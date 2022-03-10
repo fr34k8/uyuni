@@ -1,3 +1,5 @@
+- Enable HSTS for Apache to force traffic to be in HTTPS
+
 -------------------------------------------------------------------
 Mon Feb 21 12:07:41 CET 2022 - jgonzalez@suse.com
 
