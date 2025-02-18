@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2023 SUSE LLC.
+# Copyright (c) 2010-2024 SUSE LLC.
 # Licensed under the terms of the MIT license.
 
 ### This file contains all step definitions concerning general product funtionality
@@ -20,18 +20,34 @@ When(/^I wait for "(\d+)" seconds?$/) do |arg1|
   sleep(arg1.to_i)
 end
 
-When(/^I mount as "([^"]+)" the ISO from "([^"]+)" in the server$/) do |name, url|
+When(/^I mount as "([^"]+)" the ISO from "([^"]+)" in the server, validating its checksum$/) do |name, url|
   # When using a mirror it is automatically mounted at /mirror
   if $mirror
-    iso_path = url.sub(/^http:.*\/pub/, '/mirror/pub')
+    iso_path = $is_containerized_server ? url.sub(/^https?:\/\/[^\/]+/, '/srv/mirror') : url.sub(/^https?:\/\/[^\/]+/, '/mirror')
   else
     iso_path = "/tmp/#{name}.iso"
-    $server.run("wget --no-check-certificate -O #{iso_path} #{url}", timeout: 700)
+    get_target('server').run("curl --insecure -o #{iso_path} #{url}", runs_in_container: false, timeout: 1500)
   end
-  mount_point = "/srv/www/htdocs/#{name}"
-  $server.run("mkdir -p #{mount_point}")
-  $server.run("grep #{iso_path} /etc/fstab || echo '#{iso_path}  #{mount_point}  iso9660  loop,ro,_netdev  0 0' >> /etc/fstab")
-  $server.run("umount #{iso_path}; mount #{iso_path}")
+
+  iso_dir = File.dirname(iso_path)
+  original_iso_name = url.split('/').last
+  checksum_path = get_checksum_path(iso_dir, original_iso_name, url)
+
+  raise 'SHA256 checksum validation failed' unless validate_checksum_with_file(original_iso_name, iso_path, checksum_path)
+
+  if $is_containerized_server
+    mount_point = '/srv/www/distributions'
+    get_target('server').run("mkdir -p #{mount_point}")
+    # this needs to be run outside the container
+    get_target('server').run("mgradm distro copy #{iso_path} #{name}", runs_in_container: false, verbose: true)
+    get_target('server').run("ln -s #{mount_point}/#{name} /srv/www/htdocs/pub/")
+  else
+    mount_point = "/srv/www/htdocs/pub/#{name}"
+    cmd = "mkdir -p #{mount_point} && " \
+          "grep #{iso_path} /etc/fstab || echo '#{iso_path}  #{mount_point}  iso9660  loop,ro,_netdev  0 0' >> /etc/fstab && " \
+          "umount #{iso_path}; mount #{iso_path}"
+    get_target('server').run(cmd, verbose: true)
+  end
 end
 
 Then(/^the hostname for "([^"]*)" should be correct$/) do |host|
@@ -42,7 +58,7 @@ end
 Then(/^the kernel for "([^"]*)" should be correct$/) do |host|
   node = get_target(host)
   kernel_version, _code = node.run('uname -r')
-  log 'I should see kernel version: ' + kernel_version
+  log "I should see kernel version: #{kernel_version}"
   step %(I should see a "#{kernel_version.strip}" text)
 end
 
@@ -64,7 +80,7 @@ end
 Then(/^the IPv6 address for "([^"]*)" should be correct$/) do |host|
   node = get_target(host)
   interface, code = node.run("ip -6 address show #{node.public_interface}")
-  raise unless code.zero?
+  raise RuntimeError unless code.zero?
 
   lines = interface.lines
   # selects only lines with IPv6 addresses and proceeds to form an array with only those addresses
@@ -72,14 +88,14 @@ Then(/^the IPv6 address for "([^"]*)" should be correct$/) do |host|
   ipv6_addresses_list.map! { |ip_line| ip_line.slice(/2[:0-9a-f]*|fe80:[:0-9a-f]*/) }
 
   # confirms that the IPv6 address shown on the page is part of that list and, therefore, valid
-  ipv6_address = find(:xpath, "//td[text()='IPv6 Address:']/following-sibling::td[1]").text
+  ipv6_address = find(:xpath, '//td[text()=\'IPv6 Address:\']/following-sibling::td[1]').text
   log "IPv6 address: #{ipv6_address}"
-  raise unless ipv6_addresses_list.include? ipv6_address
+  raise ScriptError, "List of IPv6 addresses: #{ipv6_addresses_list} doesn't include #{ipv6_address}" unless ipv6_addresses_list.include? ipv6_address
 end
 
 Then(/^the system ID for "([^"]*)" should be correct$/) do |host|
   client_id = $api_test.system.search_by_name(get_system_name(host)).first['id']
-  step %(I should see a "#{client_id.to_s}" text)
+  step %(I should see a "#{client_id}" text)
 end
 
 Then(/^the system name for "([^"]*)" should be correct$/) do |host|
@@ -93,32 +109,44 @@ Then(/^the uptime for "([^"]*)" should be correct$/) do |host|
   rounded_uptime_minutes = uptime[:minutes].round
   rounded_uptime_hours = uptime[:hours].round
   # needed for the library's conversion of 24h multiples plus 11 hours to consider the next day
-  eleven_hours_in_seconds = 39600 # 11 hours * 60 minutes * 60 seconds
-  rounded_uptime_days = ((uptime[:seconds] + eleven_hours_in_seconds) / 86400.0).round # 60 seconds * 60 minutes * 24 hours
+  eleven_hours_in_seconds = 39_600 # 11 hours * 60 minutes * 60 seconds
+  rounded_uptime_days = ((uptime[:seconds] + eleven_hours_in_seconds) / 86_400.0).round # 60 seconds * 60 minutes * 24 hours
 
+  # select the text in the time HTML element associated with 'Last Booted'
+  ui_uptime_text = find(:xpath, '//td[contains(text(), "Last Booted")]/following-sibling::td/time').text
+  raise ScriptError, "Uptime text for host '#{host}' not found" unless ui_uptime_text
+
+  # we may have to accept as valid slightly different messages to account for rounding operations resulting in off by one errors
+  valid_uptime_messages = []
+  diffs = [-1, 0, +1]
   # the moment.js library being used has some weird rules, which these conditionals follow
   if (uptime[:days] >= 1 && rounded_uptime_days < 2) || (uptime[:days] < 1 && rounded_uptime_hours >= 22) # shows "a day ago" after 22 hours and before it's been 1.5 days
-    step %(I should see a "a day ago" text)
+    valid_uptime_messages << 'a day ago'
   elsif rounded_uptime_hours > 1 && rounded_uptime_hours <= 21
-    step %(I should see a "#{rounded_uptime_hours} hours ago" text)
+    valid_uptime_messages = diffs.map { |n| "#{rounded_uptime_hours + n} hours ago" }
+    valid_uptime_messages.map! { |time| time == '1 hours ago' ? 'an hour ago' : time }
   elsif rounded_uptime_minutes >= 45 && rounded_uptime_hours == 1 # shows "an hour ago" from 45 minutes onwards up to 1.5 hours
-    step %(I should see a "an hour ago" text)
-  elsif rounded_uptime_minutes > 1 && rounded_uptime_hours < 1
-    step %(I should see a "#{rounded_uptime_minutes} minutes ago" text)
+    valid_uptime_messages << 'an hour ago'
+  elsif rounded_uptime_minutes > 1 && rounded_uptime_hours <= 1
+    valid_uptime_messages += diffs.map { |n| "#{rounded_uptime_minutes + n} minutes ago" }
+    valid_uptime_messages.map! { |time| time == '1 minutes ago' ? 'a minute ago' : time }
   elsif uptime[:seconds] >= 45 && rounded_uptime_minutes == 1
-    step %(I should see a "a minute ago" text)
+    valid_uptime_messages << 'a minute ago'
   elsif uptime[:seconds] < 45
-    step %(I should see a "a few seconds ago" text)
-  elsif rounded_uptime_days < 25
-    step %(I should see a "#{rounded_uptime_days} days ago" text) # shows "a month ago" from 25 days onwards
+    valid_uptime_messages << 'a few seconds ago'
+  elsif rounded_uptime_days < 25 # shows "a month ago" from 25 days onwards
+    valid_uptime_messages += diffs.map { |n| "#{rounded_uptime_days + n} days ago" }
+    valid_uptime_messages.map! { |time| time == '1 days ago' ? 'a day ago' : time }
   else
-    step %(I should see a "a month ago" text)
+    valid_uptime_messages << 'a month ago'
   end
+
+  check = valid_uptime_messages.find { |message| message == ui_uptime_text }
+  raise ScriptError, "Expected uptime message to be one of #{valid_uptime_messages} - found '#{ui_uptime_text}'" unless check
 end
 
-Then(/^I should see several text fields for "([^"]*)"$/) do |host|
-  node = get_target(host)
-  steps %(Then I should see a "UUID" text
+Then(/^I should see several text fields$/) do
+  steps 'Then I should see a "UUID" text
     And I should see a "Virtualization" text
     And I should see a "Installed Products" text
     And I should see a "Checked In" text
@@ -128,7 +156,7 @@ Then(/^I should see several text fields for "([^"]*)"$/) do |host|
     And I should see a "Maintenance Schedule" text
     And I should see a "Description" text
     And I should see a "Location" text
-  )
+  '
 end
 
 # events
@@ -142,18 +170,22 @@ When(/^I wait (\d+) seconds until the event is picked up and (\d+) seconds until
   # same name in the events history - however, that's the best we have so far.
   steps %(
     When I follow "Events"
+    And I wait until I see "Pending Events" text
     And I follow "Pending"
+    And I wait until I see "Pending Events" text
     And I wait at most #{pickup_timeout} seconds until I do not see "#{event}" text, refreshing the page
     And I follow "History"
     And I wait until I see "System History" text
     And I wait until I see "#{event}" text, refreshing the page
     And I follow first "#{event}"
+    And I wait until I see "This action will be executed after" text
+    And I wait until I see "#{event}" text
     And I wait at most #{complete_timeout} seconds until the event is completed, refreshing the page
   )
 end
 
 When(/^I wait at most (\d+) seconds until event "([^"]*)" is completed$/) do |final_timeout, event|
-  step %(I wait 90 seconds until the event is picked up and #{final_timeout} seconds until the event "#{event}" is completed)
+  step %(I wait 180 seconds until the event is picked up and #{final_timeout} seconds until the event "#{event}" is completed)
 end
 
 When(/^I wait until I see the event "([^"]*)" completed during last minute, refreshing the page$/) do |event|
@@ -166,13 +198,7 @@ When(/^I wait until I see the event "([^"]*)" completed during last minute, refr
     rescue Capybara::ElementNotFound
       # ignored - pending actions cannot be found
     end
-    begin
-      accept_prompt do
-        execute_script 'window.location.reload()'
-      end
-    rescue Capybara::ModalNotFound
-      # ignored
-    end
+    refresh_page
   end
 end
 
@@ -190,30 +216,21 @@ Then(/^the up2date logs on "([^"]*)" should contain no Traceback error$/) do |ho
   node = get_target(host)
   cmd = 'if grep "Traceback" /var/log/up2date ; then exit 1; else exit 0; fi'
   _out, code = node.run(cmd)
-  raise 'error found, check the client up2date logs' if code.nonzero?
-end
-
-# salt failures log check
-Then(/^the salt event log on server should contain no failures$/) do
-  # upload salt event parser log
-  file = 'salt_event_parser.py'
-  source = "#{File.dirname(__FILE__)}/../upload_files/#{file}"
-  dest = "/tmp/#{file}"
-  return_code = file_inject($server, source, dest)
-  raise 'File injection failed' unless return_code.zero?
-  # print failures from salt event log
-  output, _code = $server.run("python3 /tmp/#{file}")
-  count_failures = output.to_s.scan(/false/).length
-  output = output.join.to_s if output.respond_to?(:join)
-  # Ignore the error if there is only the expected failure from min_salt_lock_packages.feature
-  ignore_error = false
-  ignore_error = output.include?('remove lock') if count_failures == 1 && !$build_validation
-  raise "\nFound #{count_failures} failures in salt event log:\n#{output}\n" if count_failures.nonzero? and !ignore_error
+  raise ScriptError, 'error found, check the client up2date logs' if code.nonzero?
 end
 
 # action chains
 When(/^I check radio button "(.*?)"$/) do |arg1|
-  raise "#{arg1} can't be checked" unless choose(arg1)
+  raise ScriptError, "#{arg1} can't be checked" unless choose(arg1)
+end
+
+When(/^I check radio button "(.*?)", if not checked$/) do |arg1|
+  choose(arg1) unless has_checked_field?(arg1)
+end
+
+When(/^I check default base channel radio button of this "([^"]*)"$/) do |host|
+  default_base_channel = BASE_CHANNEL_BY_CLIENT[product][host]
+  raise ScriptError, "#{default_base_channel} can't be checked" unless choose(default_base_channel)
 end
 
 When(/^I enter as remote command this script in$/) do |multiline|
@@ -223,8 +240,8 @@ end
 # bare metal
 When(/^I check the ram value of the "([^"]*)"$/) do |host|
   node = get_target(host)
-  get_ram_value = "grep MemTotal /proc/meminfo |awk '{print $2}'"
-  ram_value, _local, _remote, _code = node.test_and_store_results_together(get_ram_value, 'root', 600)
+  get_ram_value = 'grep MemTotal /proc/meminfo |awk \'{print $2}\''
+  ram_value, _err, _code = node.ssh(get_ram_value)
   ram_value = ram_value.gsub(/\s+/, '')
   ram_mb = ram_value.to_i / 1024
   step %(I should see a "#{ram_mb}" text)
@@ -233,7 +250,7 @@ end
 When(/^I check the MAC address value of the "([^"]*)"$/) do |host|
   node = get_target(host)
   get_mac_address = 'cat /sys/class/net/eth0/address'
-  mac_address, _local, _remote, _code = node.test_and_store_results_together(get_mac_address, 'root', 600)
+  mac_address, _err, _code = node.ssh(get_mac_address)
   mac_address = mac_address.gsub(/\s+/, '')
   mac_address.downcase!
   step %(I should see a "#{mac_address}" text)
@@ -241,8 +258,8 @@ end
 
 Then(/^I should see the CPU frequency of the "([^"]*)"$/) do |host|
   node = get_target(host)
-  get_cpu_freq = "cat /proc/cpuinfo  | grep -i 'CPU MHz'" # | awk '{print $4}'"
-  cpu_freq, _local, _remote, _code = node.test_and_store_results_together(get_cpu_freq, 'root', 600)
+  get_cpu_freq = 'cat /proc/cpuinfo  | grep -i \'CPU MHz\'' # | awk '{print $4}'"
+  cpu_freq, _err, _code = node.ssh(get_cpu_freq)
   get_cpu = cpu_freq.gsub(/\s+/, '')
   cpu = get_cpu.split('.')
   cpu = cpu[0].gsub(/[^\d]/, '')
@@ -250,12 +267,13 @@ Then(/^I should see the CPU frequency of the "([^"]*)"$/) do |host|
 end
 
 Then(/^I should see the power is "([^"]*)"$/) do |status|
-  within(:xpath, "//*[@for='powerStatus']/..") do
+  within(:xpath, '//*[@for=\'powerStatus\']/..') do
     repeat_until_timeout(message: "power is not #{status}") do
-      break if has_content?(status)
+      break if check_text_and_catch_request_timeout_popup?(status)
+
       find(:xpath, '//button[@value="Get status"]').click
     end
-    raise "Power status #{status} not found" unless has_content?(status)
+    raise ScriptError, "Power status #{status} not found" unless check_text_and_catch_request_timeout_popup?(status)
   end
 end
 
@@ -265,10 +283,10 @@ end
 
 # systemspage
 Given(/^I am on the Systems page$/) do
-  steps %(
+  steps '
     And I follow the left menu "Systems > System List > All"
     And I wait until I do not see "Loading..." text
-  )
+  '
 end
 
 When(/^I attach the file "(.*)" to "(.*)"$/) do |path, field|
@@ -279,21 +297,21 @@ end
 When(/^I refresh the metadata for "([^"]*)"$/) do |host|
   node = get_target(host)
   os_family = node.os_family
-  if os_family =~ /^opensuse/ || os_family =~ /^sles/
+  case os_family
+  when /^opensuse/, /^sles/, /micro/
     node.run_until_ok('zypper --non-interactive refresh -s')
-  elsif os_family =~ /^centos/ || os_family =~ /^rocky/
+  when /^centos/, /^rocky/
     node.run('yum clean all && yum makecache', timeout: 600)
-  elsif os_family =~ /^ubuntu/
+  when /^ubuntu/
     node.run('apt-get update')
   else
-    raise "The host #{host} has not yet a implementation for that step"
+    raise ScriptError, "The host #{host} has not yet a implementation for that step"
   end
 end
 
-# rubocop:disable Metrics/BlockLength
 # WORKAROUND for https://github.com/SUSE/spacewalk/issues/20318
 When(/^I install the needed packages for highstate in build host$/) do
-  packages = "bea-stax
+  packages = 'bea-stax
   bea-stax-api
   btrfsmaintenance
   btrfsprogs
@@ -472,34 +490,8 @@ When(/^I install the needed packages for highstate in build host$/) do
   xml-commons-apis
   xml-commons-resolver
   xorriso
-  xtables-plugins"
-  $build_host.run("zypper --non-interactive in #{packages}", timeout: 600)
-end
-# rubocop:enable Metrics/BlockLength
-
-Then(/^channel "([^"]*)" should be enabled on "([^"]*)"$/) do |channel, host|
-  node = get_target(host)
-  node.run("zypper lr -E | grep '#{channel}'")
-end
-
-Then(/^channel "([^"]*)" should not be enabled on "([^"]*)"$/) do |channel, host|
-  node = get_target(host)
-  _out, code = node.run("zypper lr -E | grep '#{channel}'", check_errors: false)
-  raise "'#{channel}' was not expected but was found." if code.to_i.zero?
-end
-
-Then(/^"(\d+)" channels should be enabled on "([^"]*)"$/) do |count, host|
-  node = get_target(host)
-  node.run("zypper lr -E | tail -n +5", verbose: true)
-  out, _code = node.run("zypper lr -E | tail -n +5 | wc -l")
-  raise "Expected #{count} channels enabled but found #{out}." unless count.to_i == out.to_i
-end
-
-Then(/^"(\d+)" channels with prefix "([^"]*)" should be enabled on "([^"]*)"$/) do |count, prefix, host|
-  node = get_target(host)
-  node.run("zypper lr -E | tail -n +5 | grep '#{prefix}'", verbose: true)
-  out, _code = node.run("zypper lr -E | tail -n +5 | grep '#{prefix}' | wc -l")
-  raise "Expected #{count} channels enabled but found #{out}." unless count.to_i == out.to_i
+  xtables-plugins'
+  get_target('build_host').run("zypper --non-interactive in #{packages}", timeout: 600)
 end
 
 # metadata steps
@@ -508,7 +500,7 @@ Then(/^I should have '([^']*)' in the patch metadata for "([^"]*)"$/) do |text, 
   arch, _code = node.run('uname -m')
   arch.chomp!
   # TODO: adapt for architectures
-  cmd = "zgrep '#{text}' /var/cache/zypp/raw/susemanager:fake-rpm-sles-channel/repodata/*updateinfo.xml.gz"
+  cmd = "zgrep '#{text}' /var/cache/zypp/raw/susemanager:fake-rpm-suse-channel/repodata/*updateinfo.xml.gz"
   node.run(cmd, timeout: 500)
 end
 
@@ -518,14 +510,14 @@ Then(/^I should see package "([^"]*)"$/) do |package|
 end
 
 Given(/^metadata generation finished for "([^"]*)"$/) do |channel|
-  $server.run_until_ok("ls /var/cache/rhn/repodata/#{channel}/*updateinfo.xml.gz")
+  get_target('server').run_until_ok("ls /var/cache/rhn/repodata/#{channel}/*updateinfo.xml.gz")
 end
 
-When(/^I push package "([^"]*)" into "([^"]*)" channel$/) do |arg1, arg2|
-  srvurl = "http://#{ENV['SERVER']}/APP"
-  command = "rhnpush --server=#{srvurl} -u admin -p admin --nosig -c #{arg2} #{arg1} "
-  $server.run(command, timeout: 500)
-  $server.run('ls -lR /var/spacewalk/packages', timeout: 500)
+When(/^I push package "([^"]*)" into "([^"]*)" channel through "([^"]*)"$/) do |package_filepath, channel, minion|
+  command = "mgrpush -u admin -p admin --server=#{get_target('server').full_hostname} --nosig -c #{channel} #{package_filepath}"
+  get_target(minion).run(command, timeout: 500)
+  package_filename = File.basename(package_filepath)
+  get_target('server').run_until_ok("find /var/spacewalk/packages -name \"#{package_filename}\" | grep -q \"#{package_filename}\"", timeout: 500)
 end
 
 Then(/^I should see package "([^"]*)" in channel "([^"]*)"$/) do |pkg, channel|
@@ -537,233 +529,13 @@ Then(/^I should see package "([^"]*)" in channel "([^"]*)"$/) do |pkg, channel|
   )
 end
 
-# content lifecycle steps
-When(/^I click the environment build button$/) do
-  raise 'Click on environment build failed' unless find_button('cm-build-modal-save-button', disabled: false, wait: DEFAULT_TIMEOUT).click
-end
-
-When(/^I click promote from Development to QA$/) do
-  begin
-    promote_first = first(:xpath, "//button[contains(., 'Promote')]")
-    promote_first.click
-  rescue Capybara::ElementNotFound => e
-    raise "Click on promote from Development failed: #{e}"
-  end
-end
-
-When(/^I click promote from QA to Production$/) do
-  begin
-    promote_second = find_all(:xpath, "//button[contains(., 'Promote')]", minimum: 2)[1]
-    promote_second.click
-  rescue Capybara::ElementNotFound => e
-    raise "Click on promote from QA failed: #{e}"
-  end
-end
-
-Then(/^I should see a "([^"]*)" text in the environment "([^"]*)"$/) do |text, env|
-  within(:xpath, "//h3[text()='#{env}']/../..") do
-    raise "Text \"#{text}\" not found" unless has_content?(text)
-  end
-end
-
-When(/^I wait at most (\d+) seconds until I see "([^"]*)" text in the environment "([^"]*)"$/) do |seconds, text, env|
-  within(:xpath, "//h3[text()='#{env}']/../..") do
-    step %(I wait at most #{seconds} seconds until I see "#{text}" text)
-  end
-end
-
-When(/^I wait until I see "([^"]*)" text in the environment "([^"]*)"$/) do |text, env|
-  within(:xpath, "//h3[text()='#{env}']/../..") do
-    raise "Text \"#{text}\" not found" unless has_text?(text, wait: DEFAULT_TIMEOUT)
-  end
-end
-
-When(/^I add the "([^"]*)" channel to sources$/) do |channel|
-  within(:xpath, "//span[text()='#{channel}']/../..") do
-    raise "Add channel failed" unless find(:xpath, './/input[@type="checkbox"]').set(true)
-  end
-end
-
-When(/^I click the "([^\"]*)" item (.*?) button$/) do |name, action|
-  button = case action
-           when /details/ then "i[contains(@class, 'fa-list')]"
-           when /edit/ then "i[contains(@class, 'fa-edit')]"
-           when /delete/ then "i[contains(@class, 'fa-trash')]"
-           else raise "Unknown element with description '#{action}'"
-           end
-  xpath = "//td[contains(text(), '#{name}')]/ancestor::tr/td/div/button/#{button}"
-  raise "xpath: #{xpath} not found" unless find(:xpath, xpath).click
-end
-
-When(/^I backup the SSH authorized_keys file of host "([^"]*)"$/) do |host|
-  # authorized_keys paths on the client
-  auth_keys_path = '/root/.ssh/authorized_keys'
-  auth_keys_sav_path = '/root/.ssh/authorized_keys.sav'
-  target = get_target(host)
-  _, ret_code = target.run("cp #{auth_keys_path} #{auth_keys_sav_path}")
-  raise 'error backing up authorized_keys on host' if ret_code.nonzero?
-end
-
-When(/^I add pre\-generated SSH public key to authorized_keys of host "([^"]*)"$/) do |host|
-  key_filename = 'id_rsa_bootstrap-passphrase_linux.pub'
-  target = get_target(host)
-  ret_code = file_inject(
-    target,
-    File.dirname(__FILE__) + '/../upload_files/ssh_keypair/' + key_filename,
-    '/tmp/' + key_filename
-  )
-  target.run("cat /tmp/#{key_filename} >> /root/.ssh/authorized_keys", timeout: 500)
-  raise 'Error copying ssh pubkey to host' if ret_code.nonzero?
-end
-
-When(/^I restore the SSH authorized_keys file of host "([^"]*)"$/) do |host|
-  # authorized_keys paths on the client
-  auth_keys_path = '/root/.ssh/authorized_keys'
-  auth_keys_sav_path = '/root/.ssh/authorized_keys.sav'
-  target = get_target(host)
-  target.run("cp #{auth_keys_sav_path} #{auth_keys_path}")
-  target.run("rm #{auth_keys_sav_path}")
-end
-
-When(/^I add "([^\"]*)" calendar file as url$/) do |file|
-  source = File.dirname(__FILE__) + '/../upload_files/' + file
-  dest = "/srv/www/htdocs/pub/" + file
-  return_code = file_inject($server, source, dest)
-  raise 'File injection failed' unless return_code.zero?
-  $server.run("chmod 644 #{dest}")
-  url = "https://#{$server.full_hostname}/pub/" + file
-  log "URL: #{url}"
-  step %(I enter "#{url}" as "calendar-data-text")
-end
-
-When(/^I deploy testing playbooks and inventory files to "([^"]*)"$/) do |host|
-  target = get_target(host)
-  dest = "/srv/playbooks/orion_dummy/"
-  target.run("mkdir -p #{dest}")
-  source = File.dirname(__FILE__) + '/../upload_files/ansible/playbooks/orion_dummy/playbook_orion_dummy.yml'
-  return_code = file_inject(target, source, dest + "playbook_orion_dummy.yml")
-  raise 'File injection failed' unless return_code.zero?
-  source = File.dirname(__FILE__) + '/../upload_files/ansible/playbooks/orion_dummy/hosts'
-  return_code = file_inject(target, source, dest + "hosts")
-  raise 'File injection failed' unless return_code.zero?
-  source = File.dirname(__FILE__) + '/../upload_files/ansible/playbooks/orion_dummy/file.txt'
-  return_code = file_inject(target, source, dest + "file.txt")
-  raise 'File injection failed' unless return_code.zero?
-  dest = "/srv/playbooks/"
-  source = File.dirname(__FILE__) + '/../upload_files/ansible/playbooks/playbook_ping.yml'
-  return_code = file_inject(target, source, dest + "playbook_ping.yml")
-  raise 'File injection failed' unless return_code.zero?
-end
-
-When(/^I enter the reactivation key of "([^"]*)"$/) do |host|
-  system_name = get_system_name(host)
-  node_id = $api_test.system.retrieve_server_id(system_name)
-  react_key = $api_test.system.obtain_reactivation_key(node_id)
-  log "Reactivation Key: #{react_key}"
-  step %(I enter "#{react_key}" as "reactivationKey")
-end
-
 When(/^I schedule a task to update ReportDB$/) do
-  steps %(
+  steps '
     When I follow the left menu "Admin > Task Schedules"
     And I follow "update-reporting-default"
     And I follow "mgr-update-reporting-bunch"
     And I click on "Single Run Schedule"
     Then I should see a "bunch was scheduled" text
     And I wait until the table contains "FINISHED" or "SKIPPED" followed by "FINISHED" in its first rows
-  )
-end
-
-Then(/^port "([^"]*)" should be (open|closed)$/) do |port, selection|
-  _output, code = $server.run("ss --listening --numeric | grep :#{port}", check_errors: false, verbose: true)
-  port_opened = code.zero?
-  if selection == 'closed'
-    raise "Port '#{port}' open although it should not be!" if port_opened
-  else
-    raise "Port '#{port}' not open although it should be!" unless port_opened
-  end
-end
-
-When(/^I reboot the server through SSH$/) do
-  init_string = "ssh:#{$server.public_ip}"
-  temp_server = twopence_init(init_string)
-  temp_server.extend(LavandaBasic)
-  temp_server.run('reboot > /dev/null 2> /dev/null &')
-  default_timeout = 300
-
-  check_shutdown($server.public_ip, default_timeout)
-  check_restart($server.public_ip, temp_server, default_timeout)
-
-  repeat_until_timeout(timeout: default_timeout, message: "Spacewalk didn't come up") do
-    out, code = temp_server.run('spacewalk-service status', check_errors: false, timeout: 10)
-    if !out.to_s.include? "dead" and out.to_s.include? "running"
-      log "Server spacewalk service is up"
-      break
-    end
-    sleep 1
-  end
-end
-
-When(/^I reboot the "([^"]*)" minion through SSH$/) do |host|
-  node = get_target(host)
-  node.run('reboot > /dev/null 2> /dev/null &')
-  reboot_timeout = 120
-  check_shutdown($node.public_ip, reboot_timeout)
-  check_restart($server.public_ip, node, reboot_timeout)
-end
-
-When(/^I reboot the "([^"]*)" minion through the web UI$/) do |host|
-  step %(Given I am on the Systems overview page of this "#{host}")
-  step %(When I follow first "Schedule System Reboot")
-  step %(Then I should see a "System Reboot Confirmation" text")
-  step %(And I should see a "Reboot system" button")
-  step %(When I click on "Reboot system")
-  step %(Then I should see a "Reboot scheduled for system" text")
-  step %(And I wait at most 600 seconds until event "System reboot scheduled by admin" is completed")
-  step %(Then I should see a "This action's status is: Completed" text")
-end
-
-When(/^I change the server's short hostname from hosts and hostname files$/) do
-  old_hostname = $server.hostname
-  new_hostname = old_hostname + '2'
-  log "New short hostname: #{new_hostname}"
-
-  $server.run("sed -i 's/#{old_hostname}/#{new_hostname}/g' /etc/hostname &&
-  echo '#{$server.public_ip} #{$server.full_hostname} #{old_hostname}' >> /etc/hosts &&
-  echo '#{$server.public_ip} #{new_hostname}#{$server.full_hostname.delete_prefix($server.hostname)} #{new_hostname}' >> /etc/hosts")
-end
-
-When(/^I run spacewalk-hostname-rename command on the server$/) do
-  temp_server = twopence_init("ssh:#{$server.public_ip}")
-  temp_server.extend(LavandaBasic)
-  command = "spacewalk-hostname-rename #{$server.public_ip}
-            --ssl-country=DE --ssl-state=Bayern --ssl-city=Nuremberg
-            --ssl-org=SUSE --ssl-orgunit=SUSE --ssl-email=galaxy-noise@suse.de
-            --ssl-ca-password=spacewalk -u admin -p admin"
-  out_spacewalk, result_code = temp_server.run(command, check_errors: false, timeout: 10)
-  log "#{out_spacewalk}"
-
-  default_timeout = 300
-  repeat_until_timeout(timeout: default_timeout, message: "Spacewalk didn't come up") do
-    out, code = temp_server.run('spacewalk-service status', check_errors: false, timeout: 10)
-    if !out.to_s.include? "dead" and out.to_s.include? "running"
-      log "Server: spacewalk service is up"
-      break
-    end
-    sleep 1
-  end
-  raise "Error while running spacewalk-hostname-rename command - see logs above" unless result_code.zero?
-  raise "Error in the output logs - see logs above" if out_spacewalk.include? "No such file or directory"
-end
-
-When(/^I change back the server's hostname$/) do
-  init_string = "ssh:#{$server.public_ip}"
-  temp_server = twopence_init(init_string)
-  temp_server.extend(LavandaBasic)
-  temp_server.run("echo '#{$server.full_hostname}' > /etc/hostname ")
-end
-
-When(/^I clean up the server's hosts file$/) do
-  command = "sed -i '$d' /etc/hosts && sed -i '$d' /etc/hosts"
-  $server.run(command)
+  '
 end

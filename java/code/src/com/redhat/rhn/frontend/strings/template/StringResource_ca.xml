@@ -263,15 +263,13 @@ This Patch Advisory may apply to the systems listed below. If you know that
 this patch does not apply to a system listed, it might be possible that the
 package profile for that server is out of date.
     </source>
-        <target state="needs-adaptation">
+        <target state="translated">
 ----------------------
 Llista de sistemes afectats
 ----------------------
-Aquest Avís de Pedaços pot aplicar-se als sistemes que s'indiquen a continuació. Si sabeu
-aquest pedaç no s'aplica a un sistema llistat, és possible que el
-el perfil del paquet per a aquest servidor no estigui actualitzat. En aquest cas, hauríeu d'executar
-"up2date -p" (RHEL 4 i posterior) o "rhn-profile-sync" (SLES, RHEL 5 i posterior)
-com a root al sistema en qüestió per actualitzar el perfil de programari.
+Aquest Avís de Pedaços pot aplicar-se als sistemes que s'indiquen a continuació. Si
+sabeu que aquest pedaç no s'aplica a un sistema llistat, és possible que el
+el perfil del paquet per a aquest servidor no estigui actualitzat.
     </target>
         <context-group name="ctx">
           <context context-type="sourcefile">Taskomatic task: ErrataMailer.java</context>
@@ -402,7 +400,8 @@ feu clic a la pestanya "Detalls".
         </context-group>
       </trans-unit>
       <trans-unit id="dailysummary.email.body" xml:space="preserve">
-        <source>This is the @@PRODUCT_NAME@@ Status Report for your account {0}, as of {1}.
+        <source>{7}
+This is the @@PRODUCT_NAME@@ Status Report for your account {0}, as of {1}.
 
 This email will be sent when any of the following apply:
 
@@ -422,9 +421,10 @@ Thank you for using @@PRODUCT_NAME@@.
 {5}
 {6}
 </source>
-        <target>Aquest és l'informe d'estat @@PRODUCT_NAME@@ del vostre compte {0}, a partir del dia {1}.
+        <target state="translated">{7}
+Aquest és l'informe d'estat @@PRODUCT_NAME@@ del vostre compte {0}, a partir del dia {1}.
 
-Aquest correu electrònic s'enviarà quan s'apliqui alguna de les condicions següents:
+Aquest correu electrònic s'enviarà quan s'apliqui alguna de les situacions següents:
 
 1. El sistema no pot registrar-se amb @@PRODUCT_NAME@@ en un període de 24 hores.
 2. El sistema registra l'activitat d'acció programada.
@@ -438,7 +438,7 @@ Per desactivar aquest correu electrònic per als sistemes, visiteu la pàgina Pr
 https://{4}/rhn/account/UserPreferences.do
 
 
-Gràcies per utilitzar @@PRODUCT_NAME@@.
+Gràcies per usar @@PRODUCT_NAME@@.
 {5}
 {6}
 </target>
@@ -575,6 +575,14 @@ Gràcies per utilitzar @@PRODUCT_NAME@@.
             {2} - Hostname of the @@PRODUCT_NAME@@
           </context>
         </context-group>
+      </trans-unit>
+      <trans-unit id="dailysummary.email.notpaygcompliant" xml:space="preserve">
+          <source>Warning: This @@PRODUCT_NAME@@ PAYG instance is not compliant and some of its functions are disabled.
+Please contact your administrator to amend the situation before continuing using the product.
+          </source>
+        <target state="translated">Avís: aquesta instància de PAYG de @@PRODUCT_NAME@@ no és compatible i algunes de les funcions estan desactivades.
+Poseu-vos en contacte amb el vostre administrador per modificar la situació abans de continuar utilitzant el producte.
+          </target>
       </trans-unit>
     </body>
   </file>

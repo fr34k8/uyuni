@@ -26,6 +26,8 @@ import com.redhat.rhn.domain.reactor.SaltEvent;
 import com.redhat.rhn.domain.reactor.SaltEventFactory;
 import com.redhat.rhn.frontend.events.TransactionHelper;
 
+import com.suse.manager.metrics.PrometheusExporter;
+import com.suse.salt.netapi.datatypes.Event;
 import com.suse.salt.netapi.event.AbstractEventStream;
 import com.suse.salt.netapi.exception.SaltException;
 import com.suse.salt.netapi.parser.JsonParser;
@@ -49,7 +51,6 @@ import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -63,19 +64,20 @@ public class PGEventStream extends AbstractEventStream implements PGNotification
     private static final int MAX_EVENTS_PER_COMMIT = ConfigDefaults.get().getSaltEventsPerCommit();
     private static final int THREAD_POOL_SIZE = ConfigDefaults.get().getSaltEventThreadPoolSize();
 
-    private PGConnection connection;
+    private final PGConnection connection;
     private final List<ThreadPoolExecutor> executorServices = IntStream.range(0, THREAD_POOL_SIZE + 1).mapToObj(i ->
         new ThreadPoolExecutor(
-            1,
-            1,
-            0L,
-            TimeUnit.MILLISECONDS,
+                1,
+                1,
+                0L,
+                TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(),
-            new BasicThreadFactory.Builder()
-                .namingPattern(i == 0 ? "salt-global-event-thread-%d" : String.format("salt-event-thread-%d", i))
-                .build()
+                new BasicThreadFactory.Builder()
+                    .namingPattern(i == 0 ? "salt-global-event-thread-%d" : String.format("salt-event-thread-%d", i))
+                    .build()
         )
-    ).collect(Collectors.toList());
+    ).toList();
+
 
     /**
      * Default constructor, connects to Postgres and waits for events.
@@ -92,6 +94,9 @@ public class PGEventStream extends AbstractEventStream implements PGNotification
         dataSource.setSslMode("allow");
         dataSource.setProtocolIoMode("nio");
 
+        // register the executor service for exporting metrics
+        PrometheusExporter.INSTANCE.registerThreadPoolList(this.executorServices, "salt_queue");
+
         try {
             int pending = SaltEventFactory.fixQueueNumbers(THREAD_POOL_SIZE);
             if (pending > 0) {
@@ -101,9 +106,9 @@ public class PGEventStream extends AbstractEventStream implements PGNotification
             connection = (PGConnection) dataSource.getConnection();
             connection.addNotificationListener(this);
 
-            Statement stmt = connection.createStatement();
-            stmt.execute("LISTEN suseSaltEvent");
-            stmt.close();
+            try (Statement stmt = connection.createStatement()) {
+                stmt.execute("LISTEN suseSaltEvent");
+            }
 
             startConnectionWatchdog();
 
@@ -136,7 +141,7 @@ public class PGEventStream extends AbstractEventStream implements PGNotification
 
                         List<Long> missingJobs = IntStream.range(0, allJobs.size())
                             .mapToObj(i -> executorServices.get(i).getActiveCount() > 0 ? 0 : allJobs.get(i))
-                            .collect(Collectors.toList());
+                            .toList();
 
                         if (missingJobs.stream().mapToLong(l -> l).sum() > 0) {
                             LOG.warn("Found {} events without a job. Scheduling...", missingJobs);
@@ -166,7 +171,7 @@ public class PGEventStream extends AbstractEventStream implements PGNotification
     public void notification(int processId, String channelName, String payload) {
         List<Long> counts = Arrays.stream(payload.split(","))
                 .map(Long::valueOf)
-                .collect(Collectors.toList());
+                .toList();
         notification(counts);
     }
 
@@ -197,7 +202,9 @@ public class PGEventStream extends AbstractEventStream implements PGNotification
     }
 
     /**
-     * Reads one or more events from suseSaltEvent and notifies listeners (typically, {@link PGEventListener}).
+     * Reads one or more events from suseSaltEvent and notifies listeners
+     * (typically, {@link PGEventListener#notify(Event)}).
+     *
      * @param uncommittedEvents used to keep track of events being processed
      * @param queue the index of the thread processing the events
      */
@@ -224,10 +231,14 @@ public class PGEventStream extends AbstractEventStream implements PGNotification
             List<Long> ids = uncommittedEvents.stream().map(SaltEvent::getId).collect(toList());
             List<Long> deletedIds = SaltEventFactory.deleteSaltEvents(ids);
             LOG.error("Events {} were lost", deletedIds);
+            // In case of error processing the event the transation is rollback in the PGeventListener
+            // Then this method is called. We need a commit in here to make sure we clean the DB events
+            // before we call the extra exception listener. This is needed to deal with cases where
+            // the extra listener fails with exception, which will cause the transaction helper to rollback
+            HibernateFactory.commitTransaction();
         }
 
-        if (exception instanceof PGEventListenerException) {
-            PGEventListenerException listenerException = (PGEventListenerException) exception;
+        if (exception instanceof PGEventListenerException listenerException) {
             listenerException.getExceptionHandler().run();
         }
     }

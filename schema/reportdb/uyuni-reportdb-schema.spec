@@ -1,7 +1,7 @@
 #
 # spec file for package uyuni-reportdb-schema
 #
-# Copyright (c) 2022 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 # Copyright (c) 2008-2018 Red Hat, Inc.
 #
 # All modifications and additions to the file contributed by third parties
@@ -20,19 +20,22 @@
 %{!?fedora: %global sbinpath /sbin}%{?fedora: %global sbinpath %{_sbindir}}
 
 Name:           uyuni-reportdb-schema
+Version:        5.1.3
+Release:        0
 Summary:        Report DB SQL schema for Spacewalk server
 License:        GPL-2.0-only
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
-
-Version:        4.4.1
-Release:        1
-Source0:        https://github.com/uyuni-project/uyuni/archive/%{name}-%{version}-1.tar.gz
-Source1:        https://raw.githubusercontent.com/uyuni-project/uyuni/%{name}-%{version}-1/schema/reportdb/%{name}-rpmlintrc
-
 URL:            https://github.com/uyuni-project/uyuni
+Source0:        %{name}-%{version}.tar.gz
+Source1:        https://raw.githubusercontent.com/uyuni-project/uyuni/%{name}-%{version}-0/schema/reportdb/%{name}-rpmlintrc
 BuildArch:      noarch
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
+%if 0%{?rhel}
+BuildRequires:  perl-File-Find
+%endif
+
+BuildRequires:  make
 BuildRequires:  susemanager-schema-sanity
 %if 0%{?suse_version}
 BuildRequires:  fdupes
@@ -40,7 +43,7 @@ BuildRequires:  fdupes
 
 Requires:       susemanager-schema-utility
 
-%define rhnroot /etc/sysconfig/rhn/
+%define rhnroot /usr/share/susemanager/db/
 
 %define postgres %{rhnroot}/reportdb
 
@@ -55,16 +58,17 @@ uyuni-reportdb-schema is the SQL schema for the SUSE Manager server.
 make -f Makefile.schema SCHEMA=%{name} VERSION=%{version} RELEASE=%{release}
 
 %install
-install -m 0755 -d $RPM_BUILD_ROOT%{rhnroot}
-install -m 0755 -d $RPM_BUILD_ROOT%{postgres}
-install -m 0644 postgres/main.sql $RPM_BUILD_ROOT%{postgres}
-install -m 0644 postgres/end.sql $RPM_BUILD_ROOT%{postgres}/upgrade-end.sql
+install -m 0755 -d %{buildroot}%{rhnroot}
+install -m 0755 -d %{buildroot}%{postgres}
+install -m 0644 postgres/main.sql %{buildroot}%{postgres}
+install -m 0644 postgres/end.sql %{buildroot}%{postgres}/upgrade-end.sql
 
-install -m 0755 -d $RPM_BUILD_ROOT%{rhnroot}/reportdb-schema-upgrade
-( cd upgrade && tar cf - --exclude='*.sql' . | ( cd $RPM_BUILD_ROOT%{rhnroot}/reportdb-schema-upgrade && tar xf - ) )
+install -m 0755 -d %{buildroot}%{rhnroot}/reportdb-schema-upgrade
+( cd upgrade && tar cf - --exclude='*.sql' . | ( cd %{buildroot}%{rhnroot}/reportdb-schema-upgrade && tar xf - ) )
 
 %files
 %defattr(-,root,root)
+%dir %{_datadir}/susemanager
 %dir %{rhnroot}
 %{postgres}
 %{rhnroot}/reportdb-schema-upgrade

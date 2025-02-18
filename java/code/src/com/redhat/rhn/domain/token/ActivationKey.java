@@ -24,7 +24,6 @@ import com.redhat.rhn.domain.rhnpackage.PackageName;
 import com.redhat.rhn.domain.server.ContactMethod;
 import com.redhat.rhn.domain.server.ManagedServerGroup;
 import com.redhat.rhn.domain.server.Server;
-import com.redhat.rhn.domain.server.ServerConstants;
 import com.redhat.rhn.domain.server.ServerGroup;
 import com.redhat.rhn.domain.server.ServerGroupType;
 import com.redhat.rhn.domain.user.User;
@@ -42,17 +41,6 @@ public class ActivationKey extends BaseDomainHelper {
     private String key;
     private Token token = new Token();
     private KickstartSession kickstartSession;
-    /** "Y" if this key is a bootstrap key, "N" otherwise. */
-    private String bootstrap;
-    /** Suffix in bootstrap tokens. */
-    public static final String BOOTSTRAP_TOKEN = "spacewalk-bootstrap-activation-key";
-
-    /**
-     * Istantiates a new non-bootstrap activation key.
-     */
-    public ActivationKey() {
-        bootstrap = "N";
-    }
 
     /**
      * @return Returns the key.
@@ -254,10 +242,6 @@ public class ActivationKey extends BaseDomainHelper {
      */
     public void addEntitlement(ServerGroupType entitlementIn) {
         this.getToken().addEntitlement(entitlementIn);
-        if (ServerConstants.getServerGroupTypeVirtualizationEntitled().
-                                                        equals(entitlementIn)) {
-            ActivationKeyManager.getInstance().setupVirtEntitlement(this);
-        }
     }
 
     /**
@@ -453,6 +437,14 @@ public class ActivationKey extends BaseDomainHelper {
     }
 
     /**
+     * Get the appStreams related to this activation key.
+     * @return the Set of appStreams
+     */
+    public Set<TokenChannelAppStream> getAppStreams() {
+        return this.getToken().getAppStreams();
+    }
+
+    /**
      * Makes the Activation key prefix that will get
      *  added to the base key
      * @param org the org of the activation key
@@ -471,24 +463,6 @@ public class ActivationKey extends BaseDomainHelper {
     public static String sanitize(Org org,  String key) {
         return makePrefix(org) +
                     Scrubber.scrub(key.trim().replace(" ", ""));
-    }
-
-    /**
-     * Gets the key's bootstrap status ("Y" or "N").
-     *
-     * @return "Y" if this is a bootstrap key
-     */
-    public String getBootstrap() {
-        return bootstrap;
-    }
-
-    /**
-     * Sets the key's bootstrap status ("Y" or "N").
-     *
-     * @param bootstrapIn the new bootstrap status
-     */
-    public void setBootstrap(String bootstrapIn) {
-        bootstrap = bootstrapIn;
     }
 
     /**

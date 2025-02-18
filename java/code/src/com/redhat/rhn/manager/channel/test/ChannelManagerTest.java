@@ -40,6 +40,9 @@ import com.redhat.rhn.domain.errata.ErrataFactory;
 import com.redhat.rhn.domain.errata.test.ErrataFactoryTest;
 import com.redhat.rhn.domain.org.Org;
 import com.redhat.rhn.domain.org.OrgFactory;
+import com.redhat.rhn.domain.product.SUSEProduct;
+import com.redhat.rhn.domain.product.SUSEProductFactory;
+import com.redhat.rhn.domain.product.test.SUSEProductTestUtils;
 import com.redhat.rhn.domain.rhnpackage.Package;
 import com.redhat.rhn.domain.rhnpackage.test.PackageTest;
 import com.redhat.rhn.domain.rhnset.RhnSet;
@@ -229,7 +232,6 @@ public class ChannelManagerTest extends BaseTestCaseWithUser {
 
     @Test
     public void testOrphanedChannelTree() throws Exception {
-        user = UserTestUtils.createUserInOrgOne();
         Channel channel = ChannelFactoryTest.createTestChannel(user);
         channel.setEndOfLife(new Date(System.currentTimeMillis() + 10000000L));
         user.getOrg().addOwnedChannel(channel);
@@ -434,10 +436,63 @@ public class ChannelManagerTest extends BaseTestCaseWithUser {
 
         ChannelTestUtils.createTestChannel(user);
         ChannelTestUtils.createTestChannel(user);
-        List<EssentialChannelDto> channels = ChannelManager.listBaseChannelsForSystem(
-                user, s);
+        List<EssentialChannelDto> channels = ChannelManager.listBaseChannelsForSystem(user, s);
 
         assertTrue(channels.size() >= 2);
+    }
+
+    @Test
+    public void testBaseChannelsForSystemSorted() throws Exception {
+        Server s = ServerTestUtils.createTestSystem(user);
+
+        Channel c = ChannelTestUtils.createTestChannel(user);
+        c.setName("A Channel");
+        TestUtils.saveAndReload(c);
+        c = ChannelTestUtils.createTestChannel(user);
+        c.setName("C Channel");
+        TestUtils.saveAndReload(c);
+        c = ChannelTestUtils.createTestChannel(user);
+        c.setName("B Channel");
+        TestUtils.saveAndReload(c);
+
+        List<String> channelNames = ChannelManager.listBaseChannelsForSystem(user, s).stream()
+                .map(EssentialChannelDto::getName).toList();
+
+        assertTrue(channelNames.indexOf("A Channel") < channelNames.indexOf("B Channel"));
+        assertTrue(channelNames.indexOf("B Channel") < channelNames.indexOf("C Channel"));
+    }
+
+    @Test
+    public void testBaseChannelsForLiberty() throws Exception {
+        Server s = MinionServerFactoryTest.createTestMinionServer(user);
+
+        // load official product data as test data into the DB
+        s.setServerArch(ServerFactory.lookupServerArchByLabel("x86_64-redhat-linux"));
+        SUSEProductTestUtils.createVendorSUSEProductEnvironment(user,
+                "/com/redhat/rhn/manager/content/test/data4", true);
+        HibernateFactory.getSession().flush();
+        HibernateFactory.getSession().clear();
+
+        // "mirror" the products and mandatory base channels
+        SUSEProduct resProduct = SUSEProductFactory.findSUSEProduct("res", "7", "", "x86_64", true);
+        assertNotNull(resProduct);
+        SUSEProduct resLtssProduct = SUSEProductFactory.findSUSEProduct("res-ltss", "7", "", "x86_64", true);
+        assertNotNull(resLtssProduct);
+        SUSEProductTestUtils.createBaseChannelForBaseProduct(resProduct, user);
+        SUSEProductTestUtils.createBaseChannelForBaseProduct(resLtssProduct, user);
+
+        // Test: list base channels for Liberty 7
+        SUSEProductTestUtils.installSUSEProductOnServer(resProduct, s);
+
+        List<EssentialChannelDto> channels = ChannelManager.listBaseChannelsForSystem(user, s);
+
+        assertEquals(2, channels.size());
+        List<String> expectedNames = new ArrayList<>(List.of(
+                "Channel for SUSE Liberty Linux 7 x86_64",
+                "Channel for SUSE Liberty Linux LTSS 7 x86_64"));
+        List<String> names = channels.stream().map(EssentialChannelDto::getName).toList();
+        expectedNames.removeAll(names);
+        assertTrue(expectedNames.isEmpty(), "Missing expected channel names: " + expectedNames);
     }
 
     public static ReleaseChannelMap createReleaseChannelMap(Channel channel, String product,
@@ -490,8 +545,7 @@ public class ChannelManagerTest extends BaseTestCaseWithUser {
                 ChannelManager.RHEL_PRODUCT_NAME, version, release3);
         HibernateFactory.getSession().flush();
 
-        List<EssentialChannelDto> channels = ChannelManager.listBaseChannelsForSystem(
-                user, s);
+        List<EssentialChannelDto> channels = ChannelManager.listBaseChannelsForSystem(user, s);
         assertTrue(channels.size() >= 2);
     }
 
@@ -779,8 +833,7 @@ public class ChannelManagerTest extends BaseTestCaseWithUser {
         commitHappened();
 
         // Ask for channels compatible with the new server's base
-        List<EssentialChannelDto> compatibles =
-            ChannelManager.listCompatibleBaseChannelsForChannel(user, c);
+        List<EssentialChannelDto> compatibles = ChannelManager.listCompatibleBaseChannelsForChannel(user, c);
 
         // There should be two - we now list ALL custom-channelsl
         assertNotNull(compatibles);

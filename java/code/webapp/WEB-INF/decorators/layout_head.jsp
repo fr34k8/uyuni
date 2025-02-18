@@ -29,13 +29,11 @@
     <!-- import plugins styles -->
     <link rel="stylesheet" href="/css/legacy/jquery.timepicker.css?cb=${cb_version}" />
     <link rel="stylesheet" href="/css/bootstrap-datepicker.css?cb=${cb_version}" />
-    <link rel="stylesheet" href="/javascript/select2/select2.css?cb=${cb_version}" />
-    <link rel="stylesheet" href="/javascript/select2/select2-bootstrap.css?cb=${cb_version}" />
 
     <!-- import styles -->
     <c:set var="webTheme" value="${GlobalInstanceHolder.USER_PREFERENCE_UTILS.getCurrentWebTheme(pageContext)}"/>
-    <link rel="stylesheet" href="/css/${webTheme}.css?cb=${cb_version}" />
-
+    <link rel="stylesheet" href="/css/updated-${webTheme}.css?cb=${cb_version}" />
+    
     <!-- expose user preferred language to the application -->
     <c:set var="currentLocale" value="${GlobalInstanceHolder.USER_PREFERENCE_UTILS.getCurrentLocale(pageContext)}"/>
     <script>window.preferredLocale='${currentLocale}'</script>
@@ -50,17 +48,18 @@
     <c:set var="userTimeZone" value="${GlobalInstanceHolder.USER_PREFERENCE_UTILS.getExtendedUserTimeZone(pageContext)}"/>
     <c:set var="userDateFormat" value="${GlobalInstanceHolder.USER_PREFERENCE_UTILS.getUserDateFormat(pageContext)}"/>
     <c:set var="userTimeFormat" value="${GlobalInstanceHolder.USER_PREFERENCE_UTILS.getUserTimeFormat(pageContext)}"/>
+    <c:set var="userPageSize" value="${GlobalInstanceHolder.USER_PREFERENCE_UTILS.getUserPageSize(pageContext)}"/>
     <script>
         window.serverTime='${serverTime}'
         window.serverTimeZone='${serverTimeZone}'
         window.userTimeZone='${userTimeZone}'
         window.userDateFormat='${userDateFormat}'
         window.userTimeFormat='${userTimeFormat}'
+        window.userPrefPageSize=${userPageSize}
     </script>
 
     <script src="/javascript/legacy/jquery.min.js?cb=${cb_version}"></script>
-    <script src="/javascript/legacy/bootstrap.min.js?cb=${cb_version}"></script>
-    <script src="/javascript/select2/select2.js?cb=${cb_version}"></script>
+    <script src="/javascript/legacy/bootstrap-webpack.js?cb=${cb_version}"></script>
     <script src="/javascript/spacewalk-essentials.js?cb=${cb_version}"></script>
     <script src="/javascript/spacewalk-checkall.js?cb=${cb_version}"></script>
     <script src="/javascript/ajax.js?cb=${cb_version}"></script>

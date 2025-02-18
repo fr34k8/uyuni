@@ -33,8 +33,8 @@
             <rhn:hidden name="oid" value="${param.oid}"/>
 	    <%@ include file="/WEB-INF/pages/common/fragments/org-config.jspf" %>
             <div class="form-group">
-                <div class="col-lg-offset-3 col-lg-6">
-                    <input type="submit" class="btn btn-success"
+                <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
+                    <input type="submit" class="btn btn-primary"
                       value="<bean:message key='orgdetails.jsp.submit'/>"
                       <c:if test = "${edit_disabled}">
                         disabled="${disabled}"

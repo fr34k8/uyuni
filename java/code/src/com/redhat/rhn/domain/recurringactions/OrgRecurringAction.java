@@ -16,6 +16,7 @@
 package com.redhat.rhn.domain.recurringactions;
 
 import com.redhat.rhn.domain.org.Org;
+import com.redhat.rhn.domain.recurringactions.type.RecurringActionType;
 import com.redhat.rhn.domain.role.RoleFactory;
 import com.redhat.rhn.domain.server.MinionServer;
 import com.redhat.rhn.domain.server.ServerFactory;
@@ -27,7 +28,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -54,13 +54,13 @@ public class OrgRecurringAction extends RecurringAction {
     /**
      * Constructor
      *
-     * @param testMode if action is in test mode
+     * @param actionType the recurring action type
      * @param active if action is active
      * @param org organization affiliated with the action
      * @param creator the creator User
      */
-    public OrgRecurringAction(boolean testMode, boolean active, Org org, User creator) {
-        super(testMode, active, creator);
+    public OrgRecurringAction(RecurringActionType actionType, boolean active, Org org, User creator) {
+        super(actionType, active, creator);
         this.organization = org;
     }
 
@@ -72,7 +72,7 @@ public class OrgRecurringAction extends RecurringAction {
     @Override
     public List<MinionServer> computeMinions() {
         return MinionServerUtils.filterSaltMinions(ServerFactory.listOrgSystems(organization.getId()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -92,8 +92,8 @@ public class OrgRecurringAction extends RecurringAction {
 
     @Override
     @Transient
-    public Type getType() {
-        return Type.ORG;
+    public TargetType getTargetType() {
+        return TargetType.ORG;
     }
 
     /**

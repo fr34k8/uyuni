@@ -17,6 +17,14 @@ images:
 ##
 pullPolicy: "Always"
 
+## registrySecret defines the name of secret to use to pull the images from the
+## registry with authentication. Leave empty for no authentication.
+registrySecret: ""
+
+## ingress defines the ingress that is used in the cluster.
+## It can be either "nginx", "traefik" or any other value.
+ingress: "traefik"
+
 persistentVolume:
     ## uyuni proxy overall Persistent Volume access modes
     ## Must match those of existing PV or dynamic provisioner
@@ -57,3 +65,6 @@ services:
     nodeport_saltb: 32506
     nodeport_ssh:   30020
     nodeport_tfpt:  30069
+
+squid_tuning: ""
+apache_tuning: ""

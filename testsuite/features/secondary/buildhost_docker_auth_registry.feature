@@ -1,7 +1,12 @@
-# Copyright (c) 2018-2022 SUSE LLC
+# Copyright (c) 2018-2023 SUSE LLC
 # Licensed under the terms of the MIT license.
+#
+# This feature depends on:
+# - features/secondary/min_docker_api.feature
 
-@buildhost
+@skip_if_github_validation
+
+@build_host
 @scope_building_container_images
 @auth_registry
 Feature: Build image with authenticated registry
@@ -18,6 +23,7 @@ Feature: Build image with authenticated registry
     And I click on "create-btn"
     Then I wait until I see "registry" text
 
+  @scc_credentials
   Scenario: Create a profile for the authenticated image store as Docker admin
     When I follow the left menu "Images > Profiles"
     And I follow "Create"
@@ -28,6 +34,7 @@ Feature: Build image with authenticated registry
     And I click on "create-btn"
     Then I wait until I see "auth_registry_profile" text
 
+  @scc_credentials
   Scenario: Build an image in the authenticated image store
     When I follow the left menu "Images > Build"
     And I select "auth_registry_profile" from "profileId"
@@ -38,16 +45,19 @@ Feature: Build image with authenticated registry
     # Verify the status of images in the authenticated image store
     When I wait at most 600 seconds until image "auth_registry_profile" with version "latest" is built successfully via API
     And I wait at most 300 seconds until image "auth_registry_profile" with version "latest" is inspected successfully via API
+    And I wait until no Salt job is running on "build_host"
     And I refresh the page
     Then table row for "auth_registry_profile" should contain "1"
     And the list of packages of image "auth_registry_profile" with version "latest" is not empty
 
+  @scc_credentials
   Scenario: Cleanup: remove Docker profile for the authenticated image store
     When I follow the left menu "Images > Profiles"
     And I check the row with the "auth_registry_profile" text
     And I click on "Delete"
     And I click on the red confirmation button
     And I should see a "Image profile has been deleted." text
+    And I wait until no Salt job is running on "build_host"
 
   Scenario: Cleanup: remove authenticated image store
     When I follow the left menu "Images > Stores"

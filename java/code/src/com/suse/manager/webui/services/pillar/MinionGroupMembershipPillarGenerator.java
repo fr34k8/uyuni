@@ -15,9 +15,6 @@
 
 package com.suse.manager.webui.services.pillar;
 
-import static com.suse.manager.webui.services.SaltConstants.PILLAR_DATA_FILE_EXT;
-import static com.suse.manager.webui.services.SaltConstants.PILLAR_DATA_FILE_PREFIX;
-
 import com.redhat.rhn.domain.server.MinionServer;
 import com.redhat.rhn.domain.server.Pillar;
 import com.redhat.rhn.domain.server.ServerGroup;
@@ -29,12 +26,11 @@ import org.apache.logging.log4j.Logger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Class for generating pillar data containing information of the server groups memberships of minions
  */
-public class MinionGroupMembershipPillarGenerator implements MinionPillarGenerator {
+public class MinionGroupMembershipPillarGenerator extends MinionPillarGeneratorBase {
 
     /** Logger */
     private static final Logger LOG = LogManager.getLogger(MinionGroupMembershipPillarGenerator.class);
@@ -59,19 +55,14 @@ public class MinionGroupMembershipPillarGenerator implements MinionPillarGenerat
         pillar.getPillar().clear();
 
         List<String> addonGroupTypes = minion.getEntitledGroupTypes().stream()
-                .map(ServerGroupType::getLabel).collect(Collectors.toList());
+                .map(ServerGroupType::getLabel).toList();
 
-        List<Long> groupIds = minion.getManagedGroups().stream().map(ServerGroup::getId).collect(Collectors.toList());
+        List<Long> groupIds = minion.getManagedGroups().stream().map(ServerGroup::getId).toList();
 
         pillar.add("group_ids", groupIds.toArray(new Long[groupIds.size()]));
         pillar.add("addon_group_types", addonGroupTypes.toArray(new String[addonGroupTypes.size()]));
 
         return Optional.of(pillar);
-    }
-
-    @Override
-    public String getFilename(String minionId) {
-        return PILLAR_DATA_FILE_PREFIX + "_" + minionId + "_" + CATEGORY + "." + PILLAR_DATA_FILE_EXT;
     }
 
     @Override

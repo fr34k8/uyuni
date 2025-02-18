@@ -74,7 +74,7 @@ public class MenuTree {
         if (checkAcl(user, "user_authenticated()")) {
             nodes.add(getHomeNode(adminRoles));
             nodes.add(getSystemsNode(user, adminRoles));
-            nodes.add(getSaltNode(adminRoles));
+            nodes.add(getSaltNode(user, adminRoles));
             nodes.add(getImagesNode(adminRoles));
             nodes.add(getPatchesNode(user));
             nodes.add(getSoftwareNode(user, adminRoles));
@@ -122,7 +122,7 @@ public class MenuTree {
                             .withAltUrl("/rhn/multiorg/OrgTrustDetails.do")
                             .withAltUrl("/rhn/multiorg/channels/Consumed.do")
                             .withAltUrl("/rhn/multiorg/channels/Provided.do").withVisibility(adminRoles.get("org")))
-                    .addChild(new MenuItem("Recurring States").withPrimaryUrl("/rhn/manager/yourorg/recurring-states")
+                    .addChild(new MenuItem("Recurring Actions").withPrimaryUrl("/rhn/manager/yourorg/recurring-actions")
                             .withVisibility(adminRoles.get("org")))
                     .addChild(new MenuItem("Configuration Channels").withPrimaryUrl("/rhn/manager/yourorg/custom")
                             .withVisibility(adminRoles.get("org")))
@@ -148,7 +148,7 @@ public class MenuTree {
                             .withPrimaryUrl("/rhn/manager/systems/list/all?qc=group_count&q=0")
                             .withVisibility(adminRoles.get("org")))
                     .addChild(new MenuItem("Inactive")
-                            .withPrimaryUrl("/rhn/manager/systems/list/all?qc=system_kind&q=awol"))
+                            .withPrimaryUrl("/rhn/manager/systems/list/all?qc=status_type&q=awol"))
                     .addChild(new MenuItem("Recently Registered")
                             .withPrimaryUrl("/rhn/manager/systems/list/all?qc=created_days&q=>6"))
                     .addChild(new MenuItem("Proxy")
@@ -176,17 +176,6 @@ public class MenuTree {
                     .withVisibility(adminRoles.get("org")))
             .addChild(new MenuItem("container.based.proxy.config").withPrimaryUrl("/rhn/manager/proxy/container-config")
                     .withVisibility(adminRoles.get("org")))
-            .addChild(new MenuItem("visualization.nav.title")
-                    .withVisibility(adminRoles.get("org"))
-                    .addChild(new MenuItem("Virtualization Hierarchy")
-                            .withPrimaryUrl("/rhn/manager/visualization/virtualization-hierarchy")
-                            .withVisibility(adminRoles.get("org")))
-                    .addChild(new MenuItem("Proxy Hierarchy")
-                            .withPrimaryUrl("/rhn/manager/visualization/proxy-hierarchy")
-                            .withVisibility(adminRoles.get("org")))
-                    .addChild(new MenuItem("Systems Grouping")
-                            .withPrimaryUrl("/rhn/manager/visualization/systems-with-managed-groups")
-                            .withVisibility(adminRoles.get("org"))))
             .addChild(new MenuItem("Advanced Search").withPrimaryUrl("/rhn/systems/Search.do"))
             .addChild(new MenuItem("Activation Keys").withPrimaryUrl("/rhn/activationkeys/List.do")
                     .withAltUrl("/rhn/activationkeys/Create.do").withAltUrl("/rhn/activationkeys/Edit.do")
@@ -238,10 +227,11 @@ public class MenuTree {
                     .withVisibility(adminRoles.get("org")));
     }
 
-    private MenuItem getSaltNode(Map<String, Boolean> adminRoles) {
+    private MenuItem getSaltNode(User user, Map<String, Boolean> adminRoles) {
         return new MenuItem("Salt").withIcon("spacewalk-icon-salt")
                 .addChild(new MenuItem("Keys").withPrimaryUrl("/rhn/manager/systems/keys"))
-                .addChild(new MenuItem("Remote Commands").withPrimaryUrl("/rhn/manager/systems/cmd"))
+                .addChild(new MenuItem("Remote Commands").withPrimaryUrl("/rhn/manager/systems/cmd")
+                        .withVisibility(checkAcl(user, "not is(java.disable_remote_commands_from_ui)")))
                 .addChild(new MenuItem("Formula Catalog").withPrimaryUrl("/rhn/manager/formula-catalog")
                         .withVisibility(adminRoles.get("org")));
     }
@@ -296,8 +286,8 @@ public class MenuTree {
                             .withAltUrl("/rhn/channels/manage/errata/AddRedHatErrata.do")
                             .withAltUrl("/rhn/channels/manage/errata/AddCustomErrata.do")
                             .withAltUrl("/rhn/channels/manage/errata/ConfirmErrataAdd.do"))
-                    .addChild(new MenuItem("Packages").withPrimaryUrl("/rhn/software/manage/packages/PackageList.do")
-                            .withDir("/rhn/software/manage/packages")
+                    .addChild(new MenuItem("Packages").withPrimaryUrl("/rhn/manager/packages/list")
+                            .withDir("/rhn/manager/packages")
                             .withVisibility(checkAcl(user, "user_role(channel_admin)")))
                     .addChild(new MenuItem("Repositories").withPrimaryUrl("/rhn/channels/manage/repos/RepoList.do")
                             .withAltUrl("/rhn/channels/manage/repos/RepoEdit.do")
@@ -337,7 +327,9 @@ public class MenuTree {
                         .addChild(new MenuItem("audit.nav.logreview")
                                 .addChild(new MenuItem("Overview").withPrimaryUrl("/rhn/audit/Overview.do"))
                                 .addChild(new MenuItem("Reviews").withPrimaryUrl("/rhn/audit/Machine.do"))
-                                .addChild(new MenuItem("Search").withPrimaryUrl("/rhn/audit/Search.do"))));
+                                .addChild(new MenuItem("Search").withPrimaryUrl("/rhn/audit/Search.do"))))
+                .addChild(new MenuItem("confidentialcomputing.nav.title")
+                        .withPrimaryUrl("/rhn/manager/audit/confidential-computing"));
     }
 
     private MenuItem getConfigurationNode(Map<String, Boolean> adminRoles) {
@@ -384,7 +376,7 @@ public class MenuTree {
             .addChild(new MenuItem("Archived Actions").withPrimaryUrl("/rhn/schedule/ArchivedActions.do"))
             .addChild(new MenuItem("Action Chains").withPrimaryUrl("/rhn/schedule/ActionChains.do")
                     .withAltUrl("/rhn/schedule/ActionChain.do"))
-            .addChild(new MenuItem("Recurring States").withPrimaryUrl("/rhn/manager/schedule/recurring-states"))
+            .addChild(new MenuItem("Recurring Actions").withPrimaryUrl("/rhn/manager/schedule/recurring-actions"))
             .addChild(new MenuItem("Maintenance Windows").withDir("/rhn/manager/schedule/maintenance")
                     .addChild(new MenuItem("Schedules").withPrimaryUrl("/rhn/manager/schedule/maintenance/schedules"))
                     .addChild(new MenuItem("Calendars").withPrimaryUrl("/rhn/manager/schedule/maintenance/calendars")));
@@ -414,12 +406,12 @@ public class MenuTree {
             .addChild(new MenuItem("Setup Wizard")
                     .withVisibility(adminRoles.get("satellite"))
                     .addChild(new MenuItem("HTTP Proxy")
-                            .withPrimaryUrl("/rhn/admin/setup/ProxySettings.do"))
+                            .withPrimaryUrl("/rhn/manager/admin/setup/proxy"))
                     .addChild(new MenuItem("Mirror Credentials")
                             .withPrimaryUrl("/rhn/admin/setup/MirrorCredentials.do"))
                     .addChild(new MenuItem("Products")
                             .withPrimaryUrl("/rhn/manager/admin/setup/products"))
-                    .addChild(new MenuItem("Pay-as-you-go")
+                    .addChild(new MenuItem("PAYG Connections")
                         .withPrimaryUrl("/rhn/manager/admin/setup/payg")
                         .withDir("/rhn/manager/admin/setup/payg")
                         .withDir("/rhn/manager/admin/setup/payg/create")))
@@ -432,7 +424,7 @@ public class MenuTree {
                     .withAltUrl("/rhn/admin/multiorg/DeleteOrg.do")
                     .withAltUrl("/rhn/admin/multiorg/OrgCreate.do")
                     .withAltUrl("/rhn/manager/multiorg/details/custom")
-                    .withAltUrl("/rhn/manager/multiorg/details/recurring-states")
+                    .withAltUrl("/rhn/manager/multiorg/recurring-actions")
                     .withVisibility(adminRoles.get("satellite")))
             .addChild(new MenuItem("Users")
                     .withPrimaryUrl("/rhn/admin/multiorg/Users.do")
@@ -450,9 +442,10 @@ public class MenuTree {
                             .withVisibility(adminRoles.get("satellite")))
                     .addChild(new MenuItem("Cobbler").withPrimaryUrl("/rhn/admin/config/Cobbler.do")
                             .withVisibility(adminRoles.get("satellite")))
-                    .addChild(new MenuItem("Bare-metal systems").withPrimaryUrl("/rhn/admin/config/BootstrapSystems.do")
-                            .withVisibility(adminRoles.get("satellite")))
                     .addChild(new MenuItem("Monitoring").withPrimaryUrl("/rhn/manager/admin/config/monitoring")
+                            .withVisibility(adminRoles.get("satellite")))
+                    .addChild(new MenuItem("Password Policy")
+                            .withPrimaryUrl("/rhn/manager/admin/config/password-policy")
                             .withVisibility(adminRoles.get("satellite"))))
             .addChild(new MenuItem("ISS Configuration")
                     .withVisibility(adminRoles.get("satellite"))

@@ -68,7 +68,7 @@ public class KickstartManager extends BaseManager {
      * @return the rendered kickstart contents
      */
     public String renderKickstart(String host, KickstartData data) {
-        return renderKickstart(host, KickstartUrlHelper.getCobblerProfileUrl(data));
+        return renderKickstart(host, KickstartUrlHelper.getCobblerProfileInternalUrl(data));
     }
 
     /**
@@ -84,7 +84,7 @@ public class KickstartManager extends BaseManager {
         String retval = renderKickstart(url);
         // Search/replacing all instances of cobbler host with host
         // we pass in, for use with Spacewalk Proxy.
-        retval = retval.replaceAll(ConfigDefaults.get().getCobblerHost(), host);
+        retval = retval.replaceAll(ConfigDefaults.get().getJavaHostname(), host);
         return retval;
     }
 
@@ -94,7 +94,7 @@ public class KickstartManager extends BaseManager {
      * @return the rendered kickstart contents
      */
     public String renderKickstart(KickstartData data) {
-        return renderKickstart(KickstartUrlHelper.getCobblerProfileUrl(data));
+        return renderKickstart(KickstartUrlHelper.getCobblerProfileInternalUrl(data));
     }
 
 

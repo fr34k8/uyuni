@@ -19,11 +19,17 @@ import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.common.hibernate.LookupException;
 import com.redhat.rhn.common.validator.ValidatorException;
 import com.redhat.rhn.common.validator.ValidatorResult;
+import com.redhat.rhn.domain.channel.ChannelFactory;
+import com.redhat.rhn.domain.channel.ContentSource;
 import com.redhat.rhn.domain.cloudpayg.CloudRmtHostFactory;
 import com.redhat.rhn.domain.cloudpayg.PaygSshData;
 import com.redhat.rhn.domain.cloudpayg.PaygSshDataFactory;
-import com.redhat.rhn.domain.credentials.Credentials;
+import com.redhat.rhn.domain.credentials.CloudCredentials;
+import com.redhat.rhn.domain.credentials.CloudRMTCredentials;
 import com.redhat.rhn.domain.credentials.CredentialsFactory;
+import com.redhat.rhn.domain.kickstart.KickstartFactory;
+import com.redhat.rhn.domain.kickstart.crypto.CryptoKey;
+import com.redhat.rhn.domain.kickstart.crypto.SslCryptoKey;
 import com.redhat.rhn.domain.scc.SCCCachingFactory;
 import com.redhat.rhn.domain.scc.SCCRepositoryAuth;
 import com.redhat.rhn.frontend.action.common.BadParameterException;
@@ -41,6 +47,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PaygAdminManager {
 
@@ -251,7 +260,7 @@ public class PaygAdminManager {
     public PaygSshData setDetails(String host,  Map<String, Object> details) {
         if (StringUtils.isEmpty(host)) {
             LOG.debug("payg empty host");
-            throw new BadParameterException("Pay-as-you-go host cannot be empty");
+            throw new BadParameterException("PAYG host cannot be empty");
         }
         PaygSshData paygSshData = PaygSshDataFactory.lookupByHostname(host)
                 .orElseThrow(() -> new LookupException("Host not found: " + host));
@@ -384,13 +393,34 @@ public class PaygAdminManager {
     }
 
     private boolean delete(PaygSshData paygSshData) {
-        Credentials creds = paygSshData.getCredentials();
-        if (creds != null) {
-            LOG.debug("deleting {} -> {}", paygSshData.getId(), paygSshData.getHost());
+        CloudCredentials creds = paygSshData.getCredentials();
+        LOG.debug("deleting payg data {} -> {}", paygSshData.getId(), paygSshData.getHost());
+        if (creds instanceof CloudRMTCredentials) {
             List<SCCRepositoryAuth> existingRepos = SCCCachingFactory.lookupRepositoryAuthByCredential(creds);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("deleting repo auth ids {}",
+                    existingRepos.stream().map(r -> r.getId().toString()).collect(Collectors.joining(", ")));
+            }
             existingRepos.forEach(SCCCachingFactory::deleteRepositoryAuth);
         }
-        Optional.ofNullable(paygSshData.getCredentials()).ifPresent(CredentialsFactory::removeCredentials);
+        else { // RHUI - some clouds have no credentials
+            List<ContentSource> csUrls = PaygSshDataFactory.listRhuiRepositoriesCreatedByInstance(paygSshData);
+            Set<SslCryptoKey> sslCryptoKeys = csUrls.stream()
+                    .flatMap(cs -> cs.getSslSets().stream())
+                    .flatMap(scs -> Stream.of(scs.getCaCert(), scs.getClientCert(), scs.getClientKey()))
+                    .collect(Collectors.toSet());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("deleting repositories {}",
+                    csUrls.stream().map(ContentSource::getLabel).collect(Collectors.joining(", ")));
+            }
+            csUrls.forEach(ChannelFactory::remove);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("deleting crypto keys {}",
+                    sslCryptoKeys.stream().map(CryptoKey::getDescription).collect(Collectors.joining(", ")));
+            }
+            sslCryptoKeys.forEach(KickstartFactory::removeCryptoKey);
+        }
+        Optional.ofNullable(creds).ifPresent(CredentialsFactory::removeCredentials);
         Optional.ofNullable(paygSshData.getRmtHosts()).ifPresent(CloudRmtHostFactory::deleteCloudRmtHost);
         PaygSshDataFactory.deletePaygSshData(paygSshData);
         return true;

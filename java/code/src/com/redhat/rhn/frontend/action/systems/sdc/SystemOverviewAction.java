@@ -14,11 +14,11 @@
  */
 package com.redhat.rhn.frontend.action.systems.sdc;
 
+import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.db.datasource.DataResult;
 import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.domain.action.Action;
 import com.redhat.rhn.domain.action.ActionFactory;
-import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.entitlement.Entitlement;
 import com.redhat.rhn.domain.product.SUSEProductFactory;
 import com.redhat.rhn.domain.server.InstalledProduct;
@@ -34,6 +34,8 @@ import com.redhat.rhn.manager.rhnpackage.PackageManager;
 import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.manager.user.UserManager;
 
+import com.suse.cloud.CloudPaygManager;
+
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -45,7 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -59,6 +60,8 @@ public class SystemOverviewAction extends RhnAction {
                                                        .INCLUDE_IN_DAILY_SUMMARY,
                                                        UserServerPreferenceId
                                                        .RECEIVE_NOTIFICATIONS};
+
+    private final CloudPaygManager cloudPaygManager = GlobalInstanceHolder.PAYG_MANAGER;
 
     /** {@inheritDoc} */
     @Override
@@ -132,11 +135,7 @@ public class SystemOverviewAction extends RhnAction {
                 (e1, e2) -> (e1.isBase() && e2.isBase()) || (!e1.isBase() && !e2.isBase()) ?
                         e1.getHumanReadableLabel().compareTo(e2.getHumanReadableLabel()) :
                         (e1.isBase() ? -1 : 1))
-                .collect(Collectors.toList());
-
-        if (s.getChannels().stream().anyMatch(Channel::isModular)) {
-            createErrorMessage(request, "packagelist.jsp.modulespresent", null);
-        }
+                .toList();
 
         request.setAttribute("rebootRequired", rebootRequired);
         request.setAttribute("rebootScheduled", rebootScheduled);
@@ -170,6 +169,14 @@ public class SystemOverviewAction extends RhnAction {
                         .findFirst()
                         .map(p -> SUSEProductFactory.getLivePatchSupportedProducts().anyMatch(p::equals))
                         .orElse(false));
+
+        // Inform user that SUMA cannot manage BYOS instances if SUMA is PAYG and not SCC credentials are set.
+        if (cloudPaygManager.isPaygInstance()) {
+            cloudPaygManager.checkRefreshCache(true);
+            if (s.isDeniedOnPayg() && !cloudPaygManager.hasSCCCredentials()) {
+                createErrorMessage(request, "message.payg.errorbyosnoscc", null);
+            }
+        }
 
         return mapping.findForward(RhnHelper.DEFAULT_FORWARD);
     }

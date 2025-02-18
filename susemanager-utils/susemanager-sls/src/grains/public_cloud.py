@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Copyright (c) 2019 SUSE LLC
 
 This software is licensed to you under the GNU General Public License,
@@ -19,7 +19,7 @@ internal API available from within the instance.
 
 Author: Pablo Suárez Hernández <psuarezhernandez@suse.com>
 Based on: https://docs.saltstack.com/en/latest/ref/grains/all/salt.grains.metadata.html
-'''
+"""
 from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libs
@@ -32,19 +32,22 @@ import logging
 import salt.utils.http as http
 
 # Internal metadata API information
-INTERNAL_API_IP = '169.254.169.254'
-HOST = 'http://{0}/'.format(INTERNAL_API_IP)
+INTERNAL_API_IP = "169.254.169.254"
+# pylint: disable-next=consider-using-f-string
+HOST = "http://{0}/".format(INTERNAL_API_IP)
 
 INSTANCE_ID = None
 
-AMAZON_URL_PATH = 'latest/meta-data/'
-AZURE_URL_PATH = 'metadata/instance/compute/'
-AZURE_API_ARGS = '?api-version=2017-08-01&format=text'
-GOOGLE_URL_PATH = 'computeMetadata/v1/instance/'
+AMAZON_URL_PATH = "latest/meta-data/"
+AMAZON_TOKEN_URL_PATH = "latest/api/token"
+AZURE_URL_PATH = "metadata/instance/compute/"
+AZURE_API_ARGS = "?api-version=2017-08-01&format=text"
+GOOGLE_URL_PATH = "computeMetadata/v1/instance/"
 
 log = logging.getLogger(__name__)
 
 
+# pylint: disable-next=invalid-name
 def __virtual__():
     global INSTANCE_ID
     log.debug("Checking if minion is running in the public cloud")
@@ -56,62 +59,106 @@ def __virtual__():
 
     def _do_api_request(data):
         opts = {
-            'http_connect_timeout': 0.1,
-            'http_request_timeout': 0.1,
+            "http_connect_timeout": 0.1,
+            "http_request_timeout": 0.1,
         }
+        api_token = None
+        header_dict = data[2]
         try:
+            if data[0] == "amazon":
+                token_ret = http.query(
+                    os.path.join(HOST, AMAZON_TOKEN_URL_PATH),
+                    status=True,
+                    header_dict={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
+                    method="PUT",
+                    raise_error=False,
+                    opts=opts,
+                )
+                if token_ret.get("status") == 200:
+                    api_token = token_ret.get("body")
+                    if api_token:
+                        if not header_dict:
+                            header_dict = {}
+                        header_dict.update({"X-aws-ec2-metadata-token": api_token})
             ret = {
-                data[0]: http.query(data[1],
-                                    status=True,
-                                    header_dict=data[2],
-                                    raise_error=False,
-                                    opts=opts)
+                data[0]: http.query(
+                    data[1],
+                    status=True,
+                    header_dict=header_dict,
+                    raise_error=False,
+                    opts=opts,
+                )
             }
+            if ret.get("amazon", {}).get("status") == 200:
+                ret.get("amazon", {})["api_token"] = api_token
+        # pylint: disable-next=bare-except
         except:
-            ret = { data[0]: dict() }
+            ret = {data[0]: dict()}
         return ret
 
     api_check_dict = [
-        ('amazon', os.path.join(HOST, AMAZON_URL_PATH), None),
-        ('google', os.path.join(HOST, GOOGLE_URL_PATH), {"Metadata-Flavor": "Google"}),
-        ('azure', os.path.join(HOST, AZURE_URL_PATH) + AZURE_API_ARGS, {"Metadata":"true"}),
+        ("amazon", os.path.join(HOST, AMAZON_URL_PATH), None),
+        ("google", os.path.join(HOST, GOOGLE_URL_PATH), {"Metadata-Flavor": "Google"}),
+        (
+            "azure",
+            os.path.join(HOST, AZURE_URL_PATH) + AZURE_API_ARGS,
+            {"Metadata": "true"},
+        ),
     ]
 
     api_ret = {}
     results = []
 
     try:
-       pool = ThreadPool(3)
-       results = pool.map(_do_api_request, api_check_dict)
-       pool.close()
-       pool.join()
+        pool = ThreadPool(3)
+        results = pool.map(_do_api_request, api_check_dict)
+        pool.close()
+        pool.join()
+    # pylint: disable-next=broad-exception-caught
     except Exception as exc:
-       import traceback
-       log.error(traceback.format_exc())
-       log.error("Exception while creating a ThreadPool for accessing metadata API: %s", exc)
+        # pylint: disable-next=import-outside-toplevel
+        import traceback
+
+        log.error(traceback.format_exc())
+        log.error(
+            "Exception while creating a ThreadPool for accessing metadata API: %s", exc
+        )
 
     for i in results:
         api_ret.update(i)
 
-    if _is_valid_endpoint(api_ret['amazon'], 'instance-id'):
-        INSTANCE_ID = http.query(os.path.join(HOST, AMAZON_URL_PATH, 'instance-id'), raise_error=False)['body']
+    if _is_valid_endpoint(api_ret["amazon"], "instance-id"):
+        api_token = api_ret["amazon"].get("api_token")
+        INSTANCE_ID = http.query(
+            os.path.join(HOST, AMAZON_URL_PATH, "instance-id"),
+            raise_error=False,
+            header_dict={"X-aws-ec2-metadata-token": api_token} if api_token else None,
+        )["body"]
         return True
-    elif _is_valid_endpoint(api_ret['azure'], 'vmId'):
-        INSTANCE_ID = http.query(os.path.join(HOST, AZURE_URL_PATH, 'vmId') + AZURE_API_ARGS, header_dict={"Metadata":"true"}, raise_error=False)['body']
+    elif _is_valid_endpoint(api_ret["azure"], "vmId"):
+        INSTANCE_ID = http.query(
+            os.path.join(HOST, AZURE_URL_PATH, "vmId") + AZURE_API_ARGS,
+            header_dict={"Metadata": "true"},
+            raise_error=False,
+        )["body"]
         return True
-    elif _is_valid_endpoint(api_ret['google'], 'id'):
-        INSTANCE_ID = http.query(os.path.join(HOST, GOOGLE_URL_PATH, 'id'), header_dict={"Metadata-Flavor": "Google"}, raise_error=False)['body']
+    elif _is_valid_endpoint(api_ret["google"], "id"):
+        INSTANCE_ID = http.query(
+            os.path.join(HOST, GOOGLE_URL_PATH, "id"),
+            header_dict={"Metadata-Flavor": "Google"},
+            raise_error=False,
+        )["body"]
         return True
 
     return False
 
 
 def _is_valid_endpoint(response, tag):
-    if not response.get('status', 0) == 200:
+    if not response.get("status", 0) == 200:
         return False
-    elif not tag in response.get('body', ''):
+    elif not tag in response.get("body", ""):
         return False
-    elif ' ' in response.get('body', ''):
+    elif " " in response.get("body", ""):
         return False
     else:
         return True
@@ -122,7 +169,7 @@ def _is_valid_instance_id(id_str):
         return False
     if os.linesep in id_str:
         return False
-    elif ' ' in id_str:
+    elif " " in id_str:
         return False
     elif len(id_str) > 128:
         return False
@@ -131,18 +178,23 @@ def _is_valid_instance_id(id_str):
 
 
 def instance_id():
+    # pylint: disable-next=global-variable-not-assigned
     global INSTANCE_ID
     ret = {}
     if _is_valid_instance_id(INSTANCE_ID):
-        log.debug("This minion is running in the public cloud. Adding instance_id to grains: {}".format(INSTANCE_ID))
-        ret['instance_id'] = INSTANCE_ID
+        log.debug(
+            # pylint: disable-next=logging-format-interpolation,consider-using-f-string
+            "This minion is running in the public cloud. Adding instance_id to grains: {}".format(
+                INSTANCE_ID
+            )
+        )
+        ret["instance_id"] = INSTANCE_ID
     else:
-        log.error("The obtained public cloud instance id doesn't seems correct: {}".format(INSTANCE_ID))
+        log.error(
+            # pylint: disable-next=logging-format-interpolation,consider-using-f-string
+            "The obtained public cloud instance id doesn't seems correct: {}".format(
+                INSTANCE_ID
+            )
+        )
         log.error("Skipping")
-    return ret
-
-def is_payg_instance():
-    ret = {}
-    if os.path.isfile('/usr/sbin/registercloudguest'):
-        ret['is_payg_instance'] = True
     return ret

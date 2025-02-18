@@ -1,7 +1,7 @@
 #
 # spec file for package spacewalk-admin
 #
-# Copyright (c) 2022 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 # Copyright (c) 2008-2018 Red Hat, Inc.
 #
 # All modifications and additions to the file contributed by third parties
@@ -17,42 +17,29 @@
 #
 
 
-%if 0%{?fedora} || 0%{?suse_version} > 1320 || 0%{?rhel} >= 8
-%global build_py3   1
-%endif
-
-%define pythonX %{?build_py3: python3}%{!?build_py3: python}
-
+Name:           spacewalk-admin
+Version:        5.1.2
+Release:        0
 Summary:        Various utility scripts and data files for Spacewalk installations
 License:        GPL-2.0-only
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
-Name:           spacewalk-admin
 URL:            https://github.com/uyuni-project/uyuni
-Version:        4.4.3
-Release:        1
 Source0:        https://github.com/uyuni-project/uyuni/archive/%{name}-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-Requires:       %{pythonX}
 Requires:       lsof
 Requires:       procps
+Requires:       python3
 Requires:       spacewalk-base
 Requires:       perl(MIME::Base64)
 BuildRequires:  /usr/bin/pod2man
-%if 0%{?rhel} >= 7 || 0%{?fedora} || 0%{?suse_version} >= 1210
+BuildRequires:  make
 BuildRequires:  systemd
-%endif
-Obsoletes:      satellite-utils < 5.3.0
-Provides:       satellite-utils = 5.3.0
-Obsoletes:      rhn-satellite-admin < 5.3.0
-Provides:       rhn-satellite-admin = 5.3.0
-BuildArch:      noarch
-%if 0%{?suse_version}
 BuildRequires:  spacewalk-config
-%endif
 BuildRequires:  uyuni-base-common
 Requires(pre):  uyuni-base-common
 Requires:       susemanager-schema-utility
 Requires:       uyuni-setup-reportdb
+BuildArch:      noarch
 
 %description
 Various utility scripts and data files for Spacewalk installations.
@@ -64,28 +51,25 @@ Various utility scripts and data files for Spacewalk installations.
 
 %install
 
-make -f Makefile.admin install PREFIX=$RPM_BUILD_ROOT
-
-mkdir -p $RPM_BUILD_ROOT%{_mandir}/man8/
-%{_bindir}/pod2man --section=8 rhn-config-schema.pl > $RPM_BUILD_ROOT%{_mandir}/man8/rhn-config-schema.pl.8
-%{_bindir}/pod2man --section=8 man/spacewalk-service.pod > $RPM_BUILD_ROOT%{_mandir}/man8/spacewalk-service.8
-%{_bindir}/pod2man --section=8 man/rhn-sat-restart-silent.pod > $RPM_BUILD_ROOT%{_mandir}/man8/rhn-sat-restart-silent.8
-%{_bindir}/pod2man --section=8 rhn-config-satellite.pl > $RPM_BUILD_ROOT%{_mandir}/man8/rhn-config-satellite.pl.8
-%{_bindir}/pod2man --section=8 man/rhn-deploy-ca-cert.pl.pod > $RPM_BUILD_ROOT%{_mandir}/man8/rhn-deploy-ca-cert.pl.8
-%{_bindir}/pod2man --section=8 man/rhn-install-ssl-cert.pl.pod > $RPM_BUILD_ROOT%{_mandir}/man8/rhn-install-ssl-cert.pl.8
-chmod 0644 $RPM_BUILD_ROOT%{_mandir}/man8/*.8*
-%if 0%{?build_py3}
-sed -i 's|#!/usr/bin/python|#!/usr/bin/python3|' $RPM_BUILD_ROOT/usr/bin/salt-secrets-config.py
+%if 0%{?rhel}
+sed -i 's/apache2.service/httpd.service/g' spacewalk.target
+sed -i 's/apache2.service/httpd.service/g' spacewalk-wait-for-tomcat.service
+sed -i 's/apache2.service/httpd.service/g' uyuni-check-database.service
 %endif
 
-%post
-if [ -x /usr/bin/systemctl ]; then
-    /usr/bin/systemctl daemon-reload || :
-fi
+make -f Makefile.admin install PREFIX=%{buildroot}
 
-# Fix Uyuni issue 5718: this should happen upgrading from version between 2022.02 and 2022.05
-if grep -E "^report_db_sslrootcert[[:space:]]*=[[:space:]]*/etc/pki/trust/anchors/RHN-ORG-TRUSTED-SSL-CERT" /etc/rhn/rhn.conf; then
-    sed -i "s|^report_db_sslrootcert[[:space:]]*=.*|report_db_sslrootcert = /etc/pki/trust/anchors/LOCAL-RHN-ORG-TRUSTED-SSL-CERT|" /etc/rhn/rhn.conf
+mkdir -p %{buildroot}%{_mandir}/man8/
+%{_bindir}/pod2man --section=8 man/spacewalk-service.pod > %{buildroot}%{_mandir}/man8/spacewalk-service.8
+%{_bindir}/pod2man --section=8 man/rhn-sat-restart-silent.pod > %{buildroot}%{_mandir}/man8/rhn-sat-restart-silent.8
+%{_bindir}/pod2man --section=8 rhn-config-satellite.pl > %{buildroot}%{_mandir}/man8/rhn-config-satellite.pl.8
+%{_bindir}/pod2man --section=8 man/rhn-deploy-ca-cert.pl.pod > %{buildroot}%{_mandir}/man8/rhn-deploy-ca-cert.pl.8
+%{_bindir}/pod2man --section=8 man/rhn-install-ssl-cert.pl.pod > %{buildroot}%{_mandir}/man8/rhn-install-ssl-cert.pl.8
+chmod 0644 %{buildroot}%{_mandir}/man8/*.8*
+
+%post
+if [ -x %{_bindir}/systemctl ]; then
+    %{_bindir}/systemctl daemon-reload || :
 fi
 
 %files
@@ -93,14 +77,13 @@ fi
 %{_sbindir}/spacewalk-startup-helper
 %{_sbindir}/spacewalk-service
 %{_sbindir}/uyuni-update-config
+%{_sbindir}/import-suma-build-keys
 %{_bindir}/rhn-config-satellite.pl
-%{_bindir}/rhn-config-schema.pl
 %{_bindir}/rhn-deploy-ca-cert.pl
 %{_bindir}/rhn-install-ssl-cert.pl
 %{_bindir}/salt-secrets-config.py
 %{_sbindir}/rhn-sat-restart-silent
 %{_sbindir}/mgr-monitoring-ctl
-%{_mandir}/man8/rhn-config-schema.pl.8*
 %{_mandir}/man8/spacewalk-service.8*
 %{_mandir}/man8/rhn-sat-restart-silent.8*
 %{_mandir}/man8/rhn-config-satellite.pl.8*
@@ -112,7 +95,6 @@ fi
 %{_unitdir}/spacewalk-wait-for-taskomatic.service
 %{_unitdir}/salt-secrets-config.service
 %{_unitdir}/cobbler-refresh-mkloaders.service
-%{_unitdir}/mgr-websockify.service
 %{_unitdir}/uyuni-check-database.service
 %{_unitdir}/uyuni-update-config.service
 %{_unitdir}/*.service.d

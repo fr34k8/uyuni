@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+#  pylint: disable=missing-module-docstring
 #
 # Copyright (c) 2021, SUSE LLC
 #
@@ -16,7 +17,12 @@ import os
 import sys
 import argparse
 import traceback
+import re
+
+# pylint: disable-next=unused-import
 import shutil
+
+# pylint: disable-next=unused-import
 import tempfile
 import time
 import subprocess
@@ -48,6 +54,7 @@ if not os.path.exists(CA_TRUST_DIR):
     # Red Hat
     CA_TRUST_DIR = os.path.join(PKI_DIR, "ca-trust", "source", "anchors")
 
+SALT_CA_DIR = "/usr/share/susemanager/salt/certs/"
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -56,14 +63,19 @@ class CertCheckError(Exception):
     pass
 
 
-FilesContent = namedtuple("FilesContent", ["root_ca", "server_cert", "server_key", "intermediate_cas"])
+FilesContent = namedtuple(
+    "FilesContent", ["root_ca", "server_cert", "server_key", "intermediate_cas"]
+)
+
 
 def log_error(msg):
     frame = traceback.extract_stack()[-2]
     log_clean(
         0,
+        # pylint: disable-next=consider-using-f-string
         "{0}: {1}.{2}({3}) - {4}".format(log_time(), frame[0], frame[2], frame[1], msg),
     )
+    # pylint: disable-next=consider-using-f-string
     sys.stderr.write("{0}\n".format(msg))
 
 
@@ -71,12 +83,15 @@ def log(msg, level=0):
     frame = traceback.extract_stack()[-2]
     log_clean(
         level,
+        # pylint: disable-next=consider-using-f-string
         "{0}: {1}.{2}({3}) - {4}".format(log_time(), frame[0], frame[2], frame[1], msg),
     )
     if level < 1:
+        # pylint: disable-next=consider-using-f-string
         sys.stdout.write("{0}\n".format(msg))
 
 
+# pylint: disable-next=invalid-name
 def processCommandline():
     usage = "%(prog)s [options] [command]"
     parser = argparse.ArgumentParser(usage=usage)
@@ -96,6 +111,7 @@ def processCommandline():
     )
     parser.add_argument("--check-only", "-c", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--skip-db", action="store_true")
 
     options = parser.parse_args()
     initLOG(LOGFILE, options.verbose or 1)
@@ -104,11 +120,15 @@ def processCommandline():
     return options
 
 
-def checkOptions(root_ca_file, server_cert_file, server_key_file, intermediate_ca_files):
+# pylint: disable-next=invalid-name
+def checkOptions(
+    root_ca_file, server_cert_file, server_key_file, intermediate_ca_files
+):
     if not root_ca_file:
         log_error("Root CA is required")
         sys.exit(1)
     if not os.path.exists(root_ca_file):
+        # pylint: disable-next=consider-using-f-string
         log_error("Root CA: file not found {}".format(root_ca_file))
         sys.exit(1)
 
@@ -116,39 +136,79 @@ def checkOptions(root_ca_file, server_cert_file, server_key_file, intermediate_c
         log_error("Server Certificate is required")
         sys.exit(1)
     if not os.path.exists(server_cert_file):
-        log_error(
-            "Server Certificate: file not found {}".format(server_cert_file)
-        )
+        # pylint: disable-next=consider-using-f-string
+        log_error("Server Certificate: file not found {}".format(server_cert_file))
         sys.exit(1)
 
     if not server_key_file:
         log_error("Server Private Key is required")
         sys.exit(1)
     if not os.path.exists(server_key_file):
-        log_error(
-            "Server Private Key: file not found {}".format(server_key_file)
-        )
+        # pylint: disable-next=consider-using-f-string
+        log_error("Server Private Key: file not found {}".format(server_key_file))
         sys.exit(1)
 
     for ica in intermediate_ca_files:
         if not os.path.exists(ica):
+            # pylint: disable-next=consider-using-f-string
             log_error("Intermediate CA: file not found {}".format(ica))
             sys.exit(1)
 
 
-def readAllFiles(root_ca_file, server_cert_file, server_key_file, intermediate_ca_files):
-    allFiles = [root_ca_file, server_cert_file, server_key_file]
-    allFiles.extend(intermediate_ca_files)
+# pylint: disable-next=invalid-name
+def readAllFiles(
+    root_ca_file, server_cert_file, server_key_file, intermediate_ca_files
+):
 
-    contents = []
-    for input_file in allFiles:
-        with open(input_file, "r") as f:
-            contents.append(f.read())
+    intermediate_cas = []
+    clist = readSplitCertificates(root_ca_file)
+    root_ca = clist[0]
+    intermediate_cas.extend(clist[1:])
 
-    return FilesContent(root_ca=contents[0], server_cert=contents[1],
-            server_key=contents[2], intermediate_cas=contents[3:])
+    clist = readSplitCertificates(server_cert_file)
+    server_cert = clist[0]
+    intermediate_cas.extend(clist[1:])
+
+    for ica in intermediate_ca_files:
+        clist = readSplitCertificates(ica)
+        intermediate_cas.extend(clist)
+
+    server_key = ""
+    with open(server_key_file, "r", encoding="utf-8") as f:
+        server_key = f.read()
+
+    return FilesContent(
+        root_ca=root_ca,
+        server_cert=server_cert,
+        server_key=server_key,
+        intermediate_cas=intermediate_cas,
+    )
 
 
+# pylint: disable-next=invalid-name
+def readSplitCertificates(certfile):
+
+    # pylint: disable-next=invalid-name
+    isContent = False
+    cert_list = []
+    cert = ""
+    with open(certfile, "r", encoding="utf-8") as f:
+        certs_content = f.read()
+        for line in certs_content.splitlines(keepends=True):
+            if not isContent and line.startswith("-----BEGIN"):
+                # pylint: disable-next=invalid-name
+                isContent = True
+                cert = ""
+            if isContent:
+                cert += line
+            if isContent and line.startswith("-----END"):
+                cert_list.append(cert)
+                # pylint: disable-next=invalid-name
+                isContent = False
+    return cert_list
+
+
+# pylint: disable-next=invalid-name
 def prepareData(root_ca_content, server_cert_content, intermediate_ca_content):
     """
     Create a result dict with all certificates and pre-parsed data
@@ -156,22 +216,9 @@ def prepareData(root_ca_content, server_cert_content, intermediate_ca_content):
     """
     ret = dict()
 
-    allCAs = [root_ca_content]
-    allCAs.extend(intermediate_ca_content)
-
-    isContent = False
-    content = []
-    for ca in allCAs:
-        cert = ""
-        for line in ca.splitlines(keepends=True):
-            if not isContent and line.startswith("-----BEGIN"):
-                isContent = True
-                cert = ""
-            if isContent:
-                cert += line
-            if isContent and line.startswith("-----END"):
-                content.append(cert)
-                isContent = False
+    # pylint: disable-next=invalid-name
+    content = [root_ca_content]
+    content.extend(intermediate_ca_content)
 
     for cert in content:
         data = getCertData(cert)
@@ -187,7 +234,9 @@ def prepareData(root_ca_content, server_cert_content, intermediate_ca_content):
     return ret
 
 
+# pylint: disable-next=invalid-name
 def isCA(cert):
+    # pylint: disable-next=subprocess-run-check
     out = subprocess.run(
         ["openssl", "x509", "-noout", "-ext", "basicConstraints"],
         stdout=subprocess.PIPE,
@@ -196,6 +245,7 @@ def isCA(cert):
     )
     if out.returncode:
         log_error(
+            # pylint: disable-next=consider-using-f-string
             "Unable to parse the certificate: {}".format(out.stderr.decode("utf-8"))
         )
         return False
@@ -205,6 +255,7 @@ def isCA(cert):
     return False
 
 
+# pylint: disable-next=invalid-name
 def isValid(startdate, enddate, subject):
     #  Not Before: Nov 12 14:36:13 2021 GMT
     #  Not After : Sep  1 14:36:13 2024 GMT
@@ -213,13 +264,17 @@ def isValid(startdate, enddate, subject):
     end = datetime.strptime(enddate, "%b %d %H:%M:%S %Y %Z")
     now = datetime.utcnow()
     if now < start:
+        # pylint: disable-next=consider-using-f-string
         raise CertCheckError("Certificate '{}' not yet valid".format(subject))
     if now > end:
+        # pylint: disable-next=consider-using-f-string
         raise CertCheckError("Certificate '{}' is expired".format(subject))
 
 
+# pylint: disable-next=invalid-name
 def getCertData(cert):
     data = dict()
+    # pylint: disable-next=subprocess-run-check
     out = subprocess.run(
         [
             "openssl",
@@ -232,7 +287,8 @@ def getCertData(cert):
             "-issuer",
             "-issuer_hash",
             "-modulus",
-            "-ext", "subjectKeyIdentifier,authorityKeyIdentifier"
+            "-ext",
+            "subjectKeyIdentifier,authorityKeyIdentifier",
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -240,6 +296,7 @@ def getCertData(cert):
     )
     if out.returncode:
         log_error(
+            # pylint: disable-next=consider-using-f-string
             "Unable to parse the certificate: {}".format(out.stderr.decode("utf-8"))
         )
         return None
@@ -266,6 +323,10 @@ def getCertData(cert):
                 data["subjectKeyIdentifier"] = line.strip().upper()
             elif nextval == "authorityKeyIdentifier" and line.startswith("    keyid:"):
                 data["authorityKeyIdentifier"] = line[10:].strip().upper()
+            elif nextval == "authorityKeyIdentifier" and re.match(
+                r"^\s+[0-9A-Fa-f]{2}:.+$", line
+            ):
+                data["authorityKeyIdentifier"] = line.strip().upper()
         elif "subject_hash" not in data:
             # subject_hash comes first without key to identify it
             data["subject_hash"] = line.strip()
@@ -285,7 +346,9 @@ def getCertData(cert):
     return data
 
 
+# pylint: disable-next=invalid-name
 def getCertWithText(cert):
+    # pylint: disable-next=subprocess-run-check
     out = subprocess.run(
         ["openssl", "x509", "-text"],
         stdout=subprocess.PIPE,
@@ -293,60 +356,78 @@ def getCertWithText(cert):
         input=cert.encode("utf-8"),
     )
     if out.returncode:
+        # pylint: disable-next=consider-using-f-string
         log_error("Invalid Certificate: {}".format(out.stderr.decode("utf-8")))
         return None
     return out.stdout.decode("utf-8")
 
 
-def getRsaKey(key):
+# pylint: disable-next=invalid-name
+def getPrivateKey(key):
     # set an invalid password to prevent asking in case of an encrypted one
+    # pylint: disable-next=subprocess-run-check
     out = subprocess.run(
-        ["openssl", "rsa", "-passin", "pass:invalid"],
+        ["openssl", "pkey", "-passin", "pass:invalid", "-text", "-noout"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        input=key.encode("utf-8")
+        input=key.encode("utf-8"),
     )
+
     if out.returncode:
-        log_error("Invalid RSA Key: {}".format(out.stderr.decode("utf-8")))
+        # pylint: disable-next=consider-using-f-string
+        log_error("Invalid or encrypted Key: {}".format(out.stderr.decode("utf-8")))
         return None
     return out.stdout.decode("utf-8")
 
 
+# pylint: disable-next=invalid-name
 def checkKeyBelongToCert(key, cert):
+    # pylint: disable-next=subprocess-run-check
     out = subprocess.run(
-        ["openssl", "rsa", "-noout", "-modulus"],
+        ["openssl", "pkey", "-pubout"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         input=key.encode("utf-8"),
     )
     if out.returncode:
-        log_error("Invalid RSA Key: {}".format(out.stderr.decode("utf-8")))
+        # pylint: disable-next=consider-using-f-string
+        log_error("Invalid Key: {}".format(out.stderr.decode("utf-8")))
         raise CertCheckError("Invalid Key")
-    keyModulus = out.stdout.decode("utf-8")
+    # pylint: disable-next=invalid-name
+    keyPubKey = out.stdout.decode("utf-8")
+    # pylint: disable-next=subprocess-run-check
     out = subprocess.run(
-        ["openssl", "x509", "-noout", "-modulus"],
+        ["openssl", "x509", "-noout", "-pubkey"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         input=cert.encode("utf-8"),
     )
     if out.returncode:
+        # pylint: disable-next=consider-using-f-string
         log_error("Invalid Cert file: {}".format(out.stderr.decode("utf-8")))
         raise CertCheckError("Invalid Certificate")
 
-    certModulus = out.stdout.decode("utf-8")
-    if keyModulus != certModulus:
+    # pylint: disable-next=invalid-name
+    certPubKey = out.stdout.decode("utf-8")
+    if keyPubKey != certPubKey:
         log_error("The provided key does not belong to the server certificate")
+        # pylint: disable-next=consider-using-f-string
+        log("{} vs. {}".format(keyPubKey, certPubKey), 1)
         raise CertCheckError("Key does not belong to Certificate")
 
 
+# pylint: disable-next=invalid-name
 def checkCompleteCAChain(server_cert_content, certData):
+    # pylint: disable-next=invalid-name
     foundRootCA = False
     if len(certData.keys()) == 0:
         raise CertCheckError("No CAs found")
 
+    # pylint: disable-next=invalid-name
     serverCertHash = None
     for h, data in certData.items():
         if data["content"] == server_cert_content:
+            # pylint: disable-next=invalid-name
             serverCertHash = h
             break
 
@@ -355,6 +436,7 @@ def checkCompleteCAChain(server_cert_content, certData):
 
     subject = certData[serverCertHash]["subject"]
     ihash = certData[serverCertHash]["issuer_hash"]
+    # pylint: disable-next=invalid-name
     issuerKeyId = certData[serverCertHash]["authorityKeyIdentifier"]
 
     if not ihash or ihash not in certData:
@@ -371,21 +453,27 @@ def checkCompleteCAChain(server_cert_content, certData):
     )
 
     while ihash in certData:
+        # pylint: disable-next=invalid-name
         keyId = certData[ihash]["subjectKeyIdentifier"]
         if not (keyId and issuerKeyId and keyId == issuerKeyId):
             raise CertCheckError(
-                "Incomplete CA Chain. Key Identifiers do not match. Unable to find issuer of '{}'".format(subject)
+                # pylint: disable-next=consider-using-f-string
+                "Incomplete CA Chain. Key Identifiers do not match. Unable to find issuer of '{}'".format(
+                    subject
+                )
             )
         if not certData[ihash]["isca"]:
             raise CertCheckError("CA missing basic constraints extension")
 
         subject = certData[ihash]["subject"]
         nexthash = certData[ihash]["issuer_hash"]
+        # pylint: disable-next=invalid-name
         issuerKeyId = certData[ihash]["authorityKeyIdentifier"]
         isValid(certData[ihash]["startdate"], certData[ihash]["enddate"], subject)
 
         if nexthash == ihash:
             # Found Root CA, we can exit
+            # pylint: disable-next=invalid-name
             foundRootCA = True
             if not certData[ihash]["root"]:
                 raise CertCheckError("Root CA has different issuer")
@@ -398,24 +486,30 @@ def checkCompleteCAChain(server_cert_content, certData):
 
     if not foundRootCA:
         raise CertCheckError(
+            # pylint: disable-next=consider-using-f-string
             "Incomplete CA Chain. Unable to find issuer of '{}'".format(subject)
         )
 
 
+# pylint: disable-next=invalid-name
 def generateApacheCert(server_cert_content, certData):
     return generateCertWithChainFile(server_cert_content, certData)
 
 
+# pylint: disable-next=invalid-name
 def generateCertWithChainFile(serverCert, certData):
+    # pylint: disable-next=invalid-name
     retContent = ""
 
     if len(certData.keys()) == 0:
         log_error("No CA found in Hash")
         return ""
 
+    # pylint: disable-next=invalid-name
     serverCertHash = None
     for h, data in certData.items():
         if data["content"] == serverCert:
+            # pylint: disable-next=invalid-name
             serverCertHash = h
             break
 
@@ -427,6 +521,7 @@ def generateCertWithChainFile(serverCert, certData):
     if not cert:
         log_error("Unable to get the server certificate")
         return ""
+    # pylint: disable-next=invalid-name
     retContent += cert
     while ihash in certData:
         nexthash = certData[ihash]["issuer_hash"]
@@ -437,27 +532,33 @@ def generateCertWithChainFile(serverCert, certData):
             # Found Root CA, we can exit
             break
         ihash = nexthash
+        # pylint: disable-next=invalid-name
         retContent += cert
     return retContent
 
 
+# pylint: disable-next=invalid-name
 def deployApache(apache_cert_content, server_key_content):
     if os.path.exists(APACHE_KEY_FILE):
         os.remove(APACHE_KEY_FILE)
     if os.path.exists(APACHE_CRT_FILE):
         os.remove(APACHE_CRT_FILE)
-    with open(APACHE_KEY_FILE, "w") as f:
+    # pylint: disable-next=unspecified-encoding
+    with open(APACHE_KEY_FILE, "w", encoding="utf-8") as f:
         f.write(server_key_content)
     os.chmod(APACHE_KEY_FILE, int("0600", 8))
-    with open(APACHE_CRT_FILE, "w") as f:
+    # pylint: disable-next=unspecified-encoding
+    with open(APACHE_CRT_FILE, "w", encoding="utf-8") as f:
         f.write(apache_cert_content)
     # exists on server and proxy
     os.system("/usr/bin/spacewalk-setup-httpd")
     log(
-"""After changing the server certificate please execute:
-$> spacewalk-service stop """)
+        """After changing the server certificate please execute:
+$> spacewalk-service stop """
+    )
 
 
+# pylint: disable-next=invalid-name
 def deployPg(server_key_content):
     pg_uid, pg_gid = getUidGid("postgres", "postgres")
     if pg_uid and pg_gid:
@@ -465,51 +566,101 @@ def deployPg(server_key_content):
         # the certificate is the same as for apache
         if os.path.exists(PG_KEY_FILE):
             os.remove(PG_KEY_FILE)
-        with open(PG_KEY_FILE, "w") as f:
+        # pylint: disable-next=unspecified-encoding
+        with open(PG_KEY_FILE, "w", encoding="utf-8") as f:
             f.write(server_key_content)
         os.chmod(PG_KEY_FILE, int("0600", 8))
         os.chown(PG_KEY_FILE, pg_uid, pg_gid)
 
         log("""$> systemctl restart postgresql.service """)
 
+
+# pylint: disable-next=invalid-name
+def deployCAInDB(certData):
+    if not os.path.exists("/usr/bin/rhn-ssl-dbstore"):
+        # not a Uyuni Server - skip deploying into DB
+        return
+
+    # pylint: disable-next=unused-variable
+    for h, ca in certData.items():
+        if ca["root"]:
+            # pylint: disable-next=subprocess-run-check
+            out = subprocess.run(
+                ["/usr/bin/rhn-ssl-dbstore", "--ca-cert", "-"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                input=ca["content"].encode("utf-8"),
+            )
+            if out.returncode:
+                log_error(
+                    # pylint: disable-next=consider-using-f-string
+                    "Failed to upload CA Certificate to DB: {}".format(
+                        out.stderr.decode("utf-8")
+                    )
+                )
+                raise OSError("Failed to upload CA Certificate to DB")
+            break
+
+
+# pylint: disable-next=invalid-name
 def deployCAUyuni(certData):
+    # pylint: disable-next=unused-variable
     for h, ca in certData.items():
         if ca["root"]:
             if os.path.exists(os.path.join(ROOT_CA_HTTP_DIR, ROOT_CA_NAME)):
                 os.remove(os.path.join(ROOT_CA_HTTP_DIR, ROOT_CA_NAME))
-            with open(os.path.join(ROOT_CA_HTTP_DIR, ROOT_CA_NAME), "w") as f:
+            with open(
+                os.path.join(ROOT_CA_HTTP_DIR, ROOT_CA_NAME), "w", encoding="utf-8"
+            ) as f:
                 f.write(ca["content"])
             os.chmod(os.path.join(ROOT_CA_HTTP_DIR, ROOT_CA_NAME), int("0644", 8))
 
             if os.path.exists(os.path.join(CA_TRUST_DIR, PKI_ROOT_CA_NAME)):
                 os.remove(os.path.join(CA_TRUST_DIR, PKI_ROOT_CA_NAME))
-            with open(os.path.join(CA_TRUST_DIR, PKI_ROOT_CA_NAME), "w") as f:
+            with open(
+                os.path.join(CA_TRUST_DIR, PKI_ROOT_CA_NAME), "w", encoding="utf-8"
+            ) as f:
                 f.write(ca["content"])
             os.chmod(os.path.join(CA_TRUST_DIR, PKI_ROOT_CA_NAME), int("0644", 8))
+
+            # SALT_CA_DIR exists only on the server, ignore on proxies
+            if os.path.exists(SALT_CA_DIR):
+                if os.path.exists(os.path.join(SALT_CA_DIR, ROOT_CA_NAME)):
+                    os.remove(os.path.join(SALT_CA_DIR, ROOT_CA_NAME))
+                with open(
+                    os.path.join(SALT_CA_DIR, ROOT_CA_NAME), "w", encoding="utf-8"
+                ) as f:
+                    f.write(ca["content"])
+                os.chmod(os.path.join(SALT_CA_DIR, ROOT_CA_NAME), int("0644", 8))
             break
     # in case a systemd timer try to do the same
     time.sleep(3)
     os.system("/usr/share/rhn/certs/update-ca-cert-trust.sh")
     log(
-"""$> spacewalk-service start
+        """$> spacewalk-service start
 
 As the CA certificate has been changed, please deploy the CA to all registered clients.
-On salt-managed clients, you can do this by applying the highstate.""")
+On salt-managed clients, you can do this by applying the highstate."""
+    )
 
 
-def checks(server_key_content,server_cert_content, certData):
+# pylint: disable-next=invalid-name
+def checks(server_key_content, server_cert_content, certData):
     """
     Perform different checks on the input data
     """
-    if not getRsaKey(server_key_content):
-        raise CertCheckError("Unable to read the server key. Encrypted?")
+    checkCompleteCAChain(server_cert_content, certData)
+
+    if not getPrivateKey(server_key_content):
+        raise CertCheckError("Unable to read the server key. Is it maybe encrypted?")
 
     checkKeyBelongToCert(server_key_content, server_cert_content)
 
-    checkCompleteCAChain(server_cert_content, certData)
 
-
-def getContainersSetup(root_ca_content, intermediate_ca_content, server_cert_content, server_key_content):
+# pylint: disable-next=invalid-name
+def getContainersSetup(
+    root_ca_content, intermediate_ca_content, server_cert_content, server_key_content
+):
     if not root_ca_content:
         raise CertCheckError("Root CA is required")
     if not server_cert_content:
@@ -517,11 +668,11 @@ def getContainersSetup(root_ca_content, intermediate_ca_content, server_cert_con
     if not server_key_content:
         raise CertCheckError("Server Private Key is required")
 
+    # pylint: disable-next=invalid-name
     certData = prepareData(
-            root_ca_content,
-            server_cert_content,
-            intermediate_ca_content)
-    checks(server_key_content,server_cert_content, certData)
+        root_ca_content, server_cert_content, intermediate_ca_content
+    )
+    checks(server_key_content, server_cert_content, certData)
     apache_cert_content = generateApacheCert(server_cert_content, certData)
     if not apache_cert_content:
         raise CertCheckError("Failed to generate certificates")
@@ -532,7 +683,12 @@ def _main():
     """main routine"""
 
     options = processCommandline()
-    checkOptions(options.root_ca_file, options.server_cert_file, options.server_key_file, options.intermediate_ca_file)
+    checkOptions(
+        options.root_ca_file,
+        options.server_cert_file,
+        options.server_key_file,
+        options.intermediate_ca_file,
+    )
 
     files_content = readAllFiles(
         options.root_ca_file,
@@ -541,13 +697,18 @@ def _main():
         options.intermediate_ca_file,
     )
     if options.check_only:
-        getContainersSetup(files_content.root_ca, files_content.intermediate_cas, files_content.server_cert, files_content.server_key)
+        getContainersSetup(
+            files_content.root_ca,
+            files_content.intermediate_cas,
+            files_content.server_cert,
+            files_content.server_key,
+        )
         sys.exit(0)
 
+    # pylint: disable-next=invalid-name
     certData = prepareData(
-            files_content.root_ca,
-            files_content.server_cert,
-            files_content.intermediate_cas)
+        files_content.root_ca, files_content.server_cert, files_content.intermediate_cas
+    )
     checks(files_content.server_key, files_content.server_cert, certData)
     apache_cert_content = generateApacheCert(files_content.server_cert, certData)
     if not apache_cert_content:
@@ -557,6 +718,8 @@ def _main():
     deployApache(apache_cert_content, files_content.server_key)
     deployPg(files_content.server_key)
     deployCAUyuni(certData)
+    if not options.skip_db:
+        deployCAInDB(certData)
 
 
 def main():
@@ -565,13 +728,16 @@ def main():
     1  general error
     """
 
+    # pylint: disable-next=invalid-name
     def writeError(e):
+        # pylint: disable-next=consider-using-f-string
         log_error("\nERROR: %s\n" % e)
         log(traceback.format_exc(None), 1)
 
     ret = 0
     try:
         ret = _main() or 0
+    # pylint: disable-next=broad-exception-caught
     except Exception as e:
         writeError(e)
         ret = 1

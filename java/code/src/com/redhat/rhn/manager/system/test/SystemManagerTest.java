@@ -16,7 +16,6 @@ package com.redhat.rhn.manager.system.test;
 
 import static com.redhat.rhn.domain.formula.FormulaFactory.PROMETHEUS_EXPORTERS;
 import static com.redhat.rhn.manager.action.test.ActionManagerTest.assertNotEmpty;
-import static com.redhat.rhn.testing.RhnBaseTestCase.reload;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -25,6 +24,7 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,6 +50,7 @@ import com.redhat.rhn.domain.action.server.test.ServerActionTest;
 import com.redhat.rhn.domain.action.test.ActionFactoryTest;
 import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.channel.ChannelArch;
+import com.redhat.rhn.domain.channel.ProductName;
 import com.redhat.rhn.domain.channel.test.ChannelFactoryTest;
 import com.redhat.rhn.domain.dto.SystemGroupID;
 import com.redhat.rhn.domain.dto.SystemGroupsDTO;
@@ -104,7 +105,9 @@ import com.redhat.rhn.frontend.dto.SystemEventDto;
 import com.redhat.rhn.frontend.dto.SystemOverview;
 import com.redhat.rhn.frontend.dto.VirtualSystemOverview;
 import com.redhat.rhn.frontend.listview.PageControl;
+import com.redhat.rhn.frontend.xmlrpc.ChannelSubscriptionException;
 import com.redhat.rhn.manager.action.ActionManager;
+import com.redhat.rhn.manager.content.MgrSyncUtils;
 import com.redhat.rhn.manager.entitlement.EntitlementManager;
 import com.redhat.rhn.manager.errata.cache.ErrataCacheManager;
 import com.redhat.rhn.manager.formula.FormulaMonitoringManager;
@@ -130,12 +133,12 @@ import com.redhat.rhn.testing.TestStatics;
 import com.redhat.rhn.testing.TestUtils;
 import com.redhat.rhn.testing.UserTestUtils;
 
+import com.suse.manager.metrics.SystemsCollector;
+import com.suse.manager.ssl.SSLCertManager;
 import com.suse.manager.ssl.SSLCertPair;
-import com.suse.manager.virtualization.test.TestVirtManager;
 import com.suse.manager.webui.controllers.utils.ContactMethodUtil;
 import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.impl.SaltSSHService;
 import com.suse.manager.webui.services.impl.SaltService;
 import com.suse.manager.webui.services.impl.runner.MgrUtilRunner;
@@ -151,10 +154,11 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.cobbler.test.MockConnection;
 import org.hibernate.Session;
-import org.hibernate.type.IntegerType;
+import org.hibernate.type.StandardBasicTypes;
 import org.jmock.Expectations;
 import org.jmock.imposters.ByteBuddyClassImposteriser;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
@@ -188,7 +192,6 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
     public static final int HOST_SWAP_MB = 1024;
 
     private SaltService saltServiceMock;
-    protected Path tmpPillarRoot;
     protected Path tmpSaltRoot;
     protected Path metadataDirOfficial;
     private SystemEntitlementManager systemEntitlementManager;
@@ -207,7 +210,6 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         saltServiceMock = mock(SaltService.class);
         tmpSaltRoot = Files.createTempDirectory("salt");
         metadataDirOfficial = Files.createTempDirectory("meta");
-        FormulaFactory.setDataDir(tmpSaltRoot.toString());
         FormulaFactory.setMetadataDirOfficial(metadataDirOfficial.toString());
         context().checking(new Expectations() {
             {
@@ -217,12 +219,11 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
             }
         });
         SaltApi saltApi = new TestSaltApi();
-        VirtManager virtManager = new TestVirtManager();
         MonitoringManager monitoringManager = new FormulaMonitoringManager(saltApi);
         ServerGroupManager serverGroupManager = new ServerGroupManager(saltApi);
         systemEntitlementManager = new SystemEntitlementManager(
-                new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-                new SystemEntitler(saltApi, virtManager, monitoringManager, serverGroupManager)
+                new SystemUnentitler(monitoringManager, serverGroupManager),
+                new SystemEntitler(saltApi, monitoringManager, serverGroupManager)
         );
         this.systemManager = new SystemManager(ServerFactory.SINGLETON, ServerGroupFactory.SINGLETON, saltServiceMock);
         createMetadataFiles();
@@ -284,7 +285,7 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         return (Integer) session.createSQLQuery("Select count(*) as cnt " +
                                                          "  from rhnSnapshot " +
                                                          " where server_id = " + sid)
-                                         .addScalar("cnt", IntegerType.INSTANCE)
+                                         .addScalar("cnt", StandardBasicTypes.INTEGER)
                                          .uniqueResult();
     }
 
@@ -320,7 +321,6 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         MinionServer minion = MinionServerFactoryTest.createTestMinionServer(user);
         String minionId = minion.getMinionId();
         String formulaName = "test-formula";
-        File formulaValues = Paths.get(FormulaFactory.getPillarDir(), minionId + "_" + formulaName + ".json").toFile();
         Map<String, Object> formulaData = singletonMap("fooKey", "barVal");
         FormulaFactory.saveServerFormulas(minion, singletonList(formulaName));
         FormulaFactory.saveServerFormulaData(formulaData, minion, formulaName);
@@ -328,7 +328,6 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         assertNotEmpty(FormulaFactory.getFormulasByMinion(minion));
         assertTrue(FormulaFactory.getFormulaValuesByNameAndMinion(formulaName, minion).isPresent());
         // Test the filesystem part:
-        assertFalse(formulaValues.exists());
         assertEquals(formulaData,
                 minion.getPillarByCategory(FormulaFactory.PREFIX + formulaName).orElseThrow().getPillar());
 
@@ -338,11 +337,8 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
             will(returnValue(Optional.of(new MgrUtilRunner.RemoveKnowHostResult("removed", ""))));
         }});
         systemManager.deleteServer(user, minion.getId());
-        HibernateFactory.commitTransaction();
 
         assertFalse(MinionServerFactory.findByMinionId(minion.getMinionId()).isPresent());
-        assertFalse(formulaValues.exists());
-        assertFalse(new File(FormulaFactory.getServerDataFile()).exists());
     }
 
     @Test
@@ -351,7 +347,6 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         String minionId = minion.getMinionId();
 
         String formulaName = "test-formula";
-        File formulaValues = Paths.get(FormulaFactory.getPillarDir(), minionId + "_" + formulaName + ".json").toFile();
         FormulaFactory.saveServerFormulas(minion, singletonList(formulaName));
 
         context().checking(new Expectations() {{
@@ -361,11 +356,7 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         }});
         systemManager.deleteServer(user, minion.getId());
 
-        HibernateFactory.commitTransaction();
-
         assertFalse(MinionServerFactory.findByMinionId(minion.getMinionId()).isPresent());
-        assertFalse(formulaValues.exists());
-        assertFalse(new File(FormulaFactory.getServerDataFile()).exists());
     }
 
     @Test
@@ -1016,14 +1007,14 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
             if (map.get("id").equals(server1.getId())) {
                 assertEquals(server1.getName(), map.get("system_name"));
 
-                assertTrue(map.get("elaborator0") instanceof List);
+                assertInstanceOf(List.class, map.get("elaborator0"));
                 List result1Packages = (List)map.get("elaborator0");
                 assertEquals(2, result1Packages.size());
             }
             else if (map.get("id").equals(server2.getId())) {
                 assertEquals(server2.getName(), (map.get("system_name")));
 
-                assertTrue(map.get("elaborator0") instanceof List);
+                assertInstanceOf(List.class, map.get("elaborator0"));
                 List result2Packages = (List)map.get("elaborator0");
                 assertEquals(1, result2Packages.size());
             }
@@ -1268,19 +1259,6 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
     }
 
     @Test
-    public void testGetBootstrapActivationKeys() throws Exception {
-        User user = UserTestUtils.findNewUser("testUser", "testOrg" +
-            this.getClass().getSimpleName());
-
-        ActivationKey activationKey = ActivationKeyTest.createTestActivationKey(user);
-        activationKey.setBootstrap("Y");
-        Server server = activationKey.getServer();
-        activationKey.getToken().getActivatedServers().add(server);
-        DataResult<ActivationKeyDto> result = SystemManager.getActivationKeys(server);
-        assertEquals(0, result.size());
-    }
-
-    @Test
     public void testCountSystemsInSetWithoutEntitlement() {
         User user = UserTestUtils.findNewUser("testUser", "testOrg" +
             this.getClass().getSimpleName());
@@ -1376,7 +1354,7 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
 
         HibernateFactory.getSession().flush();
 
-        SystemManager.updateServerChannels(user, server, of(base2), Arrays.asList(ch21, ch22));
+        systemManager.updateServerChannels(user, server, of(base2), Arrays.asList(ch21, ch22));
 
         assertEquals(base2.getId(), server.getBaseChannel().getId());
         assertEquals(2, server.getChildChannels().size());
@@ -1390,8 +1368,14 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
                 this.getClass().getSimpleName());
         Server server = ServerFactoryTest.createTestServer(user, true);
 
+        ProductName pnbase = MgrSyncUtils.findOrCreateProductName("Product Name Base");
+        ProductName pnch1 = MgrSyncUtils.findOrCreateProductName("Product Name Child 1");
+        ProductName pnch2 = MgrSyncUtils.findOrCreateProductName("Product Name Child 2");
+
         Channel base1 = ChannelFactoryTest.createBaseChannel(user);
+        base1.setProductName(pnbase);
         Channel ch11 = ChannelFactoryTest.createTestChannel(user.getOrg());
+        ch11.setProductName(pnch1);
 
         ch11.setParentChannel(base1);
 
@@ -1399,17 +1383,21 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         server.addChannel(ch11);
 
         Channel base2 = ChannelFactoryTest.createBaseChannel(user);
+        base2.setProductName(pnbase);
         Channel ch21 = ChannelFactoryTest.createTestChannel(user.getOrg());
+        ch21.setProductName(pnch1);
         Channel ch22 = ChannelFactoryTest.createTestChannel(user.getOrg());
+        ch22.setProductName(pnch2);
         ch21.setParentChannel(base2);
         ch22.setParentChannel(base2);
 
         HibernateFactory.getSession().flush();
 
-        SystemManager.updateServerChannels(user, server, of(base2), Collections.emptyList());
+        systemManager.updateServerChannels(user, server, of(base2), Collections.emptyList());
 
         assertEquals(base2.getId(), server.getBaseChannel().getId());
-        assertEquals(0, server.getChildChannels().size());
+        assertEquals(1, server.getChildChannels().size());
+        assertEquals(ch21, server.getChildChannels().iterator().next());
     }
 
     @Test
@@ -1434,7 +1422,10 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
 
         HibernateFactory.getSession().flush();
 
-        SystemManager.updateServerChannels(user, server, empty(), Arrays.asList(ch21, ch22));
+        Assertions.assertThrows(ChannelSubscriptionException.class,
+                () -> systemManager.updateServerChannels(user, server, empty(), Arrays.asList(ch21, ch22)));
+
+        systemManager.updateServerChannels(user, server, empty(), Collections.emptyList());
 
         assertNull(server.getBaseChannel());
         assertEquals(0, server.getChildChannels().size());
@@ -1945,7 +1936,7 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         user.addPermanentRole(RoleFactory.ORG_ADMIN);
 
         String proxyName = "pxy.mgr.lab";
-        String serverName = "srv.mgr.lab";
+        String serverName = Config.get().getString(ConfigDefaults.SERVER_HOSTNAME);
         long maxCache = 4096;
         String email = "admin@mgr.lab";
         String rootCA = "Dummy Root CA";
@@ -1958,18 +1949,23 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         String sshPushKey = "DummySshPushKey";
         String sshPushPubKey = "DummySshPushPubKey";
 
+        SSLCertManager certManager = mock(SSLCertManager.class);
+
         context().checking(new Expectations() {{
-            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)));
+            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)),
+                    with(equal(SaltSSHService.SUMA_SSH_PUB_KEY)));
             will(returnValue(Optional.of(new MgrUtilRunner.SshKeygenResult(sshKey, sshPubKey))));
-            allowing(saltServiceMock).generateSSHKey(with(aNull(String.class)));
+            allowing(saltServiceMock).generateSSHKey(with(aNull(String.class)), with(aNull(String.class)));
             will(returnValue(Optional.of(new MgrUtilRunner.SshKeygenResult(sshPushKey, sshPushPubKey))));
             allowing(saltServiceMock)
                     .checkSSLCert(with(equal(rootCA)), with(equal(new SSLCertPair(cert, key))), with(equal(otherCAs)));
             will(returnValue(apacheCert));
+            allowing(certManager).getNamesFromSslCert("Dummy cert");
+            will(returnValue(Set.of("pxy.mgr.lab", "pxy-test.mgr.lab")));
         }});
 
         byte[] actual = systemManager.createProxyContainerConfig(user, proxyName, 8022, serverName, maxCache, email,
-                rootCA, otherCAs, new SSLCertPair(cert, key), null, null, null);
+                rootCA, otherCAs, new SSLCertPair(cert, key), null, null, null, certManager);
         Map<String, String> content = readTarData(actual);
 
         Map<String, Object> configYaml = new Yaml().load(content.get("config.yaml"));
@@ -2006,6 +2002,91 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         testCreateProxyContainerConfig();
     }
 
+
+    /**
+     * Tests creating multiple chained proxy container configuration file.
+     * Network topology: PXY0 -> PXY1 -> PXY2A, PXY2B
+     * PXY0 is an anchor proxy;
+     * PXY1 parent/server is PXY0;
+     * Both PXY2A and PXY2B parent/server is PXY1;
+     *
+     * @throws InstantiationException
+     * @throws IOException
+     */
+    @Test
+    public void testCreateChainedProxyContainerConfig() throws InstantiationException, IOException {
+        user.addPermanentRole(RoleFactory.ORG_ADMIN);
+        final long maxCache = 4096;
+        final String email = "admin@mgr.lab";
+        final String rootCA = "Dummy Root CA";
+        final List<String> otherCAs = List.of("CA 1", "CA 2");
+        final String cert = "Dummy cert";
+        final String key = "Dummy key";
+        final String apacheCert = "Dummy cert for apache";
+
+        final String pxy0Name = "pxy0.mgr.lab";
+        final String pxy1Name = "pxy1.mgr.lab";
+        final String pxy2AName = "pxy2a.mgr.lab";
+        final String pxy2BName = "pxy2b.mgr.lab";
+        final String pxy0PubKey = "SshPublicKey " + pxy0Name;
+        final String pxy1SshPushKey = "sshPushKey" + pxy1Name;
+        final String pxy1SshPushPubKey = "sshPushPubKey" + pxy1Name;
+        final String pxy2ASshPushKey = "sshPushKey" + pxy2AName;
+        final String pxy2ASshPushPubKey = "sshPushPubKey" + pxy2AName;
+        final String pxy2BSshPushKey = "sshPushKey" + pxy2BName;
+        final String pxy2BSshPushPubKey = "sshPushPubKey" + pxy2BName;
+
+        SSLCertManager certManager = mock(SSLCertManager.class);
+
+        createTestProxy(pxy0Name);
+
+        context().checking(new Expectations() {{
+            allowing(saltServiceMock).generateSSHKey(with(aNull(String.class)), with(aNull(String.class)));
+            will(onConsecutiveCalls(
+                    returnValue(Optional.of(new MgrUtilRunner.SshKeygenResult(pxy1SshPushKey, pxy1SshPushPubKey))),
+                    returnValue(Optional.of(new MgrUtilRunner.SshKeygenResult(pxy2ASshPushKey, pxy2ASshPushPubKey))),
+                    returnValue(Optional.of(new MgrUtilRunner.SshKeygenResult(pxy2BSshPushKey, pxy2BSshPushPubKey)))
+            ));
+            allowing(saltServiceMock)
+                    .checkSSLCert(with(equal(rootCA)), with(equal(new SSLCertPair(cert, key))), with(equal(otherCAs)));
+            will(returnValue(apacheCert));
+            allowing(certManager).getNamesFromSslCert(cert);
+            will(returnValue(Set.of()));
+        }});
+
+        //PXY1
+        byte[] pxy1Config = systemManager.createProxyContainerConfig(user, pxy1Name, 8022, pxy0Name, maxCache, email,
+                rootCA, otherCAs, new SSLCertPair(cert, key), null, null, null, certManager);
+        Map<String, Object> sshYaml = getSshYaml(pxy1Config);
+        assertEquals(pxy1SshPushKey, sshYaml.get("server_ssh_push"));
+        assertEquals(pxy1SshPushPubKey, sshYaml.get("server_ssh_push_pub"));
+        assertEquals(pxy0PubKey, sshYaml.get("server_ssh_key_pub"));
+
+        //PXY2A
+        byte[] pxy2AConfig = systemManager.createProxyContainerConfig(user, pxy2AName, 8022, pxy1Name, maxCache, email,
+                rootCA, otherCAs, new SSLCertPair(cert, key), null, null, null, certManager);
+        Map<String, Object> sshYamlA = getSshYaml(pxy2AConfig);
+        assertEquals(pxy2ASshPushKey, sshYamlA.get("server_ssh_push"));
+        assertEquals(pxy2ASshPushPubKey, sshYamlA.get("server_ssh_push_pub"));
+        assertEquals(pxy1SshPushPubKey, sshYamlA.get("server_ssh_key_pub"));
+
+        //PXY2B
+        byte[] pxy2BConfig = systemManager.createProxyContainerConfig(user, pxy2BName, 8022, pxy1Name, maxCache, email,
+                rootCA, otherCAs, new SSLCertPair(cert, key), null, null, null, certManager);
+        Map<String, Object> sshYamlB = getSshYaml(pxy2BConfig);
+        assertEquals(pxy2BSshPushKey, sshYamlB.get("server_ssh_push"));
+        assertEquals(pxy2BSshPushPubKey, sshYamlB.get("server_ssh_push_pub"));
+        assertEquals(pxy1SshPushPubKey, sshYamlB.get("server_ssh_key_pub"));
+
+        assert true;
+    }
+
+    private Map<String, Object> getSshYaml(byte[] configFile) throws IOException {
+        Map<String, String> content = readTarData(configFile);
+        Map<String, Map<String, Object>> sshRootYaml = new Yaml().load(content.get("ssh.yaml"));
+        return sshRootYaml.get("ssh");
+    }
+
     private void createTestProxy(String fqdn) {
         Server proxy = ServerFactoryTest.createUnentitledTestServer(
                 user, true, ServerFactoryTest.TYPE_SERVER_PROXY, new Date());
@@ -2014,6 +2095,7 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         proxy.getFqdns().add(new ServerFQDN(proxy, fqdn));
         proxy.getProxyInfo().setVersion(null);
         proxy.getProxyInfo().setSshPort(8022);
+        proxy.getProxyInfo().setSshPublicKey(("SshPublicKey " + fqdn).getBytes());
 
         systemEntitlementManager.setBaseEntitlement(proxy, EntitlementManager.FOREIGN);
         ServerFactory.save(proxy);
@@ -2092,10 +2174,8 @@ public class SystemManagerTest extends JMockBaseTestCaseWithUser {
         Server server = ServerFactoryTest.createTestServer(user);
         Long sid = server.getId();
         Package pack = PackageTest.createTestPackage(user.getOrg());
-
         ErrataCacheManager.insertNeededErrataCache(sid, null, pack.getId());
-        SystemsOverviewUpdateWorker.doUpdate(sid);
 
-        assertEquals(1, SystemManager.countOutdatedSystems());
+        assertEquals(1, SystemsCollector.getNumberOfOutdatedSystems());
     }
 }

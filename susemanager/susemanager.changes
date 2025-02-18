@@ -1,8 +1,194 @@
-- Create repostories with sha256 instead of sha1.
-- Bootstrap repository definitions for openSUSE Leap Micro 5.3 and
-  openSUSE MicroOS for Uyuni
-- Add SLES15SP5 to bootstrap repo definitions
-- Add openSUSE Leap 15.5 uyuni bootstrap repositories
+-------------------------------------------------------------------
+Fri Jan 24 14:59:35 CET 2025 - marina.latini@suse.com
+
+- version 5.1.3-0
+  * Show Source String change for translations
+  * Create SUSE Linux Enterprise 15 SP7 bootstrap repo definitions
+  * Rename table suseProductSCCRepository to the more meaningful
+    name suseChannelTemplate (bsc#1234994)
+  * Remove the need for a running systemd during setup
+
+-------------------------------------------------------------------
+Thu Dec 12 09:27:25 CET 2024 - rosuna@suse.com
+
+- version 5.1.2-0
+  * Clean up the setup script (bsc#1231255)
+  * Remove now unneeded hostname calls (bsc#1231255)
+  * Mark dmidecode and logrotate as optional for Liberty 7 LTSS
+    (bsc#1226958)
+  * Read missing service stop before db changes
+  * Strip bootstrap repositories to contain only venv-salt-minion
+    and dependencies
+  * Remove OS definitions which do not have the Salt bundle or
+    are EOL
+  * Add bootstrap repo definitions for SL Micro 6.1 (bsc#1233595)
+  * Add bootstrap repo definition for Leap Micro 6.0 and 6.1
+
+-------------------------------------------------------------------
+Mon Oct 14 15:59:44 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Enable bootstrapping for Ubuntu 24.04 LTS
+  * Add missing package python3-ply to bootstrap repo definition
+    (bsc#1228130)
+  * Add SUSE Manager bootstrap repo definition for Ubuntu 24.04
+  * Use different exit codes for different failures in mgr-setup
+    (bsc#1230139)
+  * Bump version to 5.1.0
+  * Remove yast2 dependency from installation
+
+-------------------------------------------------------------------
+Thu Aug 01 09:27:16 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.9-0
+  * Create special bootstrap data for SUSE Manager Server 4.3 with
+    LTSS updates for Hub scenario (bsc#1211899)
+  * Add LTSS updates to SUSE Manager Proxy 4.3 bootstrap data
+
+-------------------------------------------------------------------
+Wed Jun 26 15:04:06 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.8-0
+  * Add bootstrap repository data for SUSE Liberty Linux 7 LTSS
+    (bsc#1226958)
+
+-------------------------------------------------------------------
+Mon Jun 10 16:36:26 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.7-0
+  * Add bootstrap repository definition for SL Micro 6.0
+  * Move server-only functions out of uyuni.common (bsc#1222325)
+  * Include uyuni.common.notificationUtils in
+    mgr-create-bootstrap-repo
+  * Configure the database to provide enough connections for our
+    default setup
+  * Fix typo in notification
+
+-------------------------------------------------------------------
+Fri May 03 14:08:01 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6-0
+  * In containers open the main database for the internal network
+
+-------------------------------------------------------------------
+Thu Apr 04 17:38:25 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.5-0
+  * Add bootstrap repository definition for openSUSE Leap 15.6
+  * Add bootstrap repository definition for SUSE Linux Enterprise 15 SP6
+  * Replace java 11 with java 17
+
+-------------------------------------------------------------------
+Fri Feb 16 10:11:02 CET 2024 - rosuna@suse.com
+
+- version 5.0.4-1
+  * Fix issue with Salt SSH keys for Salt SSH Minions CVE-2023-32189 (bsc#1170848)
+
+-------------------------------------------------------------------
+Tue Feb 13 17:08:44 CET 2024 - marina.latini@suse.com
+
+- version 5.0.3-1
+  * Add Debian 12 bootstrap data
+  * Don't change /etc/motd in the setup (bsc#1219228)
+
+-------------------------------------------------------------------
+Mon Jan 29 11:53:23 CET 2024 - rosuna@suse.com
+
+- version 5.0.2-1
+  * Use HTTP for localhost and HTTPS for other FQDN
+  * Rename Open Enterprise Server label to OES23.4 (bsc#1215514)
+  * Apply Black and Pylint to enforce style rules
+
+-------------------------------------------------------------------
+Tue Jan 16 08:29:07 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Make python3-extras as dependency of python3-luibxml2 (optional,
+    as SLES 15 does not have it and it is only required on SP4
+    or greater) (bsc#1204437)
+
+-------------------------------------------------------------------
+Fri Dec 15 17:28:06 CET 2023 - rosuna@suse.com
+
+- version 4.4.10-1
+  * Add bash completion for CLI tools
+  * Amazon Linux 2023 support
+  * Fix bootstrap repository definitions for openSUSE MicrOOS and
+    Tumbleweed
+  * Move all file managed by RPM from /srv to /usr/share/susemanager
+  * Add bootstrap repository definitions for Raspberry Pi OS 12
+  * Replace %{_datarootdir} with %{_datadir} for consistency
+  * Fix typo in repo name within server-migrator.sh script
+  * Fix Red Hat Enterprise Linux base channel name for bootstraping
+
+-------------------------------------------------------------------
+Wed Nov 01 20:05:26 CET 2023 - marina.latini@suse.com
+
+- version 4.4.9-1
+  * Add bootstrap repository definition for
+    Open Enterprise Server 2023.4 (bsc#1215514)
+  * Add bootstrap repository definitions for Debian 12
+  * Move empty repositories from pub to /usr/share/susemanager
+  * Setup postfix hostname using conf file
+  * Remove uyuni-build-keys dependency
+  * Add bootstrap repository data for SUSE Linux Enterprise Micro 5.5 (bsc#1217038)
+  * Add bootstrap repository definition for openSUSE Leap Micro 5.5
+  * Fix SUSE Linux Enterprise Server 15 for SAP not being listed in
+    mgr-create-bootstrap-repo (bsc#1215120)
+  * Fix possible permission issues with database migration script (bsc#1214746)
+
+-------------------------------------------------------------------
+Tue Sep 19 15:15:06 CEST 2023 - rosuna@suse.com
+
+- version 4.4.8-1
+  * Update server-migrator to dist-upgrade to openSUSE 15.5
+
+-------------------------------------------------------------------
+Mon Sep 18 14:40:08 CEST 2023 - rosuna@suse.com
+
+- version 4.4.7-1
+  * Add missing Salt 3006.0 dependencies to bootstrap repo definitions (bsc#1212700)
+  * Require LTSS channel for SUSE Manager Proxy 4.2 (bsc#1214187)
+  * Skip swap creation and BTRFS check when we have overlayfs
+  * require LTSS channels for SLE 15 SP1, SLE 15 SP2 and SLE 15 SP3 (bsc#1213432)
+  * drop unused susemanager-upgrade.sh
+  * Make mgr-salt-ssh to properly fix HOME environment to avoid issues with gitfs (bsc#1210994)
+  * Read hostname from input file
+  * Use environment variables in mgr-setup if available
+  * Allow setting the timezone from a TZ variable
+  * Add option to disable SSL setup
+  * Use newest venv-salt-minion version available to generate the
+    venv-enabled-*.txt file in bootstrap repos (bsc#1211958)
+  * Add bootstrap repository definitions for openSUSE Leap Micro 5.4
+  * Add bootstrap repository definitions for SLE Micro 5.4
+  * Ensure installation of make for building.
+  * Automatically detect PostgreSQL service and data folder name.
+  * Adjust product name in setup script output (bsc#1195380)
+
+-------------------------------------------------------------------
+Wed Apr 19 12:48:42 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.6-1
+  * Use context manager for mgr-create-bootstrap-repo.
+  * remove dependency to suseRegisterInfo
+  * Make python3-ordered-set optional for the SLE15 bootstrap repo as it is
+    not required or present in SLE15SP3 or older
+  * Add bootstrap repository definitions for openSUSE Leap 15.5
+  * Add bootstrap repository definitions for openEuler 22.03
+  * Tune the dabase after copying the old configuration (bsc#1208611)
+  * Remove non-salt-bundle packages from repositories for SLE12,
+    CentOS7 and clones
+  * Replace apache group to root for RHEL.
+
+-------------------------------------------------------------------
+Tue Feb 21 14:10:57 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.5-1
+  * Create repostories with sha256 instead of sha1.
+  * Bootstrap repository definitions for openSUSE Leap Micro 5.3 and
+    openSUSE MicroOS for Uyuni
+  * Add SLES15SP5 to bootstrap repo definitions
+  * Add openSUSE Leap 15.5 uyuni bootstrap repositories
 
 -------------------------------------------------------------------
 Mon Jan 23 08:31:18 CET 2023 - jgonzalez@suse.com
@@ -14,7 +200,8 @@ Mon Jan 23 08:31:18 CET 2023 - jgonzalez@suse.com
   * fix bootstrap repo definition for SUSE Liberty Linux 9 and RHEL9
     (bsc#1207136)
   * fix tools channel detection on Uyuni
-  * add bootstrap repository definitions for SLE-Micro 5.1, 5.2 and 5.3
+  * add bootstrap repository definitions for SLE-Micro 5.1, 5.2 and
+    5.3 (bsc#1209557)
 
 -------------------------------------------------------------------
 Wed Dec 14 14:15:50 CET 2022 - jgonzalez@suse.com

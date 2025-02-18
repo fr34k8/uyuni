@@ -25,12 +25,14 @@
     <template name="cve_audit_queries" filename="xml/cve_audit_queries.xml" />
     <template name="ResetPassword_queries" filename="xml/ResetPassword_queries.xml" />
     <template name="Product_queries" filename="xml/Product_queries.xml" />
+    <template name="oval_queries" filename="xml/oval_queries.xml"/>
 
     <!-- Reporting queries -->
     <template name="GeneralReport_queries" filename="xml/GeneralReport_queries.xml" />
     <template name="SystemReport_queries" filename="xml/SystemReport_queries.xml" />
     <template name="ChannelReport_queries" filename="xml/ChannelReport_queries.xml" />
     <template name="ScapReport_queries" filename="xml/ScapReport_queries.xml" />
+    <template name="CoCoAttestationReport_queries" filename="xml/CoCoAttestationReport_queries.xml"/>
 
     <!-- queries used to test the datasource system -->
     <template name="test_queries" filename="xml/test_queries.xml" />

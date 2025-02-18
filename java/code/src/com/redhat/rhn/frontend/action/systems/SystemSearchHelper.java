@@ -479,6 +479,7 @@ public class SystemSearchHelper {
             serverItem.put("rank", result.get("rank"));
             serverItem.put(SCORE, result.get(SCORE));
             serverItem.put("name", result.get("name"));
+            serverItem.put("uuid", result.get("uuid"));
             String matchingField = (String)result.get(MATCHING_FIELD);
             if (matchingField.isEmpty()) {
                 matchingField = (String)result.get("name");
@@ -806,11 +807,7 @@ public class SystemSearchHelper {
              * has been registered many times and shows up in search, we sort by
              * sysid with the highest systemid at the top.
              */
-            if (Math.abs(score1 - score2) < .001) {
-                // Lucene might give slight score differences to entries which are
-                // practically identical except for maybe registration time, etc.
-                // therefore putting a fudgefactor so we can treat systems in this
-                // range as having the same score.
+            if (Double.compare(score1, score2) == 0) {
                 return compareByNameAndSID(sys1, sys2);
             }
 

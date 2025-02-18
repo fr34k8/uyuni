@@ -1,4 +1,4 @@
-import { MessageType, Utils as MessagesUtils } from "components/messages";
+import { MessageType, Utils as MessagesUtils } from "components/messages/messages";
 import { showErrorToastr } from "components/toastr";
 
 import { Utils } from "utils/functions";
@@ -153,7 +153,7 @@ function showResponseErrorToastr(responseOrError: Error | JQueryXHR | JsonResult
   if (hasMessages(responseOrError)) {
     responseOrError.messages.flatMap((msg) => showErrorToastr(msg));
   } else {
-    responseErrorMessage(responseOrError).map((msg) => showErrorToastr(msg.text));
+    responseErrorMessage(responseOrError).forEach((msg) => showErrorToastr(msg.text));
   }
 }
 

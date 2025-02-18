@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -80,7 +79,12 @@ public class NewUserAction extends BaseMailAction implements MessageAction {
                 getMessage("email.newuser.subject", evt.getUserLocale(), subjectArgs);
         String body = LocalizationService.getInstance().
                 getMessage("email.newuser.body", evt.getUserLocale(), bodyArgs);
-        MailHelper.withMailer(getMail()).sendEmail(getEmails(evt), subject, body);
+        try {
+            MailHelper.withMailer(getMail()).sendEmail(getEmails(evt), subject, body);
+        }
+        catch (Exception e) {
+            logger.error("Unable to get a mailer: {}", e.getMessage(), e);
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("execute(EventMessage) - end");
@@ -89,14 +93,11 @@ public class NewUserAction extends BaseMailAction implements MessageAction {
 
 
     private String[] getEmails(NewUserEvent evt) {
-        List adminList = evt.getAdmins();
-        String[] adminEmails = new String[adminList.size()];
-        int index = 0;
-        for (Object oIn : adminList) {
-            adminEmails[index] = ((User) oIn).getEmail();
-            index++;
-        }
-        return adminEmails;
+        return evt.getAdmins().stream()
+                .filter(u -> !u.isDisabled())
+                .filter(u -> u.getEmailNotify() == 1)
+                .map(User::getEmail)
+                .toArray(String[]::new);
     }
 
 
@@ -135,5 +136,10 @@ public class NewUserAction extends BaseMailAction implements MessageAction {
     @Override
     public boolean needsTransactionHandling() {
         return false;
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
     }
 }

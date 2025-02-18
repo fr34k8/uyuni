@@ -1767,48 +1767,6 @@
           <context context-type="sourcefile">./includes/legends/system-group-legend.jsp</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="visualization-legend.jsp.title" xml:space="preserve">
-        <source>Visualization Hierarchy</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">./includes/legends/visualization-legend.jsp</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="visualization-legend.jsp.notcheckin" xml:space="preserve">
-        <source>System not checking in</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">./includes/legends/visualization-legend.jsp</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="visualization-legend.jsp.notpatched" xml:space="preserve">
-        <source>Not patched system</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">./includes/legends/visualization-legend.jsp</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="visualization-legend.jsp.root" xml:space="preserve">
-        <source>SUSE Manager</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">./includes/legends/visualization-legend.jsp</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="visualization-legend.jsp.vhm" xml:space="preserve">
-        <source>Virtual Host Manager</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">./includes/legends/visualization-legend.jsp</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="visualization-legend.jsp.group" xml:space="preserve">
-        <source>Group</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">./includes/legends/visualization-legend.jsp</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="visualization-legend.jsp.system" xml:space="preserve">
-        <source>System</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">./includes/legends/visualization-legend.jsp</context>
-        </context-group>
-      </trans-unit>
       <!-- email_sent.jsp -->
       <!-- yourchangeemail.jsp -->
       <trans-unit id="yourchangeemail.jsp.title" xml:space="preserve">
@@ -3313,10 +3271,6 @@ button below, and &lt;b&gt;will be unable to log back in&lt;/b&gt;.</source>
           <context context-type="sourcefile">/rhn/systems/details/packages/ForeignPackages</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="packagelist.jsp.modulespresent" xml:space="preserve">
-        <source>At least one of the channels this system is subscribed to contains modules. If you have activated modules on this system, please refrain from using @@PRODUCT_NAME@@ for package operations. Instead, use &lt;a href="/rhn/manager/contentmanagement/projects"&gt;Content Lifecycle Management&lt;/a&gt; to &lt;strong&gt;create regular channels that include module packages&lt;/strong&gt;.</source>
-        <target state="needs-adaptation"/>
-      </trans-unit>
       <!-- upgradable.jsp -->
       <trans-unit id="upgradable.jsp.header" xml:space="preserve">
         <source>Upgradable Packages</source>
@@ -3331,10 +3285,11 @@ button below, and &lt;b&gt;will be unable to log back in&lt;/b&gt;.</source>
         </context-group>
       </trans-unit>
       <trans-unit id="upgradable.jsp.latest" xml:space="preserve">
-        <source>Latest Package</source>
+        <source>Package Name</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/packages/UpgradableList</context>
         </context-group>
+      <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="upgradable.jsp.installed" xml:space="preserve">
         <source>Installed Package</source>
@@ -9022,18 +8977,6 @@ Please note that some manual configuration of these scripts may still be require
           <context context-type="sourcefile">/rhn/admin/config/BootstrapConfig.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="bootstrap.jsp.allow-config-actions" xml:space="preserve">
-        <source>Enable Remote Configuration</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/admin/config/BootstrapConfig.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="bootstrap.jsp.allow-remote-commands" xml:space="preserve">
-        <source>Enable Remote Commands</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/admin/config/BootstrapConfig.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="bootstrap.jsp.http-proxy" xml:space="preserve">
         <source>Client HTTP Proxy</source>
         <context-group name="ctx">
@@ -9146,42 +9089,6 @@ Please note that some manual configuration of these scripts may still be require
         </context-group>
       </trans-unit>
       <!-- Bare-metal system listing configuration -->
-      <trans-unit id="Bare-metal systems" xml:space="preserve">
-          <source>Bare-metal systems</source>
-      </trans-unit>
-      <trans-unit id="bootstrapsystems.jsp.toolbar" xml:space="preserve">
-          <source>@@PRODUCT_NAME@@ Configuration - Bare-metal systems</source>
-      </trans-unit>
-      <trans-unit id="bootstrapsystems.jsp.header" xml:space="preserve">
-          <source>Bare-metal system management</source>
-      </trans-unit>
-      <trans-unit id="bootstrapsystems.jsp.summary" xml:space="preserve">
-          <source>Allows @@PRODUCT_NAME@@ to automatically add bare-metal systems capable of PXE booting to an organization.</source>
-      </trans-unit>
-      <trans-unit id="bootstrapsystems.jsp.enable_bootstrap_discovery" xml:space="preserve">
-          <source>Bare-metal systems</source>
-      </trans-unit>
-      <trans-unit id="enable" xml:space="preserve">
-          <source>Enable adding to this organization</source>
-      </trans-unit>
-      <trans-unit id="disable" xml:space="preserve">
-          <source>Disable adding to this organization</source>
-      </trans-unit>
-      <trans-unit id="bootstrapsystems.jsp.bootstrap_enabled" xml:space="preserve">
-          <source>Automatic bare-metal system discovery has been successfully enabled</source>
-      </trans-unit>
-      <trans-unit id="bootstrapsystems.jsp.bootstrap_disabled" xml:space="preserve">
-          <source>Automatic bare-metal system discovery has been successfully disabled</source>
-      </trans-unit>
-      <trans-unit id="bootstrapsystems.jsp.bootstrap_enabled_for_other_org" xml:space="preserve">
-          <source>Automatic bare-metal system registration is enabled for organization "{0}", so it cannot be enabled for current organization "{1}" unless a "{0}" administrator disables it first. </source>
-      </trans-unit>
-      <trans-unit id="bootstrapsystems.kernel_not_found" xml:space="preserve">
-          <source>Bootstrap kernel file not found, please check that {0} exists and is accessible.</source>
-      </trans-unit>
-      <trans-unit id="bootstrapsystems.initrd_not_found" xml:space="preserve">
-          <source>Bootstrap initrd file not found, please check that {0} exists and is accessible.</source>
-      </trans-unit>
       <trans-unit id="bootstrapsystemlist.jsp.header" xml:space="preserve">
           <source>Unprovisioned Systems</source>
         <context-group name="ctx">
@@ -9377,7 +9284,17 @@ Please note that some manual configuration of these scripts may still be require
         <target>Фільтри</target>
       </trans-unit>
       <trans-unit id="repos.jsp.filters.tip" xml:space="preserve">
-        <source>-zsh*,kernel +zsh-html</source>
+        <source>
+              &lt;strong&gt;Filter syntax:&lt;/strong&gt; &lt;code&gt;[+-]keyword[,keyword ...]&lt;/code&gt;&lt;br/&gt;
+              Use &lt;strong&gt;'+'&lt;/strong&gt; to include only the package names matching the keyword and
+              &lt;strong&gt;'-'&lt;/strong&gt; to exclude the package names matching the keyword. Multiple filters can be
+              separated with spaces. Filters are evaluated in the order that they are specified. Shell-style wildcards
+              are supported.&lt;br/&gt;&lt;br/&gt;
+              &lt;strong&gt;Example:&lt;/strong&gt; &lt;code&gt;+zsh*,kernel* -zsh-html&lt;/code&gt;&lt;br/&gt;
+              &lt;em&gt;* Only include packages named &lt;code&gt;zsh*&lt;/code&gt; and &lt;code&gt;kernel*&lt;/code&gt;,
+              except &lt;code&gt;zsh-html&lt;/code&gt;&lt;/em&gt;
+          </source>
+      <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="repos.jsp.filters.error" xml:space="preserve">
         <source>Filter syntax is incorrect!</source>
@@ -10371,10 +10288,11 @@ Please note that some manual configuration of these scripts may still be require
         </context-group>
       </trans-unit>
       <trans-unit id="kickstart.advanced.filedetails.jsp.tip.copypaste" xml:space="preserve">
-          <source> If you wish to re-use an existing Autoinstallation Profile we recommend you to copy-paste the template from /var/lib/rhn/kickstarts instead of from your browser.  This will ensure that the template variables will be preserved and the registration process will work properly after the autoinstallation.</source>
+          <source> If you wish to re-use an existing Autoinstallation Profile we recommend you to copy-paste the template from /var/lib/cobbler/templates instead of from your browser.  This will ensure that the template variables will be preserved and the registration process will work properly after the autoinstallation.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/kickstart/AdvancedMode* pages</context>
         </context-group>
+      <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="kickstartdatadelete.jsp.confirmdelete" xml:space="preserve">
         <source>Delete Autoinstallation</source>
@@ -14773,7 +14691,7 @@ the &lt;strong&gt;@@ENTERPRISE_LINUX_NAME@@ System Administration Guide.&lt;/str
         </context-group>
       </trans-unit>
       <trans-unit id="targetsystems.jsp.summary" xml:space="preserve">
-          <source>The systems listed below do not have files managed via @@PRODUCT_NAME@@ configuration management.  For systems to be capable of being managed by @@PRODUCT_NAME@@ configuration management, they need to have particular mgr-cfg-* packages installed. You can enable configuration management on selected systems by using the 'Enable @@PRODUCT_NAME@@ Configuration Management' button below.</source>
+          <source>The systems listed below do not have files managed via @@PRODUCT_NAME@@ configuration management.  For systems to be capable of being managed by @@PRODUCT_NAME@@ configuration management, they need to have particular *-salt-minion packages installed. You can enable configuration management on selected systems by using the 'Enable @@PRODUCT_NAME@@ Configuration Management' button below.</source>
         <target state="needs-adaptation"/>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/configuration/system/TargetSystems.do</context>
@@ -14829,26 +14747,6 @@ the &lt;strong&gt;@@ENTERPRISE_LINUX_NAME@@ System Administration Guide.&lt;/str
           <context context-type="sourcefile">/rhn/configuration/system/TargetSystems.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="targetsystems.jsp.installcfg" xml:space="preserve">
-          <source>Schedule mgr-cfg package install</source>
-        <target state="needs-adaptation"/>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/configuration/system/TargetSystems.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="targetsystems.jsp.installcfgactions" xml:space="preserve">
-          <source>Schedule mgr-cfg-actions package install</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/configuration/system/TargetSystems.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="targetsystems.jsp.installcfgclient" xml:space="preserve">
-          <source>Schedule mgr-cfg-client package install</source>
-        <target state="needs-adaptation"/>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/configuration/system/TargetSystems.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="targetsystems.jsp.pending" xml:space="preserve">
           <source>Package installations currently pending.</source>
         <context-group name="ctx">
@@ -14868,7 +14766,7 @@ the &lt;strong&gt;@@ENTERPRISE_LINUX_NAME@@ System Administration Guide.&lt;/str
         </context-group>
       </trans-unit>
       <trans-unit id="targetsystems.jsp.widgetsummary" xml:space="preserve">
-          <source>You may schedule &lt;code&gt;mgr-cfg*&lt;/code&gt; package installs for the time below. &lt;strong&gt;Note: All other actions will take place immediately.&lt;/strong&gt;</source>
+          <source>You may schedule &lt;code&gt;salt-minion&lt;/code&gt; package installs for the time below. &lt;strong&gt;Note: All other actions will take place immediately.&lt;/strong&gt;</source>
         <target state="needs-adaptation"/>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/configuration/system/TargetSystems.do</context>
@@ -14888,14 +14786,7 @@ the &lt;strong&gt;@@ENTERPRISE_LINUX_NAME@@ System Administration Guide.&lt;/str
         </context-group>
       </trans-unit>
       <trans-unit id="summary.jsp.stepone" xml:space="preserve">
-          <source>Run &lt;code&gt;mgr_check&lt;/code&gt; to complete pending mgr-cfg-* package installs.</source>
-        <target state="needs-adaptation"/>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/configuration/system/Summary.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="summary.jsp.steptwo" xml:space="preserve">
-          <source>Run the following command: &lt;code&gt;mgr-actions-control --enable-all&lt;/code&gt;</source>
+          <source>Run &lt;code&gt;mgr_check&lt;/code&gt; to complete pending salt-minion package installs.</source>
         <target state="needs-adaptation"/>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/configuration/system/Summary.do</context>
@@ -14934,14 +14825,8 @@ the &lt;strong&gt;@@ENTERPRISE_LINUX_NAME@@ System Administration Guide.&lt;/str
           <context context-type="sourcefile">/rhn/configuration/system/Summary.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="summary.jsp.appstream" xml:space="preserve">
-          <source>Could not subscribe to the AppStream channel.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/configuration/system/Summary.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="summary.jsp.packages" xml:space="preserve">
-          <source>Could not schedule mgr-cfg* package installations.</source>
+          <source>Could not schedule salt-minion package installations.</source>
         <target state="needs-adaptation"/>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/configuration/system/Summary.do</context>
@@ -15704,10 +15589,11 @@ but are not subscribed to _@@PRODUCT_NAME@@Config_.</context>
         </context-group>
       </trans-unit>
       <trans-unit id="deployconfirm.jsp.h2" xml:space="preserve">
-        <source>Deploy Configuration Files: Comfirm Fields and Systems for Deployment</source>
+        <source>Deploy Configuration Files: Confirm Fields and Systems for Deployment</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/configuration/channel/DeployConfirm.do</context>
         </context-group>
+      <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="deployconfirm.jsp.note" xml:space="preserve">
         <source>The files shown below will be deployed to the systems shown below.
@@ -16314,11 +16200,11 @@ centrally-managed configuration channel, {2}; below is a list of systems you may
         </context-group>
       </trans-unit>
       <trans-unit id="toolbar.delete.org" xml:space="preserve">
-        <source>delete organization</source>
+        <source>Delete Organization</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/configuration/file/FileDetails.do</context>
         </context-group>
-        <target>вилучити запис організації</target>
+        <target state="needs-adaptation">вилучити запис організації</target>
       </trans-unit>
       <trans-unit id="toolbar.delete.deletefile" xml:space="preserve">
         <source>Delete This File</source>
@@ -18248,7 +18134,7 @@ any of these revisions.  Are you sure you want to do this?</source>
         </context-group>
       </trans-unit>
       <trans-unit id="ssmenable.jsp.summary" xml:space="preserve">
-          <source>The systems listed below do not have files managed via @@PRODUCT_NAME@@ configuration management. For systems to be capable of being managed by @@PRODUCT_NAME@@ configuration management, they will need to have particular mgr-cfg-* packages installed. You can enable configuration management on the systems listed below. &lt;strong&gt;Note:&lt;/strong&gt; nothing will happen to already enabled systems.</source>
+          <source>The systems listed below do not have files managed via @@PRODUCT_NAME@@ configuration management. For systems to be capable of being managed by @@PRODUCT_NAME@@ configuration management, they will need to have particular salt-minion packages installed. You can enable configuration management on the systems listed below. &lt;strong&gt;Note:&lt;/strong&gt; nothing will happen to already enabled systems.</source>
         <target state="needs-adaptation"/>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/ssm/config/Enable.do</context>
@@ -19377,10 +19263,11 @@ any of these revisions.  Are you sure you want to do this?</source>
         </context-group>
       </trans-unit>
       <trans-unit id="ssm.operations.provisioning.remotecommand.no_script_run" xml:space="preserve">
-          <source>You must enable Remote Command execution on the target system by installing the &lt;code&gt;mgr-cfg-actions&lt;/code&gt; RPM.</source>
+          <source>You must enable Remote Command execution on the target system by installing the &lt;code&gt;salt-minion&lt;/code&gt; RPM.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/ssm/kickstart/KickstartableSystems.do</context>
         </context-group>
+      <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="stringutil.scriptcheck.error.noshelldefined" xml:space="preserve">
           <source>Script does not contain shell definition.</source>
@@ -20386,12 +20273,6 @@ the &lt;a href="/rhn/kickstart/ActivationKeysList.do?ksid={0}"&gt;Activation Key
           <context context-type="sourcefile">/rhn/kickstart/ViewTrees.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="kickstart.kickstartable_distro_create_new.jsp" xml:space="preserve">
-          <source>Create Distribution</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ViewTrees.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="kickstart.kickstartable_distributions.jsp" xml:space="preserve">
           <source>Autoinstallable Distributions</source>
         <context-group name="ctx">
@@ -20588,7 +20469,7 @@ the &lt;a href="/rhn/kickstart/ActivationKeysList.do?ksid={0}"&gt;Activation Key
       <trans-unit id="treecreate.jsp.header1" xml:space="preserve">
         <source>The following details are needed to define an autoinstallable distribution. The tree path field should be a valid path to an installation tree located on this @@PRODUCT_NAME@@ server.&lt;br/&gt;&lt;br/&gt;
 
-The Distribution Label field should contain only letters, numbers, hyphens, periods, and underscores. It must also be at least 4 characters long.&lt;br/&gt;&lt;br/&gt;
+The Distribution Label field should contain only letters, numbers, hyphens, and underscores. It must also be at least 4 characters long.&lt;br/&gt;&lt;br/&gt;
 
 The Tree Path, Base Channel, and Installer Generation should always match. This generally means that the versions for each field should be from the same version of @@ENTERPRISE_LINUX_NAME@@.&lt;br/&gt;&lt;br/&gt;
 
@@ -20597,6 +20478,7 @@ The Tree Path, Base Channel, and Installer Generation should always match. This 
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/kickstart/TreeCreate.do</context>
         </context-group>
+      <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="treecreate.jsp.header2" xml:space="preserve">
         <source>Create Autoinstallable Distribution</source>
@@ -22076,11 +21958,11 @@ The Tree Path, Base Channel, and Installer Generation should always match. This 
         <target>Сокети:</target>
       </trans-unit>
       <trans-unit id="sdc.details.hardware.cores" xml:space="preserve">
-        <source>Cores:</source>
+        <source>Cores per Socket:</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/systems/details/SystemHardware.do</context>
         </context-group>
-        <target>Ядра:</target>
+        <target state="needs-adaptation">Ядра:</target>
       </trans-unit>
       <trans-unit id="sdc.details.hardware.cache" xml:space="preserve">
         <source>Cache:</source>
@@ -22126,17 +22008,12 @@ The Tree Path, Base Channel, and Installer Generation should always match. This 
           <context context-type="sourcefile">/systems/details/Connection.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="sdc.details.proxy.unlicensed" xml:space="preserve">
-        <source>The WebUI @@PRODUCT_NAME@@ Proxy installer is obsolete. Please use the command line installer from package spacewalk-proxy-installer.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/systems/details/ProxyClients.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="sdc.details.proxy.licensed" xml:space="preserve">
-        <source>This machine is currently a licensed @@PRODUCT_NAME@@ Proxy (v{0}).</source>
+        <source>This machine is currently a licensed @@PRODUCT_NAME@@ Proxy.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/systems/details/ProxyClients.do</context>
         </context-group>
+      <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="sdc.details.proxyclients.header" xml:space="preserve">
         <source>Proxy Clients</source>
@@ -25784,7 +25661,7 @@ given channel.</source>
         <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="spmigration.jsp.error.update-salt-package-needed" xml:space="preserve">
-        <source>The installed &lt;strong&gt;Salt&lt;/strong&gt; package version on this system is out of date. Please update the package to the latest version before you start a Product migration.</source>
+        <source>The installed &lt;strong&gt;{0}&lt;/strong&gt; package version on this system is out of date. Please update the package to the latest version before you start a Product migration.</source>
         <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="spmigration.jsp.error.missing-successor-extensions" xml:space="preserve">
@@ -25890,13 +25767,14 @@ given channel.</source>
         <source>Where do I find my Organization Credentials?</source>
       </trans-unit>
       <trans-unit id="mirror-credentials.jsp.info.p2" xml:space="preserve">
-        <source>You can find them in the &lt;a href="https://scc.suse.com/organization" target="_blank"&gt;Customer Center&lt;/a&gt;.</source>
+        <source>You can find them in the &lt;a href="https://scc.suse.com/organizations" target="_blank"&gt;Customer Center&lt;/a&gt;.</source>
+      <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="mirror-credentials.jsp.error.duplicate" xml:space="preserve">
         <source>Credentials with this username already exist</source>
       </trans-unit>
       <trans-unit id="copyright.jsp.title" xml:space="preserve">
-        <source>Copyright (c) 2011 - 2022 SUSE LLC.</source>
+        <source>Copyright (c) 2011 - 2025 SUSE LLC.</source>
       <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="copyright.jsp.urlagreement" xml:space="preserve">
@@ -25911,12 +25789,6 @@ given channel.</source>
     For details on @@PRODUCT_NAME@@, please visit our web-site at &lt;a href="http://www.uyuni-project.org/" target="_blank"&gt; http://www.uyuni-project.org/&lt;/a&gt;.
 &lt;/p&gt;
         </source>
-      </trans-unit>
-      <trans-unit id="compare.jsp.noprovisioning" xml:space="preserve">
-        <source>Syncing the packages to the list above is not available for this system.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">NOTFILLEDOUT</context>
-        </context-group>
       </trans-unit>
       <trans-unit id="activation-key.jsp.config-auto-deploy-highstate-tooltip" xml:space="preserve">
         <source>If the system is registered via Salt, the highstate will be executed on registration if this checkbox is selected.</source>
@@ -25949,7 +25821,7 @@ given channel.</source>
         <source>OS Image Build Host</source>
       </trans-unit>
       <trans-unit id="monitoring_entitled" xml:space="preserve">
-        <source>Monitored Host</source>
+        <source>Monitor this Host</source>
       <target state="needs-adaptation"/>
       </trans-unit>
       <trans-unit id="Formulas" xml:space="preserve">
@@ -26066,9 +25938,6 @@ given channel.</source>
       </trans-unit>
       <trans-unit id="Highstate" xml:space="preserve">
         <source>Highstate</source>
-      </trans-unit>
-      <trans-unit id="Recurring States" xml:space="preserve">
-        <source>Recurring States</source>
       </trans-unit>
       <trans-unit id="Configuration Channels" xml:space="preserve">
         <source>Configuration Channels</source>
@@ -26420,15 +26289,11 @@ given channel.</source>
         <target state="new"/>
       </trans-unit>
     <trans-unit id="bunch.jsp.description.update-payg-data-bunch" xml:space="preserve">
-        <source>Collect authentication data from configure pay-as-you-go cloud instances</source>
+        <source>Collect authentication data from configured PAYG cloud instances</source>
             <context-group name="ctx">
           <context context-type="sourcefile">/rhn/admin/BunchDetail.do</context>
         </context-group>
-      <target state="new"/>
-  </trans-unit>
-      <trans-unit id="Pay-as-you-go" xml:space="preserve">
-        <source>Pay-as-you-go</source>
-      <target state="new"/>
+      <target state="needs-adaptation"/>
   </trans-unit>
       <trans-unit id="bunch.jsp.description.mgr-update-reporting-bunch" xml:space="preserve">
         <source>Update Reporting Database</source>
@@ -26611,6 +26476,178 @@ given channel.</source>
         <source>Systems assigned to these schedules do not have a maintenance window at {0}</source>
       <target state="new"/>
   </trans-unit>
-      </body>
+      <trans-unit id="sdc.details.hardware.cpus" xml:space="preserve">
+        <source>CPUs:</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/systems/details/SystemHardware.do</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="sdc.details.hardware.threads" xml:space="preserve">
+        <source>Threads per Core:</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/systems/details/SystemHardware.do</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="bunch.jsp.description.system-profile-refresh-bunch" xml:space="preserve">
+        <source>Schedule System Profile refresh on all managed systems</source>
+            <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/admin/BunchDetail.do</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="task.status.system-profile-refresh" xml:space="preserve">
+        <source>System Profile Refresh</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="preferences.subscription-warning.name" xml:space="preserve">
+        <source>Subscription Warning</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/users/UserPreferences</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="preferences.subscription-warning.description" xml:space="preserve">
+        <source> Show expired subscriptions warning.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/users/UserPreferences</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+
+
+ 
+      <trans-unit id="Recurring Actions" xml:space="preserve">
+        <source>Recurring Actions</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="sdc.details.overview.virtualization.host" xml:space="preserve">
+        <source>Virtualization Host:</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/systems/details/Overview.do</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="grouplist.jsp.unknown" xml:space="preserve">
+        <source>Security updates unknown, disabled on settings.</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="bunch.jsp.description.payg-dimension-computation-bunch" xml:space="preserve">
+        <source>Collect data of managed clients for SUSE Manager PAYG</source>
+            <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/admin/BunchDetail.do</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="task.status.payg-dimension-computation" xml:space="preserve">
+        <source>PAYG Computation</source>
+      <target state="new"/>
+  </trans-unit>
+       <trans-unit id="task.status.recurring-action-executor" xml:space="preserve">
+        <source>Execute Recurring Actions</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="PAYG Connections" xml:space="preserve">
+        <source>PAYG Connections</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="mirror-credentials.jsp.fromDir" xml:space="preserve">
+        <source>cannot verify credentials because `server.susemanager.fromdir` property is set in rhn.conf</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="sdc.details.overview.payg" xml:space="preserve">
+        <source>Pay-as-you-go:</source>
+          <context-group name="ctx">
+            <context context-type="sourcefile">/systems/details/Overview.do</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="sdc.details.overview.payg_msg" xml:space="preserve">
+        <source>This is a Pay-as-you-go server</source>
+          <context-group name="ctx">
+            <context context-type="sourcefile">/systems/details/Overview.do</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="channel.manage.sync.nostrict.jsp" xml:space="preserve">
+        <source>Retain packages in channels which have been removed from the repository</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/channels/manage/Sync.do</context>
+        </context-group>
+      <target state="needs-adaptation"/>
+  </trans-unit>
+      <trans-unit id="repos.jsp.button-save" xml:space="preserve">
+        <source>Save</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="task.status.ssh-service" xml:space="preserve">
+        <source>Resume Action Chains and Checkin Salt SSH Systems </source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="peripheral_server" xml:space="preserve">
+        <source>Peripheral Server</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="actionchain.jsp.coco.attestation" xml:space="preserve">
+        <source>Confidential Computing Attestation</source>
+            <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/schedule/ActionChain</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="ssm.overview.audit" xml:space="preserve">
+            <source>Audit</source>
+            <context-group name="ctx">
+                <context context-type="sourcefile">/rhn/ssm/Index.do</context>
+            </context-group>
+        <target state="new"/>
+  </trans-unit>
+        <trans-unit id="ssm.overview.audit.coco_configure" xml:space="preserve">
+            <source>&lt;a href="/rhn/manager/systems/ssm/coco/settings"&gt;Configure&lt;/a&gt; Confidential Computing for selected systems</source>
+            <context-group name="ctx">
+                <context context-type="sourcefile">/rhn/ssm/Index.do</context>
+            </context-group>
+        <target state="new"/>
+  </trans-unit>
+        <trans-unit id="ssm.overview.audit.coco_schedule" xml:space="preserve">
+            <source>&lt;a href="/rhn/manager/systems/ssm/coco/schedule"&gt;Schedule&lt;/a&gt; a new Confidential Computing attestation for selected systems</source>
+            <context-group name="ctx">
+                <context context-type="sourcefile">/rhn/ssm/Index.do</context>
+            </context-group>
+        <target state="new"/>
+  </trans-unit>
+        <trans-unit id="ssm.coco.index" xml:space="preserve">
+            <source>Confidential Computing</source>
+        <target state="new"/>
+  </trans-unit>
+        <trans-unit id="ssm.coco.tabs.configure" xml:space="preserve">
+            <source>Configure</source>
+        <target state="new"/>
+  </trans-unit>
+        <trans-unit id="ssm.coco.tabs.schedule" xml:space="preserve">
+            <source>Schedule</source>
+        <target state="new"/>
+  </trans-unit>
+      <trans-unit id="AppStreams" xml:space="preserve">
+        <source>AppStreams</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="channel.manage.errata.listalreadyincludedlabel" xml:space="preserve">
+        <source>List Already Included Patches:</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="channel.manage.errata.listalreadyincludedmsg" xml:space="preserve">
+        <source>With this selected, patches that are already part of the channel are shown. This is useful when a patch is part of multiple channels, has been included from one of them, and it is necessary to associate its packages from another one.</source>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="toolbar.create.distro" xml:space="preserve">
+          <source>Create Distribution</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/kickstart/ViewTrees.do</context>
+        </context-group>
+        <target state="new"/>
+  </trans-unit>
+        </body>
   </file>
 </xliff>

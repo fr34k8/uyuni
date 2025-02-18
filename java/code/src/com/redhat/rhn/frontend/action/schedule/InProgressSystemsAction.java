@@ -48,7 +48,7 @@ import javax.servlet.http.HttpServletResponse;
 public class InProgressSystemsAction extends RhnSetAction {
 
     /** Logger instance */
-    private static Logger log = LogManager.getLogger(InProgressSystemsAction.class);
+    private static final Logger LOG = LogManager.getLogger(InProgressSystemsAction.class);
 
     /**
      * Removes unscheduleaction set from server actions.
@@ -76,7 +76,7 @@ public class InProgressSystemsAction extends RhnSetAction {
          */
         int numSystems = updateSet(request).size();
         ActionMessages msgs = new ActionMessages();
-        Map params = makeParamMap(formIn, request);
+        Map<String, Object> params = makeParamMap(formIn, request);
 
         if (numSystems == 0) {
             msgs.add(ActionMessages.GLOBAL_MESSAGE,
@@ -89,7 +89,7 @@ public class InProgressSystemsAction extends RhnSetAction {
 
         try {
             ActionFactory.removeActionForSystemSet(aid, "unscheduleaction", user);
-            /**
+            /*
              * If we've unscheduled the action for more than one system, send the pluralized
              * version of the message.
              */
@@ -110,8 +110,7 @@ public class InProgressSystemsAction extends RhnSetAction {
             strutsDelegate.saveMessages(request, msgs);
         }
         catch (TaskomaticApiException e) {
-            log.error("Could not unschedule action:");
-            log.error(e);
+            LOG.error("Could not unschedule action:", e);
             ActionErrors errors = new ActionErrors();
             strutsDelegate.addError(errors, "taskscheduler.down");
             strutsDelegate.saveMessages(request, errors);

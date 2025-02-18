@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Object representation of the results of a call to state.apply
@@ -53,8 +54,13 @@ public class PkgProfileUpdateSlsResult {
     public static final String PKG_PROFILE_WHATPROVIDES_SLL_RELEASE =
             "cmd_|-sllpkgquery_|-rpm -q --whatprovides 'sll-release'_|-run";
 
-    @SerializedName("mgrcompat_|-kernel_live_version_|-sumautil.get_kernel_live_version_|" +
-            "-module_run")
+    @SerializedName("mgrcompat_|-status_uptime_|-status.uptime_|-module_run")
+    private Optional<StateApplyResult<Ret<Map<String, Object>>>> upTime = Optional.empty();
+
+    @SerializedName("mgrcompat_|-reboot_required_|-reboot_info.reboot_required_|-module_run")
+    private Optional<StateApplyResult<Ret<Map<String, Object>>>> rebootRequired = Optional.empty();
+
+    @SerializedName("mgrcompat_|-kernel_live_version_|-sumautil.get_kernel_live_version_|-module_run")
     private Optional<StateApplyResult<Ret<KernelLiveVersionInfo>>> kernelLiveVersionInfo = Optional.empty();
 
     @SerializedName("mgrcompat_|-grains_update_|-grains.items_|-module_run")
@@ -62,6 +68,9 @@ public class PkgProfileUpdateSlsResult {
 
     @SerializedName("mgrcompat_|-products_|-pkg.list_products_|-module_run")
     private StateApplyResult<Ret<List<Zypper.ProductInfo>>> listProducts;
+
+    @SerializedName("mgrcompat_|-modules_|-appstreams.get_enabled_modules_|-module_run")
+    private Optional<StateApplyResult<Ret<Set<Map<String, String>>>>> enabledAppstreamModules = Optional.empty();
 
     @SerializedName("mgrcompat_|-packages_|-pkg.info_installed_|-module_run")
     private StateApplyResult<Ret<Map<String, Xor<Pkg.Info, List<Pkg.Info>>>>> infoInstalled;
@@ -94,6 +103,22 @@ public class PkgProfileUpdateSlsResult {
     private StateApplyResult<CmdResult> whatProvidesSLLReleasePkg;
 
     /**
+     * Gets the system uptime
+     * @return the system uptime
+     */
+    public Optional<StateApplyResult<Ret<Map<String, Object>>>> getUpTime() {
+        return upTime;
+    }
+
+    /**
+     * Gets the reboot required indication
+     * @return optional of reboot required flag
+     */
+    public Optional<StateApplyResult<Ret<Map<String, Object>>>> getRebootRequired() {
+        return rebootRequired;
+    }
+
+    /**
      * Gets live patching info.
      *
      * @return the live patching info
@@ -116,6 +141,15 @@ public class PkgProfileUpdateSlsResult {
      */
     public StateApplyResult<Ret<List<Zypper.ProductInfo>>> getListProducts() {
         return listProducts;
+    }
+
+    /**
+     * Gets enabled AppStream modules on the client as a list of NSVCAs
+     *
+     * @return the list of enabled AppStream modules
+     */
+    public Optional<StateApplyResult<Ret<Set<Map<String, String>>>>> getEnabledAppstreamModules() {
+        return enabledAppstreamModules;
     }
 
     /**

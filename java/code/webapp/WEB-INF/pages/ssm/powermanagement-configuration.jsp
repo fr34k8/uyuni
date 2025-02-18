@@ -30,10 +30,10 @@
             <%@ include file="/WEB-INF/pages/common/fragments/kickstart/powermanagement-options.jspf"%>
 
             <div class="form-group">
-                <div class="col-md-offset-3 col-md-6">
+                <div class="col-md-offset-3 offset-md-3 col-md-6">
                     <input type="submit" name="dispatch"
                         value="<bean:message key="ssm.provisioning.powermanagement.configuration.update" />"
-                        class="btn btn-success" />
+                        class="btn btn-primary" />
                 </div>
             </div>
         </html:form>

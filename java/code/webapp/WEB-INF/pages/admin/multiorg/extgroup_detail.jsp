@@ -100,8 +100,8 @@
                 <rhn:hidden id="selected_regular_roles" name="selected_regular_roles"/>
 
                 <div class="form-group">
-                    <div class="col-lg-offset-3 col-lg-6">
-                        <button type="submit" class="btn btn-success">
+                    <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
+                        <button type="submit" class="btn btn-primary">
                             <c:choose>
                                 <c:when test="${empty gid}">
                                     <bean:message key="button.create"/>

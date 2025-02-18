@@ -84,10 +84,8 @@ import com.suse.manager.reactor.messaging.JobReturnEventMessageAction;
 import com.suse.manager.reactor.utils.test.RhelUtilsTest;
 import com.suse.manager.utils.SaltKeyUtils;
 import com.suse.manager.utils.SaltUtils;
-import com.suse.manager.virtualization.VirtManagerSalt;
 import com.suse.manager.webui.services.SaltServerActionService;
 import com.suse.manager.webui.services.iface.MonitoringManager;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.impl.SaltSSHService;
 import com.suse.manager.webui.services.impl.SaltService;
 import com.suse.manager.webui.services.impl.runner.MgrUtilRunner;
@@ -121,7 +119,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -150,7 +147,6 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
     protected Path metadataDirOfficial;
     private SaltUtils saltUtils;
     private SaltServerActionService saltServerActionService;
-    protected Path formulaDataDir;
 
 
     @Override
@@ -162,19 +158,16 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
                 DigestUtils.sha256Hex(TestUtils.randomString()));
         saltServiceMock = context().mock(SaltService.class);
         ServerGroupManager serverGroupManager = new ServerGroupManager(saltServiceMock);
-        VirtManager virtManager = new VirtManagerSalt(saltServiceMock);
         MonitoringManager monitoringManager = new FormulaMonitoringManager(saltServiceMock);
         systemEntitlementManager = new SystemEntitlementManager(
-                new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-                new SystemEntitler(saltServiceMock, virtManager, monitoringManager, serverGroupManager)
+                new SystemUnentitler(monitoringManager, serverGroupManager),
+                new SystemEntitler(saltServiceMock, monitoringManager, serverGroupManager)
         );
         saltUtils = new SaltUtils(saltServiceMock, saltServiceMock);
         saltServerActionService = new SaltServerActionService(saltServiceMock, saltUtils,
                 new SaltKeyUtils(saltServiceMock));
         metadataDirOfficial = Files.createTempDirectory("meta");
-        formulaDataDir = Files.createTempDirectory("data");
         FormulaFactory.setMetadataDirOfficial(metadataDirOfficial.toString());
-        FormulaFactory.setDataDir(formulaDataDir.toString());
         Path systemLockDir = metadataDirOfficial.resolve("system-lock");
         Path systemLockFile = Paths.get(systemLockDir.toString(),  "form.yml");
         Files.createDirectories(systemLockDir);
@@ -232,7 +225,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         }
         assertEquals(3, minion.getPackages().size());
 
-        minion.getInstalledProducts().stream().forEach(product -> {
+        minion.getInstalledProducts().forEach(product -> {
             assertEquals("sles", product.getName().toLowerCase());
             assertEquals("sles",  product.getSUSEProduct().getName());
             assertEquals("12.1", product.getVersion());
@@ -296,7 +289,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
     }
 
     @Test
-    public void testApplyPackageDeltaWithDuplicates() throws Exception {
+    public void testApplyPackageDeltaWithDuplicates() {
         MinionServer minion = MinionServerFactoryTest.createTestMinionServer(user);
 
         Map<String, Change<Xor<String, List<Pkg.Info>>>> install = Json.GSON.fromJson(new InputStreamReader(getClass()
@@ -315,7 +308,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
     }
 
     @Test
-    public void testsPackageDeltaFromStateApply() throws Exception {
+    public void testsPackageDeltaFromStateApply() {
         MinionServer minion = MinionServerFactoryTest.createTestMinionServer(user);
         assertEquals(0, minion.getPackages().size());
 
@@ -491,6 +484,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
     public void testPackagesProfileUpdateLivePatching() throws Exception {
         MinionServer minion = MinionServerFactoryTest.createTestMinionServer(user);
         minion.setMinionId("minionsles12-suma3pg.vagrant.local");
+        minion.setLastBoot(0L);
 
         Action action = ActionFactoryTest.createAction(
                 user, ActionFactory.TYPE_PACKAGES_REFRESH_LIST);
@@ -508,6 +502,9 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         // Verify no live patching version is returned
         assertNull(minion.getKernelLiveVersion());
 
+        // Verify no Uptime is set
+        assertEquals(0L, minion.getLastBoot());
+
         //Switch to live patching
         message = new JobReturnEventMessage(JobReturnEvent
                 .parse(getJobReturnEvent("packages.profileupdate.livepatching.json",
@@ -518,6 +515,10 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         // Verify live patching version
         assertEquals("livepatch_2_2_1", minion.getKernelLiveVersion());
 
+        // Verify Uptime is set
+        Date bootTime = new Date(System.currentTimeMillis() - (600 * 1000));
+        assertEquals((long) minion.getLastBoot(), (bootTime.getTime() / 1000));
+
         //Switch back from live patching
         message = new JobReturnEventMessage(JobReturnEvent
                 .parse(getJobReturnEvent("packages.profileupdate.json",
@@ -527,6 +528,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
         // Verify no live patching version is returned again
         assertNull(minion.getKernelLiveVersion());
+
     }
 
     /**
@@ -580,7 +582,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         assertEquals(3, minion.getPackages().size());
 
         assertEquals(1, minion.getInstalledProducts().size());
-        minion.getInstalledProducts().stream().forEach(product -> {
+        minion.getInstalledProducts().forEach(product -> {
             assertEquals("res", product.getName());
             assertEquals("7", product.getVersion());
             assertNull(product.getRelease());
@@ -780,6 +782,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
             assertNotNull(server.getDmi().getVendor());
             assertFalse(server.getDevices().isEmpty());
             assertFalse(server.getNetworkInterfaces().isEmpty());
+            assertFalse(server.isPayg(), "Unexpected: system is PAYG but it should not");
 
             Map<String, NetworkInterface> ethNames = server.getNetworkInterfaces().stream().collect(Collectors.toMap(
                     NetworkInterface::getName,
@@ -826,7 +829,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdateGrainsFqdns() throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.ppc64.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.ppc64.json", server -> {
             assertNotNull(server);
             assertEquals(2, server.getFqdns().size());
         });
@@ -834,10 +837,10 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdateCustomFqdns() throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.x86.custom.fqdns.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.x86.custom.fqdns.json", server -> {
             assertNotNull(server);
             assertEquals(5, server.getFqdns().size());
-            List<String> collect = server.getFqdns().stream().map(ServerFQDN::getName).collect(Collectors.toList());
+            List<String> collect = server.getFqdns().stream().map(ServerFQDN::getName).toList();
             assertTrue(collect.contains("custom.fqdns.name.one"));
             assertTrue(collect.contains("custom.fqdns.name.two"));
             assertTrue(collect.contains("custom.fqdns.name.three"));
@@ -846,7 +849,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdateNetworkModuleFqdns() throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.x86.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.x86.json", server -> {
             assertNotNull(server);
             assertEquals(2, server.getFqdns().size());
         });
@@ -854,7 +857,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdateX86LongCPUValues()  throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.cpulongval.x86.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.cpulongval.x86.json", server -> {
             assertNotNull(server);
             assertNotNull(server.getCpu());
 
@@ -872,7 +875,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdatePPC64()  throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.ppc64.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.ppc64.json", server -> {
             assertNotNull(server);
             assertNotNull(server.getCpu());
 
@@ -927,7 +930,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdateScsiDevices()  throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.scsi.x86.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.scsi.x86.json", server -> {
             assertNotNull(server);
             assertNotNull(server.getCpu());
 
@@ -941,7 +944,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdatePrimaryIPv4Only()  throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv4only.x86.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv4only.x86.json", server -> {
             Map<String, NetworkInterface> ethNames = server.getNetworkInterfaces().stream().collect(Collectors.toMap(
                     NetworkInterface::getName,
                     Function.identity()
@@ -956,7 +959,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdatePrimaryIPv4OnlyLocalhost()  throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv4onlylocalhost.x86.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv4onlylocalhost.x86.json", server -> {
             Map<String, NetworkInterface> ethNames = server.getNetworkInterfaces().stream().collect(Collectors.toMap(
                     NetworkInterface::getName,
                     Function.identity()
@@ -971,7 +974,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdatetPrimaryIPv6Only()  throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv6only.x86.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv6only.x86.json", server -> {
             Map<String, NetworkInterface> ethNames = server.getNetworkInterfaces().stream().collect(Collectors.toMap(
                     NetworkInterface::getName,
                     Function.identity()
@@ -985,7 +988,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdatetPrimaryIPV4IPv6()  throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv4ipv6.x86.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv4ipv6.x86.json", server -> {
             Map<String, NetworkInterface> ethNames = server.getNetworkInterfaces().stream().collect(Collectors.toMap(
                     NetworkInterface::getName,
                     Function.identity()
@@ -999,7 +1002,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
     @Test
     public void testHardwareProfileChangeNetworkIP()  throws Exception {
         MinionServer minion = testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv4ipv6.x86.json",
-            (server) -> {
+            server -> {
                 Map<String, NetworkInterface> ethNames = server.getNetworkInterfaces().stream()
                     .collect(Collectors.toMap(
                             NetworkInterface::getName,
@@ -1028,7 +1031,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileMultiIP()  throws Exception {
-        MinionServer minion = testHardwareProfileUpdate("hardware.profileupdate.multi-ipv4.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.multi-ipv4.json", server -> {
             Map<String, NetworkInterface> ethNames = server.getNetworkInterfaces().stream().collect(Collectors.toMap(
                     NetworkInterface::getName,
                     Function.identity()));
@@ -1047,7 +1050,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
     @Test
     public void testHardwareProfileNoNetworkIPChange()  throws Exception {
         MinionServer minion = testHardwareProfileUpdate("hardware.profileupdate.primary_ips_ipv4ipv6.x86.json",
-            (server) -> {
+            server -> {
                 Map<String, NetworkInterface> ethNames = server.getNetworkInterfaces().stream()
                     .collect(Collectors.toMap(
                             NetworkInterface::getName,
@@ -1086,8 +1089,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         JsonObject obj = getJsonElement("hardware.profileupdate.primary_ips_empty_ssh.x86.json");
         JsonElement element = obj.get("suma-ref31-min-centos7.mgr.suse.de");
 
-        Set<NetworkInterface> oldIfs = new HashSet<>();
-        oldIfs.addAll(server.getNetworkInterfaces());
+        Set<NetworkInterface> oldIfs = new HashSet<>(server.getNetworkInterfaces());
 
         saltUtils.updateServerAction(sa, 0L, true, "n/a", element,
                 Optional.of(Xor.right("state.apply")));
@@ -1107,11 +1109,11 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileUpdateS390() throws Exception {
-        testHardwareProfileUpdate("hardware.profileupdate.s390.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.s390.json", server -> {
             assertNotNull(server);
             assertNotNull(server.getCpu());
 
-            assertNull(server.getCpu().getNrsocket());
+            assertEquals(1, server.getCpu().getNrsocket());
             assertEquals(Long.valueOf(0), server.getCpu().getNrCPU());
             assertEquals("s390x", server.getCpu().getModel());
             assertEquals("0", server.getCpu().getMHz());
@@ -1204,7 +1206,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileInfiniband()  throws Exception {
-        MinionServer minion = testHardwareProfileUpdate("hardware.profileupdate.infiniband.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.infiniband.json", server -> {
             Map<String, NetworkInterface> ethNames = server.getNetworkInterfaces().stream().collect(Collectors.toMap(
                     NetworkInterface::getName,
                     Function.identity()
@@ -1215,15 +1217,25 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
     @Test
     public void testHardwareProfileXenHost()  throws Exception {
-        MinionServer minion = testHardwareProfileUpdate("hardware.profileupdate.xen-host.json",
-                (server) -> assertFalse(server.isVirtualGuest(), "system should not be a virtual guest"));
+        testHardwareProfileUpdate("hardware.profileupdate.xen-host.json",
+                server -> assertFalse(server.isVirtualGuest(), "system should not be a virtual guest"));
     }
 
     @Test
     public void testHardwareProfilePublicCloud()  throws Exception {
-        MinionServer minion = testHardwareProfileUpdate("hardware.profileupdate.public_cloud.json", (server) -> {
+        testHardwareProfileUpdate("hardware.profileupdate.public_cloud.json", server -> {
             assertNotNull(server);
             assertEquals("iabcdef1234567890", server.getVirtualInstance().getUuid());
+            assertFalse(server.isPayg(), "Unexpected: instance is PAYG but should not");
+        });
+    }
+
+    @Test
+    public void testHardwareProfilePublicCloudPayg()  throws Exception {
+        testHardwareProfileUpdate("hardware.profileupdate.public_cloud_payg.json", server -> {
+            assertNotNull(server);
+            assertEquals("iabcdef1234567890", server.getVirtualInstance().getUuid());
+            assertTrue(server.isPayg(), "Unexpected: instance is BYOS but should not");
         });
     }
 
@@ -1271,6 +1283,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         return JsonParser.GSON.fromJson(jsonString, JsonObject.class);
     }
 
+    @Test
     public void testStateApplyActionTestMode() throws Exception {
         MinionServer minion = MinionServerFactoryTest.createTestMinionServer(user);
         minion.setMinionId("abcdefg.vagrant.local");
@@ -1282,7 +1295,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
         ApplyStatesAction action = ActionManager.scheduleApplyStates(
                 user,
-                Arrays.asList(minion.getId()),
+                Collections.singletonList(minion.getId()),
                 new ArrayList<>(),
                 new Date());
 
@@ -1321,8 +1334,8 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
         ApplyStatesAction action = ActionManager.scheduleApplyStates(
                 user,
-                Arrays.asList(minion.getId()),
-                Arrays.asList(ApplyStatesEventMessage.CHANNELS),
+                Collections.singletonList(minion.getId()),
+                List.of(ApplyStatesEventMessage.CHANNELS),
                 new Date());
 
         ServerAction sa = ActionFactoryTest.createServerAction(minion, action);
@@ -1347,13 +1360,13 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         messageAction.execute(message);
 
         assertEquals(
-            Arrays.asList(sa),
+                List.of(sa),
             action.getServerActions().stream().filter(
                 serverAction -> serverAction.getServer().equals(minion)
             ).collect(java.util.stream.Collectors.toList()));
 
         // Verify the action status
-        assertEquals(sa.getStatus(), ActionFactory.STATUS_FAILED);
+        assertEquals(ActionFactory.STATUS_FAILED, sa.getStatus());
         context().assertIsSatisfied();
     }
 
@@ -1439,14 +1452,12 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         ImageProfile profile = ImageTestUtils.createImageProfile(imageName, store, user);
 
         ImageInfo imgInfoBuild1 = doTestContainerImageBuild(server, imageName, imageVersion, profile,
-                (imgInfo) -> {
-                    // assert initial revision number
-                    assertEquals(1, imgInfo.getRevisionNumber());
-                });
+                // assert initial revision number
+                imgInfo -> assertEquals(1, imgInfo.getRevisionNumber()));
 
         doTestContainerImageInspect(server, imageName, imageVersion, profile, imgInfoBuild1,
                 digest1,
-                (imgInfo) -> {
+                imgInfo -> {
             // assertions after inspect
             // reload imgInfo to get the build history
             imgInfo = TestUtils.reload(imgInfo);
@@ -1465,10 +1476,8 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         HibernateFactory.getSession().clear();
 
         ImageInfo imgInfoBuild2 = doTestContainerImageBuild(server, imageName, imageVersion, profile,
-                (imgInfo) -> {
-                    // assert revision number incremented
-                    assertEquals(2, imgInfo.getRevisionNumber());
-                });
+                // assert revision number incremented
+                imgInfo -> assertEquals(2, imgInfo.getRevisionNumber()));
 
         // build of new revision obsoletes the previous one
         imgInfoBuild1 = TestUtils.reload(imgInfoBuild1);
@@ -1476,7 +1485,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
         doTestContainerImageInspect(server, imageName, imageVersion, profile, imgInfoBuild2,
                 digest2,
-                (imgInfo) -> {
+                imgInfo -> {
             // reload imgInfo to get the build history
             imgInfo = TestUtils.reload(imgInfo);
             assertNotNull(imgInfo);
@@ -1510,19 +1519,17 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         ImageProfile profile = ImageTestUtils.createImageProfile(imageName, store, user);
 
         ImageInfo imgInfoBuild1 = doTestContainerImageBuild(server, imageName, imageVersion1, profile,
-                (imgInfo) -> {
-                    // assert initial revision number
-                    assertEquals(1, imgInfo.getRevisionNumber());
-                });
+                // assert initial revision number
+                imgInfo -> assertEquals(1, imgInfo.getRevisionNumber()));
         doTestContainerImageInspect(server, imageName, imageVersion1, profile, imgInfoBuild1,
                 digest,
-                (imgInfo) -> {
+                imgInfo -> {
             // assertions after inspect
             // reload imgInfo to get the build history
             imgInfo = TestUtils.reload(imgInfo);
             assertNotNull(imgInfo);
             // test that the history of the build was updated correctly
-            assertEquals(1, imgInfo.getRepoDigests().stream().count());
+            assertEquals(1, (long) imgInfo.getRepoDigests().size());
             assertEquals(
                     "docker-registry:5000/" + imageName + "@sha256:" + digest,
                     imgInfo.getRepoDigests().stream()
@@ -1534,7 +1541,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         HibernateFactory.getSession().clear();
 
         ImageInfo imgInfoBuild2 = doTestContainerImageBuild(server, imageName, imageVersion2, profile,
-                (imgInfo) -> {
+                imgInfo -> {
                     // assert revision number incremented
                     assertEquals(1, imgInfo.getRevisionNumber());
                     assertNotEquals(imgInfoBuild1.getId(), imgInfo.getId());
@@ -1542,7 +1549,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
         doTestContainerImageInspect(server, imageName, imageVersion2, profile, imgInfoBuild2,
                 digest,
-                (imgInfo) -> {
+                imgInfo -> {
             // reload imgInfo to get the build history
             imgInfo = TestUtils.reload(imgInfo);
             assertNotNull(imgInfo);
@@ -1572,7 +1579,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         ImageStore store = ImageTestUtils.createImageStore("test-docker-registry:5000", user);
 
         doTestContainerImageImport(server, imageName, imageVersion, store,
-                (imgInfo) -> {
+                imgInfo -> {
                     // reload imgInfo to get the build history
                     imgInfo = TestUtils.reload(imgInfo);
                     assertNotNull(imgInfo);
@@ -1668,7 +1675,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         messageAction.execute(message);
 
         assertTrue(ImageInfoFactory.lookupByName(imageName, imageVersion, store.getId()).isPresent());
-        ImageInfo imgInfo = ImageInfoFactory.lookupByName(imageName, imageVersion, store.getId()).get();
+        ImageInfo imgInfo = ImageInfoFactory.lookupByName(imageName, imageVersion, store.getId()).orElse(null);
         assertNotNull(imgInfo);
 
         // other assertions after inspection
@@ -1687,7 +1694,8 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
         MgrUtilRunner.ExecResult mockResult = new MgrUtilRunner.ExecResult();
         context().checking(new Expectations() {{
-            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)));
+            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)),
+                    with(equal(SaltSSHService.SUMA_SSH_PUB_KEY)));
             allowing(saltServiceMock).collectKiwiImage(with(equal(server)),
                     with(equal("/var/lib/Kiwi/build129/images.build/POS_Image_JeOS7.x86_64-7.0.0")),
                     with(equal(String.format("/srv/www/os-images/%d/POS_Image_JeOS7-7.0.0-1/",
@@ -1765,7 +1773,8 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
         MgrUtilRunner.ExecResult mockResult = new MgrUtilRunner.ExecResult();
         context().checking(new Expectations() {{
-            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)));
+            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)),
+                    with(equal(SaltSSHService.SUMA_SSH_PUB_KEY)));
             allowing(saltServiceMock).collectKiwiImage(with(equal(server)),
                     with(equal("/var/lib/Kiwi/build137/images/POS_Image_JeOS7.x86_64-7.0.0-build129.tar.xz")),
                     with(equal(String.format("/srv/www/os-images/%d/POS_Image_JeOS7-7.0.0-1/",
@@ -1812,7 +1821,8 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
         MgrUtilRunner.ExecResult mockResult = new MgrUtilRunner.ExecResult();
         context().checking(new Expectations() {{
-            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)));
+            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)),
+                    with(equal(SaltSSHService.SUMA_SSH_PUB_KEY)));
             allowing(saltServiceMock).removeFile(
                     with(equal(Paths.get(String.format("/srv/www/os-images/%d/image", user.getOrg().getId())))));
             will(returnValue(Optional.of(true)));
@@ -1830,7 +1840,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         ActivationKey key = ImageTestUtils.createActivationKey(user);
         ImageProfile profile = ImageTestUtils.createKiwiImageProfile("my-kiwi-image", key, user);
 
-        ImageInfo image = doTestKiwiImageInspect(server, profile, "image.inspect.kiwi.json", (info) -> {
+        ImageInfo image = doTestKiwiImageInspect(server, profile, "image.inspect.kiwi.json", info -> {
             assertNotNull(info.getInspectAction().getId());
             assertEquals(286, info.getPackages().size());
 
@@ -1859,7 +1869,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
                         (Map<String, Map<String, Map<String, Object>>>) map.get("images");
             assertEquals("https://ftp/saltboot/image/POS_Image_JeOS6.x86_64-6.0.0-1/POS_Image_JeOS6.x86_64-6.0.0",
                         images.get("POS_Image_JeOS6").get("6.0.0-1").get("url"));
-            assertEquals(Long.valueOf(1490026496), images.get("POS_Image_JeOS6").get("6.0.0-1").get("size"));
+            assertEquals(1490026496L, images.get("POS_Image_JeOS6").get("6.0.0-1").get("size"));
             assertEquals("a64dbc025c748bde968b888db6b7b9e3",
                         images.get("POS_Image_JeOS6").get("6.0.0-1").get("hash"));
         });
@@ -1887,7 +1897,8 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
 
         MgrUtilRunner.ExecResult mockResult = new MgrUtilRunner.ExecResult();
         context().checking(new Expectations() {{
-            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)));
+            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)),
+                    with(equal(SaltSSHService.SUMA_SSH_PUB_KEY)));
             allowing(saltServiceMock).collectKiwiImage(with(equal(server)),
                     with(equal("/var/lib/Kiwi/build06/images/POS_Image_JeOS6.x86_64-6.0.0-build06.tgz")),
                     with(equal(String.format("/srv/www/os-images/%d/POS_Image_JeOS6-6.0.0-0/",
@@ -1922,7 +1933,7 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
                         (Map<String, Map<String, Map<String, Object>>>) map.get("images");
             assertEquals("https://ftp/saltboot/image/POS_Image_JeOS6.x86_64-6.0.0-1/POS_Image_JeOS6.x86_64-6.0.0",
                         images.get("POS_Image_JeOS6").get("6.0.0-1").get("url"));
-            assertEquals(Long.valueOf(1490026496), images.get("POS_Image_JeOS6").get("6.0.0-1").get("size"));
+            assertEquals(1490026496L, images.get("POS_Image_JeOS6").get("6.0.0-1").get("size"));
             assertEquals("a64dbc025c748bde968b888db6b7b9e3",
                         images.get("POS_Image_JeOS6").get("6.0.0-1").get("hash"));
             assertEquals("gzip", images.get("POS_Image_JeOS6").get("6.0.0-1").get("compressed"));
@@ -2041,6 +2052,13 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
                     with(any(User.class)), with(any(SubscribeChannelsAction.class)));
         } });
 
+        SaltService saltService = new SaltService() {
+            @Override
+            public void refreshPillar(MinionList minionList) {
+            }
+        };
+        saltServerActionService.setSaltApi(saltService);
+
         MinionServer minion = MinionServerFactoryTest.createTestMinionServer(user);
         minion.setMinionId("dev-minsles12sp2.test.local");
 
@@ -2067,10 +2085,8 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         ServerAction sa = ActionFactoryTest.createServerAction(minion, action);
         action.addServerAction(sa);
 
-        saltServerActionService.setCommitTransaction(false);
-        Map<LocalCall<?>, List<MinionSummary>> calls = saltServerActionService.callsForAction(action);
-
-        HibernateFactory.getSession().flush();
+        saltServerActionService.callsForAction(action);
+        assertTrue(minion.hasValidTokensForAllChannels(), "Unexpected minion miss tokens for some channels");
 
         // Setup an event message from file contents
         Optional<JobReturnEvent> event = JobReturnEvent.parse(
@@ -2129,30 +2145,24 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         ServerAction sa = ActionFactoryTest.createServerAction(minion, action);
         action.addServerAction(sa);
 
-        saltServerActionService.setCommitTransaction(false);
         Map<LocalCall<?>, List<MinionSummary>> calls = saltServerActionService.callsForAction(action);
-
-        // artifically expire tokens
-        action.getDetails().getAccessTokens().stream().forEach(t -> t.setMinion(null));
         HibernateFactory.getSession().flush();
 
-        // Setup an event message from file contents
-        Optional<JobReturnEvent> event = JobReturnEvent.parse(
-                getJobReturnEvent("subscribe.channels.success.json", action.getId()));
-        JobReturnEventMessage message = new JobReturnEventMessage(event.get());
+        // artifically expire tokens
+        minion.getAccessTokens().forEach(t -> t.setMinion(null));
 
-        // Process the event message
-        JobReturnEventMessageAction messageAction = new JobReturnEventMessageAction(saltServerActionService, saltUtils);
-        messageAction.execute(message);
+        HibernateFactory.getSession().flush();
+        HibernateFactory.getSession().clear();
 
+        MinionServer reloaded = HibernateFactory.reload(minion);
         // check that tokens are really gone
-        assertEquals(0, minion.getAccessTokens().size());
+        assertEquals(0, reloaded.getAccessTokens().size());
     }
 
     private void assertTokenChannel(MinionServer minion, Channel channel) {
         assertTrue(minion.getAccessTokens().stream()
-                .filter(token -> token.getChannels().size() == 1 && token.getChannels().contains(channel))
-                .findFirst().isPresent(), channel.getLabel());
+                .anyMatch(token -> token.getChannels().size() == 1 && token.getChannels().contains(channel)),
+                channel.getLabel());
     }
 
     @Test
@@ -2199,34 +2209,6 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
     }
 
     @Test
-    public void testStateErrorResponse() throws Exception {
-        MinionServer minion = MinionServerFactoryTest.createTestMinionServer(user);
-        minion.setMinionId("demo-kvm1.tf.local");
-        Action action = ActionFactoryTest.createAction(user, ActionFactory.TYPE_VIRTUALIZATION_CREATE);
-
-        action.addServerAction(ActionFactoryTest.createServerAction(minion, action));
-
-        // Setup an event message from file contents
-        Optional<JobReturnEvent> event = JobReturnEvent.parse(
-                getJobReturnEvent("virtcreate.failure.json", action.getId()));
-        JobReturnEventMessage message = new JobReturnEventMessage(event.get());
-
-        // Process the event message
-        JobReturnEventMessageAction messageAction = new JobReturnEventMessageAction(saltServerActionService, saltUtils);
-        messageAction.execute(message);
-
-        // Verify the action status
-        assertEquals(action.getServerActions().stream()
-                .filter(serverAction -> serverAction.getServer().equals(minion))
-                .findAny().get().getStatus(), ActionFactory.STATUS_FAILED);
-
-        // Verify the action message
-        assertTrue(action.getServerActions().stream()
-                .filter(serverAction -> serverAction.getServer().equals(minion))
-                .findAny().get().getResultMsg().contains("default-broken pool is not defined"));
-    }
-
-    @Test
     public void testActionChainResponse() throws Exception {
         TaskomaticApi taskomaticMock = mock(TaskomaticApi.class);
         ActionManager.setTaskomaticApi(taskomaticMock);
@@ -2242,14 +2224,14 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         Date earliestAction = new Date();
         ApplyStatesAction applyHighstate = ActionManager.scheduleApplyStates(
                 user,
-                Arrays.asList(minion.getId()),
+                Collections.singletonList(minion.getId()),
                 new ArrayList<>(),
                 earliestAction);
 
         ScriptActionDetails sad = ActionFactory.createScriptActionDetails(
                 "root", "root", 10L, "#!/bin/csh\necho hello");
         ScriptRunAction runScript = ActionManager.scheduleScriptRun(
-                user, Arrays.asList(minion.getId()), "Run script test", sad, earliestAction);
+                user, Collections.singletonList(minion.getId()), "Run script test", sad, earliestAction);
 
         ServerAction saHighstate = ActionFactoryTest.createServerAction(minion, applyHighstate);
         applyHighstate.addServerAction(saHighstate);
@@ -2309,8 +2291,8 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         MinionServer minion = MinionServerFactoryTest.createTestMinionServer(user);
         SystemManager.giveCapability(minion.getId(), SystemManager.CAP_SCRIPT_RUN, 1L);
 
-        ApplyStatesAction applyHighstate = ActionManager.scheduleApplyStates(user, Arrays.asList(minion.getId()),
-                new ArrayList<>(), new Date());
+        ApplyStatesAction applyHighstate = ActionManager.scheduleApplyStates(user,
+                Collections.singletonList(minion.getId()), new ArrayList<>(), new Date());
 
         ServerAction saHighstate = ActionFactoryTest.createServerAction(minion, applyHighstate);
         applyHighstate.addServerAction(saHighstate);
@@ -2346,8 +2328,8 @@ public class JobReturnEventMessageActionTest extends JMockBaseTestCaseWithUser {
         MinionServer minion = MinionServerFactoryTest.createTestMinionServer(user);
         SystemManager.giveCapability(minion.getId(), SystemManager.CAP_SCRIPT_RUN, 1L);
 
-        ApplyStatesAction applyHighstate = ActionManager.scheduleApplyStates(user, Arrays.asList(minion.getId()),
-                new ArrayList<>(), new Date());
+        ApplyStatesAction applyHighstate = ActionManager.scheduleApplyStates(user,
+                Collections.singletonList(minion.getId()), new ArrayList<>(), new Date());
 
         ServerAction saHighstate = ActionFactoryTest.createServerAction(minion, applyHighstate);
         applyHighstate.addServerAction(saHighstate);

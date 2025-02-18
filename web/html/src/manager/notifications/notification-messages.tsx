@@ -2,27 +2,21 @@ import { hot } from "react-hot-loader/root";
 
 import * as React from "react";
 
-import escapeHtml from "html-react-parser";
-
 import { AsyncButton } from "components/buttons";
 import { Dialog } from "components/dialog/LegacyDialog";
 import { showDialog } from "components/dialog/util";
-import { Messages as MessageContainer, Utils as MessagesUtils } from "components/messages";
+import { Form, Select } from "components/input";
+import { Messages as MessageContainer, Utils as MessagesUtils } from "components/messages/messages";
 import { TopPanel } from "components/panels/TopPanel";
 import { SectionToolbar } from "components/section-toolbar/section-toolbar";
 import { Column } from "components/table/Column";
 import { SearchField } from "components/table/SearchField";
 import { Table } from "components/table/Table";
 
+import { stringToReact } from "utils";
 import { Utils } from "utils/functions";
 import { DEPRECATED_unsafeEquals } from "utils/legacy";
 import Network from "utils/network";
-
-declare global {
-  interface JQuery {
-    select2: (...args: any[]) => JQuery;
-  }
-}
 
 const _MESSAGE_TYPE = {
   OnboardingFailed: {
@@ -47,7 +41,7 @@ const _MESSAGE_TYPE = {
   },
   PaygAuthenticationUpdateFailed: {
     id: "PaygAuthenticationUpdateFailed",
-    text: t("Pay-as-you-go refresh authentication data failed"),
+    text: t("PAYG refresh authentication data failed"),
   },
   EndOfLifePeriod: {
     id: "EndOfLifePeriod",
@@ -56,6 +50,18 @@ const _MESSAGE_TYPE = {
   SubscriptionWarning: {
     id: "SubscriptionWarning",
     text: t("Subscription Warning"),
+  },
+  UpdateAvailable: {
+    id: "UpdateAvailable",
+    text: t("Update Notification"),
+  },
+  PaygNotCompliantWarning: {
+    id: "PaygNotCompliantWarning",
+    text: t("PAYG instance is not compliant"),
+  },
+  SCCOptOutWarning: {
+    id: "SCCOptOutWarning",
+    text: t("SCC Data Sync Disabled"),
   },
 };
 
@@ -138,20 +144,6 @@ class NotificationMessages extends React.Component<Props, State> {
           messages: [],
           selectedItems: [],
         });
-
-        //HACK: usage of JQuery here is needed to apply the select2js plugin
-        jQuery("select#notification-messages-type-filter.apply-select2js-on-this").each(function (i) {
-          var select = jQuery(this);
-          // apply select2js only one time
-          if (!select.hasClass("select2js-applied")) {
-            select.addClass("select2js-applied");
-
-            var select2js = select.select2({ placeholder: t("Filter by type") });
-            select2js.on("change", function (event) {
-              currentObject.handleFilterTypeChange(select.val() || []);
-            });
-          }
-        });
       })
       .catch((response) => {
         currentObject.setState({
@@ -165,10 +157,6 @@ class NotificationMessages extends React.Component<Props, State> {
           selectedItems: [],
         });
       });
-  };
-
-  handleFilterTypeChange = (types) => {
-    this.setState({ typeCriteria: types });
   };
 
   filterDataByType = (data) => {
@@ -339,7 +327,7 @@ class NotificationMessages extends React.Component<Props, State> {
 
     return (
       <span>
-        {escapeHtml(row["summary"])}
+        {stringToReact(row["summary"])}
         &nbsp;
         {row["details"] && popupLink}
       </span>
@@ -348,12 +336,12 @@ class NotificationMessages extends React.Component<Props, State> {
 
   buildPopupSummary = () => {
     const summary = (this.state.popupItem || {}).summary || "";
-    return escapeHtml(summary);
+    return stringToReact(summary);
   };
 
   buildPopupDetails = () => {
     const details = (this.state.popupItem || {}).details || "";
-    return escapeHtml(details);
+    return stringToReact(details);
   };
 
   retryOnboarding = (minionId) => {
@@ -403,7 +391,6 @@ class NotificationMessages extends React.Component<Props, State> {
 
   render() {
     const data = this.state.serverData;
-
     const dataHashTag = window.location.hash;
     const headerTabs = (
       <div className="spacewalk-content-nav">
@@ -429,19 +416,19 @@ class NotificationMessages extends React.Component<Props, State> {
     );
 
     const typeFilter = (
-      <div className="multiple-select-wrapper">
-        <select
-          id="notification-messages-type-filter"
-          name="notification-messages-type-filter"
-          className="form-control d-inline-block apply-select2js-on-this"
-          multiple={true}
-        >
-          {Object.keys(_MESSAGE_TYPE).map((id) => (
-            <option key={id} value={id}>
-              {this.decodeTypeText(id)}
-            </option>
-          ))}
-        </select>
+      <div className="multiple-select-wrapper table-input-search">
+        {/* TODO: Remove this <Form> wrapper once https://github.com/SUSE/spacewalk/issues/14250 is implemented */}
+        <Form>
+          <Select
+            name="type-criteria"
+            placeholder={t("Filter by type")}
+            options={Object.values(_MESSAGE_TYPE)}
+            getOptionLabel={(item) => item.text}
+            getOptionValue={(item) => item.id}
+            isMulti
+            onChange={(_, typeCriteria) => this.setState({ typeCriteria })}
+          />
+        </Form>
       </div>
     );
 
@@ -492,7 +479,6 @@ class NotificationMessages extends React.Component<Props, State> {
           <Table
             data={this.buildRows(this.filterDataByType(data))}
             identifier={(row) => row["id"]}
-            cssClassFunction={(row) => (DEPRECATED_unsafeEquals(row["isRead"], true) ? "text-muted" : "")}
             initialSortColumnKey="created"
             initialSortDirection={-1}
             loading={this.state.loading}
@@ -539,10 +525,7 @@ class NotificationMessages extends React.Component<Props, State> {
                 <div className="btn-group">
                   <AsyncButton
                     id="updateReadStatus"
-                    icon={
-                      (row["isRead"] ? "spacewalk-icon-envelope-open-o text-muted" : "fa-envelope text-primary") +
-                      " fa-1-5x"
-                    }
+                    icon={(row["isRead"] ? "spacewalk-icon-envelope-open-o" : "fa-envelope text-primary") + " fa-1-5x"}
                     title={row["isRead"] ? t("Flag as Unread") : t("Flag as Read")}
                     action={() => this.updateReadStatus([row["id"]], !row["isRead"])}
                   />

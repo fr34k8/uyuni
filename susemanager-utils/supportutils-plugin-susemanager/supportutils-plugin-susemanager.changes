@@ -1,4 +1,63 @@
 -------------------------------------------------------------------
+Fri Jan 24 14:56:21 CET 2025 - marina.latini@suse.com
+
+- version 5.1.3-0
+  * Adjust requires for plugin to allow compatibility with
+    supportutils 3.2.9 release (bsc#1235145)
+  * Drop proxy installer package since it is no longer used with
+    containers
+
+-------------------------------------------------------------------
+Thu Dec 12 09:26:45 CET 2024 - rosuna@suse.com
+
+- version 5.1.2-0
+  * Change supportconfig as some packages were renamed (bsc#1233014)
+
+-------------------------------------------------------------------
+Mon Oct 14 15:58:33 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Tue Feb 13 17:16:02 CET 2024 - marina.latini@suse.com
+
+- version 5.0.3-1
+  * Port to new supportconfig resource file
+
+-------------------------------------------------------------------
+Mon Jan 29 11:51:37 CET 2024 - rosuna@suse.com
+
+- version 5.0.2-1
+  * Add Salt and Reposync connections to min. required DB connections calculation
+
+-------------------------------------------------------------------
+Tue Jan 16 08:25:53 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Updated query to the new credentials structure
+
+-------------------------------------------------------------------
+Fri Dec 15 17:27:05 CET 2023 - rosuna@suse.com
+
+- version 4.4.6-1
+  * Move all file managed by RPM from /srv to /usr/share/susemanager
+
+-------------------------------------------------------------------
+Mon Sep 18 14:38:09 CEST 2023 - rosuna@suse.com
+
+- version 4.4.5-1
+  * write configured crypto-policy in supportconfig
+  * add cloud and payg checks
+  * Fixed property name to tune for salt events queue processing
+
+-------------------------------------------------------------------
+Wed Apr 19 12:57:55 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.4-1
+  * fix db connection check tool (bsc#1208586)
+
+-------------------------------------------------------------------
 Mon Jan 23 08:29:01 CET 2023 - jgonzalez@suse.com
 
 - version 4.4.3-1

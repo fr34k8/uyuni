@@ -43,6 +43,9 @@ public class TaskConstants {
     public static final String TASK_QUERY_SESSION_CLEANUP =
         "taskomatic_session_cleanup";
 
+    public static final String TASK_QUERY_TOKEN_CLEANUP =
+        "taskomatic_token_cleanup";
+
     public static final String TASK_QUERY_PACKAGE_CHANGELOG_CLEANUP =
         "taskomatic_package_changelog_cleanup";
 
@@ -179,9 +182,6 @@ public class TaskConstants {
     public static final String TASK_QUERY_REPOMD_GENERATOR_CLONED_FROM =
         "repomdgenerator_channel_cloned_from";
 
-    public static final String TASK_QUERY_SSH_PUSH_FIND_TRADITIONAL_CANDIDATES =
-            "ssh_push_find_traditional_candidates";
-
     public static final String TASK_QUERY_SSH_PUSH_FIND_REBOOTING_MINIONS =
             "ssh_push_find_rebooting_minions";
 
@@ -214,6 +214,9 @@ public class TaskConstants {
 
     public static final String TASK_QUERY_CHANNEL_PACKAGE_EXTRATAGS =
             "repomdgenerator_channel_package_extratags";
+
+    public static final String TASK_QUERY_PKGCLEANUP_ORPHAN_VENDOR_PKG_CHANGE_ORG =
+            "taskomatic_change_org_for_orphan_vendor_packages";
 
     private TaskConstants() { }
 }

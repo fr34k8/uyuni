@@ -26,7 +26,7 @@ import com.redhat.rhn.common.hibernate.ConnectionManagerFactory;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.common.hibernate.ReportDbHibernateFactory;
 import com.redhat.rhn.common.util.TimeUtils;
-import com.redhat.rhn.domain.credentials.Credentials;
+import com.redhat.rhn.domain.credentials.ReportDBCredentials;
 import com.redhat.rhn.domain.server.MgrServerInfo;
 import com.redhat.rhn.domain.server.Server;
 import com.redhat.rhn.domain.server.ServerFactory;
@@ -40,7 +40,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 
 public class HubReportDbUpdateWorker implements QueueWorker {
@@ -57,7 +56,7 @@ public class HubReportDbUpdateWorker implements QueueWorker {
             "SystemNetAddressV6", "SystemOutdated", "SystemGroupMember", "SystemEntitlement", "SystemErrata",
             "SystemPackageInstalled", "SystemPackageUpdate", "SystemCustomInfo", "Account", "AccountGroup",
             "Channel", "ChannelPackage", "ChannelRepository", "ChannelErrata", "Errata", "Package", "Repository",
-            "XccdScan", "XccdScanResult"
+            "XccdScan", "XccdScanResult", "CoCoAttestation", "CoCoAttestationResult"
             );
 
     /**
@@ -102,7 +101,7 @@ public class HubReportDbUpdateWorker implements QueueWorker {
             return false;
         });
 
-        return tableEntry.stream().map(t -> String.valueOf(t.getValue())).collect(Collectors.toList());
+        return tableEntry.stream().map(t -> String.valueOf(t.getValue())).toList();
     }
 
     private void updateRemoteData(Session remoteSession, Session localSession, String tableName, long mgmId) {
@@ -147,7 +146,7 @@ public class HubReportDbUpdateWorker implements QueueWorker {
             parentQueue.workerStarting();
             ConnectionManager localRcm = ConnectionManagerFactory.localReportingConnectionManager();
             ReportDbHibernateFactory localRh = new ReportDbHibernateFactory(localRcm);
-            Credentials credentials = mgrServerInfo.getReportDbCredentials();
+            ReportDBCredentials credentials = mgrServerInfo.getReportDbCredentials();
             ConnectionManager remoteDBCM = ConnectionManagerFactory.reportingConnectionManager(
                     credentials.getUsername(), credentials.getPassword(),
                     ConfigDefaults.get().remoteReportDBUrl(
@@ -189,7 +188,7 @@ public class HubReportDbUpdateWorker implements QueueWorker {
         catch (Exception e) {
             parentQueue.getQueueRun().failed();
             parentQueue.changeRun(null);
-            log.error(e);
+            log.error(e.getMessage(), e);
         }
         finally {
             parentQueue.workerDone();

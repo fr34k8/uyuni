@@ -1,4 +1,88 @@
 -------------------------------------------------------------------
+Thu Dec 12 10:09:53 CET 2024 - rosuna@suse.com
+
+- version 5.1.2-0
+  * Add support for OES 24.4 (bsc#1230585)
+  * Set Ubuntu 24.04 as released
+
+-------------------------------------------------------------------
+Mon Oct 14 16:02:24 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Deploy a configuration file named oval.config.json to configure
+    OVAL data sources
+  * Add Ubuntu 24.04 support
+  * Add channel family for SLES 12 SP5 LTSS Extended Security
+  * Add SLES15-SP5-LTSS channel families
+  * Add MicroOS PPC channel family
+  * Set Ubuntu 22.04 to released
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Thu Aug 01 09:28:43 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6-0
+  * Fix CentOS 7 repo URLs (bsc#1227526)
+
+-------------------------------------------------------------------
+Mon Jun 10 17:16:53 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.5-0
+  * Add SUSE Linux Enterprise 12 SP5 LTSS channel families
+  * Remove SUSE Liberty Linux HA LTSS 7 channel family
+
+-------------------------------------------------------------------
+Fri May 03 14:46:00 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.4-0
+  * AlmaLinux 9 PowerTools repository was renamed into CRB
+    (bsc#1222110)
+
+-------------------------------------------------------------------
+Thu Apr 04 17:34:53 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.3-0
+  * Fix OES 23.4 internal name (bsc#1218837)
+
+-------------------------------------------------------------------
+Mon Jan 29 11:55:08 CET 2024 - rosuna@suse.com
+
+- version 5.0.2-1
+  * Update repository description of Open Enterprise Server 23.4 (bsc#1215514)
+
+-------------------------------------------------------------------
+Tue Jan 16 08:06:26 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * update release status of OES 23.4 (bsc#1215514)
+  * Add Debian 12 amd64
+  * add new SUSE Liberty Linux 7 LTSS channel families
+  * rename RHEL and Liberty 8 Base product to remove EOL CentOS 8 from the name
+
+-------------------------------------------------------------------
+Fri Dec 15 17:33:36 CET 2023 - rosuna@suse.com
+
+- version 4.4.6-1
+  * Change OES version from 2023.4 to 23.4 (bsc#1215514)
+
+-------------------------------------------------------------------
+Wed Nov 01 19:42:46 CET 2023 - marina.latini@suse.com
+
+- version 4.4.5-1
+  * Add Open Enterprise Server 2023.4 (bsc#1215514)
+  * Add SUSE Linux Enterprise 15 SP4
+    Long Term Service Pack Support (LTSS)
+  * Add Extended Service Pack Overlay Support (ESPOS) and
+    Long Term Service Pack Support (LTSS) for High Performance Computing 15 SP5
+
+-------------------------------------------------------------------
+Mon Sep 18 14:49:54 CEST 2023 - rosuna@suse.com
+
+- version 4.4.4-1
+  * drop obsolete upgrade_paths.json
+  * drop unused product_tree.json as it is only used from online resource
+
+-------------------------------------------------------------------
 Wed Dec 14 14:06:57 CET 2022 - jgonzalez@suse.com
 
 - version 4.4.3-1

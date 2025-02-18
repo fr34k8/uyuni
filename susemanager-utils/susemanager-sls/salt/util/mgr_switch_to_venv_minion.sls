@@ -7,10 +7,13 @@
                             not salt['file.replace'](venv_susemanager_conf, '^master: .*', 'master: ' + pillar['mgr_server'],
                                                      dry_run=True, show_changes=False, ignore_if_missing=True) %}
 {%- if managed_minion or venv_managed_minion %}
-{%- set pkgs_installed = salt['pkg.info_installed']() %}
-{%- set venv_minion_installed = pkgs_installed.get('venv-salt-minion', False) and True %}
-{%- set venv_minion_available = venv_minion_installed or salt['pkg.latest_version']('venv-salt-minion') or False %}
+{%- set pkgs_installed = salt['pkg.list_pkgs']() %}
+{%- set venv_minion_installed = 'venv-salt-minion' in pkgs_installed %}
+{%- set venv_minion_available = venv_minion_installed or 'venv-salt-minion' in salt['pkg.list_repo_pkgs']() %}
 {%- if venv_minion_available %}
+include:
+  - services.salt-minion
+ 
 mgr_venv_salt_minion_pkg:
   pkg.installed:
     - name: venv-salt-minion
@@ -66,6 +69,7 @@ mgr_disable_salt_minion:
     - enable: False
     - require:
       - service: mgr_enable_venv_salt_minion
+      - sls: services.salt-minion
 
 {%- if salt['pillar.get']('mgr_purge_non_venv_salt') %}
 mgr_purge_non_venv_salt_packages:

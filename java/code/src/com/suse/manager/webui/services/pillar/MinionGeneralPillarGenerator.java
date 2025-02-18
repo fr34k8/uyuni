@@ -15,9 +15,6 @@
 
 package com.suse.manager.webui.services.pillar;
 
-import static com.suse.manager.webui.services.SaltConstants.PILLAR_DATA_FILE_EXT;
-import static com.suse.manager.webui.services.SaltConstants.PILLAR_DATA_FILE_PREFIX;
-
 import com.redhat.rhn.common.conf.Config;
 import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.domain.channel.AccessToken;
@@ -25,6 +22,9 @@ import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.server.MinionServer;
 import com.redhat.rhn.domain.server.Pillar;
 
+import com.suse.manager.model.attestation.AttestationFactory;
+import com.suse.manager.model.attestation.CoCoAttestationStatus;
+import com.suse.manager.model.attestation.ServerCoCoAttestationConfig;
 import com.suse.manager.utils.MachinePasswordUtils;
 
 import org.apache.logging.log4j.LogManager;
@@ -37,7 +37,7 @@ import java.util.Optional;
 /**
  * Class for generating minion pillar data containing general information of minions
  */
-public class MinionGeneralPillarGenerator implements MinionPillarGenerator {
+public class MinionGeneralPillarGenerator extends MinionPillarGeneratorBase {
 
     /** Logger */
     private static final Logger LOG = LogManager.getLogger(MinionGeneralPillarGenerator.class);
@@ -46,13 +46,13 @@ public class MinionGeneralPillarGenerator implements MinionPillarGenerator {
     public static final String CATEGORY = "general";
 
     private static final int PKGSET_INTERVAL = 5;
-    private static final int REBOOT_INFO_INTERVAL = 10;
 
     private static final Map<String, Object> PKGSET_BEACON_PROPS = new HashMap<>();
-    private static final Map<String, Object> REBOOT_INFO_BEACON_PROPS = new HashMap<>();
+    private static final Map<String, Object> REBOOT_INFO_BEACON_PROPS = Map.of("interval", 30);
+    private static final Map<String, Object> REBOOT_INFO_BEACON_PROPS_RH = Map.of("interval", 180);
+
     static {
         PKGSET_BEACON_PROPS.put("interval", PKGSET_INTERVAL);
-        REBOOT_INFO_BEACON_PROPS.put("interval", REBOOT_INFO_INTERVAL);
     }
 
     /**
@@ -76,7 +76,7 @@ public class MinionGeneralPillarGenerator implements MinionPillarGenerator {
             pillar.add("mgr_server_https_port", Config.get().getInt("ssh_push_port_https"));
         }
 
-        pillar.add("mgr_origin_server", ConfigDefaults.get().getCobblerHost());
+        pillar.add("mgr_origin_server", ConfigDefaults.get().getJavaHostname());
         pillar.add("mgr_server_is_uyuni", ConfigDefaults.get().isUyuni());
         pillar.add("machine_password", MachinePasswordUtils.machinePassword(minion));
 
@@ -93,18 +93,26 @@ public class MinionGeneralPillarGenerator implements MinionPillarGenerator {
         Map<String, Object> beaconConfig = new HashMap<>();
         // this add the configuration for the beacon that tell us when the
         // minion packages are modified locally
-        if (minion.getOsFamily().toLowerCase().equals("suse") ||
-                minion.getOsFamily().toLowerCase().equals("redhat") ||
-                minion.getOsFamily().toLowerCase().equals("debian")) {
+        if (minion.getOsFamily().equalsIgnoreCase("suse") ||
+                minion.isRedHat() ||
+                minion.getOsFamily().equalsIgnoreCase("debian")) {
             beaconConfig.put("pkgset", PKGSET_BEACON_PROPS);
-        }
-        if (minion.doesOsSupportsTransactionalUpdate()) {
-            beaconConfig.put("reboot_info", REBOOT_INFO_BEACON_PROPS);
+            beaconConfig.put("reboot_info", minion.isRedHat() ? REBOOT_INFO_BEACON_PROPS_RH : REBOOT_INFO_BEACON_PROPS);
         }
         if (!beaconConfig.isEmpty()) {
             pillar.add("beacons", beaconConfig);
         }
 
+        Optional<ServerCoCoAttestationConfig> cocoCnf = minion.getOptCocoAttestationConfig();
+        cocoCnf.filter(ServerCoCoAttestationConfig::isEnabled).ifPresent(cnf -> {
+            AttestationFactory attfct = new AttestationFactory();
+            Map<String, Object> attestationPillar = attfct.lookupLatestReportByServer(minion)
+                    .filter(r -> r.getStatus().equals(CoCoAttestationStatus.PENDING))
+                    .map(r -> new HashMap<>(r.getInData()))
+                    .orElse(new HashMap<>());
+            attestationPillar.put("environment_type", cnf.getEnvironmentType().name());
+            pillar.add("attestation_data", attestationPillar);
+        });
         return Optional.of(pillar);
     }
 
@@ -162,11 +170,6 @@ public class MinionGeneralPillarGenerator implements MinionPillarGenerator {
         // Flag to override dnf modularity failsafe mechanism (module_hotfixes)
         chanProps.put("cloned_nonmodular", chan.isCloned() && !chan.isModular());
         return chanProps;
-    }
-
-    @Override
-    public String getFilename(String minionId) {
-        return PILLAR_DATA_FILE_PREFIX + "_" + minionId + "." + PILLAR_DATA_FILE_EXT;
     }
 
     @Override

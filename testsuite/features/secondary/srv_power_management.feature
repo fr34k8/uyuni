@@ -1,8 +1,10 @@
 # Copyright (c) 2015-2022 SUSE LLC
 # Licensed under the terms of the MIT license.
 
+@skip_if_github_validation
 @scope_power_management
 @scope_cobbler
+@sle_minion
 Feature: IPMI Power management
 
   Scenario: Fake an IPMI host
@@ -10,6 +12,9 @@ Feature: IPMI Power management
 
   Scenario: Log in as admin user
     Given I am authorized for the "Admin" section
+
+  Scenario: Start Cobbler monitoring
+    When I start local monitoring of Cobbler
 
   Scenario: Check the power management page
     Given I am on the Systems overview page of this "sle_minion"
@@ -20,12 +25,12 @@ Feature: IPMI Power management
     And I should see a "Save" button
 
   Scenario: Save power management values
-    When I enter "127.0.0.1" as "powerAddress"
+    When I enter "fakeipmi" as "powerAddress"
     And I enter "ipmiusr" as "powerUsername"
     And I enter "test" as "powerPassword"
     And I click on "Save"
     Then I should see a "Power settings saved" text
-    And the cobbler report should contain "Power Management Address       : 127.0.0.1" for "sle_minion"
+    And the cobbler report should contain "Power Management Address       : fakeipmi" for "sle_minion"
     And the cobbler report should contain "Power Management Username      : ipmiusr" for "sle_minion"
     And the cobbler report should contain "Power Management Password      : test" for "sle_minion"
     And the cobbler report should contain "Power Management Type          : ipmilan" for "sle_minion"
@@ -70,7 +75,7 @@ Feature: IPMI Power management
     Then I should see a "Configuration successfully saved for 1 system(s)" text
     And the cobbler report should contain "Power Management Username      : testing" for "sle_minion"
     And the cobbler report should contain "Power Management Password      : qwertz" for "sle_minion"
-    And the cobbler report should contain "Power Management Address       : 127.0.0.1" for "sle_minion"
+    And the cobbler report should contain "Power Management Address       : fakeipmi" for "sle_minion"
     And the cobbler report should contain "Power Management Type          : ipmilan" for "sle_minion"
 
   Scenario: Check power management SSM operation
@@ -96,3 +101,6 @@ Feature: IPMI Power management
 
   Scenario: Cleanup: remove remaining systems from SSM after power management tests
     When I click on the clear SSM button
+
+  Scenario: Check for errors in Cobbler monitoring
+    Then the local logs for Cobbler should not contain errors

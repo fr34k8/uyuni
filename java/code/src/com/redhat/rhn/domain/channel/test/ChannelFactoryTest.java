@@ -26,10 +26,10 @@ import com.redhat.rhn.domain.channel.ChannelArch;
 import com.redhat.rhn.domain.channel.ChannelFactory;
 import com.redhat.rhn.domain.channel.ChannelFamily;
 import com.redhat.rhn.domain.channel.ChannelFamilyFactory;
+import com.redhat.rhn.domain.channel.ChannelSyncFlag;
 import com.redhat.rhn.domain.channel.ClonedChannel;
 import com.redhat.rhn.domain.channel.ContentSource;
 import com.redhat.rhn.domain.channel.ContentSourceType;
-import com.redhat.rhn.domain.channel.Modules;
 import com.redhat.rhn.domain.channel.ProductName;
 import com.redhat.rhn.domain.common.ChecksumType;
 import com.redhat.rhn.domain.kickstart.KickstartInstallType;
@@ -50,8 +50,6 @@ import com.redhat.rhn.testing.UserTestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -549,6 +547,119 @@ public class ChannelFactoryTest extends RhnBaseTestCase {
     }
 
     /**
+     * Test org channel accessibility
+     *
+     * @throws Exception if anything goes wrong
+     */
+    @Test
+    public void testOrgAccessibility() throws Exception {
+        User user1 = UserTestUtils.findNewUser("testuser1", "testorg1");
+        User user2 = UserTestUtils.findNewUser("testuser2", "testorg2");
+        User user3 = UserTestUtils.findNewUser("testuser3", "testorg3");
+        User user4 = UserTestUtils.findNewUser("testuser4", "testorg4");
+        Org org1 = user1.getOrg();
+        Org org2 = user2.getOrg();
+        Org org3 = user3.getOrg();
+        Org org4 = user4.getOrg();
+
+
+        Channel c1 = ChannelFactoryTest.createTestChannel(user1);
+        Channel c2 = ChannelFactoryTest.createTestChannel(user2);
+
+        assertTrue(ChannelFactory.isAccessibleBy(c1.getLabel(), org1.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org2.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org3.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org4.getId()));
+
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org1.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c2.getLabel(), org2.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org3.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org4.getId()));
+
+        ChannelFamily privcfam = ChannelFamilyFactoryTest.createTestChannelFamily(user3, false);
+        ChannelFamily pubcfam = ChannelFamilyFactoryTest.createTestChannelFamily(user4, true);
+
+        c1.setChannelFamily(privcfam);
+        TestUtils.saveAndFlush(c1);
+
+        c2.setChannelFamily(pubcfam);
+        TestUtils.saveAndFlush(c2);
+
+        // c1 belongs to user3 org now
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org1.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org2.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c1.getLabel(), org3.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org4.getId()));
+
+        // c2 is public now
+        assertTrue(ChannelFactory.isAccessibleBy(c2.getLabel(), org1.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c2.getLabel(), org2.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c2.getLabel(), org3.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c2.getLabel(), org4.getId()));
+    }
+
+    /**
+     * Test trusted org channel accessibility
+     *
+     * @throws Exception if anything goes wrong
+     */
+    @Test
+    public void testTrustedOrgAccessibility() throws Exception {
+        User user1 = UserTestUtils.findNewUser("testuser1", "testorg1");
+        User user2 = UserTestUtils.findNewUser("testuser2", "testorg2");
+        User user3 = UserTestUtils.findNewUser("testuser3", "testorg3");
+        User user4 = UserTestUtils.findNewUser("testuser4", "testorg4");
+        Org org1 = user1.getOrg();
+        Org org2 = user2.getOrg();
+        Org org3 = user3.getOrg();
+        Org org4 = user4.getOrg();
+
+        Channel c1 = ChannelFactoryTest.createTestChannel(user1);
+        Channel c2 = ChannelFactoryTest.createTestChannel(user2);
+
+        assertTrue(ChannelFactory.isAccessibleBy(c1.getLabel(), org1.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org2.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org3.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org4.getId()));
+
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org1.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c2.getLabel(), org2.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org3.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org4.getId()));
+
+        // trusted org added to org
+        org1.getTrustedOrgs().add(org3);
+        c1.setAccess(Channel.PUBLIC);
+        flushAndEvict(org1);
+        flushAndEvict(c1);
+
+        assertTrue(ChannelFactory.isAccessibleBy(c1.getLabel(), org1.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org2.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c1.getLabel(), org3.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org4.getId()));
+
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org1.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c2.getLabel(), org2.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org3.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org4.getId()));
+
+        // trusted org added to channel
+        c2.getTrustedOrgs().add(org4);
+        c2.setAccess(Channel.PROTECTED);
+        flushAndEvict(c2);
+
+        assertTrue(ChannelFactory.isAccessibleBy(c1.getLabel(), org1.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org2.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c1.getLabel(), org3.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c1.getLabel(), org4.getId()));
+
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org1.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c2.getLabel(), org2.getId()));
+        assertFalse(ChannelFactory.isAccessibleBy(c2.getLabel(), org3.getId()));
+        assertTrue(ChannelFactory.isAccessibleBy(c2.getLabel(), org4.getId()));
+    }
+
+    /**
      * Test "ChannelFactory.findAllByUserOrderByChild"
      * @throws Exception
      */
@@ -591,28 +702,49 @@ public class ChannelFactoryTest extends RhnBaseTestCase {
         assertEquals("a_child1", channels.get(2).getLabel());
         assertEquals("b_parent3", channels.get(3).getLabel());
     }
-
     @Test
-    public void testCloneModulesMetadata() throws Exception {
-        User user = UserTestUtils.findNewUser("testUser", "testOrg" + this.getClass().getSimpleName());
-        Instant nowDate = Instant.now();
-        Channel orig = ChannelTestUtils.createTestChannel(user);
-        Modules modules = new Modules("modules1.yaml", Date.from(nowDate.minus(Duration.ofHours(1))));
-        modules.setChannel(orig);
-        orig.addModules(modules);
-        assertTrue(orig.isModular());
+    public void testChannelSyncFlag() throws Exception {
 
-        Channel clone = ChannelTestUtils.createTestChannel(user);
-        modules = new Modules("modules2.yaml", Date.from(nowDate));
-        modules.setChannel(clone);
-        clone.addModules(modules);
-        assertTrue(clone.isModular());
+        User user = UserTestUtils.findNewUser("testuser", "testorg");
+        Channel channel = ChannelFactoryTest.createTestChannel(user);
+        ChannelFactory.save(channel);
+        long channelId = channel.getId();
+        TestUtils.flushAndEvict(channel);
 
-        ChannelFactory.cloneModulesMetadata(orig, clone);
+        Channel ch = ChannelFactory.lookupByIdAndUser(channelId, user);
+        assertNotNull(ch);
+        ChannelSyncFlag csf = ch.getChannelSyncFlag();
 
-        assertTrue(clone.isModular());
-        assertEquals(1, clone.getModules().size());
-        assertEquals("modules1.yaml", clone.getLatestModules().getRelativeFilename());
-        assertEquals(orig.getLatestModules().getLastModified(), clone.getLatestModules().getLastModified());
+        assertNotNull(csf);
+        assertFalse(csf.isCreateTree());
+        assertFalse(csf.isNoErrata());
+        assertFalse(csf.isNoStrict());
+        assertFalse(csf.isOnlyLatest());
+        assertFalse(csf.isQuitOnError());
+
+        ChannelSyncFlag csf2 = ChannelFactory.lookupChannelReposyncFlag(channel);
+
+        assertNotNull(csf2);
+        assertFalse(csf2.isCreateTree());
+        assertFalse(csf2.isNoErrata());
+        assertFalse(csf2.isNoStrict());
+        assertFalse(csf2.isOnlyLatest());
+        assertFalse(csf2.isQuitOnError());
+
+        csf.setCreateTree(true);
+        csf.setNoErrata(true);
+        csf.setNoStrict(true);
+        csf.setOnlyLatest(true);
+        csf.setQuitOnError(true);
+
+        ChannelFactory.save(csf);
+        flushAndEvict(csf);
+
+        assertNotNull(csf);
+        assertTrue(csf.isCreateTree());
+        assertTrue(csf.isNoErrata());
+        assertTrue(csf.isNoStrict());
+        assertTrue(csf.isOnlyLatest());
+        assertTrue(csf.isQuitOnError());
     }
 }

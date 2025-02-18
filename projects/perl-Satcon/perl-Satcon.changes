@@ -1,4 +1,40 @@
 -------------------------------------------------------------------
+Fri Jan 24 14:48:16 CET 2025 - marina.latini@suse.com
+
+- version 5.1.2-0
+  * Remove useless SELinux related code
+
+-------------------------------------------------------------------
+Mon Oct 14 15:38:49 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Tue Jan 16 08:28:14 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Bump version to 5.0.0
+
+-------------------------------------------------------------------
+Fri Dec 15 16:53:55 CET 2023 - rosuna@suse.com
+
+- version 4.4.4-1
+  * Remove unused makefiles
+
+-------------------------------------------------------------------
+Mon Sep 18 14:11:41 CEST 2023 - rosuna@suse.com
+
+- version 4.4.3-1
+  * Fix to detect correct Apache group instead of assuming it (gh#7092)
+
+-------------------------------------------------------------------
+Wed Apr 19 12:46:08 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.2-1
+  * accept keys with dots
+
+-------------------------------------------------------------------
 Wed Sep 28 11:14:34 CEST 2022 - jgonzalez@suse.com
 
 - version 4.4.1-1

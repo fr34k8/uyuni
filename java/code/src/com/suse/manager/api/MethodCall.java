@@ -50,13 +50,14 @@ public class MethodCall {
         return method.invoke(obj, args);
     }
 
+    public Method getMethod() {
+        return method;
+    }
+
     private void ensureUserAccess() throws UserNotPermittedException {
         for (Object arg : args) {
-            if (arg instanceof User) {
-                User user = (User) arg;
-                if (user.isReadOnly() && !method.isAnnotationPresent(ReadOnly.class)) {
+            if (arg instanceof User user && user.isReadOnly() && !method.isAnnotationPresent(ReadOnly.class)) {
                     throw new UserNotPermittedException("The method is not available to read-only API users");
-                }
             }
         }
     }

@@ -12,20 +12,13 @@
   <property name="test.lib.dir" location="${build.dir}/test-lib" />
   <property name="boot.lib.dir" location="${build.dir}/boot-lib" />
   <property name="report.dir" location="${build.dir}/reports" />
-  <property name="javadoc.deploydir" location="/usr/share/javadoc/rhn-java" />
-  <property name="build.instrument.dir" location="${build.dir}/instrumented" />
   <property name="taskomatic.link.dir" location="/usr/share/spacewalk/taskomatic" />
 
-  <property name="eclipse.lib.dirs" location="${lib.dir}" />
-  <property name="system.lib.dir" location="/usr/share/java" />
-
   <property name="log4j.threshold" value="warn" />
-  <property name="rhn.checkout.dir" value="" />
   <property name="halt-tests-on-failure" value="false" />
   <property name="checkstyle.header.file" value="${rhn-home}/buildconf/LICENSE.txt" />
   <property name="checkstyle.cache.src" value="${rhn-home}/build/checkstyle.cache.src" />
   <property name="checkstyle.cache.test" value="${rhn-home}/build/checkstyle.cache.test" />
-  <property name="coverage.out.file" value="${rhn-home}/coverage.ec" />
   <property name="javadoc.lazy" value="false" />
   <property name="deprecation" value="off" />
   <property name="nowarn" value="!${deprecation}" />
@@ -43,15 +36,15 @@
   <property name="megajar.jar" value="${run.lib.dir}/rhn.jar" />
   <property name="testjar.jar" value="${run.lib.dir}/rhn-test.jar" />
 
-  <property name="build.rhn.conf" value="${basedir}/conf/rhn/rhn.conf"/>
-  <property name="build.webapp.conf" value="${basedir}/conf/httpd/webapp.conf"/>
-  <property name="git.home" location="${basedir}/../"/>
-
   <!-- =================== jar dependencies ======================= -->
   <property name="commons-lang" value="commons-lang3"/>
 
   <condition property="byte-buddy" value="byte-buddy/byte-buddy.jar" else="byte-buddy.jar">
     <available file="${java.lib.dir}/byte-buddy/byte-buddy.jar"/>
+  </condition>
+
+  <condition property="byte-buddy-dep" value="byte-buddy/byte-buddy-dep.jar" else="byte-buddy-dep.jar">
+    <available file="${java.lib.dir}/byte-buddy/byte-buddy-dep.jar"/>
   </condition>
 
   <available file="${java.lib.dir}/hibernate/hibernate-commons-annotations.jar" type="file"
@@ -71,7 +64,8 @@
 
   <available file="${java.lib.dir}/log4j/log4j-core.jar" type="file" property="log4j-core" value="log4j/log4j-core" />
   <available file="${java.lib.dir}/log4j/log4j-api.jar" type="file" property="log4j-api" value="log4j/log4j-api" />
-  <property name="log4j-jars" value="${log4j-core} ${log4j-api}"/>
+  <available file="${java.lib.dir}/log4j/log4j-jcl.jar" type="file" property="log4j-jcl" value="log4j/log4j-jcl" />
+  <property name="log4j-jars" value="${log4j-core} ${log4j-api} ${log4j-jcl}"/>
 
   <condition property="jta11-jars" value="geronimo-jta-1.1-api" else="jta">
     <available file="${java.lib.dir}/geronimo-jta-1.1-api.jar" />
@@ -88,8 +82,8 @@
   <available file="${java.lib.dir}/ehcache.jar" type="file" property="ehcache" value="ehcache" />
   <available file="${java.lib.dir}/ehcache-core.jar" type="file" property="ehcache" value="ehcache-core" />
 
-  <condition property="jaf" value="glassfish-activation-api" else="jaf">
-    <available file="${java.lib.dir}/glassfish-activation-api.jar"/>
+  <condition property="jaf" value="glassfish-activation" else="jaf">
+    <available file="${java.lib.dir}/glassfish-activation.jar"/>
   </condition>
   <condition property="jaf" value="jakarta-activation">
     <available file="${java.lib.dir}/jakarta-activation/jakarta.activation.jar"/>
@@ -103,8 +97,11 @@
   <condition property="jaxb-api" value="jaxb-api" else="">
     <available file="${java.lib.dir}/jaxb-api.jar" />
   </condition>
-  <condition property="jaxb-core" value="glassfish-jaxb/jaxb-core" else="">
-    <available file="${java.lib.dir}/glassfish-jaxb/jaxb-core.jar" />
+  <condition property="glassfish-jaxb-api" value="glassfish-jaxb-api" else="">
+    <available file="${java.lib.dir}/glassfish-jaxb-api.jar" />
+  </condition>
+  <condition property="jaxb-impl" value="glassfish-jaxb/jaxb-impl" else="">
+    <available file="${java.lib.dir}/glassfish-jaxb/jaxb-impl.jar" />
   </condition>
   <condition property="jaxb-runtime" value="glassfish-jaxb/jaxb-runtime" else="">
     <available file="${java.lib.dir}/glassfish-jaxb/jaxb-runtime.jar" />
@@ -115,14 +112,14 @@
   <condition property="istack-commons" value="istack-commons-runtime" else="">
     <available file="${java.lib.dir}/istack-commons-runtime.jar" />
   </condition>
-  <property name="jaxb" value="${jaxb-api} ${jaxb-core} ${jaxb-runtime} ${txw2} ${istack-commons}"/>
+  <property name="jaxb" value="${jaxb-api} ${glassfish-jaxb-api} ${jaxb-impl} ${jaxb-runtime} ${txw2} ${istack-commons}"/>
 
 
   <condition property="hibernate5files" value="hibernate5/hibernate-core hibernate5/hibernate-c3p0 hibernate5/hibernate-ehcache" else="hibernate-ehcache-5 hibernate-c3p0-5 hibernate-core-5">
     <available file="${java.lib.dir}/hibernate5/hibernate-core.jar" type="file"/>
   </condition>
 
-  <property name="hibernate5deps" value="${hibernate5files} ${hibernate-commons-annotations} slf4j/api jpa-api/jakarta.persistence-api ${byte-buddy} jboss-logging javassist log4j/log4j-slf4j-impl ${ehcache} classmate/classmate statistics hibernate-types/hibernate-types-52 jackson-databind jackson-core jackson-annotations"/>
+  <property name="hibernate5deps" value="${hibernate5files} ${hibernate-commons-annotations} slf4j/api jpa-api/jakarta.persistence-api ${byte-buddy} ${byte-buddy-dep} jboss-logging javassist log4j/log4j-slf4j-impl ${ehcache} classmate/classmate statistics hibernate-types/hibernate-types-52 jackson-databind jackson-core jackson-annotations"/>
 
   <property name="c3p0" value="c3p0"/>
   <available file="${java.lib.dir}/mchange-commons/mchange-commons-java.jar" type="file" property="c3p0" value="${c3p0} mchange-commons/mchange-commons-java"/>
@@ -142,18 +139,16 @@
   <available file="${java.lib.dir}/cglib/cglib.jar" type="file" property="cglib-jar" value="cglib/cglib" />
   <available file="${java.lib.dir}/cglib.jar" type="file" property="cglib-jar" value="cglib" />
 
-  <property name="boot.jar.dependencies" value="ivy" />
-
   <property name="common.jar.dependencies"
       value="bcel ${cglib-jar} commons-beanutils commons-cli commons-codec
              commons-collections commons-digester commons-discovery
              commons-el commons-fileupload commons-io ${commons-lang} commons-logging ${commons-validator} ${hibernate5deps}
              ${commons-compress} ${javamail} smtp jdom ${jmock-jars}
              ${log4j-jars} oro redstone-xmlrpc-client redstone-xmlrpc ${struts-jars} ${tomcat-jars}
-             bcprov bcpg jcommon stringtree-json postgresql-jdbc ongres-scram/client ongres-scram/common
+             bcprov bcpg postgresql-jdbc ongres-scram/client ongres-scram/common
              ${stringprep-jars} taglibs-standard-impl taglibs-standard-jstlel
              taglibs-standard-spec logdriver quartz slf4j-api log4j/log4j-slf4j-impl
-             concurrent velocity-engine-core simple-core  mockobjects mockobjects-core mockobjects-jdk1.4-j2ee1.3 strutstest" />
+             velocity-engine-core simple-core  mockobjects mockobjects-core mockobjects-jdk1.4-j2ee1.3 strutstest" />
 
   <!-- deps needed for testing, but required to build -->
   <property name="test.build.jar.dependencies" value="junit ${log4j-jars} regexp ${jmock-jars} postgresql-jdbc" />
@@ -171,7 +166,7 @@
   <property name="build.jar.dependencies"
       value="ant ant-junit ${ant-contrib.path} antlr  ${test.build.jar.dependencies}
       ${common.jar.dependencies} ${tomcat-jars} ${jasper-jars}
-       concurrent xalan-j2" />
+       xalan-j2" />
 
   <property name="run.jar.dependencies"
       value="antlr objectweb-asm/asm ${cglib-jar} ${c3p0} commons-discovery dom4j ${jaf} ${jta11-jars} ojdbc14 sitemesh
@@ -185,7 +180,7 @@
              regexp ${jmock-jars} strutstest" / -->
 
   <!-- SUSE extra dependencies: build and runtime -->
-  <property name="suse-common-jars" value="jade4j jose4j salt-netapi-client spark-core spark-template-jade httpasyncclient simpleclient simpleclient_common simpleclient_hibernate simpleclient_servlet simpleclient_httpserver pgjdbc-ng/pgjdbc-ng pgjdbc-ng/spy netty/netty-common netty/netty-buffer netty/netty-resolver netty/netty-transport netty/netty-codec netty/netty-handler netty/netty-transport-native-unix-common java-saml java-saml-core joda-time woodstox-core-asl xmlsec stax2-api stax-api ${commons-jexl} ical4j ${product-common-jars}" />
+  <property name="suse-common-jars" value="jade4j jose4j salt-netapi-client spark-core spark-template-jade httpasyncclient simpleclient simpleclient_common simpleclient_hibernate simpleclient_servlet simpleclient_httpserver pgjdbc-ng/pgjdbc-ng pgjdbc-ng/spy netty/netty-common netty/netty-buffer netty/netty-resolver netty/netty-transport netty/netty-codec netty/netty-handler netty/netty-transport-native-unix-common java-saml java-saml-core joda-time woodstox-core-asl xmlsec stax2-api stax-api ${commons-jexl} ical4j ${product-common-jars} ${jaxb}" />
 
   <!-- SUSE extra dependencies: runtime only -->
   <property name="suse-runtime-jars" value="${commons-lang} concurrentlinkedhashmap-lru
@@ -206,20 +201,20 @@
              commons-el commons-fileupload commons-io ${commons-lang} commons-logging ${commons-validator} ${hibernate5deps}
              ${commons-compress} ${tomcat-jars} ${javamail} jdom jsch
              ${log4j-jars} oro redstone-xmlrpc-client redstone-xmlrpc ${struts-jars}
-             jcommon stringtree-json postgresql-jdbc ongres-scram/client ongres-scram/common
+             postgresql-jdbc ongres-scram/client ongres-scram/common
              ${stringprep-jars} taglibs-standard-impl taglibs-standard-jstlel
              taglibs-standard-spec quartz ${suse-common-jars} velocity-engine-core
-             concurrent simple-core snakeyaml simple-xml ${commons-jexl}" />
+             simple-core snakeyaml simple-xml ${commons-jexl}" />
 
   <property name="dist.jar.dependencies"
       value="antlr objectweb-asm/asm bcel ${c3p0} ${cglib-jar}
              commons-collections commons-beanutils commons-cli commons-codec
              commons-digester commons-discovery commons-el commons-fileupload commons-io
              ${commons-lang} commons-logging ${commons-compress}
-             ${commons-validator} concurrent dom4j ${hibernate5deps} ${jta11-jars}
-             ${jaf} ${jasper-jars} ${javamail} ${jaxb} jcommon jdom ${other-jars}
+             ${commons-validator} dom4j ${hibernate5deps} ${jta11-jars}
+             ${jaf} ${jasper-jars} ${javamail} ${jaxb} jdom ${other-jars}
              ${tomcat-jars} ${log4j-jars} redstone-xmlrpc-client redstone-xmlrpc
-             oro quartz stringtree-json sitemesh ${struts-jars}
+             oro quartz sitemesh ${struts-jars}
              taglibs-standard-impl taglibs-standard-jstlel taglibs-standard-spec
              postgresql-jdbc ongres-scram/client ongres-scram/common ${stringprep-jars}
              snakeyaml simple-xml ${suse-common-jars} ${suse-runtime-jars}
@@ -254,12 +249,6 @@
   </path>
 
   <!-- =================== Deployment Properties ======================= -->
-  <!-- Used for war deployment -->
-  <property name="catalina.hostname" value="localhost" />
-  <property name="catalina.port"     value="8080" />
-  <property name="catalina.username" value="rhndev" />
-  <property name="catalina.password" value="spacewalk" />
-  <property name="rhnapp"            value="rhn" />
   <!-- Used for local dir deployment -->
   <property name="webapp.basedir"    value="${rhn-home}" />
   <property name="webapp.name"       value="rhnwebapp" />

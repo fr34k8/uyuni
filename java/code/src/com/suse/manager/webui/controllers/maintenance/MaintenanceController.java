@@ -18,6 +18,7 @@ package com.suse.manager.webui.controllers.maintenance;
 import static com.suse.manager.maintenance.rescheduling.RescheduleStrategyType.CANCEL;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.asJson;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
+import static com.suse.manager.webui.utils.SparkApplicationHelper.result;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUser;
 import static spark.Spark.get;
 import static spark.Spark.post;
@@ -40,6 +41,7 @@ import com.suse.manager.webui.utils.gson.ResultJson;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
@@ -57,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 import spark.Request;
 import spark.Response;
@@ -118,7 +119,7 @@ public class MaintenanceController {
             }
         }
 
-        return json(res, ResultJson.success(data));
+        return result(res, ResultJson.success(data), new TypeToken<>() { });
     }
 
     /**
@@ -154,7 +155,7 @@ public class MaintenanceController {
             log.error(e.getMessage());
             Spark.halt(HttpStatus.SC_BAD_REQUEST, GSON.toJson(ResultJson.error(e.getMessage())));
         }
-        return json(response, eventsToJson(user, events));
+        return json(response, eventsToJson(user, events), new TypeToken<>() { });
     }
 
     static void handleRescheduleResult(List<RescheduleResult> results, RescheduleStrategyType strategy) {
@@ -192,7 +193,7 @@ public class MaintenanceController {
     }
 
     private static List<MaintenanceWindowDataJson> eventsToJson(User user, List<MaintenanceWindowData> events) {
-        return events.stream().map(event -> eventToJson(user, event)).collect(Collectors.toList());
+        return events.stream().map(event -> eventToJson(user, event)).toList();
     }
 
     private static MaintenanceWindowDataJson eventToJson(User user, MaintenanceWindowData event) {

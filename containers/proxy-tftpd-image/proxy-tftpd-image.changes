@@ -1,4 +1,99 @@
-- Adapt to log_level default value being 1
+-------------------------------------------------------------------
+Fri Jan 24 13:41:43 CET 2025 - marina.latini@suse.com
+
+- version 5.1.3
+  * Update for next release
+
+-------------------------------------------------------------------
+Thu Dec 12 10:36:40 CET 2024 - rosuna@suse.com
+
+- version 5.1.2
+  * Update for next release
+
+-------------------------------------------------------------------
+Mon Oct 14 17:24:53 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Thu Aug 01 18:34:17 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.7
+  * Update for next release
+
+-------------------------------------------------------------------
+Mon Jun 10 17:56:02 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6
+  * Replace central Server URLs in system profiles, instead point
+    to the Proxy host (bsc#1223855)
+  * Do not ignore ONTIMEOUT PXE in Cobbler case (bsc#1223850)
+  * Fix PXE system entries filter to actually store
+    results (bsc#1225165)
+
+-------------------------------------------------------------------
+Fri May 03 15:20:09 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.5
+  * Translate Server FQDN to Proxy FQDN for PXE boot menus
+
+-------------------------------------------------------------------
+Mon Apr 08 12:19:15 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.4
+  * Connect to localhost instead of FQDN from tftp wrapper (bsc#1221138)
+
+-------------------------------------------------------------------
+Tue Feb 13 17:00:31 CET 2024 - marina.latini@suse.com
+
+- version 5.0.3
+  * SUSE Manager 5.0 Beta1 release
+
+-------------------------------------------------------------------
+Mon Jan 29 11:41:12 CET 2024 - rosuna@suse.com
+
+- version 5.0.2
+  * Simplify publishing to Open Build Service
+
+-------------------------------------------------------------------
+Fri Jan 12 12:15:31 CET 2024 - marina.latini@suse.com
+
+- version 5.0.1
+  * Bump version to 5.0.0
+  * Use product version in reference label
+
+-------------------------------------------------------------------
+Mon Dec 18 14:34:17 CET 2023 - rosuna@suse.com
+
+- version 4.4.3
+  * Uyuni 2023.12 release
+
+-------------------------------------------------------------------
+Wed Nov 01 21:25:13 CET 2023 - marina.latini@suse.com
+
+- version 4.4.2
+  * Remove statically defined image tags
+
+-------------------------------------------------------------------
+Mon Sep 18 17:04:14 CEST 2023 - rosuna@suse.com
+
+- version 4.4.1
+  * Adapt to openSUSE Leap 15.5
+  * Show only cobbler menu entries for given branch
+  * Integrate the containerized proxy into the usual rel-eng workflow
+
+-------------------------------------------------------------------
+Wed Apr 19 18:15:40 UTC 2023 - Marina Latini <marina.latini@suse.com>
+
+- Update the image version to 2023.04:
+  * Fix handling of http 404 (bsc#1208624)
+
+-------------------------------------------------------------------
+Tue Feb 21 13:16:11 UTC 2023 - Julio González Gil <jgonzalez@suse.com>
+
+- Update the image version to 2023.03:
+  * Adapt to log_level default value being 1
 
 -------------------------------------------------------------------
 Mon Jan 23 07:34:24 UTC 2023 - Julio González Gil <jgonzalez@suse.com>

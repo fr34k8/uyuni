@@ -16,6 +16,11 @@ products:
     - name: pkg.list_products
 {% elif grains['os_family'] == 'RedHat' %}
 {% include 'packages/redhatproductinfo.sls' %}
+{% if grains['osmajorrelease'] >= 8 %}
+modules:
+  mgrcompat.module_run:
+    - name: appstreams.get_enabled_modules
+{% endif %}
 {% elif grains['os_family'] == 'Debian' %}
 debianrelease:
   cmd.run:
@@ -39,6 +44,21 @@ grains_update:
 {%- endif %}
 
 {% if not pillar.get('imagename') %}
+
+status_uptime:
+  mgrcompat.module_run:
+    - name: status.uptime
+
+{%- if not grains.get('transactional', False) %}
+reboot_required:
+  mgrcompat.module_run:
+    - name: reboot_info.reboot_required
+    {%- if grains['os_family'] == 'RedHat' and grains['osmajorrelease'] < 8 %}
+    - onlyif:
+      - which needs-restarting
+    {%- endif %}
+{%- endif %}
+
 kernel_live_version:
   mgrcompat.module_run:
     - name: sumautil.get_kernel_live_version

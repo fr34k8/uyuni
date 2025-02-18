@@ -21,12 +21,12 @@ import com.redhat.rhn.domain.rhnpackage.PackageArch;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 
 /**
  * POJO for a suseProducts row.
@@ -79,7 +79,23 @@ public class SUSEProduct extends BaseDomainHelper implements Serializable {
     private Set<SUSEProductChannel> suseProductChannels = new HashSet<>();
 
     /** repositories */
-    private Set<SUSEProductSCCRepository> repositories = new HashSet<>();
+    private Set<ChannelTemplate> channelTemplates = new HashSet<>();
+
+    /**
+     * Default constructor.
+     */
+    public SUSEProduct() {
+        // Just create an empty object
+    }
+
+    /**
+     * Create a product with the given name. Convenience constructor for unit testing.
+     *
+     * @param nameIn the product name
+     */
+    public SUSEProduct(String nameIn) {
+        this.name = nameIn;
+    }
 
     /**
      * Gets the id.
@@ -318,17 +334,17 @@ public class SUSEProduct extends BaseDomainHelper implements Serializable {
     }
 
     /**
-     * @return Returns the repositories provided by SCC.
+     * @return Returns the channel templates provided by SCC.
      */
-    public Set<SUSEProductSCCRepository> getRepositories() {
-        return repositories;
+    public Set<ChannelTemplate> getChannelTemplates() {
+        return channelTemplates;
     }
 
     /**
-     * @param repositoriesIn The repositories to set.
+     * @param channelTemplatesIn The channel templates to set.
      */
-    public void setRepositories(Set<SUSEProductSCCRepository> repositoriesIn) {
-        this.repositories = repositoriesIn;
+    public void setChannelTemplates(Set<ChannelTemplate> channelTemplatesIn) {
+        this.channelTemplates = channelTemplatesIn;
     }
 
     /**
@@ -346,10 +362,9 @@ public class SUSEProduct extends BaseDomainHelper implements Serializable {
      */
     @Override
     public boolean equals(Object otherObject) {
-        if (!(otherObject instanceof SUSEProduct)) {
+        if (!(otherObject instanceof SUSEProduct other)) {
             return false;
         }
-        SUSEProduct other = (SUSEProduct) otherObject;
         return new EqualsBuilder()
             .append(getName(), other.getName())
             .append(getVersion(), other.getVersion())
@@ -371,15 +386,19 @@ public class SUSEProduct extends BaseDomainHelper implements Serializable {
             .toHashCode();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
-        return new StringJoiner(", ", SUSEProduct.class.getSimpleName() + "[", "]")
-                .add(Long.toString(getId()))
-                .add(getName())
-                .add(getVersion())
-                .add(getRelease())
-                .add(getArch().getLabel())
-                .add("SCCid=" + Long.toString(getProductId()))
+        return new ToStringBuilder(this)
+                .append("id", getId())
+                .append("name", getName())
+                .append("version", getVersion())
+                .append("release", getRelease())
+                .append("arch", getArch().getLabel())
+                .append("productId", getProductId())
+                .append("friendlyName", getFriendlyName())
                 .toString();
     }
 }

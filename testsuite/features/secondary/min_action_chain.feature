@@ -1,5 +1,10 @@
-# Copyright (c) 2018-2022 SUSE LLC
+# Copyright (c) 2018-2025 SUSE LLC
 # Licensed under the terms of the MIT license.
+#
+# This feature can cause failures in the following features:
+# - features/secondary/minssh_action_chain.feature
+# - features/secondary/allcli_action_chain.feature
+# If the action chain fails to be completed and run.
 
 @sle_minion
 @scope_action_chains
@@ -44,6 +49,8 @@ Feature: Action chains on Salt minions
     Given I am on the Systems overview page of this "sle_minion"
     When I follow "Software" in the content area
     And I follow "Patches" in the content area
+    And I enter "andromeda" as the filtered synopsis
+    And I click on the filter button
     And I check "andromeda-dummy-6789" in the list
     And I click on "Apply Patches"
     And I check radio button "schedule-by-action-chain"
@@ -128,6 +135,7 @@ Feature: Action chains on Salt minions
     And I check radio button "schedule-by-action-chain"
     And I click on "Apply Highstate"
 
+@skip_if_github_validation
   Scenario: Add a reboot action to the action chain on Salt minion
     Given I am on the Systems overview page of this "sle_minion"
     When I follow first "Schedule System Reboot"
@@ -156,8 +164,7 @@ Feature: Action chains on Salt minions
     And I should see a "3. Install or update virgo-dummy on 1 system" text
     And I should see a text like "4. Deploy.*/etc/action-chain.cnf.*to 1 system"
     And I should see a "5. Apply Highstate" text
-    And I should see a "6. Reboot 1 system" text
-    And I should see a "7. Run a remote command on 1 system" text
+    And I should see a "Run a remote command on 1 system" text
 
   Scenario: Check that a different user cannot see the action chain for Salt minion
     Given I am authorized as "testing" with password "testing"
@@ -196,7 +203,8 @@ Feature: Action chains on Salt minions
     And I click on "Delete"
 
   Scenario: Downgrade again repositories to lower version on Salt minion
-    When I remove package "andromeda-dummy" from this "sle_minion" without error control
+    When I enable repository "test_repo_rpm_pool" on this "sle_minion"
+    And I remove package "andromeda-dummy" from this "sle_minion" without error control
     And I remove package "virgo-dummy" from this "sle_minion" without error control
     And I install package "milkyway-dummy" on this "sle_minion" without error control
     And I install old package "andromeda-dummy-1.0" on this "sle_minion"

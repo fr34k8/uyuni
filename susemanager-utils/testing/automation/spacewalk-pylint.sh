@@ -38,76 +38,33 @@ proxy/installer/rhn-proxy-activate.py
 proxy/proxy/wsgi/xmlrpc.py
 proxy/proxy/wsgi/xmlrpc_redirect.py
 reporting/reports.py
-utils/apply_errata
 utils/cloneByDate.py
-utils/delete-old-systems-interactive
 utils/depsolver.py
 utils/__init__.py
-utils/migrate-system-profile
-utils/migrateSystemProfile.py
-utils/spacewalk-api
 utils/spacewalk-clone-by-date
 utils/spacewalk-common-channels
 utils/spacewalk-dump-schema
-utils/spacewalk-export
-utils/spacewalk-export-channels
-utils/spacewalk-final-archive
 utils/spacewalk-hostname-rename
 utils/spacewalk-manage-channel-lifecycle
-utils/spacewalk-manage-snapshots
 utils/spacewalk-sync-setup
 utils/spacewalk-utils.changes
-utils/sw-ldap-user-sync
-utils/sw-system-snapshot
 utils/systemSnapshot.py
 utils/taskotop
 spacewalk/certs-tools/
 spacewalk/setup/share/embedded_diskspace_check.py
-suseRegisterInfo/suseRegister/
 
 client/debian/apt-spacewalk/packages.py
 client/debian/apt-spacewalk/post_invoke.py
 client/debian/apt-spacewalk/pre_invoke.py
-client/rhel/yum-rhn-plugin/actions/errata.py
-client/rhel/yum-rhn-plugin/actions/packages.py
-client/rhel/yum-rhn-plugin/rhnplugin.py
-client/rhel/dnf-plugin-spacewalk/actions/errata.py
-client/rhel/dnf-plugin-spacewalk/actions/packages.py
-client/rhel/dnf-plugin-spacewalk/spacewalk.py
 client/rhel/spacewalk-client-tools/src/actions/
-client/rhel/spacewalk-client-tools/src/bin/rhn-profile-sync.py
 client/rhel/spacewalk-client-tools/src/bin/rhn_check.py
-client/rhel/spacewalk-client-tools/src/bin/rhn_register.py
-client/rhel/spacewalk-client-tools/src/bin/rhnreg_ks.py
-client/rhel/spacewalk-client-tools/src/bin/spacewalk-channel.py
-client/rhel/spacewalk-client-tools/src/bin/spacewalk-update-status.py
-client/rhel/spacewalk-client-tools/src/firstboot-legacy-rhel6/rhn_choose_channel.py
-client/rhel/spacewalk-client-tools/src/firstboot-legacy-rhel6/rhn_choose_server_gui.py
-client/rhel/spacewalk-client-tools/src/firstboot-legacy-rhel6/rhn_create_profile_gui.py
-client/rhel/spacewalk-client-tools/src/firstboot-legacy-rhel6/rhn_finish_gui.py
-client/rhel/spacewalk-client-tools/src/firstboot-legacy-rhel6/rhn_login_gui.py
-client/rhel/spacewalk-client-tools/src/firstboot-legacy-rhel6/rhn_provide_certificate_gui.py
-client/rhel/spacewalk-client-tools/src/firstboot-legacy-rhel6/rhn_register.py
-client/rhel/spacewalk-client-tools/src/firstboot-legacy-rhel6/rhn_review_gui.py
-client/rhel/spacewalk-client-tools/src/firstboot-legacy-rhel6/rhn_start_gui.py
 client/rhel/spacewalk-client-tools/src/up2date_client/
-client/tools/spacewalk-abrt/src/spacewalk_abrt/
-client/tools/spacewalk-koan/actions/kickstart.py
-client/tools/spacewalk-koan/actions/kickstart_guest.py
-client/tools/spacewalk-koan/spacewalkkoan/
 client/tools/spacewalk-client-cert/clientcert.py
-client/tools/spacewalk-oscap/scap.py
 client/tools/mgr-cfg/actions/
 client/tools/mgr-cfg/config_client/
 client/tools/mgr-cfg/config_common/
 client/tools/mgr-cfg/config_management/
-client/tools/mgr-custom-info/rhn-custom-info.py
-client/tools/mgr-osad/invocation.py
-client/tools/mgr-osad/src/
 client/tools/mgr-push/
-client/tools/mgr-virtualization/actions/image.py
-client/tools/mgr-virtualization/actions/virt.py
-client/tools/mgr-virtualization/virtualization/
 
 scripts/clone-errata/rhn-clone-errata.py
 scripts/datasource-query-usage.py
@@ -141,7 +98,7 @@ susemanager-utils/susemanager-sls/src/
 "
 
 INITIAL_CMD="/manager/susemanager-utils/testing/automation/initial-objects.sh"
-PYLINT_CMD="mkdir -p /manager/reports; cd /manager/; pylint --disable=E0203,E0611,E1101,E1102,C0111,I0011,R0801 --ignore=test --output-format=parseable --rcfile /manager/spacewalk/pylint/spacewalk-pylint.rc --reports=y --msg-template=\"{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}\""
+PYLINT_CMD="mkdir -p /manager/reports; cd /manager/; pylint --disable=E0203,E0611,E1101,E1102,C0111,I0011,R0801 --ignore=test --output-format=parseable --rcfile /manager/susemanager-utils/testing/automation/spacewalk-pylint.rc --reports=y --msg-template=\"{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}\""
 CHOWN_CMD="/manager/susemanager-utils/testing/automation/chown-objects.sh $(id -u) $(id -g)"
 
 docker pull $REGISTRY/$PGSQL_CONTAINER

@@ -1,5 +1,9 @@
-# Copyright (c) 2017 SUSE LLC
+# Copyright (c) 2017-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
+#
+# This feature can cause failures in the following features when running in sequential:
+# All features in secondary parallelizable stage
+# If this feature fails to restore the original password.
 
 @scope_visualization
 Feature: Change the user's password
@@ -7,7 +11,7 @@ Feature: Change the user's password
   As an authorized user
   I want enter a new password
 
-  Scenario: Log in as admin user
+  Scenario: Log in as org admin user
     Given I am authorized for the "Admin" section
 
   Scenario: Change the password to a new password
@@ -39,7 +43,7 @@ Feature: Change the user's password
     And I enter "A" as "desiredpassword"
     And I enter "A" as "desiredpasswordConfirm"
     And I click on "Update"
-    Then I should see a "Passwords must be at least 5 characters." text
+    Then I should see a "Passwords must be at least 4 characters." text
     When I sign out
     And I enter "admin" as "username"
     And I enter "A" as "password"

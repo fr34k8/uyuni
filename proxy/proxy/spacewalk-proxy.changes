@@ -1,4 +1,65 @@
-- Avoid unnecessary debug messages from proxy backend (bsc#1207490)
+-------------------------------------------------------------------
+Thu Dec 12 09:22:59 CET 2024 - rosuna@suse.com
+
+- version 5.1.2-0
+  * Add IPv6 support for salt-broker (bsc#1227827)
+  * Make salt-broker reconnect if Master IP has changed
+  * Make salt-broker less dependant on spacewalk libs
+  * Make socket opt setting more strict and verbose (bsc#1229286)
+
+-------------------------------------------------------------------
+Mon Oct 14 15:51:19 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Set Proxy authtoken FQDN based on config file (bsc#1230255)
+  * Allow execute of ssh-keygen command on the Proxy to cleanup SSH
+    known_hosts (bsc#1228345)
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Mon Jun 10 17:10:09 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.3-0
+  * Remove applet handler
+  * Refactor salt-broker and implement flexible channels state
+    monitoring
+
+-------------------------------------------------------------------
+Fri May 03 15:04:51 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.2-0
+  * Remove the config management related WSGI script
+
+-------------------------------------------------------------------
+Tue Jan 16 08:09:14 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Bump version to 5.0.0
+
+-------------------------------------------------------------------
+Fri Dec 15 17:19:54 CET 2023 - rosuna@suse.com
+
+- version 4.4.7-1
+  * Remove unused makefiles
+
+-------------------------------------------------------------------
+Mon Sep 18 14:47:49 CEST 2023 - rosuna@suse.com
+
+- version 4.4.6-1
+  * Use new apache wsgi mod package name
+  * remove usage of mgr-cfg tools in post script
+
+-------------------------------------------------------------------
+Wed Apr 19 12:53:43 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.5-1
+  * Better error message on missing systemid file (bsc#1209119)
+
+-------------------------------------------------------------------
+Tue Feb 21 12:30:07 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.4-1
+  * Avoid unnecessary debug messages from proxy backend (bsc#1207490)
 
 -------------------------------------------------------------------
 Mon Jan 23 08:24:37 CET 2023 - jgonzalez@suse.com

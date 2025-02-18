@@ -18,14 +18,14 @@
         <rhn:csrf />
         <%@ include file="tree-form.jspf" %>
         <div class="form-group">
-            <div class="col-lg-offset-3 col-lg-6">
+            <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
                 <button type="submit"
                    <c:choose>
                       <c:when test="${requestScope.hidesubmit == 'true'}">
                           disabled class="btn"
                       </c:when>
                       <c:otherwise>
-                          class="btn btn-success"
+                          class="btn btn-primary"
                       </c:otherwise>
                    </c:choose>
                 >

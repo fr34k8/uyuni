@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,6 +70,9 @@ public class SmtpMail implements Mail {
         String smtpUser = c.getString(ConfigDefaults.WEB_SMTP_USER);
         String smtpPass = c.getString(ConfigDefaults.WEB_SMTP_PASS);
         String from = c.getString(ConfigDefaults.WEB_DEFAULT_MAIL_FROM, "root@localhost");
+        int smtpTimeout = c.getInt(ConfigDefaults.WEB_SMTP_TIMEOUT, 5000);
+        int smtpConnectionTimeout = c.getInt(ConfigDefaults.WEB_SMTP_CONNECTION_TIMEOUT, 5000);
+        int smtpWriteTimeout = c.getInt(ConfigDefaults.WEB_SMTP_WRITE_TIMEOUT, 5000);
 
         // Get system properties
         Properties props = System.getProperties();
@@ -80,6 +84,9 @@ public class SmtpMail implements Mail {
         props.put("mail.smtp.ssl.enable", smtpSSL);
         props.put("mail.smtp.starttls.enable", smtpStartTLS);
         props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+        props.put("mail.smtp.connectiontimeout", smtpConnectionTimeout);
+        props.put("mail.smtp.timeout", smtpTimeout);
+        props.put("mail.smtp.writetimeout", smtpWriteTimeout);
 
         // Setup Authentication
         Authenticator auth = null;
@@ -136,6 +143,7 @@ public class SmtpMail implements Mail {
     public void send() {
 
         try {
+            message.setSentDate(new Date());
             Address[] addrs = message.getRecipients(RecipientType.TO);
             if (addrs == null || addrs.length == 0) {
                 log.warn("Aborting mail message {}: No recipients", message.getSubject());
@@ -248,7 +256,7 @@ public class SmtpMail implements Mail {
             buf.append(this.message.getContent());
         }
         catch (IOException | MessagingException e) {
-            log.error(e);
+            log.error(e.getMessage(), e);
         }
         return buf.toString();
     }

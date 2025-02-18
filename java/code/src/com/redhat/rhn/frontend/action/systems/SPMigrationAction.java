@@ -14,6 +14,7 @@
  */
 package com.redhat.rhn.frontend.action.systems;
 
+import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.common.util.DatePicker;
 import com.redhat.rhn.common.util.DynamicComparator;
@@ -40,6 +41,7 @@ import com.redhat.rhn.frontend.struts.RequestContext;
 import com.redhat.rhn.frontend.struts.RhnAction;
 import com.redhat.rhn.manager.channel.ChannelManager;
 import com.redhat.rhn.manager.distupgrade.DistUpgradeManager;
+import com.redhat.rhn.manager.distupgrade.DistUpgradePaygException;
 import com.redhat.rhn.manager.errata.ErrataManager;
 import com.redhat.rhn.manager.rhnpackage.PackageManager;
 
@@ -48,6 +50,7 @@ import com.suse.manager.maintenance.NotInMaintenanceModeException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -89,7 +92,10 @@ public class SPMigrationAction extends RhnAction {
     private static final String UPDATESTACK_UPDATE_NEEDED = "updateStackUpdateNeeded";
     private static final String IS_MINION = "isMinion";
     private static final String IS_SUSE_MINION = "isSUSEMinion";
+    private static final String IS_REDHAT_MINION = "isRedHatMinion";
     private static final String IS_SALT_UP_TO_DATE = "isSaltUpToDate";
+    private static final String SALT_PACKAGE = "saltPackage";
+    private static final String HAS_DRYRUN_CAPABLITY = "hasDryRunCapability";
 
     // Form parameters
     private static final String ACTION_STEP = "step";
@@ -110,14 +116,15 @@ public class SPMigrationAction extends RhnAction {
     private static final String MSG_SCHEDULED_MIGRATION = "spmigration.message.scheduled";
     private static final String MSG_SCHEDULED_DRYRUN =
             "spmigration.message.scheduled.dry-run";
+    private static final String MSG_ERROR_PAYG_MIGRATION = "spmigration.message.payg.error";
 
     /**
      * {@inheritDoc}
      */
     @Override
     public ActionForward execute(ActionMapping actionMapping,
-            ActionForm actionForm, HttpServletRequest request,
-            HttpServletResponse response) throws Exception {
+                                 ActionForm actionForm, HttpServletRequest request,
+                                 HttpServletResponse response) throws Exception {
         // Bind the server object to the request
         RequestContext ctx = new RequestContext(request);
         Server server = ctx.lookupAndBindServer();
@@ -144,15 +151,26 @@ public class SPMigrationAction extends RhnAction {
         logger.debug("is a SUSE minion? {}", isSUSEMinion);
         request.setAttribute(IS_SUSE_MINION, isSUSEMinion);
 
+        // Check if this is a RedHat system (for minions only)
+        boolean isRedHatMinion = isMinion && minion.get().getOsFamily().equals("RedHat");
+        logger.debug("is a RedHat minion? {}", isRedHatMinion);
+        request.setAttribute(IS_REDHAT_MINION, isRedHatMinion);
+
         // Check if the salt package on the minion is up to date (for minions only)
+        String saltPackage = "salt";
+        if (PackageFactory.lookupByNameAndServer("venv-salt-minion", server) != null) {
+            saltPackage = "venv-salt-minion";
+        }
         boolean isSaltUpToDate = PackageManager.
-                getServerNeededUpdatePackageByName(server.getId(), "salt") == null;
+                getServerNeededUpdatePackageByName(server.getId(), saltPackage) == null;
         logger.debug("salt package is up-to-date? {}", isSaltUpToDate);
         request.setAttribute(IS_SALT_UP_TO_DATE, isSaltUpToDate);
+        request.setAttribute(SALT_PACKAGE, saltPackage);
 
         // Check if this server supports distribution upgrades via capabilities
         // (for traditional clients only)
-        boolean supported = isSUSEMinion || DistUpgradeManager.isUpgradeSupported(server, ctx.getCurrentUser());
+        boolean supported = isSUSEMinion || isRedHatMinion ||
+                DistUpgradeManager.isUpgradeSupported(server, ctx.getCurrentUser());
         logger.debug("Upgrade supported for '{}'? {}", server.getName(), supported);
         request.setAttribute(UPGRADE_SUPPORTED, supported);
 
@@ -182,6 +200,7 @@ public class SPMigrationAction extends RhnAction {
         Long targetBaseChannel = null;
         Long[] targetChildChannels = null;
         boolean dryRun = false;
+        boolean hasDryRun = true;
         boolean goBack = false;
         boolean targetProductSelectedEmpty = false;
         boolean allowVendorChange = false;
@@ -207,6 +226,20 @@ public class SPMigrationAction extends RhnAction {
 
             // flag to know if we are going back or forward in the setup wizard
             goBack = dispatch.equals(LocalizationService.getInstance().getMessage(GO_BACK));
+
+            // flag to know if we should show the dry-run button or not
+            String bpProductClass = minion.map(m -> m.getInstalledProductSet()
+                    .map(i -> i.getBaseProduct().getChannelFamily().getLabel())
+                    .orElse("")).orElse("");
+
+            String tgtProductClass = Optional.ofNullable(targetBaseProduct)
+                    .map(SUSEProductFactory::getProductById)
+                    .map(s -> s.getChannelFamily().getLabel())
+                    .orElse("");
+
+            hasDryRun = !isRedHatMinion && bpProductClass.equals(tgtProductClass);
+            request.setAttribute(HAS_DRYRUN_CAPABLITY, hasDryRun);
+
         }
 
         // if submitting step 1 (TARGET) but no radio button
@@ -313,7 +346,9 @@ public class SPMigrationAction extends RhnAction {
 
             // Setup list of channels to subscribe to
             List<Long> channelIDs = new ArrayList<>();
-            channelIDs.addAll(Arrays.asList(targetChildChannels));
+            if (targetChildChannels != null) {
+                channelIDs.addAll(Arrays.asList(targetChildChannels));
+            }
             channelIDs.add(targetBaseChannel);
 
             // Schedule the dist upgrade action
@@ -321,7 +356,8 @@ public class SPMigrationAction extends RhnAction {
                     DatePicker.YEAR_RANGE_POSITIVE);
             try {
                 Long actionID = DistUpgradeManager.scheduleDistUpgrade(ctx.getCurrentUser(),
-                        server, targetProductSet, channelIDs, dryRun, allowVendorChange, earliest);
+                        server, targetProductSet, channelIDs, dryRun, allowVendorChange, earliest,
+                        GlobalInstanceHolder.PAYG_MANAGER.isPaygInstance());
 
                 // Display a message to the user
                 String product = targetProductSet.getBaseProduct().getFriendlyName();
@@ -337,6 +373,24 @@ public class SPMigrationAction extends RhnAction {
                         targetBaseChannel, targetChildChannels, allowVendorChange);
                 request.setAttribute(NO_MAINTENANCE_WINDOW, true);
                 forward = actionMapping.findForward(CONFIRM);
+            }
+            catch (DistUpgradePaygException e) {
+                Optional<SUSEProductSet> installedProducts = server.getInstalledProductSet();
+                List<SUSEProductSet> migrationTargets = getMigrationTargets(
+                        request,
+                        installedProducts,
+                        server.getServerArch().getCompatibleChannelArch(),
+                        ctx.getCurrentUser()
+                );
+                request.setAttribute(TARGET_PRODUCTS, migrationTargets);
+
+                ActionErrors errors = new ActionErrors();
+                // We do not support migration with individual channels in UI. So we only
+                // need 1 error message as the second case can only happens in API
+                getStrutsDelegate().addError(errors, MSG_ERROR_PAYG_MIGRATION);
+                getStrutsDelegate().saveMessages(request, errors);
+
+                forward = actionMapping.findForward(TARGET);
             }
         }
 
@@ -498,7 +552,9 @@ public class SPMigrationAction extends RhnAction {
      */
     private SUSEProductSet createProductSet(Long baseProduct, Long[] addonProducts) {
         List<Long> addonProductsList = new ArrayList<>();
-        addonProductsList.addAll(Arrays.asList(addonProducts));
+        if (addonProducts != null) {
+            addonProductsList.addAll(Arrays.asList(addonProducts));
+        }
         return new SUSEProductSet(baseProduct, addonProductsList);
     }
 
@@ -552,7 +608,7 @@ public class SPMigrationAction extends RhnAction {
         List<Channel> channels = details.getChannelTasks().stream()
                 .filter(channel -> channel.getTask() == DistUpgradeChannelTask.SUBSCRIBE)
                 .map(DistUpgradeChannelTask::getChannel)
-                .collect(Collectors.toList());
+                .toList();
 
         Set<Channel> baseChannelSet = channels.stream()
                 .filter(Channel::isBaseChannel)
@@ -564,7 +620,7 @@ public class SPMigrationAction extends RhnAction {
         }
 
         Channel baseChannel = baseChannelSet.iterator().next();
-        List<Long> channelIds = channels.stream().map(Channel::getId).collect(Collectors.toList());
+        List<Long> channelIds = channels.stream().map(Channel::getId).toList();
         List<EssentialChannelDto> childChannels = getChannelDTOs(ctx, baseChannel, channelIds);
 
         // Get name of original base channel if channel is cloned
@@ -578,7 +634,7 @@ public class SPMigrationAction extends RhnAction {
                 installedProducts,
                 server.getServerArch().getCompatibleChannelArch(),
                 ctx.getCurrentUser()
-        ).stream().filter(productSet -> productSet.getBaseProduct().equals(baseProduct)).collect(Collectors.toList());
+        ).stream().filter(productSet -> productSet.getBaseProduct().equals(baseProduct)).toList();
 
         if (targetProductSet.isEmpty()) {
             logger.debug("No valid migration target found");

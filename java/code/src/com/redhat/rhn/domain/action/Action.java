@@ -21,6 +21,7 @@ import com.redhat.rhn.domain.org.Org;
 import com.redhat.rhn.domain.server.Server;
 import com.redhat.rhn.domain.user.User;
 
+import com.suse.manager.model.attestation.ServerCoCoAttestationReport;
 import com.suse.manager.webui.websocket.WebSocketActionIdProvider;
 
 import org.apache.commons.lang3.StringUtils;
@@ -45,12 +46,11 @@ public class Action extends BaseDomainHelper implements Serializable, WebSocketA
     private Date earliestAction;
     private Long version;
     private Long archived;
-    private Date created;
-    private Date modified;
     private Action prerequisite;
     private ActionType actionType;
 
     private Set<ServerAction> serverActions;
+    private Set<ServerCoCoAttestationReport> cocoAttestationReports;
     private User schedulerUser;
     private Org org;
 
@@ -176,39 +176,30 @@ public class Action extends BaseDomainHelper implements Serializable, WebSocketA
     }
 
     /**
-     * Getter for created
-     * @return Date to get
-    */
-    @Override
-    public Date getCreated() {
-        return this.created;
+     * Getter for CocoAttestationReports
+     * @return return the attestation reports
+     */
+    public Set<ServerCoCoAttestationReport> getCocoAttestationReports() {
+        return cocoAttestationReports;
     }
 
     /**
-     * Setter for created
-     * @param createdIn to set
-    */
-    @Override
-    public void setCreated(Date createdIn) {
-        this.created = createdIn;
+     * Setter for CocoAttestationReports
+     * @param cocoAttestationReportsIn the reports
+     */
+    public void setCocoAttestationReports(Set<ServerCoCoAttestationReport> cocoAttestationReportsIn) {
+        cocoAttestationReports = cocoAttestationReportsIn;
     }
 
     /**
-     * Getter for modified
-     * @return Date to get
-    */
-    @Override
-    public Date getModified() {
-        return this.modified;
-    }
-
-    /**
-     * Setter for modified
-     * @param modifiedIn to set
-    */
-    @Override
-    public void setModified(Date modifiedIn) {
-        this.modified = modifiedIn;
+     * Add CocoAttestationReport to Action
+     * @param cocoAttestationReportIn the report to add
+     */
+    public void addCocoAttestationReport(ServerCoCoAttestationReport cocoAttestationReportIn) {
+        if (cocoAttestationReports == null) {
+            cocoAttestationReports = new HashSet<>();
+        }
+        cocoAttestationReports.add(cocoAttestationReportIn);
     }
 
     /**
@@ -335,10 +326,9 @@ public class Action extends BaseDomainHelper implements Serializable, WebSocketA
      */
     @Override
     public boolean equals(final Object other) {
-        if (!(other instanceof Action)) {
+        if (!(other instanceof Action castOther)) {
             return false;
         }
-        Action castOther = (Action) other;
         return new EqualsBuilder().append(this.getId(), castOther.getId())
                                   .append(this.getOrg(), castOther.getOrg())
                                   .append(this.getName(), castOther.getName())
@@ -383,6 +373,15 @@ public class Action extends BaseDomainHelper implements Serializable, WebSocketA
      */
     public void onCancelAction() {
         // Something to do, when action is canceled.
+        // Override this method for specific action.
+    }
+
+    /**
+     * Hook when an action failed.
+     * @param serverActionIn the {@link ServerAction} which failed
+     */
+    public void onFailAction(ServerAction serverActionIn) {
+        // Something to do, when an action failed.
         // Override this method for specific action.
     }
 

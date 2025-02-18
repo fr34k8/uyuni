@@ -15,7 +15,7 @@
 
 package com.suse.manager.webui.controllers;
 
-import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
+import static com.suse.manager.webui.utils.SparkApplicationHelper.jsonError;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withCsrfToken;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withDocsLocale;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUser;
@@ -29,6 +29,8 @@ import com.redhat.rhn.manager.system.SystemsExistException;
 
 import com.suse.manager.reactor.utils.LocalDateTimeISOAdapter;
 import com.suse.manager.reactor.utils.OptionalTypeAdapterFactory;
+import com.suse.manager.ssl.SSLCertManager;
+import com.suse.manager.webui.utils.SparkApplicationHelper;
 import com.suse.manager.webui.utils.gson.ProxyContainerConfigJson;
 
 import com.google.gson.Gson;
@@ -39,7 +41,6 @@ import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -112,30 +113,26 @@ public class ProxyController {
         ProxyContainerConfigJson data = GSON.fromJson(request.body(),
                 new TypeToken<ProxyContainerConfigJson>() { }.getType());
         if (!data.isValid()) {
-            return json(response, HttpStatus.SC_BAD_REQUEST, "Invalid Input Data");
+            return jsonError(response, HttpStatus.SC_BAD_REQUEST, "Invalid Input Data");
         }
         try {
             byte[] config = systemManager.createProxyContainerConfig(user, data.getProxyFqdn(),
                     data.getProxyPort(), data.getServerFqdn(), data.getMaxCache(), data.getEmail(),
                     data.getRootCA(), data.getIntermediateCAs(), data.getProxyCertPair(),
-                    data.getCaPair(), data.getCaPassword(), data.getCertData());
+                    data.getCaPair(), data.getCaPassword(), data.getCertData(), new SSLCertManager());
             String filename = data.getProxyFqdn().split("\\.")[0];
             request.session().attribute(filename + "-config.tar.gz", config);
 
-            return json(response, filename + "-config.tar.gz");
-        }
-        catch (IOException | InstantiationException e) {
-            LOG.error("Failed to generate proxy container configuration", e);
-            return json(response, HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                    "Failed to generate proxy container configuration");
+            return SparkApplicationHelper.json(response, filename + "-config.tar.gz");
         }
         catch (SystemsExistException e) {
             String msg = String.format("Cannot create proxy as an existing system has FQDN '%s'", data.getProxyFqdn());
             LOG.error(msg);
-            return json(response, HttpStatus.SC_INTERNAL_SERVER_ERROR, msg);
+            return jsonError(response, HttpStatus.SC_INTERNAL_SERVER_ERROR, msg);
         }
         catch (RhnRuntimeException e) {
-            return json(response, HttpStatus.SC_BAD_REQUEST, e.getMessage());
+            LOG.error("Failed to generate proxy configuration", e);
+            return jsonError(response, HttpStatus.SC_BAD_REQUEST, e.getMessage());
         }
     }
 
@@ -152,17 +149,16 @@ public class ProxyController {
     public byte[] containerConfigFile(Request request, Response response, User user) {
         String filename = request.params("filename");
         if (!request.session().attributes().contains(filename) || !filename.endsWith("-config.tar.gz")) {
-            return json(response, HttpStatus.SC_BAD_REQUEST, "Configuration file wasn't generated").getBytes();
+            return jsonError(response, HttpStatus.SC_BAD_REQUEST, "Configuration file wasn't generated").getBytes();
         }
         Object config = request.session().attribute(filename);
-        if (config instanceof byte[]) {
-            byte[] data = (byte[]) config;
+        if (config instanceof byte[] data) {
             request.session().removeAttribute(filename);
             response.header("Content-Disposition", "attachment; filename=\"" + filename + "\"");
             response.header("Content-Length", Integer.toString(data.length));
             response.type("application/gzip");
             return data;
         }
-        return json(response, HttpStatus.SC_BAD_REQUEST, "Invalid configuration file data").getBytes();
+        return jsonError(response, HttpStatus.SC_BAD_REQUEST, "Invalid configuration file data").getBytes();
     }
 }

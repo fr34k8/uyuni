@@ -3,10 +3,10 @@ import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 
 import { Button } from "components/buttons";
 import { Combobox } from "components/combobox";
-import { Check } from "components/input/Check";
-import { Form } from "components/input/Form";
-import { Radio } from "components/input/Radio";
-import { Text } from "components/input/Text";
+import { Check } from "components/input/check/Check";
+import { Form } from "components/input/form/Form";
+import { Radio } from "components/input/radio/Radio";
+import { Text } from "components/input/text/Text";
 
 type ScheduleEditProps = {
   isEdit: boolean;
@@ -111,10 +111,14 @@ const MaintenanceScheduleEdit = forwardRef((props: ScheduleEditProps, ref) => {
         ]}
       />
       {props.isEdit && (
-        <Check name="strategy" label={<b>{t("Cancel affected actions")}</b>} divClass="col-md-6 col-md-offset-3" />
+        <Check
+          name="strategy"
+          label={<b>{t("Cancel affected actions")}</b>}
+          divClass="col-md-6 col-md-offset-3 offset-md-3"
+        />
       )}
       <div className="form-group">
-        <div className="col-md-6 col-md-offset-3">
+        <div className="col-md-6 col-md-offset-3 offset-md-3">
           {!calendarAdded ? (
             <Button
               className="btn-default"
@@ -139,7 +143,7 @@ const MaintenanceScheduleEdit = forwardRef((props: ScheduleEditProps, ref) => {
                       <Combobox
                         id="calendarSelect"
                         name="calendarSelect"
-                        data={props.calendarNames as any}
+                        options={props.calendarNames as any}
                         selectedId={selectedCalendar}
                         onSelect={onSelectCalendar}
                       />

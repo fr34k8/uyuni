@@ -1,11 +1,16 @@
-# Copyright (c) 2017-2022 SUSE LLC
+# Copyright (c) 2017-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
+#
+# This feature can cause failures in the following features when running in sequential:
+# - features/secondary/min_bootstrap_negative.feature
+# If the minion fails to bootstrap again.
 
+@skip_if_github_validation
 @scope_onboarding
 Feature: Register a Salt minion via API
 
-  Scenario: Log in as admin user
-    Given I am authorized for the "Admin" section
+  Scenario: Log in as org admin user
+    Given I am authorized
 
   Scenario: Delete SLES minion system profile before API bootstrap test
     Given I am on the Systems overview page of this "sle_minion"
@@ -13,6 +18,7 @@ Feature: Register a Salt minion via API
     Then I should see a "Confirm System Profile Deletion" text
     When I click on "Delete Profile"
     And I wait until I see "has been deleted" text
+    And I wait until Salt client is inactive on "sle_minion"
     Then "sle_minion" should not be registered
 
   Scenario: Bootstrap a SLES minion via API
@@ -39,8 +45,9 @@ Feature: Register a Salt minion via API
 
   Scenario: Check spacecmd system ID of minion bootstrapped via API
     Given I am on the Systems overview page of this "sle_minion"
-    Then I run spacecmd listevents for "sle_minion"
+    Then I run spacecmd listeventhistory for "sle_minion"
 
+@susemanager
   Scenario: API bootstrap: subscribe to base channel
     Given I am on the Systems overview page of this "sle_minion"
     When I follow "Software" in the content area
@@ -50,12 +57,28 @@ Feature: Register a Salt minion via API
     And I wait until I do not see "Loading..." text
     And I include the recommended child channels
     And I check "SLE-Module-DevTools15-SP4-Pool for x86_64"
-    And I check "Fake-RPM-SLES-Channel" 
+    And I check "Fake-RPM-SUSE-Channel"
     And I click on "Next"
     Then I should see a "Confirm Software Channel Change" text
     When I click on "Confirm"
     Then I should see a "Changing the channels has been scheduled." text
-    And I wait until event "Subscribe channels scheduled by admin" is completed
+    And I wait until event "Subscribe channels scheduled" is completed
+
+@uyuni
+  Scenario: API bootstrap: subscribe to base channel
+    Given I am on the Systems overview page of this "sle_minion"
+    When I follow "Software" in the content area
+    And I follow "Software Channels" in the content area
+    And I wait until I do not see "Loading..." text
+    And I check radio button "openSUSE Leap 15.5 (x86_64)"
+    And I wait until I do not see "Loading..." text
+    And I check "Uyuni Client Tools for openSUSE Leap 15.5 (x86_64) (Development)"
+    And I check "Fake-RPM-SUSE-Channel"
+    And I click on "Next"
+    Then I should see a "Confirm Software Channel Change" text
+    When I click on "Confirm"
+    Then I should see a "Changing the channels has been scheduled." text
+    And I wait until event "Subscribe channels scheduled" is completed
 
   Scenario: Check events history for failures on SLES minion after API bootstrap
     Given I am on the Systems overview page of this "sle_minion"

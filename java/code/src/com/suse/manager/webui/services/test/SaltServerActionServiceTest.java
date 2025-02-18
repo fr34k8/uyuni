@@ -30,7 +30,6 @@ import com.redhat.rhn.domain.action.ActionChainEntry;
 import com.redhat.rhn.domain.action.ActionChainFactory;
 import com.redhat.rhn.domain.action.ActionFactory;
 import com.redhat.rhn.domain.action.ActionStatus;
-import com.redhat.rhn.domain.action.ActionType;
 import com.redhat.rhn.domain.action.channel.SubscribeChannelsAction;
 import com.redhat.rhn.domain.action.channel.SubscribeChannelsActionDetails;
 import com.redhat.rhn.domain.action.config.ConfigAction;
@@ -39,10 +38,6 @@ import com.redhat.rhn.domain.action.salt.PlaybookActionDetails;
 import com.redhat.rhn.domain.action.script.ScriptActionDetails;
 import com.redhat.rhn.domain.action.server.ServerAction;
 import com.redhat.rhn.domain.action.test.ActionFactoryTest;
-import com.redhat.rhn.domain.action.virtualization.BaseVirtualizationGuestAction;
-import com.redhat.rhn.domain.action.virtualization.VirtualizationRebootGuestAction;
-import com.redhat.rhn.domain.action.virtualization.VirtualizationShutdownGuestAction;
-import com.redhat.rhn.domain.channel.AccessToken;
 import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.channel.test.ChannelFactoryTest;
 import com.redhat.rhn.domain.config.ConfigRevision;
@@ -61,29 +56,20 @@ import com.redhat.rhn.domain.server.test.MinionServerFactoryTest;
 import com.redhat.rhn.domain.server.test.ServerFactoryTest;
 import com.redhat.rhn.manager.action.ActionChainManager;
 import com.redhat.rhn.manager.action.ActionManager;
-import com.redhat.rhn.manager.formula.FormulaMonitoringManager;
-import com.redhat.rhn.manager.system.ServerGroupManager;
 import com.redhat.rhn.manager.system.SystemManager;
-import com.redhat.rhn.manager.system.entitling.SystemEntitlementManager;
-import com.redhat.rhn.manager.system.entitling.SystemEntitler;
-import com.redhat.rhn.manager.system.entitling.SystemUnentitler;
 import com.redhat.rhn.taskomatic.TaskomaticApi;
 import com.redhat.rhn.testing.ConfigTestUtils;
 import com.redhat.rhn.testing.ErrataTestUtils;
 import com.redhat.rhn.testing.JMockBaseTestCaseWithUser;
-import com.redhat.rhn.testing.ServerTestUtils;
 import com.redhat.rhn.testing.TestUtils;
 
 import com.suse.manager.utils.SaltKeyUtils;
 import com.suse.manager.utils.SaltUtils;
-import com.suse.manager.virtualization.test.TestVirtManager;
 import com.suse.manager.webui.controllers.utils.ContactMethodUtil;
 import com.suse.manager.webui.services.SaltActionChainGeneratorService;
 import com.suse.manager.webui.services.SaltServerActionService;
-import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.impl.SaltService;
 import com.suse.manager.webui.utils.SaltModuleRun;
 import com.suse.manager.webui.utils.SaltState;
@@ -109,7 +95,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -129,7 +114,6 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
 
     private MinionServer minion;
     private SaltServerActionService saltServerActionService;
-    private SystemEntitlementManager systemEntitlementManager;
     private TaskomaticApi taskomaticMock;
 
     @Override
@@ -138,11 +122,6 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         super.setUp();
         setImposteriser(ByteBuddyClassImposteriser.INSTANCE);
 
-        VirtManager virtManager = new TestVirtManager() {
-            @Override
-            public void updateLibvirtEngine(MinionServer minionIn) {
-            }
-        };
         SaltService saltService = new SaltService() {
             @Override
             public Optional<Result<JsonElement>> rawJsonCall(LocalCall<?> call, String minionId) {
@@ -155,12 +134,6 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         };
         minion = MinionServerFactoryTest.createTestMinionServer(user);
         saltServerActionService = createSaltServerActionService(saltService, saltService);
-        MonitoringManager monitoringManager = new FormulaMonitoringManager(saltService);
-        ServerGroupManager serverGroupManager = new ServerGroupManager(saltService);
-        systemEntitlementManager = new SystemEntitlementManager(
-                new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-                new SystemEntitler(saltService, virtManager, monitoringManager, serverGroupManager)
-        );
 
         taskomaticMock = mock(TaskomaticApi.class);
         saltServerActionService.setTaskomaticApi(taskomaticMock);
@@ -180,7 +153,7 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         mins.add(testMinionServer);
 
         List<MinionSummary> minionSummaries = mins.stream().
-                map(MinionSummary::new).collect(Collectors.toList());
+                map(MinionSummary::new).toList();
 
         Channel channel = ChannelFactoryTest.createTestChannel(user);
         Package p64 = ErrataTestUtils.createTestPackage(user, channel, "x86_64");
@@ -226,7 +199,7 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         mins.add(testMinionServer);
 
         List<MinionSummary> minionSummaries = mins.stream().
-                map(MinionSummary::new).collect(Collectors.toList());
+                map(MinionSummary::new).toList();
 
         Channel channel = ChannelFactoryTest.createTestChannel(user);
         Package p64 = ErrataTestUtils.createTestPackage(user, channel, "x86_64");
@@ -253,7 +226,6 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
 
         ActionFactory.addServerToAction(testMinionServer, action);
 
-        //ActionManager.addPackageActionDetails(Arrays.asList(action), packageMaps);
         TestUtils.flushAndEvict(action);
         Action updateAction = ActionFactory.lookupById(action.getId());
 
@@ -272,7 +244,7 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         mins.add(testMinionServer);
 
         List<MinionSummary> minionSummaries = mins.stream().
-                map(MinionSummary::new).collect(Collectors.toList());
+                map(MinionSummary::new).toList();
 
         Channel channel = ChannelFactoryTest.createTestChannel(user);
         SystemManager.subscribeServerToChannel(user, testMinionServer, channel);
@@ -324,7 +296,7 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         mins.add(testMinionServer);
 
         List<MinionSummary> minionSummaries = mins.stream().
-                map(MinionSummary::new).collect(Collectors.toList());
+                map(MinionSummary::new).toList();
 
         Channel channel = ChannelFactoryTest.createTestChannel(user);
         Package p = ErrataTestUtils.createTestPackage(user, channel, "amd64-deb");
@@ -368,7 +340,7 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         mins.add(testMinionServer);
 
         List<MinionSummary> minionSummaries = mins.stream().
-                map(MinionSummary::new).collect(Collectors.toList());
+                map(MinionSummary::new).toList();
 
         Channel channel = ChannelFactoryTest.createTestChannel(user);
         Package p1 = ErrataTestUtils.createTestPackage(user, channel, "amd64-deb");
@@ -426,7 +398,7 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         mins.add(testMinion);
 
         List<MinionSummary> minionSummaries = mins.stream().
-                map(MinionSummary::new).collect(Collectors.toList());
+                map(MinionSummary::new).toList();
 
         Channel channel = ChannelFactoryTest.createTestChannel(user);
         Package p1 = ErrataTestUtils.createTestPackage(user, channel, "x86_64");
@@ -483,7 +455,7 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
     }
 
     @Test
-    public void testDeployFiles() throws Exception {
+    public void testDeployFiles() {
         MinionServer minion1 = MinionServerFactoryTest.createTestMinionServer(user);
         MinionServer minion2 = MinionServerFactoryTest.createTestMinionServer(user);
         MinionServer minion3 = MinionServerFactoryTest.createTestMinionServer(user);
@@ -519,70 +491,6 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         Map<LocalCall<?>, List<MinionSummary>> result =
                 saltServerActionService.callsForAction(configAction);
         assertEquals(result.size(), 3);
-    }
-
-    @Test
-    public void testVirtActions() throws Exception {
-        MinionServer minionHost = (MinionServer)ServerTestUtils.createVirtHostWithGuests(
-                user, 1, true, systemEntitlementManager);
-        List<MinionSummary> minions = Arrays.asList(new MinionSummary(minionHost));
-
-        List<ActionType> actionTypes = Arrays.asList(ActionFactory.TYPE_VIRTUALIZATION_DELETE,
-                                                     ActionFactory.TYPE_VIRTUALIZATION_REBOOT,
-                                                     ActionFactory.TYPE_VIRTUALIZATION_RESUME,
-                                                     ActionFactory.TYPE_VIRTUALIZATION_SET_MEMORY,
-                                                     ActionFactory.TYPE_VIRTUALIZATION_SET_VCPUS,
-                                                     ActionFactory.TYPE_VIRTUALIZATION_SHUTDOWN,
-                                                     ActionFactory.TYPE_VIRTUALIZATION_START,
-                                                     ActionFactory.TYPE_VIRTUALIZATION_SUSPEND);
-
-        for (ActionType type : actionTypes) {
-            Action action = ActionFactoryTest.createAction(user, type);
-            BaseVirtualizationGuestAction va = (BaseVirtualizationGuestAction)action;
-            va.setUuid(minionHost.getGuests().iterator().next().getUuid());
-            ActionFactory.addServerToAction(minionHost, action);
-
-            Map<LocalCall<?>, List<MinionSummary>> result = saltServerActionService.callsForAction(action, minions);
-            assertEquals(1, result.size());
-        }
-    }
-
-    @Test
-    public void testVirtForceoff() throws Exception {
-        MinionServer minionHost = (MinionServer)ServerTestUtils.createVirtHostWithGuests(
-                user, 1, true, systemEntitlementManager);
-        List<MinionSummary> minions = Arrays.asList(new MinionSummary(minionHost));
-
-        Action action = ActionFactoryTest.createAction(user, ActionFactory.TYPE_VIRTUALIZATION_SHUTDOWN);
-        VirtualizationShutdownGuestAction va = (VirtualizationShutdownGuestAction)action;
-        va.setUuid(minionHost.getGuests().iterator().next().getUuid());
-        va.setForce(true);
-        ActionFactory.addServerToAction(minionHost, action);
-
-        Map<LocalCall<?>, List<MinionSummary>> result = saltServerActionService.callsForAction(action, minions);
-        LocalCall<?> saltCall = result.keySet().iterator().next();
-        assertStateApplyWithPillar("virt.statechange", "domain_state", "powered_off", saltCall);
-    }
-
-    @Test
-    public void testVirtReset() throws Exception {
-        MinionServer minionHost = (MinionServer)ServerTestUtils.createVirtHostWithGuests(
-                user, 1, true, systemEntitlementManager);
-        List<MinionSummary> minions = Arrays.asList(new MinionSummary(minionHost));
-
-        Action action = ActionFactoryTest.createAction(user, ActionFactory.TYPE_VIRTUALIZATION_REBOOT);
-        VirtualizationRebootGuestAction va = (VirtualizationRebootGuestAction)action;
-        va.setUuid(minionHost.getGuests().iterator().next().getUuid());
-        va.setForce(true);
-        ActionFactory.addServerToAction(minionHost, action);
-
-        Map<LocalCall<?>, List<MinionSummary>> result = saltServerActionService.callsForAction(action, minions);
-        LocalCall<?> saltCall = result.keySet().iterator().next();
-        assertStateApply("virt.reset", saltCall);
-    }
-
-    private void assertStateApply(String expectedState, LocalCall<?> call) {
-        assertStateApplyWithPillar(expectedState, null, null, call);
     }
 
     @SuppressWarnings("unchecked")
@@ -701,7 +609,7 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
         MinionServer minion1 = MinionServerFactoryTest.createTestMinionServer(user);
 
         final ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
-        SubscribeChannelsAction action = (SubscribeChannelsAction)ActionManager.createAction(
+        SubscribeChannelsAction action = (SubscribeChannelsAction) ActionManager.createAction(
                 user, ActionFactory.TYPE_SUBSCRIBE_CHANNELS, "Subscribe to channels", Date.from(now.toInstant()));
 
         SubscribeChannelsActionDetails details = new SubscribeChannelsActionDetails();
@@ -713,7 +621,6 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
 
         ActionFactory.addServerToAction(minion1, action);
 
-        saltServerActionService.setCommitTransaction(false);
         Map<LocalCall<?>, List<MinionSummary>> calls = saltServerActionService.callsForAction(action);
 
         HibernateFactory.getSession().flush();
@@ -721,42 +628,30 @@ public class SaltServerActionServiceTest extends JMockBaseTestCaseWithUser {
 
         assertEquals(1, calls.size());
 
-        Map<String, Object> pillar = (Map<String, Object>)((Map<String, Object>)calls.keySet().stream()
+        Map<String, Object> payload = calls.keySet().stream()
                 .findFirst()
-                .get().getPayload().get("kwarg")).get("pillar");
-        assertEquals("mgr_channels_new", pillar.get("_mgr_channels_items_name"));
-        Map<String, Object> channels = (Map<String, Object>)pillar.get("mgr_channels_new");
-        assertEquals(3, channels.size());
-        assertTrue(channels.keySet().contains(base.getLabel()));
-        assertTrue(channels.keySet().contains(ch1.getLabel()));
-        assertTrue(channels.keySet().contains(ch2.getLabel()));
+                .get().getPayload();
 
-        assertTokenPillarValue(base, action, channels);
-        assertTokenPillarValue(ch1, action, channels);
-        assertTokenPillarValue(ch2, action, channels);
+        assertEquals("state.apply", payload.get("fun"));
+        assertEquals("channels", ((List<String>) ((Map<String, Object>) payload.get("kwarg")).get("mods")).get(0));
 
-        action = (SubscribeChannelsAction)ActionFactory.lookupById(action.getId());
+        minion1 = TestUtils.reload(minion1);
+        assertEquals(3, minion1.getChannels().size());
+        assertEquals(base.getId(), minion1.getBaseChannel().getId());
+        assertEquals(2, minion1.getChildChannels().size());
+        assertTrue(minion1.getChildChannels().stream().anyMatch(cc -> cc.getId().equals(ch1.getId())));
+        assertTrue(minion1.getChildChannels().stream().anyMatch(cc -> cc.getId().equals(ch2.getId())));
 
-        assertEquals(3,  action.getDetails().getAccessTokens().size());
-        assertTrue(action.getDetails().getAccessTokens().stream()
-                .allMatch(token ->
-                        token.getStart().toInstant().isAfter(now.toInstant()) &&
-                        token.getStart().toInstant().isBefore(now.toInstant().plus(10, ChronoUnit.SECONDS))));
-        assertTrue(action.getDetails().getAccessTokens().stream().allMatch(AccessToken::getValid));
-        assertTokenExists(base, action);
-        assertTokenExists(ch1, action);
-        assertTokenExists(ch2, action);
+        assertEquals(3, minion1.getAccessTokens().size());
+        assertTokenChannel(minion1, base);
+        assertTokenChannel(minion1, ch1);
+        assertTokenChannel(minion1, ch2);
     }
 
-    private void assertTokenExists(Channel channel, SubscribeChannelsAction action) {
-        assertEquals(1, action.getDetails().getAccessTokens().stream()
-                .filter(token -> token.getChannels().size() == 1 && token.getChannels().contains(channel)).count());
-    }
-
-    private void assertTokenPillarValue(Channel channel, SubscribeChannelsAction action, Map<String, Object> channels) {
-        AccessToken tokenForChannel = action.getDetails().getAccessTokens().stream()
-                .filter(token -> token.getChannels().contains(channel)).findFirst().get();
-        assertEquals(tokenForChannel.getToken(), ((Map<String, Object>)channels.get(channel.getLabel())).get("token"));
+    private void assertTokenChannel(MinionServer minionIn, Channel channel) {
+        assertTrue(minionIn.getAccessTokens().stream()
+                .anyMatch(token -> token.getChannels().size() == 1 && token.getChannels().contains(channel)),
+                channel.getLabel());
     }
 
     private SaltServerActionService countSaltActionCalls(AtomicInteger counter) {

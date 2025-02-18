@@ -14,25 +14,29 @@
  */
 package com.suse.manager.webui.controllers.login;
 
-import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withCsrfToken;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUser;
 import static spark.Spark.get;
 import static spark.Spark.post;
 
+import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.conf.Config;
 import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.conf.sso.SSOConfig;
 import com.redhat.rhn.common.localization.LocalizationService;
+import com.redhat.rhn.domain.common.RhnConfiguration;
+import com.redhat.rhn.domain.common.RhnConfigurationFactory;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.frontend.security.AuthenticationServiceFactory;
 import com.redhat.rhn.manager.acl.AclManager;
 import com.redhat.rhn.manager.user.UserManager;
 
 import com.suse.manager.webui.utils.LoginHelper;
+import com.suse.manager.webui.utils.SparkApplicationHelper;
 import com.suse.utils.Json;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.onelogin.saml2.Auth;
 import com.onelogin.saml2.exception.SettingsException;
 
@@ -51,6 +55,7 @@ import javax.servlet.http.HttpServletResponse;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
+import spark.Spark;
 import spark.template.jade.JadeTemplateEngine;
 
 /**
@@ -118,23 +123,53 @@ public class LoginController {
             model.put("url_bounce", urlBounce);
             model.put("request_method", reqMethod);
         }
+        RhnConfigurationFactory conf = RhnConfigurationFactory.getSingleton();
         model.put("isUyuni", ConfigDefaults.get().isUyuni());
-        model.put("title", Config.get().getString(ConfigDefaults.PRODUCT_NAME) + " - Sign In");
+        model.put("title", ConfigDefaults.get().getProductName() + " - Sign In");
         model.put("validationErrors", Json.GSON.toJson(LoginHelper.validateDBVersion()));
         model.put("schemaUpgradeRequired", Json.GSON.toJson(LoginHelper.isSchemaUpgradeRequired()));
         model.put("webVersion", ConfigDefaults.get().getProductVersion());
-        model.put("productName", Config.get().getString(ConfigDefaults.PRODUCT_NAME));
+        model.put("productName", ConfigDefaults.get().getProductName());
         model.put("customHeader", Config.get().getString("java.custom_header"));
         model.put("customFooter", Config.get().getString("java.custom_footer"));
         model.put("legalNote", Config.get().getString("java.legal_note"));
         model.put("loginLength", Config.get().getString("max_user_len"));
-        model.put("passwordLength", Config.get().getString("max_passwd_len"));
+        model.put("passwordLength", conf.getLongConfiguration(RhnConfiguration.KEYS.PSW_CHECK_LENGTH_MAX).getValue());
         model.put("preferredLocale", ConfigDefaults.get().getDefaultLocale());
         model.put("docsLocale", ConfigDefaults.get().getDefaultDocsLocale());
         model.put("webTheme", ConfigDefaults.get().getDefaultWebTheme());
         model.put("diskspaceSeverity", LoginHelper.validateDiskSpaceAvailability());
 
+        // Pay as you go code
+        boolean sccForwardWarning = GlobalInstanceHolder.PAYG_MANAGER.isPaygInstance() &&
+                GlobalInstanceHolder.PAYG_MANAGER.hasSCCCredentials() &&
+                !ConfigDefaults.get().isForwardRegistrationEnabled();
+
+        model.put("sccForwardWarning", sccForwardWarning);
+
         return new ModelAndView(model, "controllers/login/templates/login.jade");
+    }
+
+    /**
+     * Perform the webUI login.
+     *
+     * @param request the request object
+     * @param response the response object
+     * @return the JSON result of the login operation
+     */
+    public static String login(Request request, Response response) {
+        return performLogin(request, response, false);
+    }
+
+    /**
+     * Perform the http api login.
+     *
+     * @param request the request object
+     * @param response the response object
+     * @return the JSON result of the login operation
+     */
+    public static String apiLogin(Request request, Response response) {
+        return performLogin(request, response, true);
     }
 
     /**
@@ -144,20 +179,30 @@ public class LoginController {
      * @param response the response object
      * @return the JSON result of the login operation
      */
-    public static String login(Request request, Response response) {
+    private static String performLogin(Request request, Response response, boolean allowReadOnly) {
         Optional<String> errorMsg = Optional.empty();
         LoginCredentials creds = GSON.fromJson(request.body(), LoginCredentials.class);
         User user = LoginHelper.checkExternalAuthentication(request.raw(), new ArrayList<>(), new ArrayList<>());
 
         // External-auth didn't return a user - try local-auth
         if (user == null) {
-            try {
-                user = UserManager.loginUser(creds.getLogin(), creds.getPassword());
-                log.info("LOCAL AUTH SUCCESS: [{}]", user.getLogin());
+            if (creds == null) {
+                Spark.halt(HttpServletResponse.SC_BAD_REQUEST);
             }
-            catch (LoginException e) {
-                log.error("LOCAL AUTH FAILURE: [{}]", creds.getLogin());
-                errorMsg = Optional.of(LocalizationService.getInstance().getMessage(e.getMessage()));
+            else {
+                try {
+                    if (allowReadOnly) {
+                        user = UserManager.loginReadOnlyUser(creds.getLogin(), creds.getPassword());
+                    }
+                    else {
+                        user = UserManager.loginUser(creds.getLogin(), creds.getPassword());
+                    }
+                    log.info("LOCAL AUTH SUCCESS: [{}]", user.getLogin());
+                }
+                catch (LoginException e) {
+                    log.error("LOCAL AUTH FAILURE: [{}]", creds.getLogin());
+                    errorMsg = Optional.of(LocalizationService.getInstance().getMessage(e.getMessage()));
+                }
             }
         }
         // External-auth returned a user and no errors
@@ -167,12 +212,12 @@ public class LoginController {
 
         if (errorMsg.isEmpty()) {
             LoginHelper.successfulLogin(request.raw(), response.raw(), user);
-            return json(response, new LoginResult(true, null));
+            return SparkApplicationHelper.json(response, new LoginResult(true, null), new TypeToken<>() { });
         }
         else {
             log.error("LOCAL AUTH FAILURE: [{}]", creds.getLogin());
             response.status(HttpServletResponse.SC_UNAUTHORIZED);
-            return json(response, new LoginResult(false, errorMsg.get()));
+            return SparkApplicationHelper.json(response, new LoginResult(false, errorMsg.get()), new TypeToken<>() { });
         }
     }
 
@@ -186,7 +231,7 @@ public class LoginController {
     public static String logout(Request request, Response response, User user) {
         AuthenticationServiceFactory.getInstance().getAuthenticationService().invalidate(request.raw(), response.raw());
         log.info("WEB LOGOUT: [{}]", user.getLogin());
-        return json(response, new LoginResult(true, null));
+        return SparkApplicationHelper.json(response, new LoginResult(true, null), new TypeToken<>() { });
     }
 
     /**
@@ -194,6 +239,9 @@ public class LoginController {
      */
     public static class LoginCredentials {
         private String login;
+
+        // You can choose to use either login and username, both should work equally.
+        private String username;
         private String password;
 
         /**
@@ -209,6 +257,7 @@ public class LoginController {
          */
         public LoginCredentials(String loginIn, String passwordIn) {
             this.login = loginIn;
+            this.username = loginIn;
             this.password = passwordIn;
         }
 
@@ -216,7 +265,7 @@ public class LoginController {
          * @return the login
          */
         public String getLogin() {
-            return login;
+            return login != null ? login : username;
         }
 
         /**

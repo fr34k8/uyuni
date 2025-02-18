@@ -1,7 +1,7 @@
 #
 # spec file for package spacewalk-proxy
 #
-# Copyright (c) 2022 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 # Copyright (c) 2008-2018 Red Hat, Inc.
 #
 # All modifications and additions to the file contributed by third parties
@@ -17,17 +17,18 @@
 #
 
 
+%{!?python3_sitelib: %global python3_sitelib %(%{__python3} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
+
 Name:           spacewalk-proxy
+Version:        5.1.2
+Release:        0
 Summary:        Spacewalk Proxy Server
 License:        GPL-2.0-only
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
-Version:        4.4.3
-Release:        1
 URL:            https://github.com/uyuni-project/uyuni
 Source0:        https://github.com/spacewalkproject/spacewalk/archive/%{name}-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildRequires:  python3
-BuildArch:      noarch
 Requires:       httpd
 Requires:       python3-uyuni-common-libs
 Requires:       spacewalk-certs-tools
@@ -40,6 +41,7 @@ BuildRequires:  spacewalk-backend >= 1.7.24
 %define rhnroot %{_usr}/share/rhn
 %define destdir %{rhnroot}/proxy
 %define rhnconf %{_sysconfdir}/rhn
+%define python3rhnroot %{python3_sitelib}/spacewalk
 %if 0%{?suse_version}
 %define httpdconf %{_sysconfdir}/apache2/conf.d
 %define apache_user wwwrun
@@ -49,12 +51,14 @@ BuildRequires:  spacewalk-backend >= 1.7.24
 %define apache_user apache
 %define apache_group apache
 %endif
+BuildArch:      noarch
 
 %description
 This package is never built.
 
 %package management
 Summary:        Packages required by the Spacewalk Management Proxy
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
 %if 0%{?suse_version}
 Requires:       http_proxy
@@ -71,7 +75,7 @@ Requires:       httpd
 Requires:       spacewalk-backend >= 1.7.24
 %if 0%{?fedora} || 0%{?rhel}
 Requires:       sos
-Requires(preun):initscripts
+Requires(preun): initscripts
 %endif
 BuildRequires:  /usr/bin/docbook2man
 
@@ -80,11 +84,12 @@ This package require all needed packages for Spacewalk Proxy Server.
 
 %package broker
 Summary:        The Broker component for the Spacewalk Proxy Server
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
 Requires:       httpd
 Requires:       spacewalk-proxy-package-manager
 %if 0%{?suse_version}
-Requires:       apache2-mod_wsgi-python3
+Requires:       apache2-mod_wsgi
 Requires:       apache2-prefork
 %else
 Requires:       mod_ssl
@@ -106,6 +111,7 @@ server.
 
 %package redirect
 Summary:        The SSL Redirect component for the Spacewalk Proxy Server
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
 Requires:       httpd
 Requires:       spacewalk-proxy-broker = %{version}-%{release}
@@ -122,12 +128,13 @@ between an Spacewalk Proxy Server and parent Spacewalk server.
 
 %package common
 Summary:        Modules shared by Spacewalk Proxy components
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
 Requires(pre):  uyuni-base-common
 BuildRequires:  uyuni-base-common
 %if 0%{?suse_version}
 BuildRequires:  apache2
-Requires:       apache2-mod_wsgi-python3
+Requires:       apache2-mod_wsgi
 %else
 BuildRequires:  httpd
 Requires:       mod_ssl
@@ -141,10 +148,9 @@ Requires(pre):  policycoreutils
 # weakremover used on SUSE to get rid of orphan packages which are
 # unsupported and do not have a dependency anymore
 Provides:       weakremover(jabberd)
-Provides:       weakremover(jabberd-sqlite)
 Provides:       weakremover(jabberd-db)
+Provides:       weakremover(jabberd-sqlite)
 Provides:       weakremover(spacewalk-setup-jabberd)
-
 
 %description common
 The Spacewalk Proxy Server allows package caching
@@ -157,6 +163,7 @@ Spacewalk Proxy components.
 
 %package package-manager
 Summary:        Custom Channel Package Manager for the Spacewalk Proxy Server
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
 Requires:       mgr-push >= 4.0.0
 Requires:       python3
@@ -178,6 +185,7 @@ an Spacewalk Proxy Server\'s custom channel.
 
 %package salt
 Summary:        A ZeroMQ Proxy for Salt Minions
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
 Requires:       systemd
 Requires(pre):  salt
@@ -206,27 +214,27 @@ done
 install -d -m 755 %{buildroot}/%{_sysconfdir}/pki/tls/certs
 install -d -m 755 %{buildroot}/%{_sysconfdir}/pki/tls/private
 
-make -f Makefile.proxy install PREFIX=$RPM_BUILD_ROOT
-install -d -m 750 $RPM_BUILD_ROOT/%{_var}/cache/rhn/proxy-auth
+make -f Makefile.proxy install PREFIX=%{buildroot}
+install -d -m 750 %{buildroot}/%{_var}/cache/rhn/proxy-auth
 mkdir -p %{buildroot}/%{_sysconfdir}/slp.reg.d
 install -m 0644 etc/slp.reg.d/susemanagerproxy.reg %{buildroot}/%{_sysconfdir}/slp.reg.d
 
-mkdir -p $RPM_BUILD_ROOT/%{_var}/spool/rhn-proxy/list
+mkdir -p %{buildroot}/%{_var}/spool/rhn-proxy/list
 
 %if 0%{?suse_version}
-mkdir -p $RPM_BUILD_ROOT/etc/apache2
-mv $RPM_BUILD_ROOT/etc/httpd/conf.d $RPM_BUILD_ROOT/%{httpdconf}
-rm -rf $RPM_BUILD_ROOT/etc/httpd
+mkdir -p %{buildroot}%{_sysconfdir}/apache2
+mv %{buildroot}%{_sysconfdir}/httpd/conf.d %{buildroot}/%{httpdconf}
+rm -rf %{buildroot}%{_sysconfdir}/httpd
 %endif
-touch $RPM_BUILD_ROOT/%{httpdconf}/cobbler-proxy.conf
+touch %{buildroot}/%{httpdconf}/cobbler-proxy.conf
 
-ln -sf rhn-proxy $RPM_BUILD_ROOT%{_sbindir}/spacewalk-proxy
+ln -sf rhn-proxy %{buildroot}%{_sbindir}/spacewalk-proxy
 
 pushd %{buildroot}
 %if 0%{?suse_version}
 %py3_compile -O %{buildroot}
 %else
-%py_byte_compile %{python3} %{buildroot}
+%{py_byte_compile} %{python3} %{buildroot}
 %endif
 popd
 
@@ -234,13 +242,13 @@ install -m 0750 salt-broker/salt-broker %{buildroot}/%{_bindir}/
 mkdir -p %{buildroot}/%{_sysconfdir}/salt/
 install -m 0644 salt-broker/broker %{buildroot}/%{_sysconfdir}/salt/
 install -d -m 755 %{buildroot}/%{_unitdir}/
-%__install -D -m 444 salt-broker/salt-broker.service %{buildroot}/%{_unitdir}/salt-broker.service
+install -D -m 444 salt-broker/salt-broker.service %{buildroot}/%{_unitdir}/salt-broker.service
 
 ln -s %{_sbindir}/service %{buildroot}%{_sbindir}/rcsalt-broker
 
-install -m 0755 mgr-proxy-ssh-push-init $RPM_BUILD_ROOT/%{_sbindir}/mgr-proxy-ssh-push-init
-install -m 0755 mgr-proxy-ssh-force-cmd $RPM_BUILD_ROOT/%{_sbindir}/mgr-proxy-ssh-force-cmd
-install -d -m 0755 $RPM_BUILD_ROOT/%{_var}/lib/spacewalk
+install -m 0755 mgr-proxy-ssh-push-init %{buildroot}/%{_sbindir}/mgr-proxy-ssh-push-init
+install -m 0755 mgr-proxy-ssh-force-cmd %{buildroot}/%{_sbindir}/mgr-proxy-ssh-force-cmd
+install -d -m 0755 %{buildroot}/%{_var}/lib/spacewalk
 
 %check
 
@@ -258,7 +266,7 @@ fi
 # In case of an upgrade, get the configured package list directory and clear it
 # out.  Don't worry; it will be rebuilt by the proxy.
 
-RHN_CONFIG_PY=%{rhnroot}/common/rhnConfig.py
+RHN_CONFIG_PY=%{python3rhnroot}/common/rhnConfig.py
 RHN_PKG_DIR=%{_var}/spool/rhn-proxy
 
 if [ -f $RHN_CONFIG_PY ] ; then
@@ -266,9 +274,9 @@ if [ -f $RHN_CONFIG_PY ] ; then
     # Check whether the config command supports the ability to retrieve a
     # config variable arbitrarily.  Versions of  < 4.0.6 (rhn) did not.
 
-    %{python3} $RHN_CONFIG_PY proxy.broker > /dev/null 2>&1
-    if [ $? -eq 1 ] ; then
-        RHN_PKG_DIR=$(%{python3} $RHN_CONFIG_PY get proxy.broker pkg_dir)
+    CFG_RHN_PKG_DIR=$(%{__python3} $RHN_CONFIG_PY get proxy.broker pkg_dir)
+    if [ -n "$CFG_RHN_PKG_DIR" -a $CFG_RHN_PKG_DIR != "None" ]; then
+        RHN_PKG_DIR=$CFG_RHN_PKG_DIR
     fi
 fi
 
@@ -279,31 +287,11 @@ exit 0
 
 %post common
 %if 0%{?suse_version}
-sysconf_addword /etc/sysconfig/apache2 APACHE_MODULES wsgi
-sysconf_addword /etc/sysconfig/apache2 APACHE_MODULES proxy
-sysconf_addword /etc/sysconfig/apache2 APACHE_MODULES rewrite
-sysconf_addword /etc/sysconfig/apache2 APACHE_MODULES version
-sysconf_addword /etc/sysconfig/apache2 APACHE_SERVER_FLAGS SSL
-sysconf_addword -r /etc/sysconfig/apache2 APACHE_MODULES access_compat
-
-# In case of an update, remove superfluous stuff
-# from cobbler-proxy.conf (bnc#796581)
-
-PROXY_CONF=/etc/apache2/conf.d/cobbler-proxy.conf
-TMPFILE=`mktemp`
-
-if grep "^ProxyPass /ks " $PROXY_CONF > /dev/null 2>&1 ; then
-    grep -v "^ProxyPass /ks " $PROXY_CONF | \
-    grep -v "^ProxyPassReverse /ks " | \
-    grep -v "^ProxyPass /download " | \
-    grep -v "^ProxyPassReverse /download " > $TMPFILE
-    mv $TMPFILE $PROXY_CONF
-fi
-
-SSHUSER=mgrsshtunnel
-if getent passwd $SSHUSER | grep ":/home/$SSHUSER:" > /dev/null ; then
-  usermod -m -d %{_var}/lib/spacewalk/$SSHUSER $SSHUSER
-fi
+sysconf_addword %{_sysconfdir}/sysconfig/apache2 APACHE_MODULES wsgi
+sysconf_addword %{_sysconfdir}/sysconfig/apache2 APACHE_MODULES proxy
+sysconf_addword %{_sysconfdir}/sysconfig/apache2 APACHE_MODULES rewrite
+sysconf_addword %{_sysconfdir}/sysconfig/apache2 APACHE_MODULES version
+sysconf_addword %{_sysconfdir}/sysconfig/apache2 APACHE_SERVER_FLAGS SSL
 %endif
 
 %post redirect
@@ -315,22 +303,6 @@ fi
 # Make sure the scriptlet returns with success
 exit 0
 
-%post management
-# The spacewalk-proxy-management package is also our "upgrades" package.
-# We deploy new conf from configuration channel if needed
-# we deploy new conf only if we install from webui and conf channel exist
-if rhncfg-client verify %{_sysconfdir}/rhn/rhn.conf 2>&1|grep 'Not found'; then
-     %{_bindir}/rhncfg-client get %{_sysconfdir}/rhn/rhn.conf
-fi > /dev/null 2>&1
-if rhncfg-client verify %{_sysconfdir}/squid/squid.conf | grep -E '(modified|missing)'; then
-    rhncfg-client get %{_sysconfdir}/squid/squid.conf
-    rm -rf %{_var}/spool/squid/*
-    %{_usr}/sbin/squid -z
-    /sbin/service squid condrestart
-fi > /dev/null 2>&1
-
-exit 0
-
 %pre salt
 %if !0%{?rhel}
 %service_add_pre salt-broker.service
@@ -338,7 +310,7 @@ exit 0
 
 %post salt
 %if 0%{?rhel}
-%systemd_post salt-broker.service
+%{systemd_post} salt-broker.service
 %else
 %service_add_post salt-broker.service
 %endif
@@ -354,7 +326,7 @@ systemctl start salt-broker.service > /dev/null 2>&1 || :
 
 %postun salt
 %if 0%{?rhel}
-%systemd_postun salt-broker.service
+%{systemd_postun} salt-broker.service
 %else
 %service_del_postun salt-broker.service
 %endif
@@ -376,9 +348,9 @@ fi
 
 %posttrans common
 if [ -n "$1" ] ; then # anything but uninstall
-    mkdir /var/cache/rhn/proxy-auth 2>/dev/null
-    chown %{apache_user}:root /var/cache/rhn/proxy-auth
-    restorecon /var/cache/rhn/proxy-auth
+    mkdir %{_localstatedir}/cache/rhn/proxy-auth 2>/dev/null
+    chown %{apache_user}:root %{_localstatedir}/cache/rhn/proxy-auth
+    restorecon %{_localstatedir}/cache/rhn/proxy-auth
 fi
 
 %files salt
@@ -403,7 +375,7 @@ fi
 %endif
 %config(noreplace) %{_sysconfdir}/logrotate.d/rhn-proxy-broker
 # config files
-%attr(644,root,%{apache_group}) %{_prefix}/share/rhn/config-defaults/rhn_proxy_broker.conf
+%attr(644,root,%{apache_group}) %{_datadir}/rhn/config-defaults/rhn_proxy_broker.conf
 %dir %{destdir}/broker/__pycache__/
 %{destdir}/broker/__pycache__/*
 
@@ -419,7 +391,7 @@ fi
 %endif
 %config(noreplace) %{_sysconfdir}/logrotate.d/rhn-proxy-redirect
 # config files
-%attr(644,root,%{apache_group}) %{_prefix}/share/rhn/config-defaults/rhn_proxy_redirect.conf
+%attr(644,root,%{apache_group}) %{_datadir}/rhn/config-defaults/rhn_proxy_redirect.conf
 %dir %{destdir}/redirect
 %dir %{destdir}/redirect/__pycache__/
 %{destdir}/redirect/__pycache__/*
@@ -445,7 +417,7 @@ fi
 %endif
 # config files
 %attr(640,root,%{apache_group}) %config(noreplace) %{rhnconf}/rhn.conf
-%attr(644,root,%{apache_group}) %{_prefix}/share/rhn/config-defaults/rhn_proxy.conf
+%attr(644,root,%{apache_group}) %{_datadir}/rhn/config-defaults/rhn_proxy.conf
 %attr(644,root,%{apache_group}) %config %{httpdconf}/spacewalk-proxy.conf
 # this file is created by either cli or webui installer
 %ghost %config %{httpdconf}/cobbler-proxy.conf
@@ -472,11 +444,11 @@ fi
 %files package-manager
 %defattr(-,root,root)
 # config files
-%attr(644,root,%{apache_group}) %{_prefix}/share/rhn/config-defaults/rhn_proxy_package_manager.conf
+%attr(644,root,%{apache_group}) %{_datadir}/rhn/config-defaults/rhn_proxy_package_manager.conf
 %{_bindir}/rhn_package_manager
 %{rhnroot}/PackageManager/rhn_package_manager.py*
 %{rhnroot}/PackageManager/__init__.py*
-%{_mandir}/man8/rhn_package_manager.8.gz
+%{_mandir}/man8/rhn_package_manager.8%{?ext_man}
 %dir %{rhnroot}/PackageManager
 %dir %{rhnroot}/PackageManager/__pycache__/
 %{rhnroot}/PackageManager/__pycache__/*
@@ -490,7 +462,7 @@ fi
 %{_sbindir}/spacewalk-proxy
 # mans
 %{_mandir}/man8/rhn-proxy.8*
-%dir /usr/share/rhn
+%dir %{_datadir}/rhn
 %dir %{_sysconfdir}/slp.reg.d
 %config %{_sysconfdir}/slp.reg.d/susemanagerproxy.reg
 

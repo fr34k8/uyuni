@@ -15,6 +15,7 @@
 
 package com.redhat.rhn.domain.notification;
 
+import com.redhat.rhn.common.RhnRuntimeException;
 import com.redhat.rhn.domain.notification.types.ChannelSyncFailed;
 import com.redhat.rhn.domain.notification.types.ChannelSyncFinished;
 import com.redhat.rhn.domain.notification.types.CreateBootstrapRepoFailed;
@@ -23,8 +24,11 @@ import com.redhat.rhn.domain.notification.types.NotificationData;
 import com.redhat.rhn.domain.notification.types.NotificationType;
 import com.redhat.rhn.domain.notification.types.OnboardingFailed;
 import com.redhat.rhn.domain.notification.types.PaygAuthenticationUpdateFailed;
+import com.redhat.rhn.domain.notification.types.PaygNotCompliantWarning;
+import com.redhat.rhn.domain.notification.types.SCCOptOutWarning;
 import com.redhat.rhn.domain.notification.types.StateApplyFailed;
 import com.redhat.rhn.domain.notification.types.SubscriptionWarning;
+import com.redhat.rhn.domain.notification.types.UpdateAvailable;
 
 import com.google.gson.Gson;
 
@@ -134,7 +138,13 @@ public class NotificationMessage implements Serializable {
                 return new Gson().fromJson(getData(), EndOfLifePeriod.class);
             case SubscriptionWarning:
                 return new Gson().fromJson(getData(), SubscriptionWarning.class);
-            default: throw new RuntimeException("should not happen!");
+            case UpdateAvailable:
+                return new Gson().fromJson(getData(), UpdateAvailable.class);
+            case PaygNotCompliantWarning:
+                return new Gson().fromJson(getData(), PaygNotCompliantWarning.class);
+            case SCCOptOutWarning:
+                return new Gson().fromJson(getData(), SCCOptOutWarning.class);
+            default: throw new RhnRuntimeException("Notification type not found");
         }
     }
 
@@ -150,9 +160,12 @@ public class NotificationMessage implements Serializable {
             case ChannelSyncFinished: return "Channel sync finished";
             case CreateBootstrapRepoFailed: return "Creating Bootstrap Repository failed";
             case StateApplyFailed: return "State apply failed";
-            case PaygAuthenticationUpdateFailed: return "Pay-as-you-go refresh authentication data failed";
+            case PaygAuthenticationUpdateFailed: return "PAYG refresh failed";
             case EndOfLifePeriod: return "End of Life Period";
             case SubscriptionWarning: return "Subscription Warning";
+            case UpdateAvailable: return "Updates are Available";
+            case PaygNotCompliantWarning: return "PAYG instance is not compliant";
+            case SCCOptOutWarning: return "SCC Data Sync Disabled";
             default: return getType().name();
         }
     }
@@ -204,10 +217,9 @@ public class NotificationMessage implements Serializable {
      */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof NotificationMessage)) {
+        if (!(other instanceof NotificationMessage otherNotificationMessage)) {
             return false;
         }
-        NotificationMessage otherNotificationMessage = (NotificationMessage) other;
         return new EqualsBuilder()
             .append(getId(), otherNotificationMessage.getId())
             .append(getData(), otherNotificationMessage.getData())
@@ -241,6 +253,6 @@ public class NotificationMessage implements Serializable {
      * The enum type for a {@link NotificationMessage}
      */
     public enum NotificationMessageSeverity {
-        info, warning, error
+        INFO, WARNING, ERROR
     }
 }

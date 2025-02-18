@@ -14,7 +14,12 @@ if ! [ "${SH_NAME}" = "bash" ]; then
 fi
 
 REPO_HOST=$1
-REPO_PORT=$2
+if [[ $2 =~ ^[0-9]+$ ]]; then
+   REPO_PORT=$2
+else
+   echo 'Error: $2 (REPO_PORT) must be an integer.' >&2
+   exit 254
+fi
 FAIL_ON_ERROR=1
 if [ "$3" = "1" ]; then
     FAIL_ON_ERROR=0
@@ -44,12 +49,13 @@ function exit_with_message_code() {
     exit 0
 }
 
+# the order matters: see bsc#1222347
 if [ -x /usr/bin/dnf ]; then
+    INSTALLER=yum
+elif [ -x /usr/bin/yum ]; then
     INSTALLER=yum
 elif [ -x /usr/bin/zypper ]; then
     INSTALLER=zypper
-elif [ -x /usr/bin/yum ]; then
-    INSTALLER=yum
 elif [ -x /usr/bin/apt ]; then
     INSTALLER=apt
 else
@@ -95,6 +101,9 @@ function getY_CLIENT_CODE_BASE() {
     if [ -L /usr/share/doc/sles_es-release ]; then
         BASE="res"
         VERSION=6
+    elif [ -f /etc/openEuler-release ]; then
+        grep -v '^#' /etc/openEuler-release | grep -q '\(openEuler\)' && BASE="openEuler"
+	VERSION=`grep -v '^#' /etc/openEuler-release | grep -Po '(?<=release )(\d+\.)+\d+'`
     elif [ -f /etc/almalinux-release ]; then
         grep -v '^#' /etc/almalinux-release | grep -q '\(AlmaLinux\)' && BASE="almalinux"
         VERSION=`grep -v '^#' /etc/almalinux-release | grep -Po '(?<=release )\d+'`
@@ -138,11 +147,16 @@ function getZ_CLIENT_CODE_BASE() {
         if [ "$BASE" != "sle" ]; then
             grep -q 'openSUSE' /etc/os-release && BASE='opensuse'
         fi
+	if [ "$BASE" == "" ]; then
+            grep -q 'cpe:/o:suse:' /etc/os-release && BASE='sl'
+	fi
         grep -q 'Micro' /etc/os-release && BASE="${BASE}micro"
         VERSION="$(grep '^\(VERSION_ID\)' /etc/os-release | sed -n 's/.*"\([[:digit:]]\+\).*/\1/p')"
         PATCHLEVEL="$(grep '^\(VERSION_ID\)' /etc/os-release | sed -n 's/.*\.\([[:digit:]]*\).*/\1/p')"
-        # openSUSE MicroOS, could be useful for Tumbleweed in the future
+        # openSUSE MicroOS
         grep -q 'MicroOS' /etc/os-release && BASE='opensusemicroos' && VERSION='latest'
+        # openSUSE Tumbleweed
+        grep -q 'Tumbleweed' /etc/os-release && BASE='opensusetumbleweed' && VERSION='latest'
     fi
     Z_CLIENT_CODE_BASE="${BASE:-unknown}"
     Z_CLIENT_CODE_VERSION="${VERSION:-unknown}"
@@ -194,6 +208,21 @@ elif [ "${INSTALLER}" = "apt" ]; then
         CLIENT_REPO_URL="${CLIENT_REPOS_ROOT}/${A_CLIENT_CODE_BASE}/${A_CLIENT_VARIANT_ID}/bootstrap"
     else
         CLIENT_REPO_URL="${CLIENT_REPOS_ROOT}/${A_CLIENT_CODE_BASE}/${A_CLIENT_CODE_MAJOR_VERSION}/${A_CLIENT_CODE_MINOR_VERSION}/bootstrap"
+    fi
+fi
+
+SELINUX_POLICY_FILENAME="salt_ssh_port_forwarding.cil"
+function selinux_policy_loaded {
+    semodule -l | grep -x $SELINUX_POLICY_FILENAME
+}
+
+# Our SSH tunnel uses a custom port and we must configure SELinux to account for it
+if [[ $REPO_HOST == "localhost" ]] && command -v selinuxenabled && selinuxenabled; then
+    if ! selinux_policy_loaded; then
+        echo "(portcon tcp ${REPO_PORT} (system_u object_r ssh_port_t ((s0)(s0))))" >$SELINUX_POLICY_FILENAME
+        if ! semodule -i $SELINUX_POLICY_FILENAME; then
+            exit_with_message_code "Error: Failed to install SELinux policy with port=${REPO_PORT}." 7
+        fi
     fi
 fi
 

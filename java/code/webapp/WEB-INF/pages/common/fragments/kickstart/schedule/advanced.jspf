@@ -94,12 +94,12 @@
 
         <div class="panel">
             <div class="row">
-                <div class="col-sm-offset-3 col-sm-9">
+                <div class="col-sm-offset-3 offset-sm-3 col-sm-9">
                     <input type="button" class="btn btn-default"
                         value="<bean:message key='kickstart.schedule.button3.jsp'/>"
                         onclick="setStep('first');moveNext();"
                     />
-                    <input type="button" class="btn btn-success"
+                    <input type="button" class="btn btn-primary"
                         value="<bean:message key='kickstart.schedule.button2.jsp'/>"
                         onclick="setStep('third');moveNext();"
                     />

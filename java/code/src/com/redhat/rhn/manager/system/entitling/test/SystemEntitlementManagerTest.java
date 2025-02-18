@@ -14,7 +14,6 @@
  */
 package com.redhat.rhn.manager.system.entitling.test;
 
-import static com.redhat.rhn.testing.RhnBaseTestCase.reload;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,9 +38,7 @@ import com.redhat.rhn.testing.ServerTestUtils;
 import com.redhat.rhn.testing.TestUtils;
 import com.redhat.rhn.testing.UserTestUtils;
 
-import com.suse.manager.virtualization.VirtManagerSalt;
 import com.suse.manager.webui.services.iface.MonitoringManager;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.impl.SaltSSHService;
 import com.suse.manager.webui.services.impl.SaltService;
 import com.suse.salt.netapi.datatypes.target.MinionList;
@@ -63,11 +60,10 @@ public class SystemEntitlementManagerTest extends JMockBaseTestCaseWithUser {
         setImposteriser(ByteBuddyClassImposteriser.INSTANCE);
         saltServiceMock = mock(SaltService.class);
         ServerGroupManager serverGroupManager = new ServerGroupManager(saltServiceMock);
-        VirtManager virtManager = new VirtManagerSalt(saltServiceMock);
         MonitoringManager monitoringManager = new FormulaMonitoringManager(saltServiceMock);
         systemEntitlementManager = new SystemEntitlementManager(
-                new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-                new SystemEntitler(saltServiceMock, virtManager, monitoringManager, serverGroupManager)
+                new SystemUnentitler(monitoringManager, serverGroupManager),
+                new SystemEntitler(saltServiceMock, monitoringManager, serverGroupManager)
         );
         context().checking(new Expectations() {{
             allowing(saltServiceMock).refreshPillar(with(any(MinionList.class)));
@@ -117,7 +113,8 @@ public class SystemEntitlementManagerTest extends JMockBaseTestCaseWithUser {
         //Test OS Image Build Host
 
         context().checking(new Expectations() {{
-            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)));
+            allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)),
+                    with(equal(SaltSSHService.SUMA_SSH_PUB_KEY)));
         }});
 
         minion.setServerArch(ServerFactory.lookupServerArchByLabel("x86_64-redhat-linux"));
@@ -182,7 +179,6 @@ public class SystemEntitlementManagerTest extends JMockBaseTestCaseWithUser {
 
         // Test stuff!
         assertTrue(server.hasEntitlement(EntitlementManager.VIRTUALIZATION));
-        assertTrue(server.getChannels().contains(rhnTools));
         if (!ConfigDefaults.get().isSpacewalk()) {
             // this is actually Satellite-specific
             // assertTrue(server.getChannels().contains(rhelVirt));

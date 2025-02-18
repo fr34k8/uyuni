@@ -24,6 +24,7 @@ import com.suse.manager.webui.services.impl.runner.MgrK8sRunner;
 import com.suse.manager.webui.services.impl.runner.MgrUtilRunner;
 import com.suse.manager.webui.utils.gson.BootstrapParameters;
 import com.suse.manager.webui.utils.salt.custom.ScheduleMetadata;
+import com.suse.manager.webui.utils.salt.custom.SumaUtil;
 import com.suse.manager.webui.utils.salt.custom.SystemInfo;
 import com.suse.salt.netapi.calls.LocalAsyncResult;
 import com.suse.salt.netapi.calls.LocalCall;
@@ -77,6 +78,11 @@ public class TestSaltApi implements SaltApi {
     }
 
     @Override
+    public Optional<Boolean> mkDir(Path path, String modeString) {
+        return Optional.empty();
+    }
+
+    @Override
     public Optional<Boolean> copyFile(Path src, Path dst) {
         throw new UnsupportedOperationException();
     }
@@ -97,6 +103,11 @@ public class TestSaltApi implements SaltApi {
     }
 
     @Override
+    public SumaUtil.PublicCloudInstanceFlavor getInstanceFlavor(String minionId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Map<Boolean, String> storeMinionScapFiles(MinionServer minion, String uploadDir, Long actionId) {
         throw new UnsupportedOperationException();
     }
@@ -107,7 +118,7 @@ public class TestSaltApi implements SaltApi {
     }
 
     @Override
-        public Optional<MgrUtilRunner.SshKeygenResult> generateSSHKey(String path) {
+        public Optional<MgrUtilRunner.SshKeygenResult> generateSSHKey(String path, String pubkeyCopy) {
         throw new UnsupportedOperationException();
     }
 
@@ -135,6 +146,11 @@ public class TestSaltApi implements SaltApi {
 
     @Override
     public void syncModules(MinionList minionList) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void syncAllAsync(MinionList minionList) {
         throw new UnsupportedOperationException();
     }
 
@@ -299,4 +315,10 @@ public class TestSaltApi implements SaltApi {
                                          List<String> intermediateCAs) throws IllegalArgumentException {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public List<String> selectMinions(String target, String targetType) {
+        throw new UnsupportedOperationException();
+    }
+
 }

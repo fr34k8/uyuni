@@ -180,7 +180,7 @@ public class ErrataSearchAction extends BaseSearchAction {
             form.set(ERRATA_ENH, Boolean.TRUE);
         }
 
-        Map m = form.getMap();
+        Map<String, Object> m = form.getMap();
         Set<String> keys = m.keySet();
         for (String key : keys) {
             Object vObj = m.get(key);
@@ -530,8 +530,8 @@ public class ErrataSearchAction extends BaseSearchAction {
             return false;
         }
 
-        if (dateSrch instanceof Boolean) {
-            return (Boolean) dateSrch;
+        if (dateSrch instanceof Boolean bool) {
+            return bool;
         }
         else if (dateSrch instanceof String) {
             return "on".equals(dateSrch);

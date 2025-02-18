@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2014--2024 SUSE LLC
  * Copyright (c) 2009--2014 Red Hat, Inc.
  *
  * This software is licensed to you under the GNU General Public License,
@@ -14,6 +15,7 @@
  */
 package com.redhat.rhn.taskomatic.task;
 
+import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.db.datasource.ModeFactory;
 import com.redhat.rhn.common.db.datasource.SelectMode;
@@ -23,7 +25,9 @@ import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.domain.notification.NotificationMessage;
 import com.redhat.rhn.domain.notification.UserNotificationFactory;
 import com.redhat.rhn.domain.notification.types.EndOfLifePeriod;
+import com.redhat.rhn.domain.notification.types.PaygNotCompliantWarning;
 import com.redhat.rhn.domain.notification.types.SubscriptionWarning;
+import com.redhat.rhn.domain.notification.types.UpdateAvailable;
 import com.redhat.rhn.domain.org.OrgFactory;
 import com.redhat.rhn.domain.role.RoleFactory;
 import com.redhat.rhn.frontend.dto.ActionMessage;
@@ -31,7 +35,8 @@ import com.redhat.rhn.frontend.dto.AwolServer;
 import com.redhat.rhn.frontend.dto.OrgIdWrapper;
 import com.redhat.rhn.frontend.dto.ReportingUser;
 
-import com.suse.manager.maintenance.ProductEndOfLifeManager;
+import com.suse.cloud.CloudPaygManager;
+import com.suse.manager.maintenance.BaseProductManager;
 import com.suse.manager.utils.MailHelper;
 
 import org.apache.commons.lang3.StringUtils;
@@ -40,8 +45,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.quartz.JobExecutionContext;
 
-import java.io.IOException;
+import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -50,8 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-
-import javax.xml.stream.XMLStreamException;
 
 /**
  * DailySummary task.
@@ -69,7 +74,8 @@ public class DailySummary extends RhnJavaJob {
     private static final String ERRATA_UPDATE = "Errata Update";
     private static final String ERRATA_INDENTION = StringUtils.repeat(" ", ERRATA_SPACER);
 
-    private static final ProductEndOfLifeManager END_OF_LIFE_MANAGER = new ProductEndOfLifeManager();
+    private static final BaseProductManager END_OF_LIFE_MANAGER = new BaseProductManager();
+    private final CloudPaygManager cloudPaygManager = GlobalInstanceHolder.PAYG_MANAGER;
 
     @Override
     public String getConfigNamespace() {
@@ -82,8 +88,10 @@ public class DailySummary extends RhnJavaJob {
     @Override
     public void execute(JobExecutionContext ctxIn) {
 
+        processUpdateAvailableNotification();
         processEndOfLifeNotification();
         processSubscriptionWarningNotification();
+        processPaygNotCompliantNotification();
 
         processEmails();
     }
@@ -100,35 +108,51 @@ public class DailySummary extends RhnJavaJob {
             return;
         }
 
-        final LocalDate endOfLifeDate;
-
-        try {
-            endOfLifeDate = END_OF_LIFE_MANAGER.getEndOfLifeDate();
-            if (endOfLifeDate == null) {
-                LOGGER.warn("No end of life date defined for the SUSE Manager");
-                return;
-            }
-        }
-        catch (IOException | XMLStreamException ex) {
-            LOGGER.error("Unable to retrieve end of life date for SUSE Manager", ex);
-            return;
-        }
-
-        if (END_OF_LIFE_MANAGER.isNotificationPeriod(endOfLifeDate, today)) {
+        if (END_OF_LIFE_MANAGER.isNotificationPeriod(today)) {
             NotificationMessage notification = UserNotificationFactory.createNotificationMessage(
-                new EndOfLifePeriod(endOfLifeDate));
+                new EndOfLifePeriod(END_OF_LIFE_MANAGER.getEndOfLifeDate()));
             UserNotificationFactory.storeNotificationMessageFor(notification,
                 Collections.singleton(RoleFactory.ORG_ADMIN), Optional.empty());
         }
     }
 
     private void  processSubscriptionWarningNotification() {
+        if (Instant.now().atZone(ZoneId.systemDefault()).getDayOfWeek() != DayOfWeek.MONDAY) {
+            // we want to show this notification only on Mondays
+            return;
+        }
         SubscriptionWarning sw = new SubscriptionWarning();
         if (sw.expiresSoon()) {
             NotificationMessage notificationMessage =
                     UserNotificationFactory.createNotificationMessage(new SubscriptionWarning());
             UserNotificationFactory.storeNotificationMessageFor(notificationMessage,
                     Collections.singleton(RoleFactory.ORG_ADMIN), Optional.empty());
+        }
+    }
+
+    private void  processUpdateAvailableNotification() {
+        UpdateAvailable uan = new UpdateAvailable();
+        if (uan.hasUpdateAvailable()) {
+            NotificationMessage notificationMessage =
+                    UserNotificationFactory.createNotificationMessage(uan);
+            UserNotificationFactory.storeNotificationMessageFor(notificationMessage,
+                    Collections.singleton(RoleFactory.SAT_ADMIN), Optional.empty());
+        }
+    }
+
+    private void processPaygNotCompliantNotification() {
+        if (Instant.now().atZone(ZoneId.systemDefault()).getDayOfWeek() != DayOfWeek.MONDAY) {
+            // we want to show this notification only on Mondays
+            return;
+        }
+
+        // This notification will be process only if SUMA is PAYG but is not compliant
+        if (cloudPaygManager.isPaygInstance() && !cloudPaygManager.isCompliant()) {
+            NotificationMessage notificationMessage =
+                    UserNotificationFactory.createNotificationMessage(
+                            new PaygNotCompliantWarning());
+            UserNotificationFactory.storeNotificationMessageFor(notificationMessage,
+                    Collections.emptySet(), Optional.empty()); // This notification will be sent to everyone
         }
     }
 
@@ -460,7 +484,7 @@ public class DailySummary extends RhnJavaJob {
             String login, String email, String awolMsg, String actionMsg) {
 
         LocalizationService ls = LocalizationService.getInstance();
-        String[] args = new String[7];
+        String[] args = new String[8];
         args[0] = login;
         args[1] = ls.formatDate(new Date());
         args[2] = actionMsg;
@@ -469,6 +493,14 @@ public class DailySummary extends RhnJavaJob {
         // why the hell are these in OrgFactory?
         args[5] = OrgFactory.EMAIL_FOOTER.getValue();
         args[6] = OrgFactory.EMAIL_ACCOUNT_INFO.getValue();
+
+        if (cloudPaygManager.isPaygInstance() && !cloudPaygManager.isCompliant()) {
+            args[7] = String.format("%s\n", ls.getMessage("dailysummary.email.notpaygcompliant"));
+        }
+        else {
+            args[7] = "";
+        }
+
         String msg =  ls.getMessage(
                 "dailysummary.email.body", (Object[])args);
 

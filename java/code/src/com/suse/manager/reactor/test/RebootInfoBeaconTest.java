@@ -23,6 +23,9 @@ import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.testing.RhnJmockBaseTestCase;
 import com.redhat.rhn.testing.UserTestUtils;
 
+import com.suse.cloud.CloudPaygManager;
+import com.suse.cloud.test.TestCloudPaygManagerBuilder;
+import com.suse.manager.attestation.AttestationManager;
 import com.suse.manager.reactor.SaltReactor;
 import com.suse.manager.utils.SaltKeyUtils;
 import com.suse.manager.utils.SaltUtils;
@@ -61,23 +64,29 @@ public class RebootInfoBeaconTest extends RhnJmockBaseTestCase {
         SaltService saltService = createSaltService();
         SaltServerActionService saltServerActionService = createSaltServerActionService(saltService, saltService);
         SaltUtils saltUtils = new SaltUtils(saltService, saltService);
+        AttestationManager attMgr = new AttestationManager();
+        CloudPaygManager paygMgr = new TestCloudPaygManagerBuilder().build();
         reactor = new SaltReactor(
             saltService,
             saltService,
             saltServerActionService,
-            saltUtils
+            saltUtils,
+            paygMgr,
+            attMgr
         );
     }
 
     @Test
-    public void testRebootInfoEvent() throws Exception {
+    public void testRebootInfoEvent() {
         MinionServer minion1 = MinionServerFactoryTest.createTestMinionServer(user);
         minion1.setMinionId("slemicro100001");
-        minion1.setRebootNeeded(false);
+        minion1.setLastBoot(System.currentTimeMillis() / 1000);
+        minion1.setRebootRequiredAfter(null);
 
         MinionServer minion2 = MinionServerFactoryTest.createTestMinionServer(user);
         minion2.setMinionId("slemicro100002");
-        minion2.setRebootNeeded(false);
+        minion1.setLastBoot(System.currentTimeMillis() / 1000);
+        minion2.setRebootRequiredAfter(null);
 
         // Event indicating that reboot is needed for minion 1
         BeaconEvent event = buildRebootInfoEvent(minion1.getMinionId(), true);

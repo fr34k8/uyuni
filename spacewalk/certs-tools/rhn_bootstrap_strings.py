@@ -1,3 +1,4 @@
+#  pylint: disable=missing-module-docstring,anomalous-backslash-in-string
 #
 # Copyright (c) 2008--2018 Red Hat, Inc.
 # Copyright (c) 2016--2021 SUSE LLC.
@@ -16,8 +17,7 @@
 #
 # shell script function library for rhn-bootstrap
 #
-from uyuni.common.context_managers import cfg_component
-from spacewalk.common.rhnConfig import isUyuni
+from spacewalk.common.rhnConfig import isUyuni, cfg_component
 import os.path
 
 
@@ -195,12 +195,13 @@ fi
 
 INSTALLER=zypper
 
+# the order matters: see bsc#1222347
 if [ -x /usr/bin/dnf ]; then
+    INSTALLER=yum
+elif [ -x /usr/bin/yum ]; then
     INSTALLER=yum
 elif [ -x /usr/bin/zypper ]; then
     INSTALLER=zypper
-elif [ -x /usr/bin/yum ]; then
-    INSTALLER=yum
 elif [ -x /usr/bin/apt ]; then
     INSTALLER=apt
 fi
@@ -239,16 +240,22 @@ fi
 """
 
 
+# pylint: disable-next=invalid-name
 def getHeader(productName, options, orgCACert, pubname, apachePubDirectory):
     # 11/22/16 options.gpg_key is now a comma-separated list of path.
     # Removing paths from options.gpg_key
-    org_gpg_key = ",".join([os.path.basename(gpg_key) for gpg_key in options.gpg_key.split(",")])
-    with cfg_component('web') as CFG:
+    org_gpg_key = ",".join(
+        [os.path.basename(gpg_key) for gpg_key in options.gpg_key.split(",")]
+    )
+    # pylint: disable-next=invalid-name
+    with cfg_component("web") as CFG:
         version = CFG.version
         if isUyuni():
             version = CFG.uyuni
 
-    venv_section = """
+    venv_section = (
+        # pylint: disable-next=consider-using-f-string
+        """
 # Avoid installing venv-salt-minion instead salt-minion
 # even if it available in the bootstrap repo
 AVOID_VENV_SALT_MINION={avoid_venv}
@@ -257,44 +264,58 @@ AVOID_VENV_SALT_MINION={avoid_venv}
 # even if it is NOT available in the bootstrap repo
 FORCE_VENV_SALT_MINION={force_venv}
 """.format(
-    avoid_venv=1 if bool(options.no_bundle) else 0,
-    force_venv=1 if bool(options.force_bundle) else 0,
-) or ""
+            avoid_venv=1 if bool(options.no_bundle) else 0,
+            force_venv=1 if bool(options.force_bundle) else 0,
+        )
+        or ""
+    )
 
-    return _header.format(productName=productName,
-                          version=version,
-                          apachePubDirectory=apachePubDirectory,
-                          activation_keys=options.activation_keys,
-                          org_gpg_key=org_gpg_key,
-                          overrides=options.overrides,
-                          hostname=options.hostname,
-                          orgCACert=orgCACert,
-                          venv_section=venv_section,
-                          using_ssl=1,
-                          using_gpg=0 if bool(options.no_gpg) else 1,
-                          pubname=pubname)
+    return _header.format(
+        productName=productName,
+        version=version,
+        apachePubDirectory=apachePubDirectory,
+        activation_keys=options.activation_keys,
+        org_gpg_key=org_gpg_key,
+        overrides=options.overrides,
+        hostname=options.hostname,
+        orgCACert=orgCACert,
+        venv_section=venv_section,
+        using_ssl=1,
+        using_gpg=0 if bool(options.no_gpg) else 1,
+        pubname=pubname,
+    )
 
+
+# pylint: disable-next=invalid-name
 def getRegistrationStackSh():
     """
     Determines which packages and repositories needs to be
     installed in order to register this system against SUMa server.
     """
-    PKG_NAME = ['salt', 'salt-minion']
-    PKG_NAME_YUM = ['salt', 'salt-minion']
-    PKG_NAME_VENV = ['venv-salt-minion']
+    # pylint: disable-next=invalid-name
+    PKG_NAME = ["salt", "salt-minion"]
+    # pylint: disable-next=invalid-name
+    PKG_NAME_YUM = ["salt", "salt-minion"]
+    # pylint: disable-next=invalid-name
+    PKG_NAME_VENV = ["venv-salt-minion"]
 
+    # pylint: disable-next=invalid-name
     PKG_NAME_UPDATE = list(PKG_NAME)
-    PKG_NAME_UPDATE.extend(['zypper', 'openssl'])
+    PKG_NAME_UPDATE.extend(["zypper", "openssl"])
 
+    # pylint: disable-next=invalid-name
     PKG_NAME_VENV_UPDATE = list(PKG_NAME_VENV)
-    PKG_NAME_VENV_UPDATE.extend(['zypper', 'openssl'])
+    PKG_NAME_VENV_UPDATE.extend(["zypper", "openssl"])
 
+    # pylint: disable-next=invalid-name
     PKG_NAME_UPDATE_YUM = list(PKG_NAME_YUM)
-    PKG_NAME_UPDATE_YUM.extend(['yum', 'openssl'])
+    PKG_NAME_UPDATE_YUM.extend(["yum", "openssl"])
 
+    # pylint: disable-next=invalid-name
     PKG_NAME_VENV_UPDATE_YUM = list(PKG_NAME_VENV)
-    PKG_NAME_VENV_UPDATE_YUM.extend(['yum', 'openssl'])
+    PKG_NAME_VENV_UPDATE_YUM.extend(["yum", "openssl"])
 
+    # pylint: disable-next=invalid-name
     TEST_VENV_FUNC = """
 function test_venv_enabled() {
     if [ $FORCE_VENV_SALT_MINION -eq 1 ]; then
@@ -317,6 +338,7 @@ function test_venv_enabled() {
     fi
 }
 """
+    # pylint: disable-next=invalid-name
     TEST_VENV_CALL = """
     test_venv_enabled
 """
@@ -441,6 +463,9 @@ if [ "$INSTALLER" == yum ]; then
         elif [ -f /etc/redhat-release ]; then
             grep -v '^#' /etc/redhat-release | grep -q '\(Red Hat\)' && BASE="res"
             VERSION=`grep -v '^#' /etc/redhat-release | grep -Po '(?<=release )\d+'`
+        elif [ -f /etc/openEuler-release ]; then
+            grep -v '^#' /etc/openEuler-release | grep -q '\(openEuler\)' && BASE="openEuler"
+            VERSION=`grep -v '^#' /etc/openEuler-release | grep -Po '(?<=release )(\d+\.)+\d+'`
         elif [ -f /etc/os-release ]; then
             BASE=$(source /etc/os-release; echo $ID)
             VERSION=$(source /etc/os-release; echo $VERSION_ID)
@@ -474,6 +499,7 @@ if [ "$INSTALLER" == yum ]; then
       [ "$Y_CLIENT_CODE_BASE" == rockylinux ] || \
       [ "$Y_CLIENT_CODE_BASE" == oracle ] || \
       [ "$Y_CLIENT_CODE_BASE" == alibaba ] || \
+      [ "$Y_CLIENT_CODE_BASE" == openEuler ] || \
       [ "$Y_CLIENT_CODE_BASE" == centos ] ; then
         $FETCH $CLIENT_REPO_URL/repodata/repomd.xml &> /dev/null
         if [ $? -ne 0 ]; then
@@ -525,9 +551,16 @@ elif [ "$INSTALLER" == zypper ]; then
             if [ "$BASE" != "sle" ]; then
                 grep -q 'openSUSE' /etc/os-release && BASE='opensuse'
             fi
+            if [ "$BASE" == "" ]; then
+                grep -q 'cpe:/o:suse:' /etc/os-release && BASE='sl'
+            fi
             grep -q 'Micro' /etc/os-release && BASE="${{BASE}}micro"
             VERSION="$(grep '^\(VERSION_ID\)' /etc/os-release | sed -n 's/.*"\([[:digit:]]\+\).*/\\1/p')"
             PATCHLEVEL="$(grep '^\(VERSION_ID\)' /etc/os-release | sed -n 's/.*\.\([[:digit:]]*\).*/\\1/p')"
+            # openSUSE MicroOS
+            grep -q 'MicroOS' /etc/os-release && BASE='opensusemicroos' && VERSION='latest'
+            # openSUSE Tumbleweed
+            grep -q 'Tumbleweed' /etc/os-release && BASE='opensusetumbleweed' && VERSION='latest'
         fi
         Z_CLIENT_CODE_BASE="${{BASE:-unknown}}"
         Z_CLIENT_CODE_VERSION="${{VERSION:-unknown}}"
@@ -601,7 +634,7 @@ elif [ "$INSTALLER" == zypper ]; then
             call_tukit "zypper --non-interactive update {PKG_NAME_VENV_UPDATE} ||:"
         fi
     else
-        if [ -z "$SNAPSHOT_ID"]; then
+        if [ -z "$SNAPSHOT_ID" ]; then
             zypper --non-interactive up {PKG_NAME_UPDATE} $RHNLIB_PKG ||:
         else
             call_tukit "zypper --non-interactive update {PKG_NAME_UPDATE} $RHNLIB_PKG ||:"
@@ -743,15 +776,20 @@ fi
 
 remove_bootstrap_repo
 
-""".format(PKG_NAME=' '.join(PKG_NAME), PKG_NAME_YUM=' '.join(PKG_NAME_YUM),
-           PKG_NAME_UPDATE=' '.join(PKG_NAME_UPDATE),
-           PKG_NAME_UPDATE_YUM=' '.join(PKG_NAME_UPDATE_YUM),
-           PKG_NAME_VENV=' '.join(PKG_NAME_VENV),
-           PKG_NAME_VENV_UPDATE=' '.join(PKG_NAME_VENV_UPDATE),
-           PKG_NAME_VENV_UPDATE_YUM=' '.join(PKG_NAME_VENV_UPDATE_YUM),
-           TEST_VENV_FUNC=TEST_VENV_FUNC, TEST_VENV_CALL=TEST_VENV_CALL)
+""".format(
+        PKG_NAME=" ".join(PKG_NAME),
+        PKG_NAME_YUM=" ".join(PKG_NAME_YUM),
+        PKG_NAME_UPDATE=" ".join(PKG_NAME_UPDATE),
+        PKG_NAME_UPDATE_YUM=" ".join(PKG_NAME_UPDATE_YUM),
+        PKG_NAME_VENV=" ".join(PKG_NAME_VENV),
+        PKG_NAME_VENV_UPDATE=" ".join(PKG_NAME_VENV_UPDATE),
+        PKG_NAME_VENV_UPDATE_YUM=" ".join(PKG_NAME_VENV_UPDATE_YUM),
+        TEST_VENV_FUNC=TEST_VENV_FUNC,
+        TEST_VENV_CALL=TEST_VENV_CALL,
+    )
 
 
+# pylint: disable-next=invalid-name
 def getGPGKeyImportSh():
     return """\
 echo
@@ -778,6 +816,7 @@ fi
 """
 
 
+# pylint: disable-next=invalid-name
 def getCorpCACertSh():
     return """\
 echo
@@ -860,16 +899,19 @@ echo
         # we need to copy certificate to the trustroot outside of transaction for zypper
         cp "$ORG_CA_CERT" /etc/pki/trust/anchors/
         call_tukit "test -d '$CERT_DIR' || mkdir -p '$CERT_DIR'"
-        call_tukit "cp '/etc/pki/trust/anchors/$ORG_CA_CERT' '${CERT_DIR}/${ORG_CERT_FILE}'"
+        call_tukit "cp '/etc/pki/trust/anchors/$ORG_CA_CERT' '${CERT_DIR}/${CERT_FILE}'"
     else
         test -d "$CERT_DIR" || mkdir -p "$CERT_DIR"
-        mv "$ORG_CA_CERT" "${CERT_DIR}/${ORG_CERT_FILE}"
+        mv "$ORG_CA_CERT" "${CERT_DIR}/${CERT_FILE}"
     fi
     echo "* update certificates"
     updateCertificates
 """
 
+
+# pylint: disable-next=invalid-name
 def getRegistrationSaltSh(productName):
+    # pylint: disable-next=consider-using-f-string
     return """\
 echo
 echo "REGISTRATION"
@@ -892,12 +934,14 @@ if [ -n "$SNAPSHOT_ID" ]; then
 fi
 
 MINION_ID_FILE="${{SNAPSHOT_PREFIX}}/etc/salt/minion_id"
+MINION_PKI_CONF="${{SNAPSHOT_PREFIX}}/etc/salt/pki/minion"
 MINION_CONFIG_DIR="${{SNAPSHOT_PREFIX}}/etc/salt/minion.d"
 SUSEMANAGER_MASTER_FILE="${{MINION_CONFIG_DIR}}/susemanager.conf"
 MINION_SERVICE="salt-minion"
 
 if [ $VENV_ENABLED -eq 1 ]; then
     MINION_ID_FILE="${{SNAPSHOT_PREFIX}}/etc/venv-salt-minion/minion_id"
+    MINION_PKI_CONF="${{SNAPSHOT_PREFIX}}/etc/venv-salt-minion/pki/minion"
     MINION_CONFIG_DIR="${{SNAPSHOT_PREFIX}}/etc/venv-salt-minion/minion.d"
     SUSEMANAGER_MASTER_FILE="${{MINION_CONFIG_DIR}}/susemanager.conf"
     MINION_SERVICE="venv-salt-minion"
@@ -905,6 +949,14 @@ fi
 
 if [ $REGISTER_THIS_BOX -eq 1 ]; then
     echo "* registering"
+
+    PREV_MASTER="$(sed -n 's/^master: //p' $SUSEMANAGER_MASTER_FILE 2> /dev/null)"
+    # Remove old minion keys so reregistration do different master works
+    # Delete the pki config only in case of changing the master
+    if [ -d "$MINION_PKI_CONF" -a "$HOSTNAME" != "$PREV_MASTER" ]; then
+        echo "* removing old Salt PKI files"
+        rm -r "$MINION_PKI_CONF"
+    fi
 
     echo "$MYNAME" > "$MINION_ID_FILE"
     cat <<EOF > "$SUSEMANAGER_MASTER_FILE"
@@ -953,7 +1005,22 @@ if [ -n "$SNAPSHOT_ID" ]; then
 module_executors:
   - transactional_update
   - direct_call
+# Include beacon to check for pending transactions indicating that a reboot is necessary
+beacons:
+  reboot_info:
+    - interval: 10
 EOF
+
+    if ! test -f /etc/transactional-update.conf; then
+        cp /usr/etc/transactional-update.conf /etc/transactional-update.conf
+    fi
+
+    . /etc/transactional-update.conf
+    if [ -z "$REBOOT_METHOD" ] || [ "$REBOOT_METHOD" = "auto" ]; then
+        sed -i '/^REBOOT_METHOD=/d' /etc/transactional-update.conf
+        echo "REBOOT_METHOD=systemd" >> /etc/transactional-update.conf
+    fi
+
 fi # -n SNAPSHOT_ID
 fi # REGISTER_THIS_BOX eq 1
 
@@ -980,9 +1047,12 @@ else
     /sbin/chkconfig --add $MINION_SERVICE
 fi
 echo "-bootstrap complete-"
-""".format(productName=productName)
+""".format(
+        productName=productName
+    )
 
 
+# pylint: disable-next=invalid-name
 def removeTLSCertificate():
     """
     This method adds bash instructions to the bootstrap script to correctly

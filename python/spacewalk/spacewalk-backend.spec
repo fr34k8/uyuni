@@ -1,7 +1,7 @@
 #
 # spec file for package spacewalk-backend
 #
-# Copyright (c) 2022 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 # Copyright (c) 2008-2018 Red Hat, Inc.
 #
 # All modifications and additions to the file contributed by third parties
@@ -20,8 +20,7 @@
 %{!?_unitdir: %global _unitdir /lib/systemd/system}
 
 %{!?python3_sitelib: %global python3_sitelib %(%{__python3} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-%{!?pylint_check: %global pylint_check 0}
-%global rhnroot %{_prefix}/share/rhn
+%global rhnroot %{_datadir}/rhn
 %global rhnconfigdefaults %{rhnroot}/config-defaults
 %global rhnconf %{_sysconfdir}/rhn
 %global m2crypto m2crypto
@@ -48,14 +47,13 @@
 %endif
 
 Name:           spacewalk-backend
+Version:        5.1.4
+Release:        0
 Summary:        Common programs needed to be installed on the Spacewalk servers/proxies
 License:        GPL-2.0-only
 Group:          System/Management
-Version:        4.4.7
-Release:        1
 URL:            https://github.com/uyuni-project/uyuni
-Source0:        https://github.com/uyuni-project/uyuni/archive/%{name}-%{version}-1.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+Source0:        %{name}-%{version}.tar.gz
 %if !0%{?suse_version} || 0%{?suse_version} >= 1120
 BuildArch:      noarch
 %endif
@@ -70,11 +68,9 @@ Requires:       python3-uyuni-common-libs
 Requires(pre):  %{apache_pkg}
 Requires:       %{apache_pkg}
 Requires:       python3-pycurl
+Requires:       python3-libmodulemd
 # for Debian support
 Requires:       python3-debian >= 0.1.44
-%if 0%{?pylint_check}
-BuildRequires:  spacewalk-python3-pylint
-%endif
 BuildRequires:  %{m2crypto}
 BuildRequires:  /usr/bin/docbook2man
 BuildRequires:  /usr/bin/msgfmt
@@ -120,7 +116,7 @@ Group:          System/Management
 Requires(pre):  %{name}-sql = %{version}-%{release}
 Requires:       %{name}-sql = %{version}-%{release}
 Requires:       spacewalk-config
-Requires:       (apache2-mod_wsgi-python3 or python3-mod_wsgi)
+Requires:       (apache2-mod_wsgi or python3-mod_wsgi)
 Requires:       (python3-pam or python3-python-pam)
 
 # cobbler-web is known to break our configuration
@@ -142,15 +138,6 @@ Requires:       python3-rpm
 These are the files required for running the /XMLRPC handler, which
 provide the basic support for the registration client (rhn_register)
 and the up2date clients.
-
-%package applet
-Summary:        Handler for /APPLET
-Group:          System/Management
-Requires:       %{name}-server = %{version}-%{release}
-
-%description applet
-These are the files required for running the /APPLET handler, which
-provides the functions for the Spacewalk applet.
 
 %package app
 Summary:        Handler for /APP
@@ -189,30 +176,6 @@ receivers and get them enabled automatically.
 
 This package contains listener for the Server XML dumper.
 
-%package config-files-common
-Summary:        Common files for the Configuration Management project
-Group:          System/Management
-Requires:       %{name}-server = %{version}-%{release}
-
-%description config-files-common
-Common files required by the Configuration Management project
-
-%package config-files
-Summary:        Handler for /CONFIG-MANAGEMENT
-Group:          System/Management
-Requires:       %{name}-config-files-common = %{version}-%{release}
-
-%description config-files
-This package contains the server-side code for configuration management.
-
-%package config-files-tool
-Summary:        Handler for /CONFIG-MANAGEMENT-TOOL
-Group:          System/Management
-Requires:       %{name}-config-files-common = %{version}-%{release}
-
-%description config-files-tool
-This package contains the server-side code for configuration management tool.
-
 %package package-push-server
 Summary:        Listener for rhnpush (non-XMLRPC version)
 Group:          System/Management
@@ -229,6 +192,10 @@ Requires:       %{name}-app = %{version}-%{release}
 Requires:       %{name}-xmlrpc = %{version}-%{release}
 Requires:       systemd
 BuildRequires:  systemd
+%if 0%{?is_opensuse} || 0%{?sle_version} >= 150000
+# bsc#1234304
+Requires:       libzypp >= 17.35.16
+%endif
 %if 0%{?rhel}
 Requires:       python3-dnf
 BuildRequires:  systemd-rpm-macros
@@ -268,16 +235,6 @@ Requires:       %{name}-server = %{version}-%{release}
 %description xml-export-libs
 Libraries required by various exporting tools
 
-%package cdn
-Summary:        CDN tools
-Group:          System/Management
-Requires:       %{m2crypto}
-Requires:       %{name}-server = %{version}-%{release}
-Requires:       subscription-manager
-
-%description cdn
-Tools for syncing content from Red Hat CDN
-
 %prep
 %setup -q
 
@@ -290,83 +247,74 @@ do
 	sed -i '1s=^#!/usr/bin/\(python\|env python\)[0-9.]*=#!/usr/bin/python3=' $i;
 done
 
-%install
-install -d $RPM_BUILD_ROOT%{rhnroot}
-install -d $RPM_BUILD_ROOT%{python3rhnroot}
-install -d $RPM_BUILD_ROOT%{python3rhnroot}/common
-install -d $RPM_BUILD_ROOT%{rhnconf}
-install -d $RPM_BUILD_ROOT/%{_unitdir}
-install -d $RPM_BUILD_ROOT/%{_prefix}/lib/susemanager/bin/
+%if !0%{?is_opensuse} && 0%{?sle_version}
+sed -i 's/PRODUCT_NAME = "Uyuni"/PRODUCT_NAME = "SUSE Manager"/' common/rhnConfig.py
+%endif
 
-make -f Makefile.backend install PREFIX=$RPM_BUILD_ROOT \
+%install
+install -d %{buildroot}%{rhnroot}
+install -d %{buildroot}%{python3rhnroot}
+install -d %{buildroot}%{python3rhnroot}/common
+install -d %{buildroot}%{rhnconf}
+install -d %{buildroot}/%{_unitdir}
+install -d %{buildroot}%{_prefix}/lib/susemanager/bin/
+
+make -f Makefile.backend install PREFIX=%{buildroot} \
     MANDIR=%{_mandir} APACHECONFDIR=%{apacheconfd} PYTHON_BIN=python3
 
 export PYTHON_MODULE_NAME=%{name}
 export PYTHON_MODULE_VERSION=%{version}
 
 # remove all unsupported translations
-cd $RPM_BUILD_ROOT
+cd %{buildroot}
 for d in usr/share/locale/*; do
   if [ ! -d "/$d" ]; then
     rm -rfv "./$d"
   fi
 done
 cd -
-ln -s satellite-sync $RPM_BUILD_ROOT/usr/bin/mgr-inter-sync
-ln -s satellite-sync.8.gz $RPM_BUILD_ROOT/usr/share/man/man8/mgr-inter-sync.8.gz
-ln -s rhn-satellite-exporter $RPM_BUILD_ROOT/usr/bin/mgr-exporter
+ln -s satellite-sync %{buildroot}%{_bindir}/mgr-inter-sync
+ln -s satellite-sync.8.gz %{buildroot}%{_mandir}/man8/mgr-inter-sync.8.gz
+ln -s rhn-satellite-exporter %{buildroot}%{_bindir}/mgr-exporter
 
-install -m 644 rhn-conf/signing.cnf $RPM_BUILD_ROOT%{rhnconf}/signing.conf
+install -m 644 rhn-conf/signing.cnf %{buildroot}%{rhnconf}/signing.conf
 
-install -m 644 satellite_tools/spacewalk-diskcheck.service $RPM_BUILD_ROOT/%{_unitdir}
-install -m 644 satellite_tools/spacewalk-diskcheck.timer $RPM_BUILD_ROOT/%{_unitdir}
+install -m 644 satellite_tools/spacewalk-diskcheck.service %{buildroot}/%{_unitdir}
+install -m 644 satellite_tools/spacewalk-diskcheck.timer %{buildroot}/%{_unitdir}
 
-install -m 644 satellite_tools/ulnauth.py $RPM_BUILD_ROOT/%{python3rhnroot}/satellite_tools
+install -m 644 satellite_tools/ulnauth.py %{buildroot}/%{python3rhnroot}/satellite_tools
 
 %find_lang %{name}-server
 
 %if 0%{?is_opensuse} || 0%{?fedora} || 0%{?rhel}
-sed -i 's/^product_name.*/product_name = Uyuni/' $RPM_BUILD_ROOT%{rhnconfigdefaults}/rhn.conf
+sed -i 's/^product_name.*/product_name = Uyuni/' %{buildroot}%{rhnconfigdefaults}/rhn.conf
 %endif
 
-sed -i 's|#DOCUMENTROOT#|%{documentroot}|' $RPM_BUILD_ROOT%{rhnconfigdefaults}/rhn.conf
-sed -i 's|#HTTPD_CONFIG_DIR#|%{apacheconfd}|' $RPM_BUILD_ROOT%{rhnconfigdefaults}/rhn.conf
-sed -i 's|#REPORT_DB_SSLROOTCERT#|%{sslrootcert}RHN-ORG-TRUSTED-SSL-CERT|' $RPM_BUILD_ROOT%{rhnconfigdefaults}/rhn.conf
+sed -i 's|#DOCUMENTROOT#|%{documentroot}|' %{buildroot}%{rhnconfigdefaults}/rhn.conf
+sed -i 's|#HTTPD_CONFIG_DIR#|%{apacheconfd}|' %{buildroot}%{rhnconfigdefaults}/rhn.conf
+sed -i 's|#HTTPD_GROUP#|%{apache_group}|' %{buildroot}%{rhnconfigdefaults}/rhn.conf
+sed -i 's|#HTTPD_USER#|%{apache_user}|' %{buildroot}%{rhnconfigdefaults}/rhn.conf
+sed -i 's|#REPORT_DB_SSLROOTCERT#|%{sslrootcert}RHN-ORG-TRUSTED-SSL-CERT|' %{buildroot}%{rhnconfigdefaults}/rhn.conf
 
-%if 0%{?fedora} || 0%{?rhel} > 6
-sed -i 's/#LOGROTATE-3.8#//' $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/spacewalk-backend-*
-%endif
+sed -i 's/#LOGROTATE-3.8#//' %{buildroot}%{_sysconfdir}/logrotate.d/spacewalk-backend-*
+sed -i 's/@HTTPD_GROUP@/%{apache_group}/' %{buildroot}%{_sysconfdir}/logrotate.d/spacewalk-backend-*
+sed -i 's/@HTTPD_USER@/%{apache_user}/' %{buildroot}%{_sysconfdir}/logrotate.d/spacewalk-backend-*
+
 %if 0%{?suse_version}
-sed -i 's/#LOGROTATE-3.8#.*/    su root www/' $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/spacewalk-backend-*
-
 %py3_compile -O %{buildroot}/%{python3rhnroot}
 %fdupes %{buildroot}/%{python3rhnroot}
 %endif
 
-install -m 755 satellite_tools/mgr-update-pkg-extra-tags $RPM_BUILD_ROOT%{_prefix}/lib/susemanager/bin/
+install -m 755 satellite_tools/mgr-update-pkg-extra-tags %{buildroot}%{_prefix}/lib/susemanager/bin/
 
 ## Install Zypper plugins only on SUSE machines
-install -Dd -m 0750 % $RPM_BUILD_ROOT%{_prefix}/lib/zypp/plugins/urlresolver
-%{__install} satellite_tools/spacewalk-uln-resolver $RPM_BUILD_ROOT%{_prefix}/lib/zypp/plugins/urlresolver/spacewalk-uln-resolver
-%{__install} satellite_tools/spacewalk-extra-http-headers $RPM_BUILD_ROOT%{_prefix}/lib/zypp/plugins/urlresolver/spacewalk-extra-http-headers
-
-%check
-
-%if 0%{?pylint_check}
-# check coding style
-export PYTHONPATH=$RPM_BUILD_ROOT%{python3rhnroot}:/usr/lib/rhn:/usr/share/rhn:$RPM_BUILD_ROOT%{python3_sitelib}/uyuni/common-libs
-spacewalk-python3 $RPM_BUILD_ROOT%{python3rhnroot}/common \
-                     $RPM_BUILD_ROOT%{python3rhnroot}/satellite_exporter \
-                     $RPM_BUILD_ROOT%{python3rhnroot}/satellite_tools \
-                     $RPM_BUILD_ROOT%{python3rhnroot}/cdn_tools \
-                     $RPM_BUILD_ROOT%{python3rhnroot}/upload_server \
-                     $RPM_BUILD_ROOT%{python3rhnroot}/wsgi
-
-%endif
+install -Dd -m 0750 % %{buildroot}%{_prefix}/lib/zypp/plugins/urlresolver
+install satellite_tools/spacewalk-uln-resolver %{buildroot}%{_prefix}/lib/zypp/plugins/urlresolver/spacewalk-uln-resolver
+install satellite_tools/spacewalk-extra-http-headers %{buildroot}%{_prefix}/lib/zypp/plugins/urlresolver/spacewalk-extra-http-headers
 
 %post server
 %if 0%{?suse_version}
-sysconf_addword /etc/sysconfig/apache2 APACHE_MODULES wsgi
+sysconf_addword %{_sysconfdir}/sysconfig/apache2 APACHE_MODULES wsgi
 %endif
 if [ ! -e %{rhnconf}/rhn.conf ]; then
     exit 0
@@ -379,13 +327,13 @@ fi
 
 %post tools
 %if 0%{?rhel}
-%systemd_post spacewalk-diskcheck.service
-%systemd_post spacewalk-diskcheck.timer
+%{systemd_post} spacewalk-diskcheck.service
+%{systemd_post} spacewalk-diskcheck.timer
 %else
 %service_add_post spacewalk-diskcheck.service spacewalk-diskcheck.timer
 %endif
-if test -f /var/log/rhn/rhn_server_satellite.log; then
-    chown -f %{apache_user}:%{apache_group} /var/log/rhn/rhn_server_satellite.log
+if test -f %{_localstatedir}/log/rhn/rhn_server_satellite.log; then
+    chown -f %{apache_user}:%{apache_group} %{_localstatedir}/log/rhn/rhn_server_satellite.log
 fi
 
 %preun tools
@@ -398,8 +346,8 @@ fi
 
 %postun tools
 %if 0%{?rhel}
-%systemd_postun spacewalk-diskcheck.service
-%systemd_postun spacewalk-diskcheck.timer
+%{systemd_postun} spacewalk-diskcheck.service
+%{systemd_postun} spacewalk-diskcheck.timer
 %else
 %service_del_postun spacewalk-diskcheck.service spacewalk-diskcheck.timer
 %endif
@@ -423,7 +371,7 @@ fi
 # config files
 %attr(644,root,%{apache_group}) %{rhnconfigdefaults}/rhn.conf
 %attr(755,root,root) %{_bindir}/spacewalk-cfg-get
-%{_mandir}/man8/spacewalk-cfg-get.8.gz
+%{_mandir}/man8/spacewalk-cfg-get.8%{?ext_man}
 # wsgi stuff
 %dir %{rhnroot}/wsgi
 %{rhnroot}/wsgi/__init__.py*
@@ -471,6 +419,7 @@ fi
 %{python3rhnroot}/server/apacheRequest.py*
 %{python3rhnroot}/server/apacheServer.py*
 %{python3rhnroot}/server/apacheUploadServer.py*
+%{python3rhnroot}/server/db_config.py*
 %{python3rhnroot}/server/rhnAction.py*
 %{python3rhnroot}/server/rhnAuthPAM.py*
 %{python3rhnroot}/server/rhnCapability.py*
@@ -486,7 +435,6 @@ fi
 %{python3rhnroot}/server/rhnRepository.py*
 %{python3rhnroot}/server/rhnSession.py*
 %{python3rhnroot}/server/rhnUser.py*
-%{python3rhnroot}/server/rhnVirtualization.py*
 %{python3rhnroot}/server/taskomatic.py*
 %{python3rhnroot}/server/suseEula.py*
 %dir %{python3rhnroot}/server/rhnServer
@@ -518,7 +466,6 @@ fi
 %{python3rhnroot}/server/importlib/__pycache__/*
 %{python3rhnroot}/server/__pycache__/*
 %exclude %{python3rhnroot}/server/__pycache__/__init__.*
-%exclude %{python3rhnroot}/server/__pycache__/configFilesHandler.*
 %{rhnroot}/server/handlers/__init__.py*
 
 # Repomd stuff
@@ -543,9 +490,6 @@ fi
 # wsgi stuff
 %attr(644,root,%{apache_group}) %config %{apacheconfd}/zz-spacewalk-server-wsgi.conf
 %{rhnroot}/wsgi/app.py*
-%{rhnroot}/wsgi/applet.py*
-%{rhnroot}/wsgi/config.py*
-%{rhnroot}/wsgi/config_tool.py*
 %{rhnroot}/wsgi/package_push.py*
 %{rhnroot}/wsgi/sat.py*
 %{rhnroot}/wsgi/sat_dump.py*
@@ -563,26 +507,11 @@ fi
 %license LICENSE
 %dir %{rhnroot}/server/handlers/xmlrpc
 %{rhnroot}/server/handlers/xmlrpc/*
-%dir %{python3rhnroot}/server/action
-%{python3rhnroot}/server/action/*
-%dir %{python3rhnroot}/server/action_extra_data
-%{python3rhnroot}/server/action_extra_data/*
 # config files
 %attr(644,root,%{apache_group}) %{rhnconfigdefaults}/rhn_server_xmlrpc.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/spacewalk-backend-xmlrpc
 %dir %{rhnroot}/server
 %dir %{rhnroot}/server/handlers
-
-%files applet
-%defattr(-,root,root)
-%{!?_licensedir:%global license %doc}
-%license LICENSE
-%dir %{rhnroot}/server
-%dir %{rhnroot}/server/handlers/applet
-%{rhnroot}/server/handlers/applet/*
-# config files
-%attr(644,root,%{apache_group}) %{rhnconfigdefaults}/rhn_server_applet.conf
-%config(noreplace) %{_sysconfdir}/logrotate.d/spacewalk-backend-applet
 
 %files app
 %defattr(-,root,root)
@@ -622,35 +551,6 @@ fi
 # config files
 %config(noreplace) %{_sysconfdir}/logrotate.d/spacewalk-backend-iss-export
 
-%files config-files-common
-%defattr(-,root,root)
-%{!?_licensedir:%global license %doc}
-%license LICENSE
-%{python3rhnroot}/server/configFilesHandler.py*
-%{python3rhnroot}/server/__pycache__/configFilesHandler.*
-%dir %{python3rhnroot}/server/config_common
-%{python3rhnroot}/server/config_common/*
-
-%files config-files
-%defattr(-,root,root)
-%{!?_licensedir:%global license %doc}
-%license LICENSE
-%dir %{rhnroot}/server
-%dir %{rhnroot}/server/handlers/config
-%{rhnroot}/server/handlers/config/*
-%attr(644,root,%{apache_group}) %{rhnconfigdefaults}/rhn_server_config-management.conf
-%config(noreplace) %{_sysconfdir}/logrotate.d/spacewalk-backend-config-files
-
-%files config-files-tool
-%defattr(-,root,root)
-%{!?_licensedir:%global license %doc}
-%license LICENSE
-%dir %{rhnroot}/server
-%dir %{rhnroot}/server/handlers/config_mgmt
-%{rhnroot}/server/handlers/config_mgmt/*
-%attr(644,root,%{apache_group}) %{rhnconfigdefaults}/rhn_server_config-management-tool.conf
-%config(noreplace) %{_sysconfdir}/logrotate.d/spacewalk-backend-config-files-tool
-
 %files package-push-server
 %defattr(-,root,root)
 %{!?_licensedir:%global license %doc}
@@ -671,9 +571,8 @@ fi
 %doc README.ULN
 %attr(644,root,%{apache_group}) %{rhnconfigdefaults}/rhn_server_satellite.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/spacewalk-backend-tools
-%config(noreplace) %{rhnconf}/signing.conf
+%attr(600,root,root) %config(noreplace) %{rhnconf}/signing.conf
 %attr(755,root,root) %{_bindir}/rhn-charsets
-%attr(755,root,root) %{_bindir}/rhn-satellite-activate
 %attr(755,root,root) %{_bindir}/rhn-schema-version
 %attr(755,root,root) %{_bindir}/rhn-ssl-dbstore
 %attr(755,root,root) %{_bindir}/satellite-sync
@@ -707,7 +606,6 @@ fi
 %{python3rhnroot}/satellite_tools/satComputePkgHeaders.py*
 %{python3rhnroot}/satellite_tools/syncCache.py*
 %{python3rhnroot}/satellite_tools/sync_handlers.py*
-%{python3rhnroot}/satellite_tools/rhn_satellite_activate.py*
 %{python3rhnroot}/satellite_tools/rhn_ssl_dbstore.py*
 %{python3rhnroot}/satellite_tools/xmlWireSource.py*
 %{python3rhnroot}/satellite_tools/updatePackages.py*
@@ -715,6 +613,7 @@ fi
 %{python3rhnroot}/satellite_tools/constants.py*
 %{python3rhnroot}/satellite_tools/download.py*
 %{python3rhnroot}/satellite_tools/ulnauth.py*
+%{python3rhnroot}/satellite_tools/appstreams.py*
 %dir %{python3rhnroot}/satellite_tools/disk_dumper
 %{python3rhnroot}/satellite_tools/disk_dumper/__init__.py*
 %{python3rhnroot}/satellite_tools/disk_dumper/iss.py*
@@ -746,7 +645,6 @@ fi
 %config %attr(644,root,%{apache_group}) %{rhnconfigdefaults}/rhn_server_iss.conf
 %{_mandir}/man8/rhn-satellite-exporter.8*
 %{_mandir}/man8/rhn-charsets.8*
-%{_mandir}/man8/rhn-satellite-activate.8*
 %{_mandir}/man8/rhn-schema-version.8*
 %{_mandir}/man8/rhn-ssl-dbstore.8*
 %{_mandir}/man8/rhn-db-stats.8*
@@ -791,17 +689,5 @@ fi
 %{python3rhnroot}/satellite_tools/__pycache__/xmlDiskSource.*
 %{python3rhnroot}/satellite_tools/__pycache__/xmlSource.*
 %{python3rhnroot}/satellite_tools/exporter/__pycache__/*
-
-%files cdn
-%defattr(-,root,root)
-%attr(755,root,root) %{_bindir}/cdn-sync
-%dir %{python3rhnroot}/cdn_tools
-%{python3rhnroot}/cdn_tools/*.py*
-%attr(755,root,%{apache_group}) %dir %{_var}/log/rhn/cdnsync
-%config(noreplace) %{_sysconfdir}/logrotate.d/spacewalk-backend-cdn
-%{_mandir}/man8/cdn-sync.8*
-%dir %{python3rhnroot}/cdn_tools
-%dir %{python3rhnroot}/cdn_tools/__pycache__/
-%{python3rhnroot}/cdn_tools/__pycache__/*
 
 %changelog

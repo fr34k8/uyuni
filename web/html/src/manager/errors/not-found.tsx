@@ -5,7 +5,7 @@ import SpaRenderer from "core/spa/spa-renderer";
 const NotFound = ({ currentUrl }) => (
   <>
     <h1>{t("Page Not Found")}</h1>
-    <p>{t("The page you requested, {0}, was not found.", currentUrl)}</p>
+    <p>{t("The page you requested, {currentUrl}, was not found.", { currentUrl })}</p>
     <ol>
       <li>
         {t(
@@ -38,4 +38,7 @@ const NotFound = ({ currentUrl }) => (
 );
 
 export const renderer = (id: string, { currentUrl }) =>
-  SpaRenderer.renderNavigationReact(<NotFound currentUrl={currentUrl} />, document.getElementById(id));
+  SpaRenderer.renderNavigationReact(
+    <NotFound currentUrl={decodeURIComponent(currentUrl)} />,
+    document.getElementById(id)
+  );

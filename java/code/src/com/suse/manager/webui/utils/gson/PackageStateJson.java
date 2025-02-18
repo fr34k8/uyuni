@@ -60,6 +60,17 @@ public class PackageStateJson {
     /** Id to represent a version constraint as part of the state */
     private final Optional<Integer> versionConstraintId;
 
+    /** Default constructor used for Gson parsing */
+    public PackageStateJson() {
+        this.name = null;
+        this.epoch = null;
+        this.version = null;
+        this.release = null;
+        this.arch = null;
+        this.packageStateId = Optional.empty();
+        this.versionConstraintId = Optional.empty();
+    }
+
     /**
      * @param nameIn the package name
      * @param evrIn the package evr
@@ -188,10 +199,9 @@ public class PackageStateJson {
      */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof PackageStateJson)) {
+        if (!(other instanceof PackageStateJson otherState)) {
             return false;
         }
-        PackageStateJson otherState = (PackageStateJson) other;
         return new EqualsBuilder()
                 .append(getName(), otherState.getName())
                 .isEquals();

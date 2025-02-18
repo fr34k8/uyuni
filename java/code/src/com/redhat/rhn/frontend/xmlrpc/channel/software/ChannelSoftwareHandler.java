@@ -101,7 +101,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import javax.persistence.NoResultException;
+
 
 /**
  * ChannelSoftwareHandler
@@ -1029,7 +1031,7 @@ public class ChannelSoftwareHandler extends BaseHandler {
             throw new PermissionCheckFailureException();
         }
 
-        if (value) {
+        if (Boolean.TRUE.equals(value)) {
             // Add the 'subscribe' role for the target user to the channel
             ChannelManager.addSubscribeRole(target, channel);
         }
@@ -1079,7 +1081,7 @@ public class ChannelSoftwareHandler extends BaseHandler {
             throw new PermissionCheckFailureException();
         }
 
-        if (value) {
+        if (Boolean.TRUE.equals(value)) {
             // Add the 'manage' role for the target user to the channel
             ChannelManager.addManageRole(target, channel);
         }
@@ -1137,7 +1139,7 @@ public class ChannelSoftwareHandler extends BaseHandler {
      */
     @ReadOnly
     public boolean isExisting(User loggedInUser, String channelLabel) {
-        return ChannelFactory.lookupByLabelAndUser(channelLabel, loggedInUser) == null ? false : true;
+        return ChannelFactory.lookupByLabelAndUser(channelLabel, loggedInUser) != null;
     }
 
     /**
@@ -1206,12 +1208,7 @@ public class ChannelSoftwareHandler extends BaseHandler {
             throw new PermissionCheckFailureException();
         }
 
-        if (value) {
-            channel.setGloballySubscribable(true, loggedInUser.getOrg());
-        }
-        else {
-            channel.setGloballySubscribable(false, loggedInUser.getOrg());
-        }
+        channel.setGloballySubscribable(value, loggedInUser.getOrg());
 
         return 1;
     }
@@ -1521,7 +1518,7 @@ public class ChannelSoftwareHandler extends BaseHandler {
     @ReadOnly
     public List<ErrataOverview> listErrata(User loggedInUser, String channelLabel)
         throws NoSuchChannelException {
-        return listErrata(loggedInUser, channelLabel, (Date) null);
+        return listErrata(loggedInUser, channelLabel, null);
     }
 
     /**
@@ -1594,13 +1591,17 @@ public class ChannelSoftwareHandler extends BaseHandler {
     private Channel lookupChannelByLabel(Org org, String label)
         throws NoSuchChannelException {
 
-        Channel channel = ChannelManager.lookupByLabel(
-                org, label);
-        if (channel == null) {
+        try {
+            Channel channel = ChannelManager.lookupByLabel(
+                    org, label);
+            if (channel == null) {
+                throw new NoSuchChannelException(label);
+            }
+            return channel;
+        }
+        catch (NoResultException e) {
             throw new NoSuchChannelException(label);
         }
-
-        return channel;
     }
 
     private Channel lookupChannelById(User user, Long id)
@@ -1702,7 +1703,8 @@ public class ChannelSoftwareHandler extends BaseHandler {
 
         Channel originalChan = lookupChannelByLabel(loggedInUser.getOrg(), originalLabel);
 
-        CloneChannelCommand ccc = new CloneChannelCommand(originalState ? ORIGINAL_STATE : CURRENT_STATE, originalChan);
+        CloneChannelCommand ccc = new CloneChannelCommand(
+                Boolean.TRUE.equals(originalState) ? ORIGINAL_STATE : CURRENT_STATE, originalChan);
 
         ccc.setUser(loggedInUser);
         setChangedValues(ccc, channelDetails);
@@ -2750,7 +2752,7 @@ public class ChannelSoftwareHandler extends BaseHandler {
             Channel chan = lookupChannelByLabel(loggedInUser, channelLabel);
             String cronExpr = new TaskomaticApi().getRepoSyncSchedule(chan, loggedInUser);
             if (StringUtils.isEmpty(cronExpr)) {
-                return new String("");
+                return "";
             }
             return cronExpr;
         }
@@ -3167,8 +3169,8 @@ public class ChannelSoftwareHandler extends BaseHandler {
 
     public long applyChannelState(User user, List<Integer> sids) {
         try {
-            List<Long> serverIds = sids.stream().map(Integer::longValue).collect(Collectors.toList());
-            List<MinionServer> minionServers = MinionServerFactory.lookupByIds(serverIds).collect(Collectors.toList());
+            List<Long> serverIds = sids.stream().map(Integer::longValue).toList();
+            List<MinionServer> minionServers = MinionServerFactory.lookupByIds(serverIds).toList();
             return ChannelManager.applyChannelState(user, minionServers).orElse(0L);
         }
         catch (com.redhat.rhn.taskomatic.TaskomaticApiException e) {

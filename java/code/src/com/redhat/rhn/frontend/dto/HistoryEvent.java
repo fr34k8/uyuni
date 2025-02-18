@@ -74,13 +74,16 @@ public class HistoryEvent extends BaseDto {
         String dateFormat = "yyyy-MM-dd kk:mm:ss";
         SimpleDateFormat format = new SimpleDateFormat(dateFormat);
 
+        if (completedIn == null) {
+            this.completed = null;
+            return;
+        }
         try {
             this.completed = format.parse(completedIn);
         }
-       catch (ParseException e) {
-           logger.error("Cannot parse {} according to format {}", completedIn, dateFormat);
-            logger.error(e);
-       }
+        catch (ParseException e) {
+            logger.error("Cannot parse {} according to format {}", completedIn, dateFormat, e);
+        }
     }
 
     /**

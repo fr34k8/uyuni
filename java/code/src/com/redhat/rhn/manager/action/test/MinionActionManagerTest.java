@@ -55,13 +55,14 @@ import com.redhat.rhn.taskomatic.TaskomaticApi;
 import com.redhat.rhn.testing.JMockBaseTestCaseWithUser;
 import com.redhat.rhn.testing.ServerTestUtils;
 
-import com.suse.manager.virtualization.VirtManagerSalt;
+import com.suse.cloud.CloudPaygManager;
+import com.suse.cloud.test.TestCloudPaygManagerBuilder;
+import com.suse.manager.attestation.AttestationManager;
 import com.suse.manager.webui.controllers.bootstrap.RegularMinionBootstrapper;
 import com.suse.manager.webui.controllers.bootstrap.SSHMinionBootstrapper;
 import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.test.TestSaltApi;
 import com.suse.manager.webui.services.test.TestSystemQuery;
 
@@ -83,7 +84,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 
 /**
@@ -98,14 +98,17 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
     private final SystemQuery systemQuery = new TestSystemQuery();
     private final SaltApi saltApi = new TestSaltApi();
     private final ServerGroupManager serverGroupManager = new ServerGroupManager(saltApi);
-    private final VirtManager virtManager = new VirtManagerSalt(saltApi);
     private final MonitoringManager monitoringManager = new FormulaMonitoringManager(saltApi);
     private final SystemEntitlementManager systemEntitlementManager = new SystemEntitlementManager(
-            new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-            new SystemEntitler(saltApi, virtManager, monitoringManager, serverGroupManager)
+            new SystemUnentitler(monitoringManager, serverGroupManager),
+            new SystemEntitler(saltApi, monitoringManager, serverGroupManager)
     );
-    private RegularMinionBootstrapper regularMinionBootstrapper = new RegularMinionBootstrapper(systemQuery, saltApi);
-    private SSHMinionBootstrapper sshMinionBootstrapper = new SSHMinionBootstrapper(systemQuery, saltApi);
+    private final CloudPaygManager paygManager = new TestCloudPaygManagerBuilder().build();
+    private final AttestationManager attestationManager = new AttestationManager();
+    private RegularMinionBootstrapper regularMinionBootstrapper =
+            new RegularMinionBootstrapper(systemQuery, saltApi, paygManager, attestationManager);
+    private SSHMinionBootstrapper sshMinionBootstrapper =
+            new SSHMinionBootstrapper(systemQuery, saltApi, paygManager, attestationManager);
     private XmlRpcSystemHelper xmlRpcSystemHelper = new XmlRpcSystemHelper(
             regularMinionBootstrapper,
             sshMinionBootstrapper
@@ -148,7 +151,7 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
         MinionActionManager.setTaskomaticApi(taskomaticMock);
 
         SystemHandler handler = new SystemHandler(taskomaticMock, xmlRpcSystemHelper, systemEntitlementManager,
-                systemManager, serverGroupManager);
+                systemManager, serverGroupManager, new TestCloudPaygManagerBuilder().build(), new AttestationManager());
         context().checking(new Expectations() { {
             Matcher<Map<Long, ZonedDateTime>> minionMatcher =
                     AllOf.allOf(IsMapContaining.hasKey(minion1.getId()));
@@ -199,7 +202,7 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
 
 
         SystemHandler handler = new SystemHandler(taskomaticMock, xmlRpcSystemHelper, systemEntitlementManager,
-                systemManager, serverGroupManager);
+                systemManager, serverGroupManager, new TestCloudPaygManagerBuilder().build(), new AttestationManager());
 
         context().checking(new Expectations() { {
             Matcher<Map<Long, ZonedDateTime>> minionMatcher =
@@ -251,7 +254,7 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
         MinionActionManager.setTaskomaticApi(taskomaticMock);
 
         SystemHandler handler = new SystemHandler(taskomaticMock, xmlRpcSystemHelper, systemEntitlementManager,
-                systemManager, serverGroupManager);
+                systemManager, serverGroupManager, new TestCloudPaygManagerBuilder().build(), new AttestationManager());
 
         context().checking(new Expectations() { {
             exactly(1).of(taskomaticMock)
@@ -302,7 +305,7 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
         MinionActionManager.setTaskomaticApi(taskomaticMock);
 
         SystemHandler handler = new SystemHandler(taskomaticMock, xmlRpcSystemHelper, systemEntitlementManager,
-                systemManager, serverGroupManager);
+                systemManager, serverGroupManager, new TestCloudPaygManagerBuilder().build(), new AttestationManager());
         context().checking(new Expectations() {{
             Matcher<Map<Long, ZonedDateTime>> minionMatcher =
                     AllOf.allOf(IsMapContaining.hasKey(minion1.getId()));
@@ -353,7 +356,7 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
         MinionActionManager.setTaskomaticApi(taskomaticMock);
 
         SystemHandler handler = new SystemHandler(taskomaticMock, xmlRpcSystemHelper, systemEntitlementManager,
-                systemManager, serverGroupManager);
+                systemManager, serverGroupManager, new TestCloudPaygManagerBuilder().build(), new AttestationManager());
 
         context().checking(new Expectations() { {
             exactly(1).of(taskomaticMock)
@@ -768,13 +771,13 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
                 MinionActionManager.scheduleStagingJobsForMinions(Collections.singletonList(action), user.getOrg());
         List<ZonedDateTime> scheduleTimes =
                 actionsDataMap.values().stream().map(s -> new ArrayList<>(s.values()))
-                        .flatMap(List::stream).collect(Collectors.toList());
+                        .flatMap(List::stream).toList();
 
         assertEquals(2,
                 scheduleTimes.stream()
                     .filter(scheduleTime -> scheduleTime.isAfter(now))
                     .filter(scheduleTime -> scheduleTime.isBefore(executionTime))
-                    .collect(Collectors.toList()).size());
+                    .toList().size());
     }
 
     /**
@@ -821,13 +824,13 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
                 MinionActionManager.scheduleStagingJobsForMinions(Collections.singletonList(action), user.getOrg());
         List<ZonedDateTime> scheduleTimes =
                 actionsDataMap.values().stream().map(s -> new ArrayList<>(s.values()))
-                        .flatMap(List::stream).collect(Collectors.toList());
+                        .flatMap(List::stream).toList();
 
         assertEquals(0,
                 scheduleTimes.stream()
                     .filter(scheduleTime -> scheduleTime.isAfter(now))
                     .filter(scheduleTime -> scheduleTime.isBefore(executionTime))
-                    .collect(Collectors.toList()).size());
+                    .toList().size());
     }
 
     /**
@@ -874,12 +877,12 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
                 MinionActionManager.scheduleStagingJobsForMinions(Collections.singletonList(action), user.getOrg());
         List<ZonedDateTime> scheduleTimes =
                 actionsDataMap.values().stream().map(s -> new ArrayList<>(s.values()))
-                        .flatMap(List::stream).collect(Collectors.toList());
+                        .flatMap(List::stream).toList();
         assertEquals(0,
                 scheduleTimes.stream()
                     .filter(scheduleTime -> scheduleTime.isAfter(now))
                     .filter(scheduleTime -> scheduleTime.isBefore(executionTime))
-                    .collect(Collectors.toList()).size());
+                    .toList().size());
     }
 
     /**
@@ -928,13 +931,13 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
                 MinionActionManager.scheduleStagingJobsForMinions(Collections.singletonList(action), user.getOrg());
         List<ZonedDateTime> scheduleTimes =
                 actionsDataMap.values().stream().map(s -> new ArrayList<>(s.values()))
-                        .flatMap(List::stream).collect(Collectors.toList());
+                        .flatMap(List::stream).toList();
 
         assertEquals(0,
                 scheduleTimes.stream()
                     .filter(scheduleTime -> scheduleTime.isAfter(now))
                     .filter(scheduleTime -> scheduleTime.isBefore(executionTime))
-                    .collect(Collectors.toList()).size());
+                    .toList().size());
     }
 
     /**
@@ -982,12 +985,12 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
                 MinionActionManager.scheduleStagingJobsForMinions(Collections.singletonList(action), user.getOrg());
         List<ZonedDateTime> scheduleTimes =
                 actionsDataMap.values().stream().map(s -> new ArrayList<>(s.values()))
-                        .flatMap(List::stream).collect(Collectors.toList());
+                        .flatMap(List::stream).toList();
         assertEquals(0,
                 scheduleTimes.stream()
                     .filter(scheduleTime -> scheduleTime.isAfter(now))
                     .filter(scheduleTime -> scheduleTime.isBefore(executionTime))
-                    .collect(Collectors.toList()).size());
+                    .toList().size());
     }
 
     /**
@@ -1035,12 +1038,12 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
                 MinionActionManager.scheduleStagingJobsForMinions(Collections.singletonList(action), user.getOrg());
         List<ZonedDateTime> scheduleTimes =
                 actionsDataMap.values().stream().map(s -> new ArrayList<>(s.values()))
-                        .flatMap(List::stream).collect(Collectors.toList());
+                        .flatMap(List::stream).toList();
         assertEquals(0,
                 scheduleTimes.stream()
                     .filter(scheduleTime -> scheduleTime.isAfter(now))
                     .filter(scheduleTime -> scheduleTime.isBefore(executionTime))
-                    .collect(Collectors.toList()).size());
+                    .toList().size());
     }
 
     /**
@@ -1087,12 +1090,12 @@ public class MinionActionManagerTest extends JMockBaseTestCaseWithUser {
                 MinionActionManager.scheduleStagingJobsForMinions(Collections.singletonList(action), user.getOrg());
         List<ZonedDateTime> scheduleTimes =
                 actionsDataMap.values().stream().map(s -> new ArrayList<>(s.values()))
-                        .flatMap(List::stream).collect(Collectors.toList());
+                        .flatMap(List::stream).toList();
         assertEquals(0,
                 scheduleTimes.stream()
                     .filter(scheduleTime -> scheduleTime.isAfter(now))
                     .filter(scheduleTime -> scheduleTime.isBefore(executionTime))
-                    .collect(Collectors.toList()).size());
+                    .toList().size());
     }
 
  }

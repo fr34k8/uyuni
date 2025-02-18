@@ -1,7 +1,7 @@
 #
 # spec file for package spacewalk
 #
-# Copyright (c) 2022 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 # Copyright (c) 2008-2018 Red Hat, Inc.
 #
 # All modifications and additions to the file contributed by third parties
@@ -18,14 +18,14 @@
 
 
 Name:           spacewalk
-Version:        4.4.2
-Release:        1
+Version:        5.1.2
+Release:        0
 Summary:        Spacewalk Systems Management Application
 License:        GPL-2.0-only
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
 URL:            https://github.com/uyuni-project/uyuni
 Source:         https://github.com/uyuni-project/uyuni/archive/%{name}-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
 %description
@@ -34,9 +34,8 @@ inventory, provision, update and control your Linux machines.
 
 %package common
 Summary:        Spacewalk Systems Management Application with postgresql database backend
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
-Obsoletes:      spacewalk < 0.7.0
-
 BuildRequires:  python3
 BuildRequires:  spacewalk-backend
 BuildRequires:  spacewalk-base-minimal-config
@@ -56,10 +55,6 @@ Requires:       spacewalk-html
 Requires:       mgr-push
 Requires:       spacewalk-backend
 Requires:       spacewalk-backend-app
-Requires:       spacewalk-backend-applet
-Requires:       spacewalk-backend-config-files
-Requires:       spacewalk-backend-config-files-common
-Requires:       spacewalk-backend-config-files-tool
 Requires:       spacewalk-backend-iss
 Requires:       spacewalk-backend-iss-export
 Requires:       spacewalk-backend-package-push-server
@@ -71,7 +66,7 @@ Requires:       spacewalk-backend-xmlrpc
 Requires:       spacewalk-certs-tools
 
 # Misc
-%if !0%{?rhel}
+%if 0%{?opensuse}
 Requires:       pxe-default-image
 %endif
 Requires:       spacewalk-config
@@ -82,64 +77,23 @@ Recommends:     virtual-host-gatherer-VMware
 Requires:       subscription-matcher
 Requires:       susemanager-sls
 
-Obsoletes:      spacewalk-monitoring < 2.3
-
 Requires:       cobbler
 Requires:       susemanager-jsp_en
 
 # weakremover used on SUSE to get rid of orphan packages which are
 # unsupported and do not have a dependency anymore
-Provides:	weakremover(jabberd)
-Provides:	weakremover(jabberd-sqlite)
-Provides:	weakremover(jabberd-db)
-Provides:	weakremover(spacewalk-setup-jabberd)
-Provides:	weakremover(python3-jabberpy)
-Provides:	weakremover(mgr-osa-dispatcher)
-Provides:	weakremover(python3-mgr-osa-dispatcher)
-Provides:	weakremover(python3-mgr-osa-common)
+Provides:       weakremover(jabberd)
+Provides:       weakremover(jabberd-db)
+Provides:       weakremover(jabberd-sqlite)
+Provides:       weakremover(mgr-osa-dispatcher)
+Provides:       weakremover(python3-jabberpy)
+Provides:       weakremover(python3-mgr-osa-common)
+Provides:       weakremover(python3-mgr-osa-dispatcher)
+Provides:       weakremover(spacewalk-setup-jabberd)
 
 %description common
 Spacewalk is a systems management application that will
 inventory, provision, update and control your Linux machines.
-
-%package postgresql
-Summary:        Spacewalk Systems Management Application with PostgreSQL database backend
-Group:          Applications/Internet
-Obsoletes:      spacewalk < 0.7.0
-Requires:       spacewalk-common = %{version}-%{release}
-Conflicts:      spacewalk-oracle
-Provides:       spacewalk-db-virtual = %{version}-%{release}
-
-Requires:       spacewalk-backend-sql-postgresql
-Requires:       spacewalk-java-postgresql
-Requires:       perl(DBD::Pg)
-%if 0%{?sle_version}
-%if 0%{?sle_version} >= 150400
-Requires:       postgresql14
-Requires:       postgresql14-contrib
-# we do not support postgresql versions > 14.x yet
-Conflicts:      postgresql-implementation >= 15
-Conflicts:      postgresql-contrib-implementation >= 15
-%else # not sle_version >= 150400
-Requires:       postgresql13
-Requires:       postgresql13-contrib
-# we do not support postgresql versions > 13.x yet
-Conflicts:      postgresql-implementation >= 14
-Conflicts:      postgresql-contrib-implementation >= 14
-%endif # if sle_version >= 150400
-%else # not a supported SUSE version or alternative OS.
-Requires:       postgresql14
-Requires:       postgresql14-contrib
-# we do not support postgresql versions > 14.x yet
-# Hardcoded v15 conflict due to PostgreSQL bug 17507 (instead of >= 15)
-Conflicts:      postgresql15
-Conflicts:      postgresql15-contrib
-%endif # if sle_Version
-
-%description postgresql
-Spacewalk is a systems management application that will
-inventory, provision, update and control your Linux machines.
-Version for PostgreSQL database backend.
 
 %prep
 %setup -q
@@ -148,33 +102,14 @@ Version for PostgreSQL database backend.
 #nothing to do here
 
 %install
-RDBMS="postgresql"
-install -d $RPM_BUILD_ROOT/%{_sysconfdir}
-SUMA_REL=$(echo %{version} | awk -F. '{print $1"."$2}')
-UYUNI_REL=$(grep -F 'web.version.uyuni' %{_datadir}/rhn/config-defaults/rhn_web.conf | sed 's/^.*= *\([[:digit:]\.]\+\) *$/\1/')
-echo "Uyuni release $UYUNI_REL" > $RPM_BUILD_ROOT/%{_sysconfdir}/uyuni-release
-if grep -F 'product_name' %{_datadir}/rhn/config-defaults/rhn.conf | grep 'SUSE Manager' >/dev/null; then
-  echo "SUSE Manager release $SUMA_REL ($UYUNI_REL)" > $RPM_BUILD_ROOT/%{_sysconfdir}/susemanager-release
-fi
-install -d $RPM_BUILD_ROOT/%{_datadir}/spacewalk/setup/defaults.d
-for i in ${RDBMS} ; do
-    cat <<EOF >$RPM_BUILD_ROOT/%{_datadir}/spacewalk/setup/defaults.d/$i-backend.conf
-# database backend to be used by spacewalk
-db-backend = $i
-EOF
-done
-
-%files common
-%{_sysconfdir}/*-release
-%{!?_licensedir:%global license %doc}
-%license LICENSE
-%if 0%{?suse_version}
-%dir %{_datadir}/spacewalk
-%dir %{_datadir}/spacewalk/setup
-%dir %{_datadir}/spacewalk/setup/defaults.d
+install -d %{buildroot}%{_sysconfdir}
+install -d %{buildroot}%{_bindir}
+%if 0%{?rhel}
+ln -s %{_prefix}/pgsql-14/bin/initdb %{buildroot}%{_bindir}/initdb
 %endif
 
-%files postgresql
-%{_datadir}/spacewalk/setup/defaults.d/postgresql-backend.conf
+%files common
+%{!?_licensedir:%global license %doc}
+%license LICENSE
 
 %changelog

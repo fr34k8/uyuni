@@ -8,18 +8,19 @@ import { AsyncButton, Button } from "components/buttons";
 import { CustomDiv } from "components/custom-objects";
 import { DangerDialog } from "components/dialog/DangerDialog";
 import { Dialog } from "components/dialog/Dialog";
+import { Form, Select } from "components/input";
 import { ChannelLink } from "components/links";
-import { Messages, MessageType } from "components/messages";
-import { Utils as MessagesUtils } from "components/messages";
+import { Messages, MessageType } from "components/messages/messages";
+import { Utils as MessagesUtils } from "components/messages/messages";
 import { SectionToolbar } from "components/section-toolbar/section-toolbar";
 import { CustomDataHandler } from "components/table/CustomDataHandler";
 import { SearchField } from "components/table/SearchField";
 import { Toggler } from "components/toggler";
-import { HelpLink } from "components/utils/HelpLink";
 
 import { DEPRECATED_unsafeEquals } from "utils/legacy";
 import Network from "utils/network";
 
+import { SetupHeader } from "../setup-header";
 import { searchCriteriaInExtension } from "./products.utils";
 import { SCCDialog } from "./products-scc-dialog";
 
@@ -34,48 +35,11 @@ declare global {
   }
 }
 
-type Instance = JQuery;
-type StaticProperties = {};
-type Select2 = ((...args: any[]) => Instance) & StaticProperties;
-
-declare global {
-  interface JQuery {
-    select2: Select2;
-  }
-}
-
-const msgMap = {
+const messageMap = {
   // Nothing for now
 };
 
 const _DATA_ROOT_ID = "baseProducts";
-
-const _SETUP_WIZARD_STEPS = [
-  {
-    id: "wizard-step-proxy",
-    label: "HTTP Proxy",
-    url: "/rhn/admin/setup/ProxySettings.do",
-    active: false,
-  },
-  {
-    id: "wizard-step-credentials",
-    label: "Organization Credentials",
-    url: "/rhn/admin/setup/MirrorCredentials.do",
-    active: false,
-  },
-  {
-    id: "wizard-step-suse-products",
-    label: "Products",
-    url: window.location.href.split(/\?|#/)[0],
-    active: true,
-  },
-  {
-    id: "wizard-step-suse-payg",
-    label: "Pay-as-you-go",
-    url: "/rhn/manager/admin/setup/payg",
-    active: false,
-  },
-];
 
 const _PRODUCT_STATUS = {
   installed: "INSTALLED",
@@ -93,11 +57,16 @@ const _CHANNEL_STATUS = {
 const _COLS = {
   selector: { width: 2, um: "em" },
   showSubList: { width: 2, um: "em" },
-  description: { width: "auto", um: "" },
-  arch: { width: 6, um: "em" },
+  description: { width: "", um: "" },
+  arch: { width: 5, um: "em" },
   channels: { width: 7, um: "em" },
-  mix: { width: 13, um: "em" },
+  recommended: { width: 9, um: "em" },
+  mix: { width: 4, um: "em" },
 };
+
+function loadMetadata() {
+  return Network.get("/rhn/manager/api/admin/products/metadata");
+}
 
 function reloadData() {
   return Network.get("/rhn/manager/api/admin/products");
@@ -140,18 +109,38 @@ class ProductsPageWrapper extends React.Component {
 
   refreshServerData = () => {
     this.setState({ loading: true });
-    var currentObject = this;
-    let resultMessages: MessageType[] = currentObject.state.errors;
-    if (currentObject.state.noToolsChannelSubscription && currentObject.state.issMaster) {
-      resultMessages = MessagesUtils.warning(
-        t("No SUSE Manager Server Subscription available. Products requiring Client Tools Channel will not be shown.")
-      );
-    }
+    const currentObject = this;
+
+    loadMetadata()
+      .then((metadata) => {
+        currentObject.setState({
+          issMaster: metadata.issMaster,
+          refreshNeeded: metadata.refreshNeeded,
+          refreshRunning: metadata.refreshRunning || metadata.refreshFileLocked,
+          noToolsChannelSubscription: metadata.noToolsChannelSubscription,
+        });
+
+        if (
+          currentObject.state.noToolsChannelSubscription &&
+          currentObject.state.issMaster &&
+          !currentObject.state.refreshNeeded &&
+          !currentObject.state.refreshRunning
+        ) {
+          currentObject.setState({
+            errors: MessagesUtils.warning(
+              t(
+                "No SUSE Manager Server Subscription available. Products requiring Client Tools Channel will not be shown."
+              )
+            ),
+          });
+        }
+      })
+      .catch(this.handleResponseError);
+
     reloadData()
       .then((data) => {
         currentObject.setState({
           serverData: data[_DATA_ROOT_ID],
-          errors: resultMessages,
           loading: false,
           selectedItems: [],
           scheduleResyncItems: [],
@@ -267,7 +256,7 @@ class ProductsPageWrapper extends React.Component {
               </>
             )),
             true,
-            t("The following channel installations for '{0}' failed. Please check log files.", product)
+            t('The following channel installations for "{product}" failed. Please check log files.', { product })
           );
         }
         this.setState({
@@ -281,37 +270,13 @@ class ProductsPageWrapper extends React.Component {
   };
 
   handleResponseError = (jqXHR: JQueryXHR, arg = "") => {
-    const msg = Network.responseErrorMessage(jqXHR, (status, msg) => (msgMap[msg] ? t(msgMap[msg], arg) : null));
+    const msg = Network.responseErrorMessage(jqXHR, (status, msg) =>
+      messageMap[msg] ? t(messageMap[msg], arg) : null
+    );
     this.setState({ errors: this.state.errors.concat(msg) });
   };
 
   render() {
-    const title = (
-      <div className="spacewalk-toolbar-h1">
-        <h1>
-          <i className="fa fa-cogs"></i>
-          &nbsp;
-          {t("Setup Wizard")}
-          &nbsp;
-          <HelpLink url="reference/admin/setup-wizard.html" />
-        </h1>
-      </div>
-    );
-
-    const tabs = (
-      <div className="spacewalk-content-nav">
-        <ul className="nav nav-tabs">
-          {_SETUP_WIZARD_STEPS.map((step) => (
-            <li key={step.id} className={step.active ? "active" : ""}>
-              <a className="js-spa" href={step.url}>
-                {t(step.label)}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-
     let pageContent;
     if (this.state.refreshRunning) {
       pageContent = (
@@ -330,15 +295,16 @@ class ProductsPageWrapper extends React.Component {
           <Button
             id="addProducts"
             icon={this.state.addingProducts ? "fa-plus-circle fa-spin" : "fa-plus"}
-            className="btn-default text-muted"
+            className="btn btn-primary"
             title={submitButtonTitle}
             text={t("Add products")}
+            disabled
           />
         ) : (
           <Button
             id="addProducts"
             icon="fa-plus"
-            className={"btn-success"}
+            className={"btn btn-primary"}
             text={
               t("Add products") +
               (this.state.selectedItems.length > 0 ? " (" + this.state.selectedItems.length + ")" : "")
@@ -358,10 +324,11 @@ class ProductsPageWrapper extends React.Component {
                     <Button
                       id="clearSelection"
                       icon="fa-eraser"
-                      className={"btn-default " + (this.state.selectedItems.length === 0 ? "text-muted" : "")}
+                      className={"btn-default"}
                       title={t("Clear products selection")}
                       text={t("Clear")}
                       handler={this.clearSelection}
+                      disabled={this.state.selectedItems.length === 0}
                     />
                     {addProductButton}
                   </div>
@@ -388,18 +355,20 @@ class ProductsPageWrapper extends React.Component {
             />
             <hr />
             {this.state.selectedItems.length > 0 ? (
-              <div className="text-left">
-                <h4>Selected products</h4>
-                <ul>
-                  {this.state.selectedItems.map((i) => (
-                    <li key={i.identifier}>
-                      {i.label} [{i.arch}]
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <>
+                <div className="text-left">
+                  <h4>Selected products</h4>
+                  <ul>
+                    {this.state.selectedItems.map((i) => (
+                      <li key={i.identifier}>
+                        {i.label} [{i.arch}]
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <hr />
+              </>
             ) : null}
-            <hr />
             <h4>{t("Why aren't all products displayed in the list?")}</h4>
             <p>
               {t(
@@ -424,39 +393,10 @@ class ProductsPageWrapper extends React.Component {
       );
     }
 
-    const prevStyle = { marginLeft: "10px", verticalAlign: "middle" };
-    const activeStep = _SETUP_WIZARD_STEPS.find((step) => step.active);
-    const currentStepIndex = activeStep ? _SETUP_WIZARD_STEPS.indexOf(activeStep) : -1;
-    const footer = (
-      <div className="panel-footer">
-        <div className="btn-group">
-          {currentStepIndex > 1 ? (
-            <a className="btn btn-default" href={_SETUP_WIZARD_STEPS[currentStepIndex - 1].url}>
-              <i className="fa fa-arrow-left"></i>
-              {t("Prev")}
-            </a>
-          ) : null}
-          {currentStepIndex < _SETUP_WIZARD_STEPS.length - 1 ? (
-            <a className="btn btn-success" href={_SETUP_WIZARD_STEPS[currentStepIndex + 1].url}>
-              <i className="fa fa-arrow-right"></i>
-              {t("Next")}
-            </a>
-          ) : null}
-        </div>
-        <span style={prevStyle}>
-          {currentStepIndex + 1}&nbsp;{t("of")}&nbsp;{_SETUP_WIZARD_STEPS.length}
-        </span>
-      </div>
-    );
-
     return (
       <div className="responsive-wizard">
-        {title}
-        {tabs}
-        <div className="panel panel-default" id="products-content">
-          <div className="panel-body">{pageContent}</div>
-        </div>
-        {footer}
+        <SetupHeader />
+        {pageContent}
       </div>
     );
   }
@@ -485,36 +425,10 @@ class Products extends React.Component<ProductsProps> {
     visibleSubList: [] as any[],
   };
 
-  componentDidMount() {
-    const currentObject = this;
-
-    //HACK: usage of JQuery here is needed to apply the select2js plugin
-    jQuery("select#product-arch-filter.apply-select2js-on-this").each(function () {
-      var select = jQuery(this);
-      // apply select2js only one time
-      if (!select.hasClass("select2js-applied")) {
-        select.addClass("select2js-applied");
-
-        var select2js = select.select2({ placeholder: t("Filter by architecture") });
-        select2js.on("change", function (event) {
-          currentObject.handleFilterArchChange(select.val() || []);
-        });
-      }
-    });
-  }
-
-  getDistinctArchsFromData = (data) => {
-    var archs: any[] = [];
-    Object.keys(data)
-      .map((id) => data[id])
-      .forEach(function (x) {
-        if (!archs.includes(x.arch)) archs.push(x.arch);
-      });
-    return archs;
-  };
-
-  handleFilterArchChange = (archs) => {
-    this.setState({ archCriteria: archs });
+  getDistinctArchsFromData = (data: any[] = []) => {
+    return Array.from(new Set(data.map((item) => item.arch)))
+      .filter(Boolean) // Some items don't have an arch set so pick those out
+      .sort();
   };
 
   filterDataByArch = (data: any[]) => {
@@ -565,19 +479,17 @@ class Products extends React.Component<ProductsProps> {
 
   render() {
     const archFilter = (
-      <div className="multiple-select-wrapper">
-        <select
-          id="product-arch-filter"
-          name="product-arch-filter"
-          className="form-control d-inline-block apply-select2js-on-this"
-          multiple={true}
-        >
-          {this.getDistinctArchsFromData(this.props.data).map((a, i) => (
-            <option key={a + i} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
+      <div className="multiple-select-wrapper table-input-search">
+        {/* TODO: Remove this <Form> wrapper once https://github.com/SUSE/spacewalk/issues/14250 is implemented */}
+        <Form>
+          <Select
+            name="product-arch-filter"
+            placeholder={t("Filter by architecture")}
+            options={this.getDistinctArchsFromData(this.props.data)}
+            isMulti
+            onChange={(_, archCriteria) => this.setState({ archCriteria })}
+          />
+        </Form>
       </div>
     );
     return (
@@ -662,7 +574,7 @@ class CheckList extends React.Component<CheckListProps> {
               um={this.props.bypassProps.cols.showSubList.um}
             ></CustomDiv>
             <CustomDiv
-              className="col col-class-calc-width"
+              className="col col-description-width"
               width={this.props.bypassProps.cols.description.width}
               um={this.props.bypassProps.cols.description.um}
             >
@@ -682,6 +594,13 @@ class CheckList extends React.Component<CheckListProps> {
               um={this.props.bypassProps.cols.channels.um}
             >
               {t("Channels")}
+            </CustomDiv>
+            <CustomDiv
+              className="col text-right"
+              width={this.props.bypassProps.cols.recommended.width}
+              um={this.props.bypassProps.cols.recommended.um}
+            >
+              {t("Recommended")}
             </CustomDiv>
             <CustomDiv
               className="col text-right"
@@ -950,11 +869,7 @@ class CheckListItem extends React.Component<CheckListItemProps> {
       this.getNestedData(currentItem).some((i) => i.recommended)
     ) {
       recommendedTogglerContent = (
-        <Toggler
-          handler={this.handleWithRecommended.bind(this)}
-          value={this.state.withRecommended}
-          text={t("include recommended")}
-        />
+        <Toggler handler={this.handleWithRecommended.bind(this)} value={this.state.withRecommended} />
       );
     }
 
@@ -1040,7 +955,7 @@ class CheckListItem extends React.Component<CheckListItemProps> {
             {showNestedDataIconContent}
           </CustomDiv>
           <CustomDiv
-            className="col col-class-calc-width"
+            className="col col-description-width"
             width={this.props.bypassProps.cols.description.width}
             um={this.props.bypassProps.cols.description.um}
           >
@@ -1070,11 +985,17 @@ class CheckListItem extends React.Component<CheckListItemProps> {
             </button>
           </CustomDiv>
           <CustomDiv
-            className="col text-right"
+            className="col text-center"
+            width={this.props.bypassProps.cols.recommended.width}
+            um={this.props.bypassProps.cols.recommended.um}
+          >
+            {recommendedTogglerContent}
+          </CustomDiv>
+          <CustomDiv
+            className="col text-center"
             width={this.props.bypassProps.cols.mix.width}
             um={this.props.bypassProps.cols.mix.um}
           >
-            {recommendedTogglerContent}
             {resyncActionContent}
           </CustomDiv>
         </div>
@@ -1159,7 +1080,7 @@ const ChannelsPopUp = (props) => {
       content={contentPopup}
       submitText={t("Confirm")}
       submitIcon="fa-check"
-      btnClass="btn-success"
+      btnClass="btn-primary"
       onConfirm={showConfirm() ? () => addOptionalChannels() : undefined}
     />
   ) : (

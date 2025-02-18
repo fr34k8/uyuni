@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: uyuni-proxy
   namespace: "{{ .Release.Namespace }}"
+  labels:
+    app: uyuni-proxy
 spec:
   replicas: 1
   selector:
@@ -13,6 +15,10 @@ spec:
       labels:
         app: uyuni-proxy
     spec:
+{{- if .Values.registrySecret }}
+      imagePullSecrets:
+        - name: {{ .Values.registrySecret }}
+{{- end }}
       containers:
         - name: httpd
           image: {{- include "deployment.container.image" (dict "name" "proxy-httpd" "global" .) | indent 1}}
@@ -30,6 +36,10 @@ spec:
             mountPath: /var/cache/rhn
           - name: tftp-boot
             mountPath: /srv/tftpboot
+          - name: config-volume
+            mountPath: /etc/apache2/conf.d/apache_tuning.conf
+            subPath:  apache_tuning
+            readOnly: true
           ports:
             - containerPort: 80
             - containerPort: 443
@@ -54,6 +64,10 @@ spec:
             readOnly: true
           - name: squid-cache
             mountPath: /var/cache/squid
+          - name: config-volume
+            mountPath: /etc/squid/conf.d/squid_tuning.conf
+            subPath:  squid_tuning
+            readOnly: true
           ports:
             - containerPort: 8088
         - name: ssh
@@ -91,6 +105,10 @@ spec:
             items:
               - key: config.yaml
                 path: config.yaml
+              - key: squid_tuning
+                path: squid_tuning
+              - key: apache_tuning
+                path: apache_tuning
         - name: httpd-secret-volume
           secret:
             secretName: proxy-secret

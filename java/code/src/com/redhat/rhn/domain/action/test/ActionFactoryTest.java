@@ -16,6 +16,7 @@ package com.redhat.rhn.domain.action.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,9 +44,6 @@ import com.redhat.rhn.domain.action.script.ScriptActionDetails;
 import com.redhat.rhn.domain.action.script.ScriptRunAction;
 import com.redhat.rhn.domain.action.server.ServerAction;
 import com.redhat.rhn.domain.action.server.test.ServerActionTest;
-import com.redhat.rhn.domain.action.virtualization.BaseVirtualizationGuestAction;
-import com.redhat.rhn.domain.action.virtualization.VirtualizationSetMemoryGuestAction;
-import com.redhat.rhn.domain.action.virtualization.VirtualizationSetVcpusGuestAction;
 import com.redhat.rhn.domain.config.ConfigFileName;
 import com.redhat.rhn.domain.config.ConfigRevision;
 import com.redhat.rhn.domain.config.ConfigurationFactory;
@@ -74,7 +72,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -150,7 +147,7 @@ public class ActionFactoryTest extends BaseTestCaseWithUser {
         Action a = ActionFactory.lookupById(id);
 
         assertNotNull(a);
-        assertTrue(a instanceof ScriptRunAction);
+        assertInstanceOf(ScriptRunAction.class, a);
         ScriptRunAction s = (ScriptRunAction) a;
         assertNotNull(s.getScriptActionDetails().getUsername());
         assertNotNull(s.getEarliestAction());
@@ -178,7 +175,7 @@ public class ActionFactoryTest extends BaseTestCaseWithUser {
     public void testLookupErrataAction() throws Exception {
         Action newA = createAction(user, ActionFactory.TYPE_ERRATA);
         assertNotNull(newA.getId());
-        assertTrue(newA instanceof ErrataAction);
+        assertInstanceOf(ErrataAction.class, newA);
         ErrataAction ea = (ErrataAction) newA;
         assertNotNull(ea.getErrata());
         assertNotNull(((Errata) ea.getErrata().toArray()[0]).getId());
@@ -194,7 +191,7 @@ public class ActionFactoryTest extends BaseTestCaseWithUser {
         Long id = newA.getId();
         Action a = ActionFactory.lookupById(id);
         assertNotNull(a);
-        assertTrue(a instanceof DaemonConfigAction);
+        assertInstanceOf(DaemonConfigAction.class, a);
         DaemonConfigAction dca = (DaemonConfigAction) a;
         assertNotNull(dca.getId());
         assertNotNull(dca.getDaemonConfigDetails());
@@ -415,7 +412,7 @@ public class ActionFactoryTest extends BaseTestCaseWithUser {
         TestUtils.saveAndReload(a1);
         TestUtils.saveAndReload(a2);
 
-        List<Long> actionIds = Stream.of(a1, a2).map(Action::getId).collect(Collectors.toList());
+        List<Long> actionIds = Stream.of(a1, a2).map(Action::getId).toList();
         ActionFactory.rejectScheduledActions(actionIds, "Test Rejection Reason");
 
         sa1 = HibernateFactory.reload(sa1);
@@ -536,8 +533,10 @@ public class ActionFactoryTest extends BaseTestCaseWithUser {
 
             //create packageArch
             Long testid = 100L;
-            String query = "PackageArch.findById";
-            PackageArch arch = (PackageArch) TestUtils.lookupFromCacheById(testid, query);
+            PackageArch arch = HibernateFactory.getSession().createNativeQuery("""
+                SELECT p.* from rhnPackageArch as p WHERE p.id = :id
+                """, PackageArch.class).setParameter("id", testid).getSingleResult();
+
             d.setArch(arch);
 
             //create packageName
@@ -567,26 +566,6 @@ public class ActionFactoryTest extends BaseTestCaseWithUser {
             dcd.setDaemonConfigModified(new Date());
             dcd.setParentAction(newA);
             ((DaemonConfigAction) newA).setDaemonConfigDetails(dcd);
-        }
-        else if (type.equals(ActionFactory.TYPE_VIRTUALIZATION_DELETE) ||
-                 type.equals(ActionFactory.TYPE_VIRTUALIZATION_DESTROY) ||
-                 type.equals(ActionFactory.TYPE_VIRTUALIZATION_REBOOT) ||
-                 type.equals(ActionFactory.TYPE_VIRTUALIZATION_RESUME) ||
-                 type.equals(ActionFactory.TYPE_VIRTUALIZATION_SHUTDOWN) ||
-                 type.equals(ActionFactory.TYPE_VIRTUALIZATION_START) ||
-                 type.equals(ActionFactory.TYPE_VIRTUALIZATION_SUSPEND)) {
-            BaseVirtualizationGuestAction va = (BaseVirtualizationGuestAction)newA;
-            va.setUuid(RandomStringUtils.randomAlphanumeric(8));
-        }
-        else if (type.equals(ActionFactory.TYPE_VIRTUALIZATION_SET_MEMORY)) {
-           VirtualizationSetMemoryGuestAction va = (VirtualizationSetMemoryGuestAction)newA;
-            va.setUuid(RandomStringUtils.randomAlphanumeric(8));
-           va.setMemory(1234);
-        }
-        else if (type.equals(ActionFactory.TYPE_VIRTUALIZATION_SET_VCPUS)) {
-            VirtualizationSetVcpusGuestAction va = (VirtualizationSetVcpusGuestAction)newA;
-            va.setUuid(RandomStringUtils.randomAlphanumeric(8));
-            va.setVcpu(12);
         }
 
         newA.setName("RHN-JAVA Test Action");

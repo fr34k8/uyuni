@@ -25,7 +25,8 @@ import com.redhat.rhn.manager.action.ActionManager;
 import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.taskomatic.TaskomaticApiException;
 
-import com.suse.manager.reactor.messaging.AbstractLibvirtEngineMessage;
+import com.suse.cloud.CloudPaygManager;
+import com.suse.manager.attestation.AttestationManager;
 import com.suse.manager.reactor.messaging.ApplyStatesEventMessage;
 import com.suse.manager.reactor.messaging.ApplyStatesEventMessageAction;
 import com.suse.manager.reactor.messaging.BatchStartedEventMessage;
@@ -36,13 +37,6 @@ import com.suse.manager.reactor.messaging.ImageSyncedEventMessage;
 import com.suse.manager.reactor.messaging.ImageSyncedEventMessageAction;
 import com.suse.manager.reactor.messaging.JobReturnEventMessage;
 import com.suse.manager.reactor.messaging.JobReturnEventMessageAction;
-import com.suse.manager.reactor.messaging.LibvirtEngineDomainLifecycleMessage;
-import com.suse.manager.reactor.messaging.LibvirtEngineDomainLifecycleMessageAction;
-import com.suse.manager.reactor.messaging.LibvirtEngineNetworkLifecycleMessage;
-import com.suse.manager.reactor.messaging.LibvirtEngineNetworkMessageAction;
-import com.suse.manager.reactor.messaging.LibvirtEnginePoolLifecycleMessage;
-import com.suse.manager.reactor.messaging.LibvirtEnginePoolMessageAction;
-import com.suse.manager.reactor.messaging.LibvirtEnginePoolRefreshMessage;
 import com.suse.manager.reactor.messaging.RefreshGeneratedSaltFilesEventMessage;
 import com.suse.manager.reactor.messaging.RefreshGeneratedSaltFilesEventMessageAction;
 import com.suse.manager.reactor.messaging.RegisterMinionEventMessage;
@@ -55,11 +49,9 @@ import com.suse.manager.saltboot.PXEEvent;
 import com.suse.manager.saltboot.PXEEventMessage;
 import com.suse.manager.saltboot.PXEEventMessageAction;
 import com.suse.manager.utils.SaltUtils;
-import com.suse.manager.virtualization.VirtManagerSalt;
 import com.suse.manager.webui.services.SaltServerActionService;
 import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.utils.salt.custom.ImageDeployedEvent;
 import com.suse.manager.webui.utils.salt.custom.ImageSyncedEvent;
 import com.suse.manager.webui.utils.salt.custom.MinionStartupGrains;
@@ -67,7 +59,6 @@ import com.suse.manager.webui.utils.salt.custom.SystemIdGenerateEvent;
 import com.suse.salt.netapi.datatypes.Event;
 import com.suse.salt.netapi.event.BatchStartedEvent;
 import com.suse.salt.netapi.event.BeaconEvent;
-import com.suse.salt.netapi.event.EngineEvent;
 import com.suse.salt.netapi.event.EventStream;
 import com.suse.salt.netapi.event.JobReturnEvent;
 import com.suse.salt.netapi.event.MinionStartEvent;
@@ -75,6 +66,7 @@ import com.suse.salt.netapi.event.MinionStartEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Date;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -91,6 +83,8 @@ public class SaltReactor {
     private final SystemQuery systemQuery;
     private final SaltServerActionService saltServerActionService;
     private final SaltUtils saltUtils;
+    private final CloudPaygManager paygMgr;
+    private final AttestationManager attestationMgr;
 
     // The event stream object
     private EventStream eventStream;
@@ -104,25 +98,27 @@ public class SaltReactor {
      * Processing salt events
      * @param saltApiIn instance to talk to salt
      * @param systemQueryIn instance to get system information.
-     * @param saltServerActionServiceIn
-     * @param saltUtilsIn
+     * @param saltServerActionServiceIn the salt server action sevice
+     * @param saltUtilsIn the salt utils
+     * @param paygMgrIn the payg manager
+     * @param attestationMgrIn the attestation manager
      */
     public SaltReactor(SaltApi saltApiIn, SystemQuery systemQueryIn, SaltServerActionService saltServerActionServiceIn,
-                       SaltUtils saltUtilsIn) {
+                       SaltUtils saltUtilsIn, CloudPaygManager paygMgrIn, AttestationManager attestationMgrIn) {
         this.saltApi = saltApiIn;
         this.systemQuery = systemQueryIn;
         this.saltServerActionService = saltServerActionServiceIn;
         this.saltUtils = saltUtilsIn;
+        this.paygMgr = paygMgrIn;
+        this.attestationMgr = attestationMgrIn;
     }
 
     /**
      * Start the salt reactor.
      */
     public void start() {
-        VirtManager virtManager = new VirtManagerSalt(saltApi);
-
         // Configure message queue to handle minion registrations
-        MessageQueue.registerAction(new RegisterMinionEventMessageAction(systemQuery, saltApi),
+        MessageQueue.registerAction(new RegisterMinionEventMessageAction(systemQuery, saltApi, paygMgr, attestationMgr),
                 RegisterMinionEventMessage.class);
         MessageQueue.registerAction(new ApplyStatesEventMessageAction(),
                 ApplyStatesEventMessage.class);
@@ -136,14 +132,6 @@ public class SaltReactor {
                 SystemIdGenerateEventMessage.class);
         MessageQueue.registerAction(new ImageDeployedEventMessageAction(systemQuery),
                 ImageDeployedEventMessage.class);
-        MessageQueue.registerAction(new LibvirtEngineDomainLifecycleMessageAction(virtManager),
-                LibvirtEngineDomainLifecycleMessage.class);
-        MessageQueue.registerAction(new LibvirtEnginePoolMessageAction(),
-                LibvirtEnginePoolLifecycleMessage.class);
-        MessageQueue.registerAction(new LibvirtEnginePoolMessageAction(),
-                LibvirtEnginePoolRefreshMessage.class);
-        MessageQueue.registerAction(new LibvirtEngineNetworkMessageAction(),
-                LibvirtEngineNetworkLifecycleMessage.class);
         MessageQueue.registerAction(new BatchStartedEventMessageAction(),
                 BatchStartedEventMessage.class);
         MessageQueue.registerAction(new ImageSyncedEventMessageAction(),
@@ -195,10 +183,9 @@ public class SaltReactor {
                ImageDeployedEvent.parse(event).map(this::eventToMessages).orElseGet(() ->
                ImageSyncedEvent.parse(event).map(this::eventToMessages).orElseGet(() ->
                PXEEvent.parse(event).map(this::eventToMessages).orElseGet(() ->
-               EngineEvent.parse(event).map(this::eventToMessages).orElseGet(() ->
                BeaconEvent.parse(event).map(this::eventToMessages).orElse(
                empty()
-        )))))))));
+        ))))))));
     }
 
     /**
@@ -219,7 +206,7 @@ public class SaltReactor {
      */
     private Stream<EventMessage> eventToMessages(SystemIdGenerateEvent systemIdGenerateEvent) {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Generate systemid file for minion: {}", (String) systemIdGenerateEvent.getData().get("id"));
+            LOG.debug("Generate systemid file for minion: {}", systemIdGenerateEvent.getData().get("id"));
         }
         return of(new SystemIdGenerateEventMessage((String) systemIdGenerateEvent.getData().get("id")));
     }
@@ -262,30 +249,6 @@ public class SaltReactor {
     }
 
     /**
-     * Trigger handling of engine events
-     *
-     * @param engineEvent engine event
-     * @return event handler runnable
-     */
-    private Stream<EventMessage> eventToMessages(EngineEvent engineEvent) {
-        if ("libvirt_events".equals(engineEvent.getEngine())) {
-            try {
-                AbstractLibvirtEngineMessage message = AbstractLibvirtEngineMessage.create(engineEvent);
-                if (message != null) {
-                    return of(message);
-                }
-                else {
-                    LOG.debug("Unhandled libvirt engine event:{}", engineEvent.getAdditional());
-                }
-            }
-            catch (IllegalArgumentException e) {
-                LOG.warn("Invalid libvirt engine event: {}", engineEvent.getAdditional());
-            }
-        }
-        return empty();
-    }
-
-    /**
      * Trigger handling of job return events.
      *
      * @param jobReturnEvent the job return event as we get it from salt
@@ -309,11 +272,11 @@ public class SaltReactor {
                             () -> MinionServerFactory.findByMinionId(beaconEvent.getMinionId())
                                     .ifPresent(minionServer -> {
                         try {
-                            ActionManager.schedulePackageRefresh(minionServer.getOrg(), minionServer);
+                            ActionManager.schedulePackageRefresh(Optional.empty(), minionServer);
                         }
                         catch (TaskomaticApiException e) {
-                            LOG.error("Could not schedule package refresh for minion: {}", minionServer.getMinionId());
-                            LOG.error(e);
+                            LOG.error("Could not schedule package refresh for minion: {}",
+                                    minionServer.getMinionId(), e);
                         }
                     }))
             );
@@ -322,7 +285,11 @@ public class SaltReactor {
             Optional<MinionServer> minion = MinionServerFactory.findByMinionId(beaconEvent.getMinionId());
             minion.ifPresent(
                 m -> {
-                    m.setRebootNeeded((Boolean) beaconEvent.getData().get("reboot_needed"));
+                    Boolean rebootRequired = (Boolean) beaconEvent.getData().get("reboot_needed");
+                    Date rebootRequiredAfter = Optional.ofNullable(rebootRequired)
+                                                       .map(s -> Boolean.TRUE.equals(s) ? new Date() : null)
+                                                       .orElse(null);
+                    m.setRebootRequiredAfter(rebootRequiredAfter);
                     SystemManager.updateSystemOverview(m);
                 }
             );

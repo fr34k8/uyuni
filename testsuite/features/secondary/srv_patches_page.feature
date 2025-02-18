@@ -1,4 +1,4 @@
-# Copyright (c) 2017 SUSE LLC
+# Copyright (c) 2017-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
 
 @scope_visualization
@@ -7,8 +7,8 @@ Feature: Patches page
   As a authorized user
   I want to see all the texts and links
 
-  Scenario: Log in as admin user
-    Given I am authorized for the "Admin" section
+  Scenario: Log in as org admin user
+    Given I am authorized
 
   Scenario: Patches left menu
     When I follow the left menu "Patches > Patch List > Relevant"
@@ -80,7 +80,7 @@ Feature: Patches page
     And I should see a "Test Topic" text
     And I should see a "Test Description" text
     And I should see a "Test Solution" text
-    And I should see a "Fake Base Channel" link
+    And I should see a "Fake-Base-Channel-SUSE-like" link
     And I should see a "Test Summary" link
     And I should see a "keywords, test" text
     And I should see a "Test Reference" text
@@ -88,7 +88,7 @@ Feature: Patches page
 
   Scenario: Assert that patch is now in test base channel
     When I follow the left menu "Software > Channel List > All"
-    And I follow "Fake Base Channel"
+    And I follow "Fake-Base-Channel-SUSE-like"
     And I follow "Patches" in the content area
     Then I should see a "Test Patch" text
 

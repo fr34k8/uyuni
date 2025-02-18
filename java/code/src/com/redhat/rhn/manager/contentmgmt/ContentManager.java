@@ -67,6 +67,7 @@ import com.redhat.rhn.frontend.events.AlignSoftwareTargetAction;
 import com.redhat.rhn.frontend.events.AlignSoftwareTargetMsg;
 import com.redhat.rhn.manager.EntityExistsException;
 import com.redhat.rhn.manager.EntityNotExistsException;
+import com.redhat.rhn.manager.appstreams.AppStreamsManager;
 import com.redhat.rhn.manager.channel.ChannelManager;
 import com.redhat.rhn.manager.channel.CloneChannelCommand;
 import com.redhat.rhn.manager.errata.ErrataManager;
@@ -769,9 +770,20 @@ public class ContentManager {
     }
 
     private static void stripModuleMetadata(Channel channel) {
-        if (channel != null && channel.isModular()) {
-            channel.getModules().clear();
+        if (channel != null && channel.getModules() != null) {
+            HibernateFactory.getSession().delete(channel.getModules());
+            channel.setModules(null);
+            AppStreamsManager.listChannelAppStreams(channel.getId()).forEach(a ->
+                    HibernateFactory.getSession().delete(a)
+            );
         }
+    }
+
+    private static void syncGpgKeyInfo(Channel source, Channel target) {
+        target.setGPGCheck(source.isGPGCheck());
+        target.setGPGKeyFp(source.getGPGKeyFp());
+        target.setGPGKeyId(source.getGPGKeyId());
+        target.setGPGKeyUrl(source.getGPGKeyUrl());
     }
 
     /**
@@ -849,6 +861,9 @@ public class ContentManager {
         else {
             tgt.cloneModulesFrom(newSource);
         }
+
+        // Sync GPG key info to target in case it's updated since last build
+        syncGpgKeyInfo(newSource, tgt);
 
         return swTgt;
     }

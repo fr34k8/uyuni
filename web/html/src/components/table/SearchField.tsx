@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import { Form } from "components/input/Form";
-import { Select } from "components/input/Select";
+import { Select } from "components/input";
+import { Form } from "components/input/form/Form";
 
 type SearchFieldOption = {
   label: string;
@@ -50,21 +50,25 @@ export function SearchField(props: SearchFieldProps) {
       {props.options != null && (
         <Select
           name="filter"
-          className="col-md-2"
           placeholder={t("Select a filter")}
           defaultValue={props.field}
           options={props.options}
-          onChange={(name: string | undefined, value: string) => props.onSearchField?.(value)}
+          onChange={(name: string | undefined, value: string) => {
+            props.onSearchField?.(value);
+          }}
         />
       )}
-      <input
-        className="form-control table-input-search"
-        value={props.criteria || ""}
-        placeholder={props.placeholder}
-        type="text"
-        onChange={(e) => props.onSearch?.(e.target.value)}
-        name={props.name}
-      />
+      <div className="form-group">
+        <input
+          className="form-control table-input-search"
+          data-testid="default-table-search"
+          value={props.criteria || ""}
+          placeholder={props.placeholder}
+          type="text"
+          onChange={(e) => props.onSearch?.(e.target.value)}
+          name={props.name}
+        />
+      </div>
     </Form>
   );
 }

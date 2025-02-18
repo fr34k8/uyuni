@@ -14,15 +14,17 @@
  */
 package com.redhat.rhn.domain.channel;
 
+import com.redhat.rhn.common.db.datasource.ModeFactory;
+import com.redhat.rhn.common.db.datasource.WriteMode;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.domain.server.MinionServer;
+import com.redhat.rhn.taskomatic.task.TaskConstants;
 
 import com.suse.manager.webui.utils.DownloadTokenBuilder;
 import com.suse.utils.Opt;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.criterion.Restrictions;
 import org.jose4j.lang.JoseException;
 
 import java.time.Duration;
@@ -32,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,12 +57,10 @@ public class AccessTokenFactory extends HibernateFactory {
      * @return optional of AccessToken
      */
     public static Optional<AccessToken> lookupById(long id) {
-        return Optional.ofNullable(
-                (AccessToken)HibernateFactory.getSession()
-                .createCriteria(AccessToken.class)
-                .add(Restrictions.eq("id", id))
-                .uniqueResult()
-        );
+        return getSession()
+                .createQuery("FROM AccessToken WHERE id = :id", AccessToken.class)
+                .setParameter("id", id)
+                .uniqueResultOptional();
     }
 
     /**
@@ -67,8 +68,21 @@ public class AccessTokenFactory extends HibernateFactory {
      * @return list of AccessTokens
      */
     public static List<AccessToken> all() {
-        return (List<AccessToken>) HibernateFactory.getSession()
-                .createCriteria(AccessToken.class)
+        return getSession()
+                .createQuery("FROM AccessToken", AccessToken.class)
+                .list();
+    }
+
+
+    /**
+     * Queries all AccessTokens for a specific minion
+     * @param minion the minion
+     * @return list of AccessTokens
+     */
+    public static List<AccessToken> listByMinion(MinionServer minion) {
+        return getSession()
+                .createQuery("FROM AccessToken WHERE minion = :minion", AccessToken.class)
+                .setParameter("minion", minion)
                 .list();
     }
 
@@ -78,12 +92,10 @@ public class AccessTokenFactory extends HibernateFactory {
      * @return optional of AccessToken
      */
     public static Optional<AccessToken> lookupByToken(String token) {
-        return Optional.ofNullable(
-            (AccessToken)HibernateFactory.getSession()
-            .createCriteria(AccessToken.class)
-            .add(Restrictions.eq("token", token))
-            .uniqueResult()
-        );
+        return getSession()
+                .createQuery("FROM AccessToken WHERE token = :token", AccessToken.class)
+                .setParameter("token", token)
+                .uniqueResultOptional();
     }
 
     /**
@@ -115,7 +127,7 @@ public class AccessTokenFactory extends HibernateFactory {
                     tokensToActivate.stream()
                             .anyMatch(newToken ->
                                     newToken.getChannels().containsAll(token.getChannels()));
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     /**
@@ -175,14 +187,14 @@ public class AccessTokenFactory extends HibernateFactory {
         List<Channel> allTokenChannels =
                 Stream.concat(all.stream(), tokensToActivate.stream())
                         .flatMap(s -> s.getChannels().stream())
-                        .collect(Collectors.toList());
+                        .toList();
 
         ArrayList<Channel> withoutToken = new ArrayList<>(minion.getChannels());
         withoutToken.removeAll(allTokenChannels);
 
         List<AccessToken> newTokens = withoutToken.stream().flatMap(channel ->
                 Opt.stream(generate(minion, Collections.singleton(channel)))
-        ).collect(Collectors.toList());
+        ).toList();
         all.addAll(newTokens);
 
         List<AccessToken> maybeRefreshed = update.stream().map(token -> {
@@ -193,12 +205,12 @@ public class AccessTokenFactory extends HibernateFactory {
                 LOG.error("Could not regenerate token with id: {}", token.getId(), e);
                 return token;
             }
-        }).collect(Collectors.toList());
+        }).toList();
 
         List<AccessToken> tokens = Stream.concat(
                 maybeRefreshed.stream(),
                 Stream.concat(newTokens.stream(), noUpdate.stream())
-        ).collect(Collectors.toList());
+        ).toList();
         minion.getAccessTokens().clear();
         minion.getAccessTokens().addAll(tokens);
         tokensToActivate.forEach(toActivate -> {
@@ -206,6 +218,8 @@ public class AccessTokenFactory extends HibernateFactory {
             minion.getAccessTokens().add(toActivate);
         });
 
+        LOG.debug("Token refresh finished. Got Unneeded {} Got Updated {} Got New {}",
+                !unneededTokens.isEmpty(), !update.isEmpty(), !newTokens.isEmpty());
         return !unneededTokens.isEmpty() || !update.isEmpty() || !newTokens.isEmpty();
     }
 
@@ -213,13 +227,25 @@ public class AccessTokenFactory extends HibernateFactory {
      * Deletes unassigned expired AccessTokens.
      */
     public static void cleanupUnusedExpired() {
-        Instant now = Instant.now();
-        all().forEach(token -> {
-            if (token.getMinion() == null &&
-                    now.isAfter(token.getExpiration().toInstant())) {
-                delete(token);
-            }
-        });
+        WriteMode m = ModeFactory.getWriteMode(TaskConstants.MODE_NAME,
+                TaskConstants.TASK_QUERY_TOKEN_CLEANUP);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Executing WriteMode " + TaskConstants.MODE_NAME + "::" +
+                    TaskConstants.TASK_QUERY_TOKEN_CLEANUP);
+        }
+        int tokensDeleted = m.executeUpdate(new HashMap<>());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("WriteMode " + TaskConstants.MODE_NAME + "::" +
+                    TaskConstants.TASK_QUERY_TOKEN_CLEANUP + " returned");
+        }
+        //logs number of tokens deleted
+        if (tokensDeleted > 0) {
+            LOG.info("{} channel access tokens deleted", tokensDeleted);
+        }
+        else {
+            LOG.debug("No tokens to be deleted");
+        }
    }
 
     /**
@@ -295,6 +321,7 @@ public class AccessTokenFactory extends HibernateFactory {
 
         // Unlink the old token
         token.setMinion(null);
+        token.setValid(false);
         AccessTokenFactory.save(token);
 
         return newToken;

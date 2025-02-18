@@ -15,7 +15,8 @@
 package com.redhat.rhn.frontend.dto;
 
 import com.redhat.rhn.common.localization.LocalizationService;
-import com.redhat.rhn.domain.common.SatConfigFactory;
+import com.redhat.rhn.domain.common.RhnConfiguration;
+import com.redhat.rhn.domain.common.RhnConfigurationFactory;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.entitlement.EntitlementManager;
 import com.redhat.rhn.manager.system.SystemManager;
@@ -152,15 +153,6 @@ public class SystemOverview extends BaseTupleDto implements Serializable {
         }
     }
 
-    protected static <T> Optional<T> getTupleValue(Tuple tuple, String name, Class<T> clazz) {
-        try {
-            return Optional.ofNullable(tuple.get(name, clazz));
-        }
-        catch (IllegalArgumentException e) {
-            return Optional.empty();
-        }
-    }
-
     /**
      * Compute the system status and update the corresponding field.
      *
@@ -189,7 +181,7 @@ public class SystemOverview extends BaseTupleDto implements Serializable {
         else if (getEnhancementErrata() + getBugErrata() +
                 getSecurityErrata() > 0 &&
                 Optional.ofNullable(unscheduledErrataCount).map(count -> count == 0)
-                        .orElse(SystemManager.hasUnscheduledErrata(user, sid))) {
+                        .orElse(!SystemManager.hasUnscheduledErrata(user, sid))) {
             type = STATUS_TYPE_UPDATES_SCHEDULED;
         }
         else if (Optional.ofNullable(actionsCount).orElse(Long.valueOf(SystemManager.countActions(sid))) > 0) {
@@ -965,7 +957,8 @@ public class SystemOverview extends BaseTupleDto implements Serializable {
      * @return Returns <code>true</code> if the last checkin dates too much.
      */
     public boolean checkinOverdue() {
-        Long threshold = SatConfigFactory.getSatConfigLongValue(SatConfigFactory.SYSTEM_CHECKIN_THRESHOLD, 1L);
+        RhnConfigurationFactory factory = RhnConfigurationFactory.getSingleton();
+        Long threshold = factory.getLongConfiguration(RhnConfiguration.KEYS.SYSTEM_CHECKIN_THRESHOLD).getValue();
 
         return getLastCheckinDaysAgo() != null &&
                 getLastCheckinDaysAgo().compareTo(threshold) > 0;

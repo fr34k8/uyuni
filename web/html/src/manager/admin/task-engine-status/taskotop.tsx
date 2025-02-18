@@ -2,7 +2,7 @@ import * as React from "react";
 
 import SpaRenderer from "core/spa/spa-renderer";
 
-import { Messages as MessageContainer, Utils as MessagesUtils } from "components/messages";
+import { Messages as MessageContainer, Utils as MessagesUtils } from "components/messages/messages";
 import { Column } from "components/table/Column";
 import { SearchField } from "components/table/SearchField";
 import { Table } from "components/table/Table";
@@ -132,7 +132,7 @@ class TaskoTop extends React.Component<Props> {
         break;
       case "skipped":
         cell = (
-          <div className="text-muted">
+          <div>
             <i className="fa fa-angle-double-right"></i>
             {t(" skipped")}
           </div>
@@ -192,7 +192,6 @@ class TaskoTop extends React.Component<Props> {
             <Table
               data={this.buildRows(data)}
               identifier={(row) => row["id"]}
-              cssClassFunction={(row) => (row["status"] === "skipped" ? "text-muted" : null)}
               initialSortColumnKey="status"
               searchField={<SearchField filter={this.searchData} placeholder={t("Filter by name")} />}
             >

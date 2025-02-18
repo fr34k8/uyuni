@@ -120,8 +120,7 @@ public class SystemChannelsAction extends RhnLookupDispatchAction {
         }
 
 
-        List<EssentialChannelDto> orgChannels = ChannelManager.listBaseChannelsForSystem(
-                user, s);
+        List<EssentialChannelDto> orgChannels = ChannelManager.listBaseChannelsForSystem(user, s);
 
         List<EssentialChannelDto> rhnChannels = new LinkedList<>();
         List<EssentialChannelDto> customChannels = new LinkedList<>();

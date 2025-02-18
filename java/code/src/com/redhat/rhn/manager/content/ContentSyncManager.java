@@ -14,6 +14,7 @@
  */
 package com.redhat.rhn.manager.content;
 
+import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.conf.Config;
 import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
@@ -24,10 +25,15 @@ import com.redhat.rhn.domain.channel.ChannelFamily;
 import com.redhat.rhn.domain.channel.ChannelFamilyFactory;
 import com.redhat.rhn.domain.channel.ContentSource;
 import com.redhat.rhn.domain.channel.PublicChannelFamily;
+import com.redhat.rhn.domain.cloudpayg.PaygProductFactory;
+import com.redhat.rhn.domain.cloudpayg.PaygSshDataFactory;
 import com.redhat.rhn.domain.common.ManagerInfoFactory;
-import com.redhat.rhn.domain.credentials.Credentials;
+import com.redhat.rhn.domain.credentials.CloudRMTCredentials;
 import com.redhat.rhn.domain.credentials.CredentialsFactory;
+import com.redhat.rhn.domain.credentials.RemoteCredentials;
+import com.redhat.rhn.domain.credentials.SCCCredentials;
 import com.redhat.rhn.domain.iss.IssFactory;
+import com.redhat.rhn.domain.product.ChannelTemplate;
 import com.redhat.rhn.domain.product.MgrSyncChannelDto;
 import com.redhat.rhn.domain.product.ProductType;
 import com.redhat.rhn.domain.product.ReleaseStage;
@@ -35,7 +41,6 @@ import com.redhat.rhn.domain.product.SUSEProduct;
 import com.redhat.rhn.domain.product.SUSEProductChannel;
 import com.redhat.rhn.domain.product.SUSEProductExtension;
 import com.redhat.rhn.domain.product.SUSEProductFactory;
-import com.redhat.rhn.domain.product.SUSEProductSCCRepository;
 import com.redhat.rhn.domain.product.Tuple2;
 import com.redhat.rhn.domain.product.Tuple3;
 import com.redhat.rhn.domain.rhnpackage.PackageArch;
@@ -48,13 +53,22 @@ import com.redhat.rhn.domain.scc.SCCRepositoryBasicAuth;
 import com.redhat.rhn.domain.scc.SCCRepositoryNoAuth;
 import com.redhat.rhn.domain.scc.SCCRepositoryTokenAuth;
 import com.redhat.rhn.domain.scc.SCCSubscription;
+import com.redhat.rhn.domain.server.MinionServer;
+import com.redhat.rhn.domain.server.ServerFactory;
+import com.redhat.rhn.frontend.xmlrpc.sync.content.ContentSyncSource;
+import com.redhat.rhn.frontend.xmlrpc.sync.content.ContentSyncSourceException;
+import com.redhat.rhn.frontend.xmlrpc.sync.content.LocalDirContentSyncSource;
+import com.redhat.rhn.frontend.xmlrpc.sync.content.RMTContentSyncSource;
+import com.redhat.rhn.frontend.xmlrpc.sync.content.SCCContentSyncSource;
 import com.redhat.rhn.manager.channel.ChannelManager;
+import com.redhat.rhn.taskomatic.task.payg.beans.PaygProductInfo;
 
+import com.suse.cloud.CloudPaygManager;
+import com.suse.manager.webui.services.pillar.MinionGeneralPillarGenerator;
 import com.suse.mgrsync.MgrSyncStatus;
 import com.suse.salt.netapi.parser.JsonParser;
 import com.suse.scc.client.SCCClient;
 import com.suse.scc.client.SCCClientException;
-import com.suse.scc.client.SCCClientFactory;
 import com.suse.scc.client.SCCClientUtils;
 import com.suse.scc.client.SCCWebClient;
 import com.suse.scc.model.ChannelFamilyJson;
@@ -63,7 +77,6 @@ import com.suse.scc.model.SCCOrderJson;
 import com.suse.scc.model.SCCProductJson;
 import com.suse.scc.model.SCCRepositoryJson;
 import com.suse.scc.model.SCCSubscriptionJson;
-import com.suse.scc.model.UpgradePathJson;
 import com.suse.utils.Opt;
 
 import com.google.gson.Gson;
@@ -85,6 +98,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,7 +108,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -102,8 +115,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -113,31 +125,25 @@ import java.util.stream.Stream;
 public class ContentSyncManager {
 
     // Logger instance
-    private static Logger log = LogManager.getLogger(ContentSyncManager.class);
+    private static final Logger LOG = LogManager.getLogger(ContentSyncManager.class);
 
     /**
      * OES channel family name, this is used to distinguish supported non-SUSE
      * repos that are served directly from NCC instead of SCC.
      */
     public static final String OES_CHANNEL_FAMILY = "OES2";
-    private static final String OES_URL = "https://nu.novell.com/repo/$RCE/" +
-            "OES11-SP2-Pool/sle-11-x86_64/";
-
+    private static final String OES_URL = "https://nu.novell.com/repo/$RCE/OES2023-Pool/sle-15-x86_64/";
 
     // Static JSON files we parse
-    private static File upgradePathsJson = new File(
-            "/usr/share/susemanager/scc/upgrade_paths.json");
     private static File channelFamiliesJson = new File(
             "/usr/share/susemanager/scc/channel_families.json");
     private static File additionalProductsJson = new File(
             "/usr/share/susemanager/scc/additional_products.json");
     private static File additionalRepositoriesJson = new File(
             "/usr/share/susemanager/scc/additional_repositories.json");
-    private static Optional<File> sumaProductTreeJson = Optional.empty();
 
     // File to parse this system's UUID from
-    private static final File UUID_FILE =
-            new File("/etc/zypp/credentials.d/SCCcredentials");
+    private static final File UUID_FILE = new File("/etc/zypp/credentials.d/SCCcredentials");
     private static String uuid;
 
     // Mirror URL read from rhn.conf
@@ -146,18 +152,56 @@ public class ContentSyncManager {
     // SCC JSON files location in rhn.conf
     public static final String RESOURCE_PATH = "server.susemanager.fromdir";
 
+    private Optional<File> sumaProductTreeJson = Optional.empty();
+
+    private CloudPaygManager cloudPaygManager;
+
+    private final Optional<Path> tmpLoggingDir;
+
     /**
      * Default constructor.
      */
     public ContentSyncManager() {
+        cloudPaygManager = GlobalInstanceHolder.PAYG_MANAGER;
+        tmpLoggingDir = Optional.empty();
     }
 
     /**
-     * Set the upgrade_paths.json {@link File} to read from.
-     * @param file the upgrade_paths.json file
+     * Constructor for testing
+     * @param tmpLogDir overwrite logdir for credential output
+     * @param paygMgrIn {@link CloudPaygManager} to use
      */
-    public void setUpgradePathsJson(File file) {
-        upgradePathsJson = file;
+    public ContentSyncManager(Path tmpLogDir, CloudPaygManager paygMgrIn) {
+        cloudPaygManager = paygMgrIn;
+        tmpLoggingDir = Optional.ofNullable(tmpLogDir);
+    }
+
+    /**
+     * @return return a stream of statically defined upgrade paths not coming from SCC.
+     */
+    protected Stream<Tuple2<Long, Long>> staticUpgradePaths() {
+        Set<Tuple2<Long, Long>> upgradePaths = Set.of(
+                new Tuple2<>(-7L, 2702L), // rhel-base-7-None.x86_64 => res-ltss-7-None.x86_64
+                new Tuple2<>(-12L, 2702L), // centos-7-None.x86_64 => res-ltss-7-None.x86_64
+                new Tuple2<>(-12L, 1251L), // centos-7-None.x86_64 => res-7-None.x86_64
+                new Tuple2<>(-14L, 2702L), // oraclelinux-7-None.x86_64 => res-7-None.x86_64
+                new Tuple2<>(-14L, 2778L), // oraclelinux-7-None.x86_64 => res-ol-ltss-7-None.x86_64
+                new Tuple2<>(-17L, -8L), // oraclelinux-8-None.x86_64 => rhel-base-8-None.x86_64
+                new Tuple2<>(-24L, -8L), // rockylinux-8-None.x86_64 => rhel-base-8-None.x86_64
+                new Tuple2<>(-26L, -8L), // almalinux-8-None.x86_64  => rhel-base-8-None.x86_64
+                new Tuple2<>(-41L, -35L), // oraclelinux-9-None.x86_64 => el-base-9-None.x86_64
+                new Tuple2<>(-36L, -35L), // rockylinux-9-None.x86_64 => el-base-9-None.x86_64
+                new Tuple2<>(-38L, -35L) // almalinux-9-None.x86_64 => el-base-9-None.x86_64
+        );
+        return upgradePaths.stream();
+    }
+
+    /**
+     * Set the channel_family.json {@link File} to a different path.
+     * @param file the channel_family.json
+     */
+    public void setChannelFamiliesJson(File file) {
+        channelFamiliesJson = file;
     }
 
     /**
@@ -166,6 +210,14 @@ public class ContentSyncManager {
      */
     public void setSumaProductTreeJson(Optional<File> file) {
         sumaProductTreeJson = file;
+    }
+
+    /**
+     * Set the additional_products.json {@link File} to read from.
+     * @param file the add additional_products.json file
+     */
+    public void setAdditionalProductsJson(File file) {
+        additionalProductsJson = file;
     }
 
     /**
@@ -178,40 +230,17 @@ public class ContentSyncManager {
         List<ChannelFamilyJson> channelFamilies = new ArrayList<>();
         try {
             channelFamilies = gson.fromJson(new BufferedReader(new InputStreamReader(
-                    new FileInputStream(channelFamiliesJson))),
+                            new FileInputStream(channelFamiliesJson))),
                     SCCClientUtils.toListType(ChannelFamilyJson.class));
         }
         catch (IOException e) {
-            log.error(e);
+            LOG.error(e.getMessage(), e);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Read {} channel families from {}", channelFamilies.size(),
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Read {} channel families from {}", channelFamilies.size(),
                     channelFamiliesJson.getAbsolutePath());
         }
         return channelFamilies;
-    }
-
-    /**
-     * Read the upgrade_paths.xml file.
-     *
-     * @return List of upgrade paths
-     * @throws ContentSyncException in case of an error
-     */
-    public List<UpgradePathJson> readUpgradePaths() throws ContentSyncException {
-        Gson gson = new GsonBuilder().create();
-        List<UpgradePathJson> upPaths = new ArrayList<>();
-        try {
-            upPaths = gson.fromJson(new BufferedReader(new InputStreamReader(
-                    new FileInputStream(upgradePathsJson))),
-                    SCCClientUtils.toListType(UpgradePathJson.class));
-        }
-        catch (Exception e) {
-            throw new ContentSyncException(e);
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Read {} upgrade paths from {}", upPaths.size(), upgradePathsJson.getAbsolutePath());
-        }
-        return upPaths;
     }
 
     /**
@@ -219,24 +248,25 @@ public class ContentSyncManager {
      * As well as we do need to read the file only once.
      * If /etc/rhn/rhn.conf contains local path URL, then the SCCClient will read
      * from the local file instead of the network.
-     * @return List of {@link Credentials}
+     * @return List of {@link ContentSyncSource}
      */
-    private List<Credentials> filterCredentials() throws ContentSyncException {
-        // if repos are read with "fromdir", no credentials are used. We signal this
-        // with one null Credentials object
-        if (Config.get().getString(ContentSyncManager.RESOURCE_PATH) != null) {
-            List<Credentials> list = new ArrayList<>();
-            list.add(null);
-            return list;
-        }
+    private List<ContentSyncSource> filterCredentials() throws ContentSyncException {
+        Optional<List<ContentSyncSource>> local = ConfigDefaults.get().getOfflineMirrorDir()
+                        .map(p -> List.of(new LocalDirContentSyncSource(Paths.get(p))));
 
-        List<Credentials> credentials = CredentialsFactory.lookupSCCCredentials();
-        if (credentials.isEmpty()) {
-            throw new ContentSyncException("No SCC organization credentials found.");
-        }
-        else {
-            return credentials;
-        }
+        // We prefer local mirror over scc over cloud rmt
+        return local
+            .or(() -> Optional.of(CredentialsFactory.listSCCCredentials())
+                .filter(cs -> !cs.isEmpty())
+                .map(cs -> cs.stream().map(SCCContentSyncSource::new).collect(Collectors.toList()))
+            )
+            .or(() -> Optional.of(cloudPaygManager)
+                .filter(paygManager -> paygManager.isPaygInstance())
+                .flatMap(paygManager -> PaygSshDataFactory.lookupCloudCredentialsByHostname("localhost"))
+                .flatMap(c -> c.castAs(CloudRMTCredentials.class))
+                .map(c -> List.of(new RMTContentSyncSource(c)))
+            )
+            .orElseThrow(() -> new ContentSyncException("No SCC organization credentials found."));
     }
 
     /**
@@ -245,39 +275,38 @@ public class ContentSyncManager {
      * @throws ContentSyncException in case of an error
      */
     public List<SCCProductJson> getProducts() throws ContentSyncException {
-        Set<SCCProductJson> productList = new HashSet<>();
-        List<Credentials> credentials = filterCredentials();
-        Iterator<Credentials> i = credentials.iterator();
+        List<ContentSyncSource> sources = filterCredentials();
 
-        // stop as soon as a credential pair works
-        while (i.hasNext() && productList.isEmpty()) {
-            Credentials c = i.next();
-            try {
-                SCCClient scc = getSCCClient(c);
-                List<SCCProductJson> products = scc.listProducts();
-                for (SCCProductJson product : products) {
-                    // Check for missing attributes
-                    String missing = verifySCCProduct(product);
-                    if (!StringUtils.isBlank(missing)) {
-                        log.warn("Broken product: {}, Version: {}, Identifier: {}, Product ID: {} " +
-                                "### Missing attributes: {}", product.getName(), product.getVersion(),
-                                product.getIdentifier(), product.getId(), missing);
+        List<SCCProductJson> sccProductJsons = sources.stream().map(source -> {
+                    try {
+                        SCCClient scc = getSCCClient(source);
+                        var products = scc.listProducts();
+                        products.forEach(product -> {
+                            // Check for missing attributes
+                            String missing = verifySCCProduct(product);
+                            if (!StringUtils.isBlank(missing)) {
+                                LOG.warn("Broken product: {}, Version: {}, Identifier: {}, Product ID: {} " +
+                                                "### Missing attributes: {}", product.getName(), product.getVersion(),
+                                        product.getIdentifier(), product.getId(), missing);
+                            }
+                        });
+                        return products;
                     }
+                    catch (SCCClientException e) {
+                        // test for OES credentials
+                        return handleOESCredentials(source, e, Collections::<SCCProductJson>emptyList);
+                    }
+                })
+                .filter(products -> !products.isEmpty())
+                // stop as soon as a credential pair works
+                .findFirst()
+                .orElseGet(Collections::emptyList);
 
-                    // Add product in any case
-                    productList.add(product);
-                }
-            }
-            catch (SCCClientException | URISyntaxException e) {
-                throw new ContentSyncException(e);
-            }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Found {} available products.", sccProductJsons.size());
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Found {} available products.", productList.size());
-        }
-
-        return new ArrayList<>(productList);
+        return sccProductJsons;
     }
 
     /**
@@ -297,32 +326,10 @@ public class ContentSyncManager {
                     SCCClientUtils.toListType(SCCRepositoryJson.class));
         }
         catch (IOException e) {
-            log.error(e);
+            LOG.error(e.getMessage(), e);
         }
-        repos.addAll(collectRepos(flattenProducts(getAdditionalProducts()).collect(Collectors.toList())));
+        repos.addAll(collectRepos(flattenProducts(getAdditionalProducts()).toList()));
         return repos;
-    }
-
-    /**
-     * temporary fix to mitigate a duplicate id
-     * @param products broken list of products
-     * @return fixed lst of products
-     */
-    public static List<SCCProductJson> fixAdditionalProducts(List<SCCProductJson> products) {
-        return products.stream().map(p -> {
-            if (p.getId() == -7) {
-                p.getRepositories().forEach(r -> {
-                    if (r.getSCCId() == -81) {
-                        r.setSCCId(-83L);
-                    }
-                });
-                return p;
-            }
-            else {
-                return p;
-            }
-        })
-        .collect(Collectors.toList());
     }
 
     /*
@@ -337,9 +344,9 @@ public class ContentSyncManager {
                     SCCClientUtils.toListType(SCCProductJson.class));
         }
         catch (IOException e) {
-            log.error(e);
+            LOG.error(e.getMessage(), e);
         }
-        return fixAdditionalProducts(additionalProducts);
+        return additionalProducts;
     }
 
     /**
@@ -347,9 +354,9 @@ public class ContentSyncManager {
      * @return list of all available products
      */
     public List<MgrSyncProductDto> listProducts() {
-        if (!(ConfigDefaults.get().isUyuni() || hasToolsChannelSubscription())) {
-            log.warn("No SUSE Manager Server Subscription available. " +
-                     "Products requiring Client Tools Channel will not be shown.");
+        if (!(ConfigDefaults.get().isUyuni() || hasToolsChannelSubscription() || canSyncToolsChannelViaCloudRMT())) {
+            LOG.warn("No SUSE Manager Server Subscription available. " +
+                    "Products requiring Client Tools Channel will not be shown.");
         }
         return HibernateFactory.doWithoutAutoFlushing(this::listProductsImpl);
     }
@@ -362,13 +369,13 @@ public class ContentSyncManager {
         for (Channel sc : syncedChannels) {
             List<SUSEProductChannel> spcList = SUSEProductFactory.lookupSyncedProductChannelsByLabel(sc.getLabel());
             if (spcList.isEmpty()) {
-                List<SUSEProductSCCRepository> missingData = SUSEProductFactory.lookupByChannelLabel(sc.getLabel());
-                missingData.forEach(md -> {
-                        SUSEProductChannel correctedData = new SUSEProductChannel();
-                        correctedData.setProduct(md.getProduct());
-                        correctedData.setChannel(sc);
-                        correctedData.setMandatory(md.isMandatory());
-                        SUSEProductFactory.save(correctedData);
+                List<ChannelTemplate> missing = SUSEProductFactory.lookupChannelTemplateByChannelLabel(sc.getLabel());
+                missing.forEach(md -> {
+                    SUSEProductChannel correctedData = new SUSEProductChannel();
+                    correctedData.setProduct(md.getProduct());
+                    correctedData.setChannel(sc);
+                    correctedData.setMandatory(md.isMandatory());
+                    SUSEProductFactory.save(correctedData);
                 });
             }
         }
@@ -381,18 +388,18 @@ public class ContentSyncManager {
     private List<MgrSyncProductDto> listProductsImpl() {
         List<String> installedChannelLabels = getInstalledChannelLabels();
 
-        List<Tuple2<SUSEProductSCCRepository, MgrSyncStatus>> availableChannels =
-                TimeUtils.logTime(log, "getAvailableCHannels", this::getAvailableChannels).stream().map(e -> {
+        List<Tuple2<ChannelTemplate, MgrSyncStatus>> availableChannels =
+                TimeUtils.logTime(LOG, "getAvailableChannels", () -> getAvailableChannels()).stream().map(e -> {
                     MgrSyncStatus status = installedChannelLabels.contains(e.getChannelLabel()) ?
                             MgrSyncStatus.INSTALLED : MgrSyncStatus.AVAILABLE;
                     return new Tuple2<>(e, status);
-                }).collect(Collectors.toList());
+                }).toList();
 
         List<SUSEProduct> allSUSEProducts = SUSEProductFactory.findAllSUSEProducts();
 
         List<SUSEProduct> roots = allSUSEProducts.stream()
                 .filter(SUSEProduct::isBase)
-                .collect(Collectors.toList());
+                .toList();
 
         Map<Long, List<Long>> recommendedForBase = SUSEProductFactory.allRecommendedExtensions().stream().collect(
                 Collectors.groupingBy(
@@ -402,115 +409,104 @@ public class ContentSyncManager {
         );
 
 
-        Map<Long, List<Tuple2<SUSEProductSCCRepository, MgrSyncStatus>>> byProductId = availableChannels.stream()
+        Map<Long, List<Tuple2<ChannelTemplate, MgrSyncStatus>>> byProductId = availableChannels.stream()
                 .collect(Collectors.groupingBy(p -> p.getA().getProduct().getId()));
-        Map<Long, List<Tuple2<SUSEProductSCCRepository, MgrSyncStatus>>> byRootId = availableChannels.stream()
+        Map<Long, List<Tuple2<ChannelTemplate, MgrSyncStatus>>> byRootId = availableChannels.stream()
                 .collect(Collectors.groupingBy(p -> p.getA().getRootProduct().getId()));
 
-        List<MgrSyncProductDto> productDtos = roots.stream()
+        return roots.stream()
                 .filter(p -> byProductId.containsKey(p.getId()))
                 .map(root -> {
 
-            List<Tuple2<SUSEProductSCCRepository, MgrSyncStatus>> exts = byRootId.get(root.getId()).stream()
-                    .filter(p -> !p.getA().getProduct().equals(root))
-                    .collect(Collectors.toList());
+                    var exts = byRootId.get(root.getId()).stream()
+                            .filter(p -> !p.getA().getProduct().equals(root));
 
-            List<Tuple2<SUSEProductSCCRepository, MgrSyncStatus>> repos = byProductId.get(root.getId());
+                    var repos = byProductId.get(root.getId());
 
-            Map<Boolean, List<Tuple2<SUSEProductSCCRepository, MgrSyncStatus>>> partitionBaseRepo = repos.stream()
-                    .collect(Collectors.partitioningBy(p -> p.getA().getParentChannelLabel() == null));
+                    var partitionBaseRepo = repos.stream()
+                            .collect(Collectors.partitioningBy(p -> p.getA().getParentChannelLabel() == null));
 
-            List<Tuple2<SUSEProductSCCRepository, MgrSyncStatus>> baseRepos = partitionBaseRepo.get(true).stream()
-                    // for RHEL and Vmware which have multiple base channels for a product
-                    .sorted(Comparator.comparing(a -> a.getA().getChannelLabel())).collect(Collectors.toList());
-            List<Tuple2<SUSEProductSCCRepository, MgrSyncStatus>> childRepos = partitionBaseRepo.get(false);
+                    var baseRepos = partitionBaseRepo.get(true).stream()
+                        // for RHEL and Vmware which have multiple base channels for a product
+                        .sorted(Comparator.comparing(a -> a.getA().getChannelLabel()));
 
-            Set<MgrSyncChannelDto> allChannels = childRepos.stream().map(c -> new MgrSyncChannelDto(
-                    c.getA().getChannelName(),
-                    c.getA().getChannelLabel(),
-                    c.getA().getProduct().getFriendlyName(),
-                    c.getA().getRepository().getDescription(),
-                    c.getA().isMandatory(),
-                    c.getA().getRepository().isInstallerUpdates(),
-                    Optional.ofNullable(c.getA().getProduct().getArch()),
-                    c.getA().getParentChannelLabel(),
-                    c.getA().getProduct().getChannelFamily().getLabel(),
-                    c.getA().getProduct().getName(),
-                    c.getA().getProduct().getVersion(),
-                    c.getB(),
-                    c.getA().getRepository().isSigned(),
-                    c.getA().getRepository().getUrl(),
-                    c.getA().getUpdateTag()
-            )).collect(Collectors.toSet());
+                    List<Tuple2<ChannelTemplate, MgrSyncStatus>> childRepos = partitionBaseRepo.get(false);
 
-            List<MgrSyncChannelDto> baseChannels = baseRepos.stream().map(baseRepo -> new MgrSyncChannelDto(
-                    baseRepo.getA().getChannelName(),
-                    baseRepo.getA().getChannelLabel(),
-                    baseRepo.getA().getProduct().getFriendlyName(),
-                    baseRepo.getA().getRepository().getDescription(),
-                    baseRepo.getA().isMandatory(),
-                    baseRepo.getA().getRepository().isInstallerUpdates(),
-                    Optional.ofNullable(baseRepo.getA().getProduct().getArch()),
-                    baseRepo.getA().getParentChannelLabel(),
-                    baseRepo.getA().getProduct().getChannelFamily().getLabel(),
-                    baseRepo.getA().getProduct().getName(),
-                    baseRepo.getA().getProduct().getVersion(),
-                    baseRepo.getB(),
-                    baseRepo.getA().getRepository().isSigned(),
-                    baseRepo.getA().getRepository().getUrl(),
-                    baseRepo.getA().getUpdateTag()
-            )).collect(Collectors.toList());
-            allChannels.addAll(baseChannels);
-            MgrSyncChannelDto baseChannel = baseChannels.get(0);
+                    Set<MgrSyncChannelDto> allChannels = childRepos.stream().map(c -> new MgrSyncChannelDto(
+                            c.getA().getChannelName(),
+                            c.getA().getChannelLabel(),
+                            c.getA().getProduct().getFriendlyName(),
+                            c.getA().getRepository().getDescription(),
+                            c.getA().isMandatory(),
+                            c.getA().getRepository().isInstallerUpdates(),
+                            Optional.ofNullable(c.getA().getProduct().getArch()),
+                            c.getA().getParentChannelLabel(),
+                            c.getA().getProduct().getChannelFamily().getLabel(),
+                            c.getA().getProduct().getName(),
+                            c.getA().getProduct().getVersion(),
+                            c.getB(),
+                            c.getA().getRepository().isSigned(),
+                            c.getA().getRepository().getUrl(),
+                            c.getA().getUpdateTag()
+                    )).collect(Collectors.toSet());
 
-            Map<SUSEProduct, List<Tuple2<SUSEProductSCCRepository, MgrSyncStatus>>> byExtension = exts.stream()
-                    .collect(Collectors.groupingBy(e -> e.getA().getProduct()));
+                    List<MgrSyncChannelDto> baseChannels = baseRepos.map(baseRepo -> new MgrSyncChannelDto(
+                            baseRepo.getA().getChannelName(),
+                            baseRepo.getA().getChannelLabel(),
+                            baseRepo.getA().getProduct().getFriendlyName(),
+                            baseRepo.getA().getRepository().getDescription(),
+                            baseRepo.getA().isMandatory(),
+                            baseRepo.getA().getRepository().isInstallerUpdates(),
+                            Optional.ofNullable(baseRepo.getA().getProduct().getArch()),
+                            baseRepo.getA().getParentChannelLabel(),
+                            baseRepo.getA().getProduct().getChannelFamily().getLabel(),
+                            baseRepo.getA().getProduct().getName(),
+                            baseRepo.getA().getProduct().getVersion(),
+                            baseRepo.getB(),
+                            baseRepo.getA().getRepository().isSigned(),
+                            baseRepo.getA().getRepository().getUrl(),
+                            baseRepo.getA().getUpdateTag()
+                    )).toList();
+                    allChannels.addAll(baseChannels);
+                    MgrSyncChannelDto baseChannel = baseChannels.get(0);
 
-            Set<MgrSyncProductDto> extensions = byExtension.entrySet().stream().map(e -> {
-                SUSEProduct ext = e.getKey();
+                    var byExtension = exts.collect(Collectors.groupingBy(e -> e.getA().getProduct()));
 
+                    Set<MgrSyncProductDto> extensions = byExtension.entrySet().stream().map(e -> {
+                        SUSEProduct ext = e.getKey();
 
-                Set<MgrSyncChannelDto> extChildChannels = e.getValue().stream().map(c -> new MgrSyncChannelDto(
-                        c.getA().getChannelName(),
-                        c.getA().getChannelLabel(),
-                        c.getA().getProduct().getFriendlyName(),
-                        c.getA().getRepository().getDescription(),
-                        c.getA().isMandatory(),
-                        c.getA().getRepository().isInstallerUpdates(),
-                        Optional.ofNullable(c.getA().getProduct().getArch()),
-                        c.getA().getParentChannelLabel(),
-                        c.getA().getProduct().getChannelFamily().getLabel(),
-                        c.getA().getProduct().getName(),
-                        c.getA().getProduct().getVersion(),
-                        c.getB(),
-                        c.getA().getRepository().isSigned(),
-                        c.getA().getRepository().getUrl(),
-                        c.getA().getUpdateTag()
-                )).collect(Collectors.toSet());
+                        Set<MgrSyncChannelDto> extChildChannels = e.getValue().stream().map(c -> new MgrSyncChannelDto(
+                                c.getA().getChannelName(),
+                                c.getA().getChannelLabel(),
+                                c.getA().getProduct().getFriendlyName(),
+                                c.getA().getRepository().getDescription(),
+                                c.getA().isMandatory(),
+                                c.getA().getRepository().isInstallerUpdates(),
+                                Optional.ofNullable(c.getA().getProduct().getArch()),
+                                c.getA().getParentChannelLabel(),
+                                c.getA().getProduct().getChannelFamily().getLabel(),
+                                c.getA().getProduct().getName(),
+                                c.getA().getProduct().getVersion(),
+                                c.getB(),
+                                c.getA().getRepository().isSigned(),
+                                c.getA().getRepository().getUrl(),
+                                c.getA().getUpdateTag()
+                        )).collect(Collectors.toSet());
 
-                boolean isRecommended = Optional.ofNullable(recommendedForBase.get(ext.getProductId()))
-                        .map(s -> s.contains(root.getProductId()))
-                        .orElse(false);
+                        boolean isRecommended = Optional.ofNullable(recommendedForBase.get(ext.getProductId()))
+                                .map(s -> s.contains(root.getProductId()))
+                                .orElse(false);
 
-                MgrSyncProductDto productDto = new MgrSyncProductDto(
-                        ext.getFriendlyName(), ext.getProductId(), ext.getId(), ext.getVersion(), isRecommended,
-                        baseChannel, extChildChannels, Collections.emptySet()
-                );
+                        return new MgrSyncProductDto(
+                                ext.getFriendlyName(), ext.getProductId(), ext.getId(), ext.getVersion(), isRecommended,
+                                baseChannel, extChildChannels, Collections.emptySet()
+                        );
+                    }).collect(Collectors.toSet());
 
-                return productDto;
-            }).collect(Collectors.toSet());
-
-
-            MgrSyncProductDto rootProductDto = new MgrSyncProductDto(
-                    root.getFriendlyName(), root.getProductId(), root.getId(), root.getVersion(), false,
-                    baseChannel, allChannels, extensions
-            );
-
-            return rootProductDto;
-        }).collect(Collectors.toList());
-
-
-        return productDtos;
+                    return new MgrSyncProductDto(
+                            root.getFriendlyName(), root.getProductId(), root.getId(), root.getVersion(), false,
+                            baseChannel, allChannels, extensions);
+                }).toList();
     }
 
     /**
@@ -525,27 +521,78 @@ public class ContentSyncManager {
      *
      * @throws ContentSyncException in case of an error
      */
-    private void refreshRepositoriesAuthentication(String mirrorUrl) throws ContentSyncException {
-        List<Credentials> credentials = filterCredentials();
+    private void refreshRepositoriesAuthentication(String mirrorUrl, boolean excludeSCC) throws ContentSyncException {
 
         ChannelFactory.cleanupOrphanVendorContentSource();
 
-        // Query repos for all mirror credentials and consolidate
-        for (Credentials c : credentials) {
-            try {
-                log.debug("Getting repos for: {}", c);
-                SCCClient scc = getSCCClient(c);
-                List<SCCRepositoryJson> repos = scc.listRepositories();
-                repos.addAll(getAdditionalRepositories());
-                refreshRepositoriesAuthentication(repos, c, mirrorUrl);
-            }
-            catch (SCCClientException | URISyntaxException e) {
-                throw new ContentSyncException(e);
-            }
+        try {
+            // Query repos for all mirror credentials and consolidate
+            filterCredentials().stream()
+                .filter(source -> !excludeSCC || !(source instanceof SCCContentSyncSource))
+                .forEach(source -> {
+                    LOG.debug("Getting repos for: {}", source);
+                    List<SCCRepositoryJson> repos = source.match(
+                        scc -> {
+                            try {
+                                SCCClient client = getSCCClient(source);
+                                return client.listRepositories();
+                            }
+                            catch (SCCClientException e) {
+                                // test for OES credentials
+                                SCCCredentials cred = scc.getCredentials(SCCCredentials.class)
+                                    .orElseThrow(() -> new ContentSyncException("Invalid credentials type"));
+
+                                if (!accessibleUrl(OES_URL, cred.getUsername(), cred.getPassword())) {
+                                    LOG.info("Credential is not an OES credentials");
+                                    throw new ContentSyncException(e);
+                                }
+                                return Collections.emptyList();
+                            }
+                        },
+                        // cloudrmt does not support the scc repository endpoint
+                        cloudrmt -> {
+                            LOG.info("Getting credentials");
+                            var cred = cloudrmt.getCredentials(CloudRMTCredentials.class)
+                                .orElseThrow(() -> new ContentSyncException("Invalid credentials type"));
+
+                            LOG.info("Retrieving products");
+                            // Retrieve the products associated with this credentials
+                            List<PaygProductInfo> productsList = PaygProductFactory.getProductsForCredentials(cred);
+                            // If it's SUMA PAYG, check if we synced additional products we can access
+                            LOG.info("Checking suma payg");
+                            if (cred.getPaygSshData().isSUSEManagerPayg()) {
+                                LOG.info("Adding additional products");
+                                productsList.addAll(PaygProductFactory.listAdditionalProductsForSUMAPayg());
+                            }
+
+                            LOG.info("Refreshing PAYG auth");
+                            List<SCCRepositoryAuth> repoAuths = PaygProductFactory
+                                .refreshRepositoriesAuths(cred, productsList);
+                            LOG.info("Refreshed {} repository auths associated to the PAYG credentials",
+                                repoAuths.size());
+                            return Collections.emptyList();
+                        },
+                        localdir -> {
+                            try {
+                                SCCClient client = getSCCClient(source);
+                                return client.listRepositories();
+                            }
+                            catch (SCCClientException e) {
+                                throw new ContentSyncException(e);
+                            }
+                        }
+                    );
+
+                    LinkedList<SCCRepositoryJson> allReposList = new LinkedList<>(repos);
+                    allReposList.addAll(getAdditionalRepositories());
+                    refreshRepositoriesAuthentication(allReposList, source, mirrorUrl);
+                });
         }
-        ensureSUSEProductChannelData();
-        linkAndRefreshContentSource(mirrorUrl);
-        ManagerInfoFactory.setLastMgrSyncRefresh();
+        finally {
+            ensureSUSEProductChannelData();
+            linkAndRefreshContentSource(mirrorUrl);
+            ManagerInfoFactory.setLastMgrSyncRefresh();
+        }
     }
 
     /**
@@ -575,6 +622,30 @@ public class ContentSyncManager {
         auth.setContentSource(source);
     }
 
+    private void linkOrphanContentSource(ContentSource cs) {
+        for (Channel c : cs.getChannels()) {
+            ChannelFactory.findVendorRepositoryByChannel(c).ifPresentOrElse(
+                    repo -> repo.getBestAuth().ifPresentOrElse(
+                            auth -> {
+                                LOG.debug("Has new auth: {}", cs.getLabel());
+                                auth.setContentSource(cs);
+                                SCCCachingFactory.saveRepositoryAuth(auth);
+                            },
+                            () -> {
+                                LOG.debug("No auth anymore - remove content source: {}", cs.getLabel());
+                                c.getSources().remove(cs);
+                                ChannelFactory.remove(cs);
+                            }
+                    ),
+                    () -> {
+                        LOG.debug("No repository found for channel: '{}' - remove content source", cs.getLabel());
+                        c.getSources().remove(cs);
+                        ChannelFactory.remove(cs);
+                    }
+            );
+        }
+    }
+
     /**
      * Search for orphan contentsource or channels and try to find
      * available repositories. In case they are found they get linked.
@@ -582,49 +653,33 @@ public class ContentSyncManager {
      * @param mirrorUrl optional mirror url
      */
     public void linkAndRefreshContentSource(String mirrorUrl) {
-        log.debug("linkAndRefreshContentSource called");
+        LOG.debug("linkAndRefreshContentSource called");
         // flush needed to let the next queries find something
         HibernateFactory.getSession().flush();
         // find all CountentSource with org id == NULL which do not have a sccrepositoryauth
         List<ContentSource> orphan = ChannelFactory.lookupOrphanVendorContentSources();
-        if (orphan != null) {
-            log.debug("found orphan vendor content sources: {}", orphan.size());
+        if (!orphan.isEmpty()) {
+            LOG.debug("found orphan vendor content sources: {}", orphan.size());
             // find sccrepositoryauth and link
-            orphan.forEach(cs ->
-                cs.getChannels().forEach(c ->
-                    Opt.consume(ChannelFactory.findVendorRepositoryByChannel(c),
-                    () -> {
-                        log.debug("No repository found for channel: '{}' - remove content source", cs.getLabel());
-                        ChannelFactory.remove(cs);
-                    },
-                    repo ->
-                        Opt.consume(repo.getBestAuth(),
-                        () -> {
-                            log.debug("No auth anymore - remove content source: {}", cs.getLabel());
-                            ChannelFactory.remove(cs);
-                        }, auth -> {
-                                    log.debug("Has new auth: {}", cs.getLabel());
-                            auth.setContentSource(cs);
-                            SCCCachingFactory.saveRepositoryAuth(auth);
-                        })
-                    )
-                )
-            );
+            for (ContentSource cs : orphan) {
+                linkOrphanContentSource(cs);
+            }
+            HibernateFactory.getSession().flush();
         }
         // find all rhnChannel with org id == null and no content source
         List<Channel> orphanChannels = ChannelFactory.lookupOrphanVendorChannels();
-        if (orphanChannels != null) {
-            log.debug("found orphan vendor channels: {}", orphanChannels.size());
+        if (!orphanChannels.isEmpty()) {
+            LOG.debug("found orphan vendor channels: {}", orphanChannels.size());
             // find sccrepository auth and create content source and link
             orphanChannels.forEach(c -> Opt.consume(ChannelFactory.findVendorRepositoryByChannel(c),
-                () -> log.error("No repository found for channel: '{}'", c.getLabel()),
-                repo -> {
-                    log.debug("configure orphan repo {}", repo);
-                    repo.getBestAuth().ifPresentOrElse(
-                            a -> createOrUpdateContentSource(a, c, mirrorUrl),
-                            () -> log.info("No Auth available for {}", repo)
-                            );
-                }
+                    () -> LOG.error("No repository found for channel: '{}'", c.getLabel()),
+                    repo -> {
+                        LOG.debug("configure orphan repo {}", repo);
+                        repo.getBestAuth().ifPresentOrElse(
+                                a -> createOrUpdateContentSource(a, c, mirrorUrl),
+                                () -> LOG.info("No Auth available for {}", repo)
+                        );
+                    }
             ));
         }
         // update URL if needed
@@ -634,15 +689,16 @@ public class ContentSyncManager {
 
             // check if this auth item is the "best" available auth for this repo
             // if not, switch it over to the best
-            if (auth.getRepo().getBestAuth().isEmpty()) {
-                log.warn("no best auth available for repo {}", auth.getRepo());
+            Optional<SCCRepositoryAuth> bestAuthOpt = auth.getRepo().getBestAuth();
+            if (bestAuthOpt.isEmpty()) {
+                LOG.warn("no best auth available for repo {}", auth.getRepo());
                 continue;
             }
-            SCCRepositoryAuth bestAuth = auth.getRepo().getBestAuth().get();
+            SCCRepositoryAuth bestAuth = bestAuthOpt.get();
             if (!bestAuth.equals(auth)) {
                 // we are not the "best" available repository auth item.
                 // remove the content source link and set it to the "best"
-                log.info("Auth '{}' became the best auth. Remove CS link from {}", bestAuth.getId(), auth.getId());
+                LOG.info("Auth '{}' became the best auth. Remove CS link from {}", bestAuth.getId(), auth.getId());
                 auth.setContentSource(null);
                 bestAuth.setContentSource(cs);
                 SCCCachingFactory.saveRepositoryAuth(auth);
@@ -651,10 +707,10 @@ public class ContentSyncManager {
                 auth = bestAuth;
             }
             String overwriteUrl = contentSourceUrlOverwrite(auth.getRepo(), auth.getUrl(), mirrorUrl);
-            log.debug("Linked ContentSource: '{}' OverwriteURL: '{}' AuthUrl: '{}' Mirror: '{}'",
+            LOG.debug("Linked ContentSource: '{}' OverwriteURL: '{}' AuthUrl: '{}' Mirror: '{}'",
                     cs.getSourceUrl(), overwriteUrl, auth.getUrl(), mirrorUrl);
             if (!cs.getSourceUrl().equals(overwriteUrl)) {
-                log.debug("Change URL to : {}", overwriteUrl);
+                LOG.debug("Change URL to : {}", overwriteUrl);
                 cs.setSourceUrl(overwriteUrl);
                 save = true;
             }
@@ -677,18 +733,29 @@ public class ContentSyncManager {
     public boolean isRefreshNeeded(String mirrorUrl) {
         for (SCCRepositoryAuth a : SCCCachingFactory.lookupRepositoryAuthWithContentSource()) {
             ContentSource cs = a.getContentSource();
-            String overwriteUrl = contentSourceUrlOverwrite(a.getRepo(), a.getUrl(), mirrorUrl);
-            log.debug("Linked ContentSource: '{}' OverwriteURL: '{}' AuthUrl: '{}' Mirror: {}",
-                    cs.getSourceUrl(), overwriteUrl, a.getUrl(), mirrorUrl);
-            if (!cs.getSourceUrl().equals(overwriteUrl)) {
-                log.debug("Source and overwrite urls differ: {} != {}", cs.getSourceUrl(), overwriteUrl);
-                return true;
+            try {
+                String overwriteUrl = contentSourceUrlOverwrite(a.getRepo(), a.getUrl(), mirrorUrl);
+                LOG.debug("Linked ContentSource: '{}' OverwriteURL: '{}' AuthUrl: '{}' Mirror: {}",
+                        cs.getSourceUrl(), overwriteUrl, a.getUrl(), mirrorUrl);
+                if (!cs.getSourceUrl().equals(overwriteUrl)) {
+                    LOG.debug("Source and overwrite urls differ: {} != {}", cs.getSourceUrl(), overwriteUrl);
+                    return true;
+                }
+            }
+            catch (ContentSyncException e) {
+                if (cloudPaygManager.isPaygInstance()) {
+                    LOG.debug("PAYG instance detected. Continue checking for refresh needed.");
+                    break;
+                }
+                // Can happen when neither SCC Credentials nor fromdir is configured
+                // in such a case, refresh makes no sense.
+                return false;
             }
         }
 
         Optional<Date> lastRefreshDate = ManagerInfoFactory.getLastMgrSyncRefresh();
         if (Config.get().getString(ContentSyncManager.RESOURCE_PATH, null) != null) {
-            log.debug("Syncing from dir");
+            LOG.debug("Syncing from dir");
             long hours24 = 24 * 60 * 60 * 1000;
             Timestamp t = new Timestamp(System.currentTimeMillis() - hours24);
 
@@ -696,25 +763,95 @@ public class ContentSyncManager {
                     lastRefreshDate,
                     () -> true,
                     modifiedCache -> {
-                        log.debug("Last sync more than 24 hours ago: {} ({})", modifiedCache, t);
-                        return t.after(modifiedCache) ? true : false;
+                        LOG.debug("Last sync more than 24 hours ago: {} ({})", modifiedCache, t);
+                        return t.after(modifiedCache);
                     }
             );
+        }
+        else if (CredentialsFactory.listSCCCredentials().isEmpty() && !(cloudPaygManager.isPaygInstance() &&
+                PaygSshDataFactory.lookupByHostname("localhost").isPresent())) {
+            // Can happen when neither SCC Credentials nor fromdir is configured
+            // Also when we are PAYG instance, but localhost connection is not configured
+            // in such a case, refresh makes no sense.
+            return false;
         }
         return SCCCachingFactory.refreshNeeded(lastRefreshDate);
     }
 
-    /**
-     * Update authentication for all repos of the given credential.
-     * Removes authentication if they have expired
-     *
-     * @param repositories the new repositories
-     * @param c the credentials
-     * @param mirrorUrl optional mirror url
-     */
-    public void refreshRepositoriesAuthentication(
-            Collection<SCCRepositoryJson> repositories, Credentials c, String mirrorUrl) {
-        refreshRepositoriesAuthentication(repositories, c, mirrorUrl, true);
+    private Optional<SCCRepositoryAuth> determineAuth(SCCRepositoryJson jrepo, SCCRepository repo,
+                                                      ContentSyncSource c) {
+
+        String url = c.castAs(LocalDirContentSyncSource.class)
+            .map(LocalDirContentSyncSource.class::cast)
+            // "fromdir" - convert into local file URL
+            .map(local -> MgrSyncUtils.urlToFSPath(jrepo.getUrl(), repo.getName(), local.getPath()).toString())
+            .orElse(jrepo.getUrl());
+
+        Optional<String> tokenOpt = getTokenFromURL(url);
+
+        //SCC
+        //Token auth
+        if (tokenOpt.isPresent()) {
+            return Optional.of(new SCCRepositoryTokenAuth(tokenOpt.get()));
+        }
+        //BOTH
+        //Not in product tree
+        else if (repo.getChannelTemplates().isEmpty()) {
+            LOG.debug("Repo '{}' not in the product tree. Skipping", repo.getUrl());
+            return Optional.empty();
+        }
+        //SCC
+        //Not Local Dir and free product (to avoid expensive accessibleUrl check for free products)
+        else if (!(c instanceof LocalDirContentSyncSource) &&
+                repo.getChannelTemplates().stream()
+                        .map(ChannelTemplate::getProduct)
+                        //TODO: check what free means in scc and if it works for us
+                        .filter(SUSEProduct::getFree)
+                        .anyMatch(p -> {
+                            String cfLabel = p.getChannelFamily().getLabel();
+                            return cfLabel.startsWith(ChannelFamilyFactory.TOOLS_CHANNEL_FAMILY_LABEL) ||
+                                    cfLabel.startsWith(ChannelFamilyFactory.OPENSUSE_CHANNEL_FAMILY_LABEL);
+                        })) {
+            LOG.debug("Free repo detected. Setting NoAuth for {}", repo.getUrl());
+            return Optional.of(new SCCRepositoryNoAuth());
+        }
+
+
+        else {
+
+            try {
+                List<String> fullUrls = buildRepoFileUrls(url, repo);
+                //Try without credentials
+                // also tests fromdir
+                if (accessibleUrl(fullUrls)) {
+                    URI uri = new URI(url);
+                    if (uri.getUserInfo() == null) {
+                        return Optional.of(new SCCRepositoryNoAuth());
+                    }
+                    else {
+                        // we do not handle the case where the credentials are part of the URL
+                        LOG.error("URLs with credentials not supported");
+                        return Optional.empty();
+                    }
+                }
+                // Not LocalDir accessible with credentials
+                else if (c.getCredentials(SCCCredentials.class)
+                    .map(scc -> accessibleUrl(fullUrls, scc.getUsername(), scc.getPassword()))
+                    .orElse(false)) {
+                    return Optional.of(new SCCRepositoryBasicAuth());
+                }
+                else {
+                    // typical happens with fromdir where not all repos are synced
+                    LOG.warn("url: {} not accessible.", fullUrls);
+                    return Optional.empty();
+                }
+            }
+            catch (URISyntaxException e) {
+                LOG.warn("Unable to parse URL: {}", e.getMessage());
+                return Optional.empty();
+            }
+
+        }
     }
 
     /**
@@ -722,209 +859,141 @@ public class ContentSyncManager {
      * Removes authentication if they have expired
      *
      * @param repositories the new repositories
-     * @param c the credentials
+     * @param source the credentials
      * @param mirrorUrl optional mirror url
-     * @param withFix if fix for duplicate id -81 should be applied or not
      */
     public void refreshRepositoriesAuthentication(
-            Collection<SCCRepositoryJson> repositories, Credentials c, String mirrorUrl, boolean withFix) {
+            Collection<SCCRepositoryJson> repositories, ContentSyncSource source, String mirrorUrl) {
         List<Long> repoIdsFromCredential = new LinkedList<>();
         List<Long> availableRepoIds = SCCCachingFactory.lookupRepositories().stream()
-                .map(r -> r.getSccId())
-                .collect(Collectors.toList());
+                .map(SCCRepository::getSccId)
+                .toList();
         List<SCCRepositoryJson> ptfRepos = repositories.stream()
-            .filter(r -> !availableRepoIds.contains(r.getSCCId()))
-            .filter(r -> r.isPtfRepository())
-            .collect(Collectors.toList());
+                .filter(r -> !availableRepoIds.contains(r.getSCCId()))
+                .filter(SCCRepositoryJson::isPtfRepository)
+                .toList();
         generatePtfChannels(ptfRepos);
-        Map<Long, SCCRepository> availableRepos = SCCCachingFactory.lookupRepositories().stream()
+        Map<Long, SCCRepository> availableReposById = SCCCachingFactory.lookupRepositories().stream()
                 .collect(Collectors.toMap(SCCRepository::getSccId, r -> r));
 
-        List<SCCRepositoryAuth> allRepoAuths = SCCCachingFactory.lookupRepositoryAuth();
-        if (c == null) {
+        List<SCCRepositoryAuth> allExistingRepoAuths = SCCCachingFactory.lookupRepositoryAuth();
+
+        // cloudrmt and mirror work together
+        // mirror and scc doesn't work togehter
+        //CLEANUP
+        if (source instanceof LocalDirContentSyncSource) {
             // cleanup if we come from scc
-            allRepoAuths.stream()
-                .filter(a -> a.getOptionalCredentials().isPresent())
-                .forEach(SCCCachingFactory::deleteRepositoryAuth);
+            allExistingRepoAuths.stream()
+                    .filter(a -> a.getOptionalCredentials().isPresent())
+                    .filter(a -> a.cloudRmtAuth().isEmpty())
+                    .forEach(SCCCachingFactory::deleteRepositoryAuth);
         }
         else {
             // cleanup if we come from "fromdir"
-            allRepoAuths.stream()
-                .filter(a -> !a.getOptionalCredentials().isPresent())
-                .forEach(SCCCachingFactory::deleteRepositoryAuth);
+            allExistingRepoAuths.stream()
+                    .filter(a -> a.getOptionalCredentials().isEmpty())
+                    .filter(a -> a.cloudRmtAuth().isEmpty())
+                    .forEach(SCCCachingFactory::deleteRepositoryAuth);
         }
-        allRepoAuths = null;
+
+        //REPO HANDLING
         List<SCCRepository> oesRepos = SCCCachingFactory.lookupRepositoriesByChannelFamily(OES_CHANNEL_FAMILY);
-        for (SCCRepositoryJson jrepo : repositories) {
-            if (oesRepos.stream().anyMatch(oes -> oes.getSccId().equals(jrepo.getSCCId()))) {
-                // OES repos are handled later
-                continue;
-            }
-            SCCRepository repo = availableRepos.get(jrepo.getSCCId());
+        List<SCCRepositoryJson> nonOESJRepos = repositories.stream()
+            .filter(jsonRepo -> oesRepos.stream().noneMatch(oes -> oes.getSccId().equals(jsonRepo.getSCCId())))
+            .toList();
+
+        for (SCCRepositoryJson jsonRepo : nonOESJRepos) {
+            SCCRepository repo = availableReposById.get(jsonRepo.getSCCId());
             if (repo == null) {
-                log.error("No repository with ID '{}' found", jrepo.getSCCId());
+                LOG.error("No repository with ID '{}' found", jsonRepo.getSCCId());
+                // This happens when no ChannelTemplate reference this repository
                 continue;
             }
-            Set<SCCRepositoryAuth> allAuths = repo.getRepositoryAuth();
-            Set<SCCRepositoryAuth> authsThisCred = allAuths.stream()
+            Set<SCCRepositoryAuth> allRepoAuths = repo.getRepositoryAuth();
+            Set<SCCRepositoryAuth> authsThisCred = allRepoAuths.stream()
                     .filter(a -> {
-                        if (c == null) {
-                            return !a.getOptionalCredentials().isPresent();
+                        if (source instanceof LocalDirContentSyncSource) {
+                            return a.getOptionalCredentials().isEmpty();
                         }
                         else {
-                            Optional<Credentials> oc = a.getOptionalCredentials();
-                            return oc.isPresent() && oc.get().equals(c);
+                            Optional<RemoteCredentials> oc = a.getOptionalCredentials();
+                            return oc.isPresent() && oc.equals(source.getCredentials());
                         }
                     })
                     .collect(Collectors.toSet());
+
             if (authsThisCred.size() > 1) {
-                log.error("More than 1 authentication found for one credential - removing all unused");
-                authsThisCred.stream().forEach(a -> {
-                    allAuths.remove(a);
+                LOG.error("More than 1 authentication found for one credential - removing all unused");
+                authsThisCred.forEach(a -> {
+                    allRepoAuths.remove(a);
                     authsThisCred.remove(a);
-                    repo.setRepositoryAuth(allAuths);
                     SCCCachingFactory.deleteRepositoryAuth(a);
                 });
-            }
-            String url = jrepo.getUrl();
-            if (c == null) {
-                // "fromdir" - convert into local file URL
-                url = MgrSyncUtils.urlToFSPath(url, repo.getName()).toString();
+                repo.setRepositoryAuth(allRepoAuths);
             }
 
-            Optional<String> tokenOpt = getTokenFromURL(url);
-
-            // find out the auth type of the URL
-            SCCRepositoryAuth newAuth = null;
-            if (tokenOpt.isPresent()) {
-                newAuth = new SCCRepositoryTokenAuth(tokenOpt.get());
-            }
-            else if (repo.getProducts().isEmpty()) {
-                log.debug("Repo '{}' not in the product tree. Skipping", repo.getUrl());
-                continue;
-            }
-            else if (c != null &&
-                    repo.getProducts().stream()
-                        .map(SUSEProductSCCRepository::getProduct)
-                        .filter(SUSEProduct::getFree)
-                        .anyMatch(p -> p.getChannelFamily().getLabel().startsWith("SLE-M-T") ||
-                                p.getChannelFamily().getLabel().startsWith("OPENSUSE"))) {
-                log.debug("Free repo detected. Setting NoAuth for {}", repo.getUrl());
-                newAuth = new SCCRepositoryNoAuth();
-            }
-            else {
-                try {
-                    List<String> fullUrl = buildRepoFileUrl(url, repo);
-                    if (accessibleUrl(fullUrl)) {
-                        URI uri = new URI(url);
-                        if (uri.getUserInfo() == null) {
-                            newAuth = new SCCRepositoryNoAuth();
+            determineAuth(jsonRepo, repo, source).ifPresent(newAuth -> {
+                repoIdsFromCredential.add(jsonRepo.getSCCId());
+                authsThisCred.stream().findFirst().ifPresentOrElse(exAuth -> {
+                    // Auth exists - check if we need to update it
+                    Opt.and(exAuth.tokenAuth(), newAuth.tokenAuth()).ifPresentOrElse(t -> {
+                        SCCRepositoryTokenAuth exTAuth = t.getA();
+                        SCCRepositoryTokenAuth newTAuth = t.getB();
+                        if (!exTAuth.getAuth().equals(newTAuth.getAuth())) {
+                            exTAuth.setAuth(newTAuth.getAuth());
+                            SCCCachingFactory.saveRepositoryAuth(exTAuth);
+                            ContentSource updateCS = exTAuth.getContentSource();
+                            if (updateCS != null) {
+                                updateCS.setMetadataSigned(repo.isSigned());
+                                updateCS.setSourceUrl(contentSourceUrlOverwrite(repo, exTAuth.getUrl(), mirrorUrl));
+                                ChannelFactory.save(updateCS);
+                            }
                         }
-                        else {
-                            // we do not handle the case where the credentials are part of the URL
-                            log.error("URLs with credentials not supported");
-                            continue;
+                    }, () -> {
+                        // other types are basic and no auth which differ only in the type
+                        if (!exAuth.getClass().equals(newAuth.getClass())) {
+                            // class differ => remove and later add
+                            source.getCredentials().ifPresent(newAuth::setCredentials);
+                            newAuth.setRepo(repo);
+                            SCCCachingFactory.saveRepositoryAuth(newAuth);
+                            allRepoAuths.add(newAuth);
+                            allRepoAuths.remove(exAuth);
+                            repo.setRepositoryAuth(allRepoAuths);
+                            SCCCachingFactory.deleteRepositoryAuth(exAuth);
                         }
-                    }
-                    else if (c != null && accessibleUrl(fullUrl, c.getUsername(), c.getPassword())) {
-                        newAuth = new SCCRepositoryBasicAuth();
-                    }
-                    else {
-                        // typical happens with fromdir where not all repos are synced
-                        continue;
-                    }
-                }
-                catch (URISyntaxException e) {
-                    log.warn("Unable to parse URL");
-                    continue;
-                }
-            }
-            repoIdsFromCredential.add(jrepo.getSCCId());
-            if (authsThisCred.isEmpty()) {
-                // We need to create a new auth for this repo
-                newAuth.setCredentials(c);
-                newAuth.setRepo(repo);
-                allAuths.add(newAuth);
-                repo.setRepositoryAuth(allAuths);
-                SCCCachingFactory.saveRepositoryAuth(newAuth);
-            }
-            else {
-                // Auth exists - check if we need to update it
-                SCCRepositoryAuth exAuth = authsThisCred.iterator().next();
-                if (exAuth instanceof SCCRepositoryTokenAuth && newAuth instanceof SCCRepositoryTokenAuth) {
-                    SCCRepositoryTokenAuth tauth = (SCCRepositoryTokenAuth) exAuth;
-                    if (!tauth.getAuth().equals(tokenOpt.get())) {
-                        tauth.setAuth(tokenOpt.get());
-                        SCCCachingFactory.saveRepositoryAuth(tauth);
-                        ContentSource updateCS = tauth.getContentSource();
-                        if (updateCS != null) {
-                            updateCS.setMetadataSigned(repo.isSigned());
-                            updateCS.setSourceUrl(contentSourceUrlOverwrite(repo, tauth.getUrl(), mirrorUrl));
-                            ChannelFactory.save(updateCS);
-                        }
-                    }
-                }
-                // other types are basic and no auth which differ only in the type
-                else if (!exAuth.getClass().equals(newAuth.getClass())) {
-                    // class differ => remove and later add
-                    newAuth.setCredentials(c);
+                    });
+                    // else => unchanged, nothing to do
+                }, () -> {
+                    // We need to create a new auth for this repo
+                    source.getCredentials().ifPresent(newAuth::setCredentials);
                     newAuth.setRepo(repo);
+                    allRepoAuths.add(newAuth);
+                    repo.setRepositoryAuth(allRepoAuths);
                     SCCCachingFactory.saveRepositoryAuth(newAuth);
-                    allAuths.add(newAuth);
-                    allAuths.remove(exAuth);
-                    repo.setRepositoryAuth(allAuths);
-                    SCCCachingFactory.deleteRepositoryAuth(exAuth);
-                }
-                // else => unchanged, nothing to do
-            }
+                });
+            });
+
         }
 
         // OES
-        repoIdsFromCredential.addAll(refreshOESRepositoryAuth(c, mirrorUrl, oesRepos));
+        source.getCredentials(SCCCredentials.class)
+            .ifPresent(scc -> repoIdsFromCredential.addAll(refreshOESRepositoryAuth(scc, mirrorUrl, oesRepos)));
 
+        //DELETE OLD
         // check if we have to remove auths which exists before
-        List<SCCRepositoryAuth> authList = SCCCachingFactory.lookupRepositoryAuthByCredential(c);
+        List<SCCRepositoryAuth> authList = SCCCachingFactory.lookupRepositoryAuthByCredential(source);
         authList.stream()
-            .filter(repoAuth -> !repoIdsFromCredential.contains(repoAuth.getRepo().getSccId()))
-            .forEach(SCCCachingFactory::deleteRepositoryAuth);
-
-        if (withFix) {
-            SUSEProductFactory.lookupPSRByChannelLabel("rhel6-pool-i386").stream().findFirst()
-                    .ifPresent(rhel6 -> SUSEProductFactory.lookupPSRByChannelLabel("rhel7-pool-x86_64").stream()
-                    .findFirst().ifPresent(rhel7 -> {
-                SCCRepository repository6 = rhel6.getRepository();
-                SCCRepository repository7 = rhel7.getRepository();
-                repository6.setDistroTarget("i386");
-                // content source value in susesccrepositoryauth
-                repository6.getBestAuth().ifPresent(auth -> {
-                    Channel channel7 = ChannelFactory.lookupByLabel(rhel7.getChannelLabel());
-                    Channel channel6 = ChannelFactory.lookupByLabel(rhel6.getChannelLabel());
-                    if (channel6 != null && channel7 != null) {
-                        repository7.getRepositoryAuth().forEach(ra -> {
-                            ra.setContentSource(auth.getContentSource());
-                            SCCCachingFactory.saveRepositoryAuth(ra);
-                        });
-                    }
-                    else if (channel6 == null && channel7 != null) {
-                        repository7.getRepositoryAuth().forEach(ra -> {
-                            ra.setContentSource(auth.getContentSource());
-                            SCCCachingFactory.saveRepositoryAuth(ra);
-                        });
-                        repository6.getRepositoryAuth().forEach(ra -> {
-                            ra.setContentSource(null);
-                            SCCCachingFactory.saveRepositoryAuth(ra);
-                        });
-                    }
+                .filter(repoAuth -> repoAuth.cloudRmtAuth().isEmpty()) // rmtAuth is handled elsewhere (where?)
+                .filter(repoAuth -> !repoIdsFromCredential.contains(repoAuth.getRepo().getSccId()))
+                .forEach(a -> {
+                    a.getRepo().getRepositoryAuth().remove(a);
+                    SCCCachingFactory.deleteRepositoryAuth(a);
                 });
-                SCCCachingFactory.saveRepository(repository6);
-                SCCCachingFactory.saveRepository(repository7);
-            }));
-        }
     }
 
     private void generatePtfChannels(List<SCCRepositoryJson> repositories) {
         List<SCCRepository> reposToSave = new ArrayList<>();
-        List<SUSEProductSCCRepository> productReposToSave = new ArrayList<>();
+        List<ChannelTemplate> templatesToSave = new ArrayList<>();
         for (SCCRepositoryJson jRepo : repositories) {
             PtfProductRepositoryInfo ptfInfo = parsePtfInfoFromUrl(jRepo);
             if (ptfInfo == null) {
@@ -938,15 +1007,15 @@ public class ContentSyncManager {
             }
 
             rootProducts.stream()
-                    .map(root -> convertToProductSCCRepository(root, ptfInfo))
+                    .map(root -> convertToChannelTemplate(root, ptfInfo))
                     .filter(Objects::nonNull)
-                    .forEach(productReposToSave::add);
+                    .forEach(templatesToSave::add);
 
             reposToSave.add(ptfInfo.getRepository());
         }
 
         reposToSave.forEach(SUSEProductFactory::save);
-        productReposToSave.forEach(SUSEProductFactory::save);
+        templatesToSave.forEach(SUSEProductFactory::save);
     }
 
     private static PtfProductRepositoryInfo parsePtfInfoFromUrl(SCCRepositoryJson jrepo) {
@@ -956,7 +1025,7 @@ public class ContentSyncManager {
             uri = new URI(jrepo.getUrl());
         }
         catch (URISyntaxException e) {
-            log.warn("Unable to parse URL '{}'. Skipping", jrepo.getUrl(), e);
+            LOG.warn("Unable to parse URL '{}'. Skipping", jrepo.getUrl(), e);
             return null;
         }
 
@@ -974,7 +1043,7 @@ public class ContentSyncManager {
 
         SUSEProduct product = SUSEProductFactory.findSUSEProduct(parts[4], parts[5], null, archStr, false);
         if (product == null) {
-            log.warn("Skipping PTF repo for unknown product: {}", uri);
+            LOG.warn("Skipping PTF repo for unknown product: {}", uri);
             return null;
         }
 
@@ -987,7 +1056,7 @@ public class ContentSyncManager {
                 channelParts.add("TEST");
                 break;
             default:
-                log.warn("Unknown repo type: {}. Skipping", parts[7]);
+                LOG.warn("Unknown repo type: {}. Skipping", parts[7]);
                 return null;
         }
         channelParts.add(prdArch);
@@ -995,49 +1064,48 @@ public class ContentSyncManager {
         return new PtfProductRepositoryInfo(product, repo, channelParts, prdArch);
     }
 
-    private static SUSEProductSCCRepository convertToProductSCCRepository(SUSEProduct root,
-                                                                          PtfProductRepositoryInfo ptfInfo) {
-        SUSEProductSCCRepository prodRepoLink = new SUSEProductSCCRepository();
+    private static ChannelTemplate convertToChannelTemplate(SUSEProduct root, PtfProductRepositoryInfo ptfInfo) {
+        ChannelTemplate template = new ChannelTemplate();
 
-        prodRepoLink.setProduct(ptfInfo.getProduct());
-        prodRepoLink.setRepository(ptfInfo.getRepository());
-        prodRepoLink.setRootProduct(root);
+        template.setProduct(ptfInfo.getProduct());
+        template.setRepository(ptfInfo.getRepository());
+        template.setRootProduct(root);
 
-        prodRepoLink.setUpdateTag(null);
-        prodRepoLink.setMandatory(false);
+        template.setUpdateTag(null);
+        template.setMandatory(false);
 
         // Current PTF key for SLE 12/15 and SLE-Micro
-        prodRepoLink.setGpgKeyUrl("file:///usr/lib/rpm/gnupg/keys/suse_ptf_key.asc");
+        template.setGpgKeyUrl("file:///usr/lib/rpm/gnupg/keys/suse_ptf_key.asc");
 
         ptfInfo.getProduct()
-               .getRepositories()
-               .stream()
-               .filter(r -> r.getRootProduct().equals(root) && r.getParentChannelLabel() != null)
-               .findFirst()
-               .ifPresent(r -> {
-                   List<String> suffix = new ArrayList<>();
+                .getChannelTemplates()
+                .stream()
+                .filter(r -> r.getRootProduct().equals(root) && r.getParentChannelLabel() != null)
+                .findFirst()
+                .ifPresent(r -> {
+                    List<String> suffix = new ArrayList<>();
 
-                   prodRepoLink.setParentChannelLabel(r.getParentChannelLabel());
-                   int archIdx = r.getChannelName().lastIndexOf(ptfInfo.getArchitecture());
-                   if (archIdx > -1) {
-                       suffix = Arrays.asList(
-                           r.getChannelName().substring(archIdx + ptfInfo.getArchitecture().length())
-                            .strip().split("[\\s-]"));
-                   }
+                    template.setParentChannelLabel(r.getParentChannelLabel());
+                    int archIdx = r.getChannelName().lastIndexOf(ptfInfo.getArchitecture());
+                    if (archIdx > -1) {
+                        suffix = Arrays.asList(
+                                r.getChannelName().substring(archIdx + ptfInfo.getArchitecture().length())
+                                        .strip().split("[\\s-]"));
+                    }
 
-                   List<String> cList = Stream.concat(ptfInfo.getChannelParts().stream(), suffix.stream())
-                                              .filter(e -> !e.isBlank())
-                                              .collect(Collectors.toList());
+                    List<String> cList = Stream.concat(ptfInfo.getChannelParts().stream(), suffix.stream())
+                            .filter(e -> !e.isBlank())
+                            .toList();
 
-                   prodRepoLink.setChannelLabel(String.join("-", cList).toLowerCase().replaceAll("( for | )", "-"));
-                   prodRepoLink.setChannelName(String.join(" ", cList));
-               });
-        if (StringUtils.isBlank(prodRepoLink.getChannelLabel())) {
+                    template.setChannelLabel(String.join("-", cList).toLowerCase().replaceAll("( for | )", "-"));
+                    template.setChannelName(String.join(" ", cList));
+                });
+        if (StringUtils.isBlank(template.getChannelLabel())) {
             // mandatory field is missing. This happens when a product does not have suseProductSCCRepositories
-            log.info("Product '{}' does not have repositories. Skipping.", root);
+            LOG.info("Product '{}' does not have repositories. Skipping.", root);
             return null;
         }
-        return prodRepoLink;
+        return template;
     }
 
     /**
@@ -1053,29 +1121,26 @@ public class ContentSyncManager {
      * @param oesRepos cached list of OES Repositories or NULL
      * @return list of available repository ids
      */
-    public List<Long> refreshOESRepositoryAuth(Credentials c, String mirrorUrl, List<SCCRepository> oesRepos) {
+    public List<Long> refreshOESRepositoryAuth(SCCCredentials c, String mirrorUrl, List<SCCRepository> oesRepos) {
         List<Long> oesRepoIds = new LinkedList<>();
+        //TODO: separate OES Credentials
         if (!(c == null || accessibleUrl(OES_URL, c.getUsername(), c.getPassword()))) {
             return oesRepoIds;
-        }
-        if (oesRepos == null) {
-            oesRepos = SCCCachingFactory.lookupRepositoriesByChannelFamily(OES_CHANNEL_FAMILY);
         }
         for (SCCRepository repo : oesRepos) {
             Set<SCCRepositoryAuth> allAuths = repo.getRepositoryAuth();
             Set<SCCRepositoryAuth> authsThisCred = allAuths.stream()
                     .filter(a -> {
                         if (c == null) {
-                            return !a.getOptionalCredentials().isPresent();
+                            return a.getOptionalCredentials().isEmpty();
                         }
                         else {
-                            Optional<Credentials> oc = a.getOptionalCredentials();
-                            return oc.isPresent() && oc.get().equals(c);
+                            return a.getOptionalCredentials().filter(oc -> oc.equals(c)).isPresent();
                         }
                     })
                     .collect(Collectors.toSet());
             if (authsThisCred.size() > 1) {
-                log.error("More than 1 authentication found for one credential - removing all");
+                LOG.error("More than 1 authentication found for one credential - removing all");
                 authsThisCred.forEach(a -> {
                     allAuths.remove(a);
                     authsThisCred.remove(a);
@@ -1088,12 +1153,12 @@ public class ContentSyncManager {
                 // we need to check every repo if it is available
                 String url = MgrSyncUtils.urlToFSPath(repo.getUrl(), repo.getName()).toString();
                 try {
-                    if (!accessibleUrl(buildRepoFileUrl(url, repo))) {
+                    if (!accessibleUrl(buildRepoFileUrls(url, repo))) {
                         continue;
                     }
                 }
                 catch (URISyntaxException e) {
-                    log.error("Failed to parse URL", e);
+                    LOG.error("Failed to parse URL", e);
                     continue;
                 }
                 newAuth = new SCCRepositoryNoAuth();
@@ -1169,12 +1234,12 @@ public class ContentSyncManager {
             URI testUri = new URI(mirrorUri.getScheme(), mirrorUri.getUserInfo(), mirrorUri.getHost(),
                     mirrorUri.getPort(), combinedPath, mirrorUri.getQuery(), null);
 
-            if (accessibleUrl(buildRepoFileUrl(testUri.toString(), repo))) {
+            if (accessibleUrl(buildRepoFileUrls(testUri.toString(), repo))) {
                 return testUri.toString();
             }
         }
         catch (URISyntaxException e) {
-            log.warn(e.getMessage());
+            LOG.warn(e.getMessage());
         }
         return defaultUrl;
     }
@@ -1189,7 +1254,7 @@ public class ContentSyncManager {
      * @return List of full URLs pointing to a file which should be available depending on the repo type
      * @throws URISyntaxException in case of an error
      */
-    public List<String> buildRepoFileUrl(String url, SCCRepository repo) throws URISyntaxException {
+    public List<String> buildRepoFileUrls(String url, SCCRepository repo) throws URISyntaxException {
         URI uri = new URI(url);
         List<String> relFiles = new LinkedList<>();
         List<String> urls = new LinkedList<>();
@@ -1225,11 +1290,11 @@ public class ContentSyncManager {
      * mirror credentials, consolidating and inserting into the database.
      *
      * @param subscriptions list of scc subscriptions
-     * @param c credentials
+     * @param source source of subscriptions
      * @throws ContentSyncException in case of an error
      */
-    public void refreshSubscriptionCache(List<SCCSubscriptionJson> subscriptions,
-            Credentials c) {
+    public void refreshSubscriptionCache(List<SCCSubscriptionJson> subscriptions, ContentSyncSource source) {
+        RemoteCredentials c = source.getCredentials().orElse(null);
         List<Long> cachedSccIDs = SCCCachingFactory.listSubscriptionsIdsByCredentials(c);
         Map<Long, SCCSubscription> subscriptionsBySccId = SCCCachingFactory.lookupSubscriptions()
                 .stream().collect(Collectors.toMap(SCCSubscription::getSccId, s -> s));
@@ -1239,11 +1304,11 @@ public class ContentSyncManager {
             subscriptionsBySccId.put(ns.getSccId(), ns);
             cachedSccIDs.remove(s.getId());
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Found {} subscriptions with credentials: {}", subscriptions.size(), c);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Found {} subscriptions with credentials: {}", subscriptions.size(), c);
         }
         for (Long subId : cachedSccIDs) {
-            log.debug("Delete Subscription with sccId: {}", subId);
+            LOG.debug("Delete Subscription with sccId: {}", subId);
             SCCCachingFactory.deleteSubscriptionBySccId(subId);
         }
     }
@@ -1252,23 +1317,30 @@ public class ContentSyncManager {
      * Get subscriptions from SCC for a single pair of mirror credentials
      * and update the DB.
      * Additionally order items are fetched and put into the DB.
-     * @param credentials username/password pair
+     * @param source the source from where to get the subscriptions
      * @return list of subscriptions as received from SCC.
-     * @throws SCCClientException in case of an error
+     * @throws ContentSyncException in case of an error
      */
-    public List<SCCSubscriptionJson> updateSubscriptions(Credentials credentials)
-            throws SCCClientException {
+    public List<SCCSubscriptionJson> updateSubscriptions(ContentSyncSource source) throws ContentSyncException {
+        if (source instanceof RMTContentSyncSource) {
+            return Collections.emptyList();
+        }
+
         try {
-            SCCClient scc = this.getSCCClient(credentials);
-            List<SCCSubscriptionJson> subscriptions = scc.listSubscriptions();
-            refreshSubscriptionCache(subscriptions, credentials);
-            refreshOrderItemCache(credentials);
-            generateOEMOrderItems(subscriptions, credentials);
+            SCCClient scc = this.getSCCClient(source);
+            var subscriptions = scc.listSubscriptions();
+            refreshSubscriptionCache(subscriptions, source);
+            refreshOrderItemCache(source);
+            generateOEMOrderItems(subscriptions, source);
             return subscriptions;
         }
-        catch (URISyntaxException e) {
-            log.error("Invalid URL:{}", e.getMessage());
-            return new ArrayList<>();
+        catch (SCCClientException e) {
+            // test for OES credentials
+            return handleOESCredentials(source, e, Collections::emptyList);
+        }
+        catch (ContentSyncSourceException e) {
+            LOG.error("Unable to build client from ContentSyncSource", e);
+            return Collections.emptyList();
         }
     }
 
@@ -1279,52 +1351,75 @@ public class ContentSyncManager {
      * @throws ContentSyncException in case of an error
      */
     public Collection<SCCSubscriptionJson> updateSubscriptions() throws ContentSyncException {
-        log.info("ContentSyncManager.getSubscriptions called");
-        Set<SCCSubscriptionJson> subscriptions = new HashSet<>();
-        List<Credentials> credentials = filterCredentials();
-        // Query subscriptions for all mirror credentials
-        for (Credentials c : credentials) {
-            try {
-                subscriptions.addAll(updateSubscriptions(c));
-            }
-            catch (SCCClientException e) {
-                throw new ContentSyncException(e);
-            }
+        return TimeUtils.logTime(LOG, "updateSubscriptions", () -> {
+            List<ContentSyncSource> sources = filterCredentials();
+            List<SCCSubscriptionJson> subscriptions = sources.stream()
+                    .flatMap(source -> updateSubscriptions(source).stream())
+                    .toList();
+
+            LOG.debug("Found {} available subscriptions.", subscriptions.size());
+            return subscriptions;
+        });
+    }
+
+    /**
+     * Check if the provided Credentials are usable for SCC. OES credentials will return false.
+     * @param c the credentials
+     * @return true if they can be used for SCC, otherwise false
+     */
+    public boolean isSCCCredentials(SCCCredentials c) {
+        try {
+            SCCClient scc = this.getSCCClient(new SCCContentSyncSource(c));
+            scc.listOrders();
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Found {} available subscriptions.", subscriptions.size());
+        catch (SCCClientException | ContentSyncSourceException e) {
+            return false;
         }
-        log.info("ContentSyncManager.getSubscriptions finished");
-        return subscriptions;
+        return true;
+    }
+
+    //Some old scc credentials are in reality OES credentials and don't work for SCC but only on the OES
+    //endpoint so whenever there is an error using SCC credentials we have to check if those work for OES
+    //and handle it accordingly
+    private <T> T handleOESCredentials(ContentSyncSource source, SCCClientException e, Supplier<T> oesReturn)
+            throws ContentSyncException {
+        return source.getCredentials(SCCCredentials.class)
+            .filter(scc -> accessibleUrl(OES_URL, scc.getUsername(), scc.getPassword()))
+            .map(scc -> oesReturn.get())
+            .orElseThrow(() -> new ContentSyncException(e));
     }
 
     /**
      * Fetch new Order Items from SCC for the given credentials,
      * deletes all order items stored in the database below the given credentials
      * and inserts the new ones.
-     * @param c the credentials
-     * @throws SCCClientException  in case of an error
+     * @param source the credentials
+     * @throws ContentSyncException  in case of an error
      */
-    public void refreshOrderItemCache(Credentials c) throws SCCClientException  {
+    public void refreshOrderItemCache(ContentSyncSource source) throws ContentSyncException  {
         try {
-            SCCClient scc = this.getSCCClient(c);
-            List<SCCOrderJson> orders = scc.listOrders();
-            List<SCCOrderItem> existingOI = SCCCachingFactory.listOrderItemsByCredentials(c);
+            SCCClient scc = this.getSCCClient(source);
+            SCCCredentials credential = source.getCredentials(SCCCredentials.class).orElse(null);
+            var orders = scc.listOrders();
+            List<SCCOrderItem> existingOI = SCCCachingFactory.listOrderItemsByCredentials(source);
             for (SCCOrderJson order : orders) {
                 for (SCCOrderItemJson j : order.getOrderItems()) {
-                    SCCOrderItem oi = SCCCachingFactory.lookupOrderItemBySccId(j.getSccId())
-                            .orElse(new SCCOrderItem());
-                    oi.update(j, c);
+                    SCCOrderItem oi = SCCCachingFactory.lookupOrderItemBySccId(j.getSccId()).orElse(new SCCOrderItem());
+                    oi.update(j, credential);
                     SCCCachingFactory.saveOrderItem(oi);
                     existingOI.remove(oi);
                 }
             }
             existingOI.stream()
-                .filter(item -> item.getSccId() >= 0)
-                .forEach(SCCCachingFactory::deleteOrderItem);
+                    .filter(item -> item.getSccId() >= 0)
+                    .forEach(SCCCachingFactory::deleteOrderItem);
         }
-        catch (URISyntaxException e) {
-            log.error("Invalid URL:{}", e.getMessage());
+        catch (SCCClientException e) {
+            // test for OES credentials
+            handleOESCredentials(source, e, () -> 0);
+        }
+        catch (ContentSyncSourceException e) {
+            LOG.error("Unable to get client from ContentSyncSource", e);
         }
     }
 
@@ -1332,16 +1427,15 @@ public class ContentSyncManager {
      * Generates OrderItems for OEM subscriptions.
      *
      * @param subscriptions the subscriptions
-     * @param credentials the credentials
+     * @param source scc credentials source
      */
-    private void generateOEMOrderItems(List<SCCSubscriptionJson> subscriptions,
-            Credentials credentials) {
-        List<SCCOrderItem> existingOI = SCCCachingFactory.listOrderItemsByCredentials(credentials);
+    private void generateOEMOrderItems(List<SCCSubscriptionJson> subscriptions, ContentSyncSource source) {
+        List<SCCOrderItem> existingOI = SCCCachingFactory.listOrderItemsByCredentials(source);
         subscriptions.stream()
                 .filter(sub -> "oem".equals(sub.getType()))
                 .forEach(sub -> {
                     if (sub.getSkus().size() == 1) {
-                        log.debug("Generating order item for OEM subscription {}, SCC ID: {}",
+                        LOG.debug("Generating order item for OEM subscription {}, SCC ID: {}",
                                 sub.getName(), sub.getId());
                         long subscriptionSccId = sub.getId();
                         SCCOrderItem oemOrder = SCCCachingFactory.lookupOrderItemBySccId(-subscriptionSccId)
@@ -1349,7 +1443,7 @@ public class ContentSyncManager {
                         // HACK: use inverted subscription id as new the order item id
                         oemOrder.setSccId(-subscriptionSccId);
                         oemOrder.setQuantity(sub.getSystemLimit().longValue());
-                        oemOrder.setCredentials(credentials);
+                        oemOrder.setCredentials(source.getCredentials().orElse(null));
                         oemOrder.setStartDate(sub.getStartsAt());
                         oemOrder.setEndDate(sub.getExpiresAt());
                         oemOrder.setSku(sub.getSkus().get(0));
@@ -1358,13 +1452,13 @@ public class ContentSyncManager {
                         existingOI.remove(oemOrder);
                     }
                     else {
-                        log.warn("Subscription {}, SCC ID: {} does not have a single SKU. " +
+                        LOG.warn("Subscription {}, SCC ID: {} does not have a single SKU. " +
                                 "Not generating Order Item for it.", sub.getName(), sub.getId());
                     }
                 });
         existingOI.stream()
-            .filter(item -> item.getSccId() < 0)
-            .forEach(SCCCachingFactory::deleteOrderItem);
+                .filter(item -> item.getSccId() < 0)
+                .forEach(SCCCachingFactory::deleteOrderItem);
     }
 
     /**
@@ -1377,9 +1471,20 @@ public class ContentSyncManager {
      * @throws ContentSyncException in case of an error
      */
     public void updateRepositories(String mirrorUrl) throws ContentSyncException {
-        log.info("ContentSyncManager.updateRepository called");
-        refreshRepositoriesAuthentication(mirrorUrl);
-        log.info("ContentSyncManager.updateRepository finished");
+        TimeUtils.logTime(LOG, "updateRepositories", () ->
+                refreshRepositoriesAuthentication(mirrorUrl, false)
+        );
+    }
+
+    /**
+     * Update repositories and its available authentications for Payg only.
+     *
+     * @throws ContentSyncException in case of an error
+     */
+    public void updateRepositoriesPayg() throws ContentSyncException {
+        TimeUtils.logTime(LOG, "updateRepositoriesPayg", () ->
+                refreshRepositoriesAuthentication(null, true)
+        );
     }
 
     /**
@@ -1387,9 +1492,8 @@ public class ContentSyncManager {
      * @param channelFamilies List of families.
      * @throws ContentSyncException in case of an error
      */
-    public void updateChannelFamilies(Collection<ChannelFamilyJson> channelFamilies)
-            throws ContentSyncException {
-        log.info("ContentSyncManager.updateChannelFamilies called");
+    public void updateChannelFamilies(Collection<ChannelFamilyJson> channelFamilies) throws ContentSyncException {
+        LOG.info("Sync started with updateChannelFamilies");
         List<String> suffixes = Arrays.asList("", "ALPHA", "BETA");
 
         for (ChannelFamilyJson channelFamily : channelFamilies) {
@@ -1397,7 +1501,7 @@ public class ContentSyncManager {
                 ChannelFamily family = createOrUpdateChannelFamily(
                         channelFamily.getLabel(), channelFamily.getName(), suffix);
                 // Create rhnPublicChannelFamily entry if it doesn't exist
-                if (family.getPublicChannelFamily() == null) {
+                if (family != null && family.getPublicChannelFamily() == null) {
                     PublicChannelFamily pcf = new PublicChannelFamily();
 
                     // save the public channel family
@@ -1407,7 +1511,6 @@ public class ContentSyncManager {
                 }
             }
         }
-        log.info("ContentSyncManager.updateChannelFamilies finished");
     }
 
     /**
@@ -1419,7 +1522,8 @@ public class ContentSyncManager {
      * @return the updated product
      */
     public static SUSEProduct updateProduct(SCCProductJson p, SUSEProduct product,
-            Map<String, ChannelFamily> channelFamilyByLabel, Map<String, PackageArch> packageArchMap) {
+                                            Map<String, ChannelFamily> channelFamilyByLabel,
+                                            Map<String, PackageArch> packageArchMap) {
         // it is not guaranteed for this ID to be stable in time, as it
         // depends on IBS
         product.setProductId(p.getId());
@@ -1441,7 +1545,7 @@ public class ContentSyncManager {
         PackageArch pArch = packageArchMap.computeIfAbsent(p.getArch(), PackageFactory::lookupPackageArchByLabel);
         if (pArch == null && p.getArch() != null) {
             // unsupported architecture, skip the product
-            log.error("Unknown architecture '{}'. This may be caused by a missing database migration", p.getArch());
+            LOG.error("Unknown architecture '{}'. This may be caused by a missing database migration", p.getArch());
         }
         else {
             product.setArch(pArch);
@@ -1458,7 +1562,7 @@ public class ContentSyncManager {
      * @return the new product
      */
     public static SUSEProduct createNewProduct(SCCProductJson p, Map<String, ChannelFamily> channelFamilyMap,
-            Map<String, PackageArch> packageArchMap) {
+                                               Map<String, PackageArch> packageArchMap) {
         // Otherwise create a new SUSE product and save it
         SUSEProduct product = new SUSEProduct();
 
@@ -1488,7 +1592,7 @@ public class ContentSyncManager {
         PackageArch pArch = packageArchMap.computeIfAbsent(p.getArch(), PackageFactory::lookupPackageArchByLabel);
         if (pArch == null && p.getArch() != null) {
             // unsupported architecture, skip the product
-            log.error("Unknown architecture '{}'. This may be caused by a missing database migration", p.getArch());
+            LOG.error("Unknown architecture '{}'. This may be caused by a missing database migration", p.getArch());
         }
         else {
             product.setArch(pArch);
@@ -1501,70 +1605,35 @@ public class ContentSyncManager {
         return loadStaticTree(tag);
     }
 
-    /**
-     * temporary fix to mitigate a duplicate id
-     * @param tree broken product tree
-     * @return fixed product tree
-     */
-    public List<ProductTreeEntry> productTreeFix(List<ProductTreeEntry> tree) {
-        Stream<ProductTreeEntry> productTreeEntries = tree.stream().map(e -> {
-            if (e.getProductId() == -7 && e.getRepositoryId() == -81) {
-                return new ProductTreeEntry(
-                        e.getChannelLabel(),
-                        e.getParentChannelLabel(),
-                        e.getChannelName(),
-                        e.getProductId(),
-                        -83,
-                        e.getParentProductId(),
-                        e.getRootProductId(),
-                        e.getUpdateTag(),
-                        e.isSigned(),
-                        e.isMandatory(),
-                        e.isRecommended(),
-                        e.getUrl(),
-                        e.getReleaseStage(),
-                        e.getProductType(),
-                        e.getTags(),
-                        e.getGpgInfo()
-                );
-            }
-            else {
-                return e;
-            }
-        });
-        return productTreeEntries.collect(Collectors.toList());
-    }
-
     /*
      * load the static tree from file
      */
     private List<ProductTreeEntry> loadStaticTree(String tag) throws ContentSyncException {
-        List<ProductTreeEntry> tree = new ArrayList<>();
-        if (sumaProductTreeJson.isPresent()) {
+        List<ProductTreeEntry> tree = sumaProductTreeJson.map(treeJson -> {
             try {
-                tree = JsonParser.GSON.fromJson(new BufferedReader(new InputStreamReader(
+                return JsonParser.GSON.<List<ProductTreeEntry>>fromJson(new BufferedReader(new InputStreamReader(
                                 new FileInputStream(sumaProductTreeJson.get()))),
                         SCCClientUtils.toListType(ProductTreeEntry.class));
             }
             catch (IOException e) {
-                log.error(e);
+                LOG.error(e.getMessage(), e);
+                return Collections.<ProductTreeEntry>emptyList();
             }
-        }
-        else {
-            List<Credentials> credentials = filterCredentials();
-            for (Credentials c : credentials) {
+        }).orElseGet(() -> {
+            List<ContentSyncSource> sources = filterCredentials();
+            return sources.stream().map(source -> {
                 try {
-                    SCCClient scc = getSCCClient(c);
-                    tree = scc.productTree();
+                    SCCClient scc = getSCCClient(source);
+                    return scc.productTree();
                 }
-                catch (SCCClientException | URISyntaxException e) {
+                catch (SCCClientException e) {
                     throw new ContentSyncException(e);
                 }
-            }
-        }
-        return productTreeFix(
-            tree.stream().filter(e -> e.getTags().isEmpty() || e.getTags().contains(tag)).collect(Collectors.toList())
-        );
+            }).findFirst().orElseGet(Collections::emptyList);
+        });
+
+        return tree.stream()             .filter(e -> e.getTags().isEmpty() || e.getTags().contains(tag))
+                .toList();
     }
 
     /**
@@ -1574,8 +1643,8 @@ public class ContentSyncManager {
      */
     public static Stream<SCCProductJson> flattenProducts(List<SCCProductJson> products) {
         return products.stream().flatMap(p -> Stream.concat(
-                Stream.of(p),
-                flattenProducts(p.getExtensions())
+                        Stream.of(p),
+                        flattenProducts(p.getExtensions())
                 ))
                 .distinct();
     }
@@ -1586,11 +1655,11 @@ public class ContentSyncManager {
      * @return a list of repositories
      */
     public static List<SCCRepositoryJson> collectRepos(List<SCCProductJson> products) {
-       return products.stream().flatMap(p -> p.getRepositories().stream()).collect(Collectors.toList());
+        return products.stream().flatMap(p -> p.getRepositories().stream()).toList();
     }
 
     private static <T> Map<Long, T> productAttributeOverride(List<ProductTreeEntry> tree,
-            Function<ProductTreeEntry, T> attrGetter) {
+                                                             Function<ProductTreeEntry, T> attrGetter) {
         return tree.stream()
                 .collect(Collectors.groupingBy(
                         ProductTreeEntry::getProductId, Collectors.mapping(
@@ -1598,9 +1667,9 @@ public class ContentSyncManager {
                 .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> {
                     if (e.getValue().size() != 1) {
                         throw new RuntimeException(
-                                "found more then 1 unique value for a product attribute override: " +
-                                "id " + e.getKey() +
-                                " values " + e.getValue().stream()
+                                "found more than 1 unique value for a product attribute override: " +
+                                        "id " + e.getKey() +
+                                        " values " + e.getValue().stream()
                                         .map(Object::toString)
                                         .collect(Collectors.joining(","))
                         );
@@ -1630,7 +1699,7 @@ public class ContentSyncManager {
                     .setProductType(productType)
                     .setReleaseStage(releaseStage)
                     .build();
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
 
@@ -1641,13 +1710,13 @@ public class ContentSyncManager {
      * @param tree the static suse product tree
      */
     public static void updateProducts(Map<Long, SCCProductJson> productsById, Map<Long, SCCRepositoryJson> reposById,
-            List<ProductTreeEntry> tree) {
+                                      List<ProductTreeEntry> tree) {
         Map<String, PackageArch> packageArchMap = PackageFactory.lookupPackageArch()
                 .stream().collect(Collectors.toMap(PackageArch::getLabel, a -> a));
         Map<String, ChannelFamily> channelFamilyMap = ChannelFamilyFactory.getAllChannelFamilies()
                 .stream().collect(Collectors.toMap(ChannelFamily::getLabel, cf -> cf));
-        Map<Tuple3<Long, Long, Long>, SUSEProductSCCRepository> dbProductReposByIds =
-                SUSEProductFactory.allProductReposByIds();
+        Map<Tuple3<Long, Long, Long>, ChannelTemplate> dbChannelTemplatesByIds =
+                SUSEProductFactory.allChannelTemplatesByIds();
         Map<Long, SUSEProduct> dbProductsById = SUSEProductFactory.findAllSUSEProducts().stream()
                 .collect(Collectors.toMap(SUSEProduct::getProductId, p -> p));
         Map<Long, SCCRepository> dbReposById = SCCCachingFactory.lookupRepositories().stream()
@@ -1664,75 +1733,72 @@ public class ContentSyncManager {
 
         Map<Long, SUSEProduct> productMap = productsById.values().stream().map(productJson -> {
 
-                // If the product is release the id should be stable
-                // so we don't do the fuzzy matching to reduce unexpected behaviour
-                if (productJson.getReleaseStage() == ReleaseStage.released) {
-                    return Opt.fold(Optional.ofNullable(dbProductsById.get(productJson.getId())),
-                            () -> {
-                                SUSEProduct prod = createNewProduct(productJson, channelFamilyMap, packageArchMap);
-                                dbProductsById.put(prod.getProductId(), prod);
-                                return prod;
-                            },
-                            prod -> {
-                                if (prod.getReleaseStage() != ReleaseStage.released) {
-                                    // product switched from beta to released.
-                                    // tag for later cleanup all assosicated repositories
-                                    productIdsSwitchedToReleased.add(prod.getProductId());
-                                }
-                                updateProduct(productJson, prod, channelFamilyMap, packageArchMap);
-                                dbProductsById.put(prod.getProductId(), prod);
-                                return prod;
+            // If the product is release the id should be stable
+            // so we don't do the fuzzy matching to reduce unexpected behaviour
+            if (productJson.getReleaseStage() == ReleaseStage.released) {
+                return Opt.fold(Optional.ofNullable(dbProductsById.get(productJson.getId())),
+                        () -> {
+                            SUSEProduct prod = createNewProduct(productJson, channelFamilyMap, packageArchMap);
+                            dbProductsById.put(prod.getProductId(), prod);
+                            return prod;
+                        },
+                        prod -> {
+                            if (prod.getReleaseStage() != ReleaseStage.released) {
+                                // product switched from beta to released.
+                                // tag for later cleanup all assosicated repositories
+                                productIdsSwitchedToReleased.add(prod.getProductId());
                             }
-                    );
-                }
-                else {
-                    return Opt.fold(
-                            Opt.or(
-                                    Optional.ofNullable(dbProductsById.get(productJson.getId())),
-                                    Optional.ofNullable(SUSEProductFactory.findSUSEProduct(
-                                            productJson.getIdentifier(),
-                                            productJson.getVersion(),
-                                            productJson.getReleaseType(),
-                                            productJson.getArch(),
-                                            false
-                                    ))),
-                            () -> {
-                                SUSEProduct prod = createNewProduct(productJson, channelFamilyMap, packageArchMap);
-                                dbProductsById.put(prod.getProductId(), prod);
-                                return prod;
-                            },
-                            prod -> {
-                                updateProduct(productJson, prod, channelFamilyMap, packageArchMap);
-                                dbProductsById.put(prod.getProductId(), prod);
-                                return prod;
-                            }
-                    );
-                }
+                            updateProduct(productJson, prod, channelFamilyMap, packageArchMap);
+                            dbProductsById.put(prod.getProductId(), prod);
+                            return prod;
+                        }
+                );
+            }
+            else {
+                return Opt.fold(
+                        Opt.or(
+                                Optional.ofNullable(dbProductsById.get(productJson.getId())),
+                                Optional.ofNullable(SUSEProductFactory.findSUSEProduct(
+                                        productJson.getIdentifier(), productJson.getVersion(),
+                                        productJson.getReleaseType(), productJson.getArch(), false))
+                        ),
+                        () -> {
+                            SUSEProduct prod = createNewProduct(productJson, channelFamilyMap, packageArchMap);
+                            dbProductsById.put(prod.getProductId(), prod);
+                            return prod;
+                        },
+                        prod -> {
+                            updateProduct(productJson, prod, channelFamilyMap, packageArchMap);
+                            dbProductsById.put(prod.getProductId(), prod);
+                            return prod;
+                        }
+                );
+            }
         }).collect(Collectors.toMap(SUSEProduct::getProductId, p -> p));
 
 
         Map<Long, SCCRepository> repoMap = reposById.values().stream()
                 .map(repoJson -> Opt.fold(Optional.ofNullable(dbReposById.get(repoJson.getSCCId())),
-            () -> {
-                SCCRepository r = new SCCRepository();
-                r.update(repoJson);
-                dbReposById.put(r.getSccId(), r);
-                return r;
-            },
-            r -> {
-                r.setName(repoJson.getName());
-                r.setDescription(repoJson.getDescription());
-                r.setUrl(repoJson.getUrl());
-                r.setInstallerUpdates(repoJson.isInstallerUpdates());
-                dbReposById.put(r.getSccId(), r);
-                return r;
-            })).collect(Collectors.toMap(SCCRepository::getSccId, p -> p));
+                        () -> {
+                            SCCRepository r = new SCCRepository();
+                            r.update(repoJson);
+                            dbReposById.put(r.getSccId(), r);
+                            return r;
+                        },
+                        r -> {
+                            r.setName(repoJson.getName());
+                            r.setDescription(repoJson.getDescription());
+                            r.setUrl(repoJson.getUrl());
+                            r.setInstallerUpdates(repoJson.isInstallerUpdates());
+                            dbReposById.put(r.getSccId(), r);
+                            return r;
+                        })).collect(Collectors.toMap(SCCRepository::getSccId, p -> p));
 
-        Map<Tuple3<Long, Long, Long>, SUSEProductSCCRepository> productReposToSave = new HashMap<>();
+        Map<Tuple3<Long, Long, Long>, ChannelTemplate> channelTemplatesToSave = new HashMap<>();
         Map<Tuple3<Long, Long, Long>, SUSEProductExtension> extensionsToSave = new HashMap<>();
         Set<String> channelsToCleanup = new HashSet<>();
 
-        tree.stream().forEach(entry -> {
+        tree.forEach(entry -> {
             SCCProductJson productJson = productsById.get(entry.getProductId());
 
             SCCRepositoryJson repoJson = reposById.get(entry.getRepositoryId());
@@ -1743,7 +1809,7 @@ public class ContentSyncManager {
                     .map(id -> Optional.ofNullable(productsById.get(id)));
 
             if (productJson != null  && repoJson != null && rootJson != null &&
-                    (!parentJson.isPresent() || parentJson.get().isPresent())) {
+                    (parentJson.isEmpty() || parentJson.get().isPresent())) {
 
                 Tuple3<Long, Long, Long> ids = new Tuple3<>(rootJson.getId(), productJson.getId(), repoJson.getSCCId());
                 SUSEProduct product = productMap.get(productJson.getId());
@@ -1752,79 +1818,81 @@ public class ContentSyncManager {
                 Optional<SUSEProduct> parent = parentJson.flatMap(Function.identity())
                         .map(p -> productMap.get(p.getId()));
 
-                SUSEProductSCCRepository productRepo = Opt.fold(Optional.ofNullable(dbProductReposByIds.get(ids)),
+                ChannelTemplate template = Opt.fold(Optional.ofNullable(dbChannelTemplatesByIds.get(ids)),
                         () -> {
                             SCCRepository repo = repoMap.get(repoJson.getSCCId());
                             repo.setSigned(entry.isSigned());
 
-                            SUSEProductSCCRepository prodRepoLink = new SUSEProductSCCRepository();
-                            prodRepoLink.setUpdateTag(entry.getUpdateTag().orElse(null));
-                            prodRepoLink.setChannelLabel(entry.getChannelLabel());
-                            prodRepoLink.setParentChannelLabel(entry.getParentChannelLabel().orElse(null));
-                            prodRepoLink.setChannelName(entry.getChannelName());
-                            prodRepoLink.setMandatory(entry.isMandatory());
-                            prodRepoLink.setProduct(product);
-                            prodRepoLink.setRepository(repo);
-                            prodRepoLink.setRootProduct(root);
+                            ChannelTemplate channelTemplate = new ChannelTemplate();
+                            channelTemplate.setUpdateTag(entry.getUpdateTag().orElse(null));
+                            channelTemplate.setChannelLabel(entry.getChannelLabel());
+                            channelTemplate.setParentChannelLabel(entry.getParentChannelLabel().orElse(null));
+                            channelTemplate.setChannelName(entry.getChannelName());
+                            channelTemplate.setMandatory(entry.isMandatory());
+                            channelTemplate.setProduct(product);
+                            channelTemplate.setRepository(repo);
+                            channelTemplate.setRootProduct(root);
                             if (!entry.getGpgInfo().isEmpty()) {
-                                // we use only the 1st entry
-                                prodRepoLink.setGpgKeyUrl(entry.getGpgInfo().get(0).getUrl());
-                                prodRepoLink.setGpgKeyId(entry.getGpgInfo().get(0).getKeyId());
-                                prodRepoLink.setGpgKeyFingerprint(entry.getGpgInfo().get(0).getFingerprint());
+                                channelTemplate.setGpgKeyUrl(entry.getGpgInfo()
+                                        .stream().map(GpgInfoEntry::getUrl).collect(Collectors.joining(" ")));
+                                // we use only the 1st entry for id and fingerprint
+                                channelTemplate.setGpgKeyId(entry.getGpgInfo().get(0).getKeyId());
+                                channelTemplate.setGpgKeyFingerprint(entry.getGpgInfo().get(0).getFingerprint());
                             }
-                            dbProductReposByIds.put(ids, prodRepoLink);
+                            dbChannelTemplatesByIds.put(ids, channelTemplate);
 
                             if (productIdsSwitchedToReleased.contains(entry.getProductId())) {
                                 channelsToCleanup.add(entry.getChannelLabel());
                             }
-                            repo.addProduct(prodRepoLink);
-                            return prodRepoLink;
-                        }, prodRepoLink -> {
+                            repo.addChannelTemplate(channelTemplate);
+                            return channelTemplate;
+                        }, channelTemplate -> {
                             if (entry.getReleaseStage() != ReleaseStage.released) {
                                 // Only allowed to change in Alpha or Beta stage
-                                prodRepoLink.setUpdateTag(entry.getUpdateTag().orElse(null));
-                                prodRepoLink.setChannelLabel(entry.getChannelLabel());
-                                prodRepoLink.setParentChannelLabel(entry.getParentChannelLabel().orElse(null));
+                                channelTemplate.setUpdateTag(entry.getUpdateTag().orElse(null));
+                                channelTemplate.setChannelLabel(entry.getChannelLabel());
+                                channelTemplate.setParentChannelLabel(entry.getParentChannelLabel().orElse(null));
                             }
                             else {
                                 if (!entry.getParentChannelLabel()
-                                        .equals(Optional.ofNullable(prodRepoLink.getParentChannelLabel()))) {
-                                    log.error("parent_channel_label changed from '{}' to '{}' but its not allowed " +
-                                            "to change.", prodRepoLink.getParentChannelLabel(),
+                                        .equals(Optional.ofNullable(channelTemplate.getParentChannelLabel()))) {
+                                    LOG.error("parent_channel_label changed from '{}' to '{}' but its not allowed " +
+                                                    "to change.", channelTemplate.getParentChannelLabel(),
                                             entry.getParentChannelLabel());
                                 }
 
                                 if (!entry.getUpdateTag()
-                                        .equals(Optional.ofNullable(prodRepoLink.getUpdateTag()))) {
-                                    log.debug("updatetag changed from '{}' to '{}' but its not allowed to change.",
-                                            prodRepoLink.getUpdateTag(), entry.getUpdateTag());
+                                        .equals(Optional.ofNullable(channelTemplate.getUpdateTag()))) {
+                                    LOG.debug("updatetag changed from '{}' to '{}' but its not allowed to change.",
+                                            channelTemplate.getUpdateTag(), entry.getUpdateTag());
                                 }
 
-                                if (!entry.getChannelLabel().equals(prodRepoLink.getChannelLabel())) {
-                                    log.error("channel_label changed from '{}' to '{}' but its not allowed to change.",
-                                            prodRepoLink.getChannelLabel(), entry.getChannelLabel());
+                                if (!entry.getChannelLabel().equals(channelTemplate.getChannelLabel())) {
+                                    LOG.error("channel_label changed from '{}' to '{}' but its not allowed to change.",
+                                            channelTemplate.getChannelLabel(), entry.getChannelLabel());
                                 }
                             }
                             // Allowed to change also in released stage
-                            prodRepoLink.setChannelName(entry.getChannelName());
-                            prodRepoLink.setMandatory(entry.isMandatory());
-                            prodRepoLink.getRepository().setSigned(entry.isSigned());
+                            channelTemplate.setChannelName(entry.getChannelName());
+                            channelTemplate.setMandatory(entry.isMandatory());
+                            channelTemplate.getRepository().setSigned(entry.isSigned());
                             if (!entry.getGpgInfo().isEmpty()) {
-                                // we use only the 1st entry
-                                prodRepoLink.setGpgKeyUrl(entry.getGpgInfo().get(0).getUrl());
-                                prodRepoLink.setGpgKeyId(entry.getGpgInfo().get(0).getKeyId());
-                                prodRepoLink.setGpgKeyFingerprint(entry.getGpgInfo().get(0).getFingerprint());
+                                channelTemplate.setGpgKeyUrl(entry.getGpgInfo()
+                                        .stream().map(GpgInfoEntry::getUrl).collect(Collectors.joining(" ")));
+                                // we use only the 1st entry for id and fingerprint
+                                channelTemplate.setGpgKeyId(entry.getGpgInfo().get(0).getKeyId());
+                                channelTemplate.setGpgKeyFingerprint(entry.getGpgInfo().get(0).getFingerprint());
                             }
                             else {
-                                prodRepoLink.setGpgKeyUrl(null);
-                                prodRepoLink.setGpgKeyId(null);
-                                prodRepoLink.setGpgKeyFingerprint(null);
+                                channelTemplate.setGpgKeyUrl(null);
+                                channelTemplate.setGpgKeyId(null);
+                                channelTemplate.setGpgKeyFingerprint(null);
                             }
 
                             if (productIdsSwitchedToReleased.contains(entry.getProductId())) {
                                 channelsToCleanup.add(entry.getChannelLabel());
                             }
-                            return prodRepoLink;
+                            return channelTemplate;
                         });
 
                 parent.ifPresent(p -> {
@@ -1841,7 +1909,7 @@ public class ContentSyncManager {
                     extensionsToSave.put(peId, pe);
                 });
 
-                productReposToSave.put(ids, productRepo);
+                channelTemplatesToSave.put(ids, template);
             }
         });
 
@@ -1852,25 +1920,25 @@ public class ContentSyncManager {
                 .forEach(SUSEProductFactory::remove);
 
 
-        dbProductReposByIds.entrySet().stream()
-                .filter(e -> !productReposToSave.containsKey(e.getKey()))
+        dbChannelTemplatesByIds.entrySet().stream()
+                .filter(e -> !channelTemplatesToSave.containsKey(e.getKey()))
                 .map(Map.Entry::getValue)
                 .forEach(SUSEProductFactory::remove);
 
         dbReposById.entrySet().stream()
-            .filter(e -> !repoMap.containsKey(e.getKey()))
-            .map(Map.Entry::getValue)
-            .forEach(r -> {
-                r.getRepositoryAuth().forEach(SCCCachingFactory::deleteRepositoryAuth);
-                SCCCachingFactory.deleteRepository(r);
-            });
+                .filter(e -> !repoMap.containsKey(e.getKey()))
+                .map(Map.Entry::getValue)
+                .forEach(r -> {
+                    r.getRepositoryAuth().forEach(SCCCachingFactory::deleteRepositoryAuth);
+                    SCCCachingFactory.deleteRepository(r);
+                });
 
         productMap.values().forEach(SUSEProductFactory::save);
         extensionsToSave.values().forEach(SUSEProductFactory::save);
         repoMap.values().forEach(SUSEProductFactory::save);
-        productReposToSave.values().forEach(SUSEProductFactory::save);
+        channelTemplatesToSave.values().forEach(SUSEProductFactory::save);
 
-        ChannelFactory.listVendorChannels().stream().forEach(c -> {
+        ChannelFactory.listVendorChannels().forEach(c -> {
             updateChannel(c);
             if (channelsToCleanup.contains(c.getLabel())) {
                 ChannelManager.disassociateChannelEntries(c);
@@ -1884,31 +1952,30 @@ public class ContentSyncManager {
      * @throws ContentSyncException in case of an error
      */
     public void updateSUSEProducts(List<SCCProductJson> products) throws ContentSyncException {
-        updateSUSEProducts(
-                Stream.concat(
-                        products.stream(),
-                        getAdditionalProducts().stream()
-                ).collect(Collectors.toList()),
-                readUpgradePaths(), loadStaticTree(),
-                getAdditionalRepositories());
+        TimeUtils.logTime(LOG, "updateSUSEProducts", () ->
+                updateSUSEProducts(
+                        Stream.concat(
+                                products.stream(),
+                                getAdditionalProducts().stream()
+                        ).toList(),
+                        loadStaticTree(), getAdditionalRepositories())
+        );
     }
 
     /**
      * Creates or updates entries in the SUSEProducts database table with a given list of
      * {@link SCCProductJson} objects.
      *
-     * @param products list of products
-     * @param upgradePathJsons list of available upgrade path
-     * @param staticTree suse product tree with fixes and additional data
+     * @param products        list of products
+     * @param staticTree      suse product tree with fixes and additional data
      * @param additionalRepos list of additional static repos
      */
-    public void updateSUSEProducts(List<SCCProductJson> products, List<UpgradePathJson> upgradePathJsons,
-                                   List<ProductTreeEntry> staticTree, List<SCCRepositoryJson> additionalRepos) {
-        log.info("ContentSyncManager.updateSUSEProducts called");
+    public void updateSUSEProducts(List<SCCProductJson> products, List<ProductTreeEntry> staticTree,
+                                   List<SCCRepositoryJson> additionalRepos) {
         Map<Long, SUSEProduct> processed = new HashMap<>();
 
         List<SCCProductJson> allProducts = overrideProductAttributes(
-                flattenProducts(products).collect(Collectors.toList()),
+                flattenProducts(products).toList(),
                 staticTree
         );
 
@@ -1931,9 +1998,8 @@ public class ContentSyncManager {
 
         SUSEProductFactory.removeAllExcept(processed.values());
 
-        updateUpgradePaths(products, upgradePathJsons);
+        updateUpgradePaths(products);
         HibernateFactory.getSession().flush();
-        log.info("ContentSyncManager.updateSUSEProducts finished");
     }
 
     /**
@@ -1946,27 +2012,27 @@ public class ContentSyncManager {
      * @return true in case of all mandatory repos could be mirrored, otherwise false
      */
     public static boolean isProductAvailable(SUSEProduct product, SUSEProduct root) {
-        Set<SUSEProductSCCRepository> repos = product.getRepositories();
-        if (repos == null) {
+        Set<ChannelTemplate> templates = product.getChannelTemplates();
+        if (templates == null) {
             return false;
         }
-        return !repos.isEmpty() && repos.stream()
+        return !templates.isEmpty() && templates.stream()
                 .filter(e -> e.getRootProduct().equals(root))
-                .filter(SUSEProductSCCRepository::isMandatory)
-                .allMatch(ContentSyncManager::isRepoAccessible);
+                .filter(ChannelTemplate::isMandatory)
+                .allMatch(ContentSyncManager::isChannelAccessible);
     }
 
-    private static boolean isRepoAccessible(SUSEProductSCCRepository repo) {
-        boolean isPublic = repo.getProduct().getChannelFamily().isPublic();
-        boolean isAvailable = ChannelFactory.lookupByLabel(repo.getChannelLabel()) != null;
+    private static boolean isChannelAccessible(ChannelTemplate template) {
+        boolean isPublic = template.getProduct().getChannelFamily().isPublic();
+        boolean isAvailable = ChannelFactory.lookupByLabel(template.getChannelLabel()) != null;
         boolean isISSSlave = IssFactory.getCurrentMaster() != null;
         boolean isMirrorable = false;
         if (!isISSSlave) {
-            isMirrorable = repo.getRepository().isAccessible();
+            isMirrorable = template.getRepository().isAccessible();
         }
-        log.debug("{} - {} isPublic: {} isMirrorable: {} isISSSlave: {} isAvailable: {}",
-                repo.getProduct().getFriendlyName(),
-                repo.getChannelLabel(), isPublic, isMirrorable, isISSSlave, isAvailable);
+        LOG.debug("{} - {} isPublic: {} isMirrorable: {} isISSSlave: {} isAvailable: {}",
+                template.getProduct().getFriendlyName(),
+                template.getChannelLabel(), isPublic, isMirrorable, isISSSlave, isAvailable);
         return  isPublic && (isMirrorable || isISSSlave || isAvailable);
     }
 
@@ -1976,13 +2042,16 @@ public class ContentSyncManager {
      * @param product product to get available repositories from
      * @return stream of available repositories of product
      */
-    private Stream<SUSEProductSCCRepository> getAvailableRepositories(SUSEProduct root, SUSEProduct product) {
-        List<SUSEProductSCCRepository> allEntries = SUSEProductFactory.allProductRepos();
+    private Stream<ChannelTemplate> getAvailableChannels(SUSEProduct root, SUSEProduct product) {
+        List<ChannelTemplate> allEntries = SUSEProductFactory.allChannelTemplates();
         List<Long> repoIdsWithAuth = SCCCachingFactory.lookupRepositoryIdsWithAuth();
+        Map<Tuple2<SUSEProduct, SUSEProduct>, List<SUSEProductExtension>> allSUSEProdExt =
+                SUSEProductFactory.findAllSUSEProductExtensions().stream()
+                        .collect(Collectors.groupingBy(e -> new Tuple2<>(e.getRootProduct(), e.getBaseProduct())));
 
-        Map<Tuple2<SUSEProduct, SUSEProduct>, List<SUSEProductSCCRepository>> entriesByProducts = allEntries.stream()
+        Map<Tuple2<SUSEProduct, SUSEProduct>, List<ChannelTemplate>> entriesByProducts = allEntries.stream()
                 .collect(Collectors.groupingBy(e -> new Tuple2<>(e.getRootProduct(), e.getProduct())));
-        return getAvailableRepositories(root, product, entriesByProducts, repoIdsWithAuth);
+        return getAvailableChannels(root, product, entriesByProducts, repoIdsWithAuth, allSUSEProdExt);
     }
 
     /**
@@ -1991,46 +2060,53 @@ public class ContentSyncManager {
      * @param product product to get available repositories from
      * @param allEntries lookup map for repositories by product and root product
      * @param repoIdsWithAuth lookup list for all authenticated repositories by id
+     * @param allSUSEProdExt lookup map for all extensions
      * @return stream of available repositories of product
      */
-    private Stream<SUSEProductSCCRepository> getAvailableRepositories(SUSEProduct root, SUSEProduct product,
-            Map<Tuple2<SUSEProduct, SUSEProduct>, List<SUSEProductSCCRepository>> allEntries,
-            List<Long> repoIdsWithAuth) {
+    private Stream<ChannelTemplate> getAvailableChannels(
+        SUSEProduct root,
+        SUSEProduct product,
+        Map<Tuple2<SUSEProduct, SUSEProduct>, List<ChannelTemplate>> allEntries,
+        List<Long> repoIdsWithAuth,
+        Map<Tuple2<SUSEProduct, SUSEProduct>, List<SUSEProductExtension>> allSUSEProdExt
+    ) {
+        Tuple2<SUSEProduct, SUSEProduct> rootProductTuple = new Tuple2<>(root, product);
+        List<ChannelTemplate> entries =
+                allEntries.getOrDefault(rootProductTuple, Collections.emptyList());
+        boolean isAccessible = entries.stream()
+                .filter(ChannelTemplate::isMandatory)
+                .allMatch(entry -> {
+                    boolean isPublic = entry.getProduct().getChannelFamily().isPublic();
+                    boolean hasAuth = repoIdsWithAuth.contains(entry.getRepository().getId());
+                    LOG.debug("{} - {} isPublic: {} hasAuth: {}", product.getFriendlyName(),
+                            entry.getChannelLabel(), isPublic, hasAuth);
+                    return  isPublic &&
+                            // isMirrorable
+                            hasAuth;
+                });
 
-            List<SUSEProductSCCRepository> entries =
-                    Optional.ofNullable(allEntries.get(new Tuple2<>(root, product)))
-                    .orElseGet(Collections::emptyList);
-            boolean isAccessible = entries.stream()
-                    .filter(SUSEProductSCCRepository::isMandatory)
-                    .allMatch(entry -> {
-                        boolean isPublic = entry.getProduct().getChannelFamily().isPublic();
-                        boolean hasAuth = repoIdsWithAuth.contains(entry.getRepository().getId());
-                        log.debug("{} - {} isPublic: {} hasAuth: {}", product.getFriendlyName(),
-                                entry.getChannelLabel(), isPublic, hasAuth);
-                        return  isPublic &&
-                                // isMirrorable
-                                hasAuth;
-                    });
-
-            if (log.isDebugEnabled()) {
-                log.debug("{}: {} {}", product.getFriendlyName(), isAccessible, entries.stream()
-                        .map(SUSEProductSCCRepository::getChannelLabel)
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("{}: {} {}", product.getFriendlyName(), isAccessible, entries.stream()
+                        .map(ChannelTemplate::getChannelLabel)
                         .collect(Collectors.joining(",")));
             }
 
-             if (isAccessible) {
-                 return Stream.concat(
-                     entries.stream().filter(e ->
-                         e.isMandatory() || repoIdsWithAuth.contains(e.getRepository().getId())
-                     ),
-                     SUSEProductFactory.findAllExtensionProductsForRootOf(product, root).stream()
-                             .flatMap(nextProduct ->
-                                     getAvailableRepositories(root, nextProduct, allEntries, repoIdsWithAuth))
-                 );
-             }
-             else {
-                 return Stream.empty();
-             }
+        if (isAccessible) {
+            return Stream.concat(
+                    entries.stream().filter(e ->
+                            e.isMandatory() || repoIdsWithAuth.contains(e.getRepository().getId())
+                    ),
+                    // We iterate recursively to not evaluate extensions when the parent is not accessible
+                    allSUSEProdExt.getOrDefault(rootProductTuple, new ArrayList<>())
+                            .stream()
+                            .map(SUSEProductExtension::getExtensionProduct)
+                            .flatMap(nextProduct -> getAvailableChannels(root, nextProduct, allEntries,
+                                    repoIdsWithAuth, allSUSEProdExt))
+            );
+        }
+        else {
+            return Stream.empty();
+        }
     }
 
     /**
@@ -2038,38 +2114,66 @@ public class ContentSyncManager {
      * as well as some other criteria.
      * @return list of available channels
      */
-    public List<SUSEProductSCCRepository> getAvailableChannels() {
-        List<SUSEProductSCCRepository> allEntries = SUSEProductFactory.allProductRepos();
+    public List<ChannelTemplate> getAvailableChannels() {
+        List<ChannelTemplate> allEntries = SUSEProductFactory.allChannelTemplates();
         List<Long> repoIdsWithAuth = SCCCachingFactory.lookupRepositoryIdsWithAuth();
+        Map<Tuple2<SUSEProduct, SUSEProduct>, List<SUSEProductExtension>> allSUSEProdExt =
+                SUSEProductFactory.findAllSUSEProductExtensions().stream()
+                        .collect(Collectors.groupingBy(e -> new Tuple2<>(e.getRootProduct(), e.getBaseProduct())));
 
-        Map<Tuple2<SUSEProduct, SUSEProduct>, List<SUSEProductSCCRepository>> entriesByProducts = allEntries.stream()
+        Map<Tuple2<SUSEProduct, SUSEProduct>, List<ChannelTemplate>> entriesByProducts = allEntries.stream()
                 .collect(Collectors.groupingBy(e -> new Tuple2<>(e.getRootProduct(), e.getProduct())));
 
         return allEntries.stream()
-                .filter(SUSEProductSCCRepository::isRoot)
-                .map(SUSEProductSCCRepository::getProduct)
+                .filter(ChannelTemplate::isRoot)
+                .map(ChannelTemplate::getProduct)
                 .distinct()
-                .flatMap(p -> getAvailableRepositories(p, p, entriesByProducts, repoIdsWithAuth))
-                .collect(Collectors.toList());
+                .flatMap(p -> getAvailableChannels(p, p, entriesByProducts, repoIdsWithAuth, allSUSEProdExt))
+                .toList();
     }
 
     /**
-     * Recreate contents of the suseUpgradePaths table with values from upgrade_paths.json
-     * and predecessor_ids from SCC
+     * Recreate contents of the suseUpgradePaths table predecessor_ids from SCC
      *
      * @param products Collection of SCC Products
-     * @param upgradePathJsons list of static upgrade paths
      */
-    public void updateUpgradePaths(Collection<SCCProductJson> products, List<UpgradePathJson> upgradePathJsons) {
+    public void updateUpgradePaths(Collection<SCCProductJson> products) {
         List<SUSEProduct> allSUSEProducts = SUSEProductFactory.findAllSUSEProducts();
         Map<Long, SUSEProduct> productsById = allSUSEProducts
                 .stream().collect(Collectors.toMap(SUSEProduct::getProductId, p -> p));
 
+        Map<String, SCCProductJson> sles = new HashMap<>();
+        Map<String, SCCProductJson> sap = new HashMap<>();
+        products.stream()
+                .filter(SCCProductJson::isBaseProduct)
+                .filter(p -> p.getCpe() != null &&
+                        (p.getCpe().startsWith("cpe:/o:suse:sles:15:") ||
+                                p.getCpe().startsWith("cpe:/o:suse:sles_sap:15:")))
+                .forEach(p -> {
+                    String ident = String.format("%s-%s", p.getVersion(), p.getArch());
+                    if (p.getCpe().startsWith("cpe:/o:suse:sles:15:")) {
+                        sles.put(ident, p);
+                    }
+                    else {
+                        sap.put(ident, p);
+                    }
+                });
+        Set<Tuple2<Long, Long>> sles2sap = new HashSet<>();
+        sles.forEach((k, v) -> {
+            if (sap.containsKey(k)) {
+                sles2sap.add(new Tuple2<>(v.getId(), sap.get(k).getId()));
+            }
+        });
+
         Map<Long, Set<Long>> newPaths = Stream.concat(
-                upgradePathJsons.stream().map(u -> new Tuple2<>(u.getFromProductId(), u.getToProductId())),
-                products.stream()
-                        .flatMap(p -> p.getOnlinePredecessorIds().stream().map(pre -> new Tuple2<>(pre, p.getId())))
-        ).collect(Collectors.groupingBy(Tuple2::getA, Collectors.mapping(Tuple2::getB, Collectors.toSet())));
+                Stream.concat(staticUpgradePaths(), sles2sap.stream()),
+                        products.stream()
+                                .flatMap(p -> p.getOnlinePredecessorIds()
+                                        .stream()
+                                        .map(pre -> new Tuple2<>(pre, p.getId()))
+                                )
+                )
+                .collect(Collectors.groupingBy(Tuple2::getA, Collectors.mapping(Tuple2::getB, Collectors.toSet())));
 
         allSUSEProducts.forEach(p -> {
             Set<SUSEProduct> successors = newPaths.getOrDefault(p.getProductId(), Collections.emptySet()).stream()
@@ -2089,19 +2193,23 @@ public class ContentSyncManager {
      */
     public List<MgrSyncChannelDto> listChannels() {
 
-        List<MgrSyncChannelDto> collect = listProducts().stream().flatMap(p -> Stream.concat(
+        return listProducts().stream().flatMap(p -> Stream.concat(
                 p.getChannels().stream(),
                 p.getExtensions().stream().flatMap(e -> e.getChannels().stream())
-                )).collect(Collectors.toList());
-        return collect;
+        )).toList();
     }
 
-    private Optional<String> getTokenFromURL(String url) {
+    protected Optional<String> getTokenFromURL(String url) {
         Optional<String> token = Optional.empty();
-        Pattern p = Pattern.compile("/?\\?([^?&=]+)$");
-        Matcher m = p.matcher(url);
-        if (m.find()) {
-            token = Optional.of(m.group(1));
+        try {
+            URI uri = new URI(url);
+            token = Arrays.stream(Optional.ofNullable(uri.getQuery()).orElse("").split("&"))
+                    .filter(p -> !p.isEmpty())
+                    .filter(MgrSyncUtils::isAuthToken)
+                    .findFirst();
+        }
+        catch (URISyntaxException e) {
+            LOG.warn("Unable to parse URL: {}", url);
         }
         return token;
     }
@@ -2112,44 +2220,58 @@ public class ContentSyncManager {
      */
     public static void updateChannel(Channel dbChannel) {
         if (dbChannel == null) {
-            log.error("Channel does not exist");
+            LOG.error("Channel does not exist");
             return;
         }
         String label = dbChannel.getLabel();
-        List<SUSEProductSCCRepository> suseProductSCCRepositories = SUSEProductFactory.lookupPSRByChannelLabel(label);
+        List<ChannelTemplate> channelTemplates = SUSEProductFactory.lookupChannelTemplateByChannelLabel(label);
+        boolean regenPillar = false;
 
-        Opt.consume(suseProductSCCRepositories.stream().findFirst(),
-                () -> {
-                    log.warn("Expired Vendor Channel with label '{}' found. To remove it please run: ", label);
-                    log.warn("spacewalk-remove-channel -c {}", label);
-                },
-                productrepo -> {
-                    SUSEProduct product = productrepo.getProduct();
+        Optional<ChannelTemplate> chanTmplOpt = channelTemplates.stream().findFirst();
+        if (chanTmplOpt.isEmpty()) {
+            LOG.warn("Expired Vendor Channel with label '{}' found. To remove it please run: ", label);
+            LOG.warn("spacewalk-remove-channel -c {}", label);
+        }
+        else {
+            ChannelTemplate chanTmpl = chanTmplOpt.get();
+            SUSEProduct product = chanTmpl.getProduct();
 
-                    // update only the fields which are save to be updated
-                    dbChannel.setChannelFamily(product.getChannelFamily());
-                    dbChannel.setName(productrepo.getChannelName());
-                    dbChannel.setSummary(product.getFriendlyName());
-                    dbChannel.setDescription(
-                            Optional.ofNullable(product.getDescription())
-                                    .orElse(product.getFriendlyName()));
-                    dbChannel.setProduct(MgrSyncUtils.findOrCreateChannelProduct(product));
-                    dbChannel.setProductName(MgrSyncUtils.findOrCreateProductName(product.getName()));
-                    dbChannel.setUpdateTag(productrepo.getUpdateTag());
-                    dbChannel.setInstallerUpdates(productrepo.getRepository().isInstallerUpdates());
-                    dbChannel.setGPGKeyUrl(productrepo.getGpgKeyUrl());
-                    dbChannel.setGPGKeyId(productrepo.getGpgKeyId());
-                    dbChannel.setGPGKeyFp(productrepo.getGpgKeyFingerprint());
-                    ChannelFactory.save(dbChannel);
+            // update only the fields which are save to be updated
+            dbChannel.setChannelFamily(product.getChannelFamily());
+            dbChannel.setName(chanTmpl.getChannelName());
+            dbChannel.setSummary(product.getFriendlyName());
+            dbChannel.setDescription(
+                    Optional.ofNullable(product.getDescription())
+                            .orElse(product.getFriendlyName()));
+            dbChannel.setProduct(MgrSyncUtils.findOrCreateChannelProduct(product));
+            dbChannel.setProductName(MgrSyncUtils.findOrCreateProductName(product.getName()));
+            dbChannel.setUpdateTag(chanTmpl.getUpdateTag());
+            dbChannel.setInstallerUpdates(chanTmpl.getRepository().isInstallerUpdates());
+            if (!Objects.equals(dbChannel.getGPGKeyUrl(), chanTmpl.getGpgKeyUrl())) {
+                dbChannel.setGPGKeyUrl(chanTmpl.getGpgKeyUrl());
+                regenPillar = true;
+            }
+            dbChannel.setGPGKeyId(chanTmpl.getGpgKeyId());
+            dbChannel.setGPGKeyFp(chanTmpl.getGpgKeyFingerprint());
+            ChannelFactory.save(dbChannel);
 
-                    // update Mandatory Flag
-                    dbChannel.getSuseProductChannels().forEach(pc -> suseProductSCCRepositories.forEach(pr -> {
-                        if (pr.getProduct().equals(pc.getProduct()) && pr.isMandatory() != pc.isMandatory()) {
-                            pc.setMandatory(pr.isMandatory());
-                            SUSEProductFactory.save(pc);
-                        }
-                    }));
-                });
+            // update Mandatory Flag
+            for (SUSEProductChannel pc : dbChannel.getSuseProductChannels()) {
+                for (ChannelTemplate ct : channelTemplates) {
+                    if (ct.getProduct().equals(pc.getProduct()) && ct.isMandatory() != pc.isMandatory()) {
+                        pc.setMandatory(ct.isMandatory());
+                        regenPillar = true;
+                        SUSEProductFactory.save(pc);
+                    }
+                }
+            }
+        }
+        if (regenPillar) {
+            for (MinionServer minion : ServerFactory.listMinionsByChannel(dbChannel.getId())) {
+                MinionGeneralPillarGenerator gen = new MinionGeneralPillarGenerator();
+                gen.generatePillarData(minion);
+            }
+        }
     }
 
     /**
@@ -2161,27 +2283,27 @@ public class ContentSyncManager {
     public void addChannel(String label, String mirrorUrl) throws ContentSyncException {
         // Return immediately if the channel is already there
         if (ChannelFactory.doesChannelLabelExist(label)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Channel exists ({}), returning...", label);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Channel exists ({}), returning...", label);
             }
             return;
         }
-        List<SUSEProductSCCRepository> suseProductSCCRepositories = SUSEProductFactory.lookupPSRByChannelLabel(label);
-        List<SUSEProduct> products = suseProductSCCRepositories.stream()
-                .map(SUSEProductSCCRepository::getProduct).collect(Collectors.toList());
-        Opt.consume(suseProductSCCRepositories.stream().findFirst(),
+        List<ChannelTemplate> channelTemplates = SUSEProductFactory.lookupChannelTemplateByChannelLabel(label);
+        List<SUSEProduct> products = channelTemplates.stream()
+                .map(ChannelTemplate::getProduct).toList();
+        Opt.consume(channelTemplates.stream().findFirst(),
                 () -> {
                     throw new ContentSyncException("No product tree entry found for label: '" + label + "'");
                 },
-                productrepo -> {
-                    SUSEProduct product = productrepo.getProduct();
+                chanTmpl -> {
+                    SUSEProduct product = chanTmpl.getProduct();
 
-                    if (getAvailableRepositories(productrepo.getRootProduct(), product)
+                    if (getAvailableChannels(chanTmpl.getRootProduct(), product)
                             .noneMatch(e -> e.getChannelLabel().equals(label))) {
                         throw new ContentSyncException("Channel is not available: " + label);
                     }
 
-                    SCCRepository repository = productrepo.getRepository();
+                    SCCRepository repository = chanTmpl.getRepository();
                     if (!repository.isAccessible()) {
                         throw new ContentSyncException("Channel is not mirrorable: " + label);
                     }
@@ -2198,18 +2320,18 @@ public class ContentSyncManager {
                     // channel['summary'] = product.get('uiname')
                     // channel['description'] = product.find('description').text or channel['summary']
                     dbChannel.setLabel(label);
-                    dbChannel.setName(productrepo.getChannelName());
+                    dbChannel.setName(chanTmpl.getChannelName());
                     dbChannel.setSummary(product.getFriendlyName());
                     dbChannel.setDescription(
                             Optional.ofNullable(product.getDescription()).orElse(product.getFriendlyName()));
-                    dbChannel.setParentChannel(MgrSyncUtils.getChannel(productrepo.getParentChannelLabel()));
+                    dbChannel.setParentChannel(MgrSyncUtils.getChannel(chanTmpl.getParentChannelLabel()));
                     dbChannel.setProduct(MgrSyncUtils.findOrCreateChannelProduct(product));
                     dbChannel.setProductName(MgrSyncUtils.findOrCreateProductName(product.getName()));
-                    dbChannel.setUpdateTag(productrepo.getUpdateTag());
+                    dbChannel.setUpdateTag(chanTmpl.getUpdateTag());
                     dbChannel.setInstallerUpdates(repository.isInstallerUpdates());
-                    dbChannel.setGPGKeyUrl(productrepo.getGpgKeyUrl());
-                    dbChannel.setGPGKeyId(productrepo.getGpgKeyId());
-                    dbChannel.setGPGKeyFp(productrepo.getGpgKeyFingerprint());
+                    dbChannel.setGPGKeyUrl(chanTmpl.getGpgKeyUrl());
+                    dbChannel.setGPGKeyId(chanTmpl.getGpgKeyId());
+                    dbChannel.setGPGKeyFp(chanTmpl.getGpgKeyFingerprint());
 
                     // Create or link the content source
                     Optional<SCCRepositoryAuth> auth = repository.getBestAuth();
@@ -2218,7 +2340,7 @@ public class ContentSyncManager {
                         ContentSource source = ChannelFactory.findVendorContentSourceByRepo(url);
                         if (source == null) {
                             source = new ContentSource();
-                            source.setLabel(productrepo.getChannelLabel());
+                            source.setLabel(chanTmpl.getChannelLabel());
                             source.setMetadataSigned(repository.isSigned());
                             source.setOrg(null);
                             source.setSourceUrl(url);
@@ -2236,14 +2358,14 @@ public class ContentSyncManager {
                     // Save the channel
                     ChannelFactory.save(dbChannel);
 
-                     // Create the product/channel relations
-                     for (SUSEProduct p : products) {
-                         SUSEProductChannel spc = new SUSEProductChannel();
-                         spc.setProduct(p);
-                         spc.setChannel(dbChannel);
-                         spc.setMandatory(productrepo.isMandatory());
-                         SUSEProductFactory.save(spc);
-                     }
+                    // Create the product/channel relations
+                    for (SUSEProduct p : products) {
+                        SUSEProductChannel spc = new SUSEProductChannel();
+                        spc.setProduct(p);
+                        spc.setChannel(dbChannel);
+                        spc.setMandatory(chanTmpl.isMandatory());
+                        SUSEProductFactory.save(spc);
+                    }
                 });
     }
 
@@ -2284,7 +2406,7 @@ public class ContentSyncManager {
      * @return {@link ChannelFamily}
      */
     private static ChannelFamily createOrUpdateChannelFamily(String label, String name,
-            Map<String, ChannelFamily> channelFamilyByLabel) {
+                                                             Map<String, ChannelFamily> channelFamilyByLabel) {
         ChannelFamily family = Optional.ofNullable(channelFamilyByLabel).orElse(new HashMap<>()).get(label);
         if (family == null) {
             family = ChannelFamilyFactory.lookupByLabel(label, null);
@@ -2333,9 +2455,7 @@ public class ContentSyncManager {
      */
     public static String getUUID() {
         if (uuid == null) {
-            BufferedReader reader = null;
-            try {
-                reader = new BufferedReader(new FileReader(UUID_FILE));
+            try (BufferedReader reader = new BufferedReader(new FileReader(UUID_FILE))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if (line.startsWith("username")) {
@@ -2344,25 +2464,15 @@ public class ContentSyncManager {
                 }
             }
             catch (FileNotFoundException e) {
-                log.info("Server not registered at SCC: {}", e.getMessage());
+                LOG.debug("Server not registered at SCC: {}", e.getMessage());
             }
             catch (IOException e) {
-                log.warn("Unable to read SCC credentials file: {}", e.getMessage());
-            }
-            finally {
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    }
-                    catch (IOException e) {
-                        log.warn("IO exception on SCC credentials file: {}", e.getMessage());
-                    }
-                }
+                LOG.warn("Unable to read SCC credentials file: {}", e.getMessage());
             }
             if (uuid == null) {
                 uuid = Config.get().getString(ConfigDefaults.SCC_BACKUP_SRV_USR);
                 if (uuid == null) {
-                    log.warn("WARNING: unable to read SCC username");
+                    LOG.warn("WARNING: unable to read SCC username");
                 }
             }
         }
@@ -2421,7 +2531,7 @@ public class ContentSyncManager {
             return accessibleUrl(url, username, password);
         }
         catch (URISyntaxException e) {
-            log.error("accessibleUrl: {} URISyntaxException {}", url, e.getMessage());
+            LOG.error("accessibleUrl: {} URISyntaxException {}", url, e.getMessage(), e);
         }
         return false;
     }
@@ -2443,7 +2553,7 @@ public class ContentSyncManager {
             // Build full URL to test
             if (uri.getScheme().equals("file")) {
                 boolean res = Files.isReadable(testUrlPath);
-                log.debug("accessibleUrl:{} {}", testUrlPath, res);
+                LOG.debug("accessibleUrl:{} {}", testUrlPath, res);
                 return res;
             }
             else {
@@ -2452,15 +2562,15 @@ public class ContentSyncManager {
                 // Verify the mirrored repo by sending a HEAD request
                 int status = MgrSyncUtils.sendHeadRequest(testUri.toString(),
                         user, password).getStatusLine().getStatusCode();
-                log.debug("accessibleUrl: {} returned status {}", testUri, status);
+                LOG.debug("accessibleUrl: {} returned status {}", testUri, status);
                 return (status == HttpURLConnection.HTTP_OK);
             }
         }
         catch (IOException e) {
-            log.error("accessibleUrl: {} IOException {}", url, e.getMessage());
+            LOG.error("accessibleUrl: {} IOException {}", url, e.getMessage(), e);
         }
         catch (URISyntaxException e) {
-            log.error("accessibleUrl: {} URISyntaxException {}", url, e.getMessage());
+            LOG.error("accessibleUrl: {} URISyntaxException {}", url, e.getMessage(), e);
         }
         return false;
     }
@@ -2469,39 +2579,12 @@ public class ContentSyncManager {
      * Get an instance of {@link SCCWebClient} and configure it to use localpath, if
      * such is setup in /etc/rhn/rhn.conf
      *
-     * @param credentials username/password pair
-     * @throws URISyntaxException if the URL in configuration file is malformed
-     * @throws SCCClientException
+     * @param source sync source to get content from
+     * @throws SCCClientException when access is not possible
      * @return {@link SCCWebClient}
      */
-    private SCCClient getSCCClient(Credentials credentials)
-            throws URISyntaxException, SCCClientException {
-        // check that URL is valid
-        URI url = new URI(Config.get().getString(ConfigDefaults.SCC_URL));
-
-        String localPath = Config.get().getString(ContentSyncManager.RESOURCE_PATH, null);
-        String localAbsolutePath = null;
-        if (localPath != null) {
-            File localFile = new File(localPath);
-            localAbsolutePath = localFile.getAbsolutePath();
-
-            if (!localFile.canRead()) {
-                throw new SCCClientException(
-                        String.format("Unable to access resource at \"%s\" location.",
-                                localAbsolutePath));
-            }
-            else if (!localFile.isDirectory()) {
-                throw new SCCClientException(
-                        String.format("Path \"%s\" must be a directory.",
-                                localAbsolutePath));
-            }
-        }
-
-        String username = credentials == null ? null : credentials.getUsername();
-        String password = credentials == null ? null : credentials.getPassword();
-
-        return SCCClientFactory.getInstance(url, username, password, localAbsolutePath,
-                getUUID());
+    protected SCCClient getSCCClient(ContentSyncSource source) throws SCCClientException, ContentSyncSourceException {
+        return source.getClient(getUUID(), tmpLoggingDir);
     }
 
     /**
@@ -2533,13 +2616,29 @@ public class ContentSyncManager {
      */
     public boolean hasToolsChannelSubscription() {
         return SCCCachingFactory.lookupSubscriptions()
-               .stream()
-               .filter(s -> s.getStatus().equals("ACTIVE") &&
-                            s.getExpiresAt().after(new Date()) &&
-                            (s.getStartsAt() == null || s.getStartsAt().before(new Date())))
-               .map(SCCSubscription::getProducts)
-               .flatMap(Set::stream)
-               .filter(p -> p.getChannelFamily() != null)
-               .anyMatch(p -> p.getChannelFamily().getLabel().equals(ChannelFamily.TOOLS_CHANNEL_FAMILY_LABEL));
+                .stream()
+                .filter(s -> s.getStatus().equals("ACTIVE") &&
+                        s.getExpiresAt().after(new Date()) &&
+                        (s.getStartsAt() == null || s.getStartsAt().before(new Date())))
+                .map(SCCSubscription::getProducts)
+                .flatMap(Set::stream)
+                .filter(p -> p.getChannelFamily() != null)
+                .anyMatch(p -> p.getChannelFamily().getLabel().equals(ChannelFamilyFactory.TOOLS_CHANNEL_FAMILY_LABEL));
+    }
+
+    /**
+     * Check if Tools Channels can be synced via Cloud RMT Infrastructure.
+     * In PAYG scenario, we do not have a subscription, but we have access
+     * via the Cloud RMT server and can mirror them.
+     * @return return true if we can sync tools channels via Cloud RMT, otherwise false
+     */
+    public boolean canSyncToolsChannelViaCloudRMT() {
+        return SCCCachingFactory.lookupRepositoryAuth().stream()
+                .filter(a -> a.cloudRmtAuth().isPresent())
+                .map(SCCRepositoryAuth::getRepo)
+                .flatMap(r -> r.getChannelTemplates().stream())
+                .map(ChannelTemplate::getProduct)
+                .filter(p -> p.getChannelFamily() != null)
+                .anyMatch(p -> p.getChannelFamily().getLabel().equals(ChannelFamilyFactory.TOOLS_CHANNEL_FAMILY_LABEL));
     }
 }

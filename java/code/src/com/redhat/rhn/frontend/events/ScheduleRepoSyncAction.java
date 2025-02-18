@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * ScheduleRepoSyncAction
@@ -63,14 +62,13 @@ public class ScheduleRepoSyncAction implements MessageAction {
 
             List<Channel> channels = channelLabels.stream()
                 .map(label -> ChannelManager.lookupByLabel(org, label))
-                .collect(Collectors.toList());
+                .toList();
 
             try {
                 new TaskomaticApi().scheduleSingleRepoSync(channels);
             }
             catch (TaskomaticApiException e) {
-                logger.error("Could not schedule repository synchronization for: {}", channels);
-                logger.error(e);
+                logger.error("Could not schedule repository synchronization for: {}", channels, e);
             }
         }
     }

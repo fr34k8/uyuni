@@ -67,6 +67,8 @@ public class PackageListItem extends IdComboDto {
 
     private boolean selectable;
 
+    private String appstream;
+
     /**
      * Default constructor
      */
@@ -543,6 +545,24 @@ public class PackageListItem extends IdComboDto {
     }
 
     /**
+     * Gets the AppStream for this package.
+     *
+     * @return The AppStream this package is associated with.
+     */
+    public String getAppstream() {
+        return appstream;
+    }
+
+    /**
+     * Sets the AppStream for this package.
+     *
+     * @param appstreamIn The AppStream to set for this package.
+     */
+    public void setAppstream(String appstreamIn) {
+        appstream = appstreamIn;
+    }
+
+    /**
      * Get a string representation of NEVR:
      *
      * virt-manager-0.2.6-7.0.2.el5
@@ -707,12 +727,9 @@ public class PackageListItem extends IdComboDto {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PackageListItem)) {
+        if (!(o instanceof PackageListItem that)) {
             return false;
         }
-
-        PackageListItem that = (PackageListItem) o;
-
         return !Objects.equals(idCombo, that.idCombo);
     }
 

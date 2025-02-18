@@ -28,7 +28,7 @@ import com.redhat.rhn.testing.BaseTestCaseWithUser;
 import com.redhat.rhn.testing.TestUtils;
 
 import com.suse.manager.webui.services.pillar.MinionGroupMembershipPillarGenerator;
-import com.suse.manager.webui.services.pillar.MinionPillarFileManager;
+import com.suse.manager.webui.services.pillar.MinionPillarGenerator;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,21 +37,19 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Tests for {@link MinionGroupMembershipPillarGenerator}
  */
 public class MinionGroupMembershipPillarGeneratorTest extends BaseTestCaseWithUser {
 
-    protected MinionPillarFileManager minionGroupMembershipPillarFileManager =
-            new MinionPillarFileManager(new MinionGroupMembershipPillarGenerator());
+    protected MinionPillarGenerator minionGroupMembershipPillarGenerator =
+            new MinionGroupMembershipPillarGenerator();
 
     @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        minionGroupMembershipPillarFileManager.setPillarDataPath(tmpPillarRoot.toAbsolutePath());
         Config.get().setString("server.secret_key",
                 DigestUtils.sha256Hex(TestUtils.randomString()));
     }
@@ -63,7 +61,7 @@ public class MinionGroupMembershipPillarGeneratorTest extends BaseTestCaseWithUs
         ServerGroup group = ServerGroupTest.createTestServerGroup(user.getOrg(), null);
         ServerFactory.addServerToGroup(minion, group);
         ServerFactory.save(minion);
-        this.minionGroupMembershipPillarFileManager.updatePillarFile(minion);
+        this.minionGroupMembershipPillarGenerator.generatePillarData(minion);
 
         Pillar pillar = minion.getPillarByCategory(MinionGroupMembershipPillarGenerator.CATEGORY).orElseThrow();
         Map<String, Object> map = pillar.getPillar();
@@ -76,7 +74,7 @@ public class MinionGroupMembershipPillarGeneratorTest extends BaseTestCaseWithUs
         List<String> addonGroupTypes = Arrays.asList((String[]) map.get("addon_group_types"));
 
         List<String> minionAddonEntitlements =
-                minion.getAddOnEntitlements().stream().map(Entitlement::getLabel).collect(Collectors.toList());
+                minion.getAddOnEntitlements().stream().map(Entitlement::getLabel).toList();
 
         assertTrue(addonGroupTypes.containsAll(minionAddonEntitlements));
         assertContains(addonGroupTypes, minion.getBaseEntitlement().getLabel());

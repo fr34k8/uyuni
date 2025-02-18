@@ -31,7 +31,7 @@ public class SubscriptionWarning implements NotificationData {
      * @return boolean
      **/
     public boolean expiresSoon() {
-        Optional<Boolean> result = getSession().createSQLQuery(
+        Optional<Boolean> result = getSession().createNativeQuery(
         "select exists (select name,  expires_at, status, subtype " +
                 "from susesccsubscription where subtype != 'internal' " +
                 " and ((status = 'ACTIVE' and expires_at < now() + interval '90 day') " +
@@ -42,7 +42,7 @@ public class SubscriptionWarning implements NotificationData {
 
     @Override
     public NotificationMessage.NotificationMessageSeverity getSeverity() {
-        return NotificationMessage.NotificationMessageSeverity.warning;
+        return NotificationMessage.NotificationMessageSeverity.WARNING;
     }
 
     @Override
@@ -52,17 +52,11 @@ public class SubscriptionWarning implements NotificationData {
 
     @Override
     public String getSummary() {
-         if (expiresSoon()) {
-             return LOCALIZATION_SERVICE.getMessage("notification.subscriptionwarning.summary");
-         }
-        return null;
+         return LOCALIZATION_SERVICE.getMessage("notification.subscriptionwarning.summary");
     }
 
     @Override
     public String getDetails() {
-        if (expiresSoon()) {
-            return LOCALIZATION_SERVICE.getMessage("notification.subscriptionwarning.detail");
-        }
-        return null;
+        return LOCALIZATION_SERVICE.getMessage("notification.subscriptionwarning.detail");
     }
 }

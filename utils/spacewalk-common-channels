@@ -18,8 +18,9 @@ import sys
 import fnmatch
 from optparse import OptionParser, Option
 import re
+
+from spacewalk.common.rhnConfig import cfg_component
 from uyuni.common.cli import getUsernamePassword, xmlrpc_login, xmlrpc_logout
-from uyuni.common.context_managers import cfg_component
 
 try:
     import xmlrpclib
@@ -53,6 +54,8 @@ CHANNEL_ARCH = {
     'ppc64':        'channel-ppc64',
     'ppc64le':      'channel-ppc64le',
     'amd64-deb':    'channel-amd64-deb',
+    'arm64-deb':    'channel-arm64-deb',
+    'armhf-deb':    'channel-armhf-deb',
     'ia32-deb':     'channel-ia32-deb',
     'ia64-deb':     'channel-ia64-deb',
     'sparc-deb':    'channel-sparc-deb',
@@ -69,6 +72,7 @@ CHANNEL_NAME_TO_ARCH = {
     'Alpha Debian': 'alpha-deb',
     'AMD64 Debian': 'amd64-deb',
     'ARM64 Debian': 'arm64-deb',
+    'ARM HF Debian':  'armhf',
     'arm Debian': 'arm-deb',
     'ARM hard. FP':  'armhfp',
     'ARM soft. FP': 'arm',
@@ -107,7 +111,9 @@ class ExtOptionParser(OptionParser):
 
 
 def connect(user, password, server):
-    server_url = "http://%s/rpc/api" % server
+    server_url = "https://%s/rpc/api" % server
+    if server in ["localhost", "127.0.0.1"]:
+        server_url = "http://%s/rpc/api" % server
 
     if options.verbose and options.verbose > 2:
         client_verbose = options.verbose - 2

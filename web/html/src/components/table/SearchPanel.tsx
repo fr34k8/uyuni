@@ -2,6 +2,8 @@ import * as React from "react";
 
 import { cloneReactElement } from "components/utils";
 
+import styles from "./SearchPanel.module.scss";
+
 type SearchPanelProps = {
   /** number representing the number of the first displayed item */
   fromItem: number;
@@ -43,7 +45,7 @@ type SearchPanelProps = {
 /** Panel containing the search fields for a table */
 export function SearchPanel(props: SearchPanelProps) {
   return (
-    <div className="spacewalk-list-filter table-search-wrapper">
+    <div className={`spacewalk-list-filter ${styles.searchPanel}`}>
       {React.Children.toArray(props.children).map((child) =>
         cloneReactElement(child, {
           criteria: props.criteria,
@@ -52,11 +54,14 @@ export function SearchPanel(props: SearchPanelProps) {
           onSearchField: props.onSearchField,
         })
       )}
-      <div className="d-inline-block">
-        <span>{t("Items {0} - {1} of {2}", props.fromItem, props.toItem, props.itemCount)}&nbsp;&nbsp;</span>
+      <div className={styles.pagination}>
+        <span>
+          {t("Items {from} - {to} of {total}", { from: props.fromItem, to: props.toItem, total: props.itemCount })}
+          &nbsp;&nbsp;
+        </span>
         {props.selectable && props.selectedCount > 0 && (
           <span>
-            {t("({0} selected)", props.selectedCount)}&nbsp;
+            {t("({selectedCount} selected)", { selectedCount: props.selectedCount })}&nbsp;
             <button className="btn-link" onClick={props.onClear}>
               {t("Clear")}
             </button>

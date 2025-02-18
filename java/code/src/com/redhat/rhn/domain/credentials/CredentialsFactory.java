@@ -17,17 +17,15 @@ package com.redhat.rhn.domain.credentials;
 
 import com.redhat.rhn.common.hibernate.HibernateFactory;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.Criteria;
-import org.hibernate.Session;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 
 /**
  * CredentialsFactory
@@ -38,15 +36,6 @@ public class CredentialsFactory extends HibernateFactory {
     private static Logger log = LogManager.getLogger(CredentialsFactory.class);
 
     private CredentialsFactory() {
-        super();
-    }
-
-    /**
-     * Create new empty {@link Credentials}.
-     * @return new empty credentials
-     */
-    public static Credentials createCredentials() {
-        return new Credentials();
     }
 
     /**
@@ -67,52 +56,11 @@ public class CredentialsFactory extends HibernateFactory {
     }
 
     /**
-     * Find a {@link CredentialsType} by a given label.
-     * @param label label
-     * @return CredentialsType instance for given label
-     */
-    public static CredentialsType findCredentialsTypeByLabel(String label) {
-        if (label == null) {
-            return null;
-        }
-        return singleton.lookupObjectByNamedQuery("CredentialsType.findByLabel", Map.of("label", label));
-    }
-
-    /**
-     * Helper method for creating new SCC {@link Credentials}
-     * @return new credential with type SCC
-     */
-    public static Credentials createSCCCredentials() {
-        Credentials creds = createCredentials();
-        creds.setType(CredentialsFactory
-                .findCredentialsTypeByLabel(Credentials.TYPE_SCC));
-        return creds;
-    }
-
-    /**
      * Helper method for looking up SCC credentials.
      * @return credentials or null
      */
-    @SuppressWarnings("unchecked")
-    public static List<Credentials> lookupSCCCredentials() {
-        Session session = getSession();
-        Criteria c = session.createCriteria(Credentials.class);
-        c.add(Restrictions.eq("type", CredentialsFactory
-                .findCredentialsTypeByLabel(Credentials.TYPE_SCC)));
-        c.addOrder(Order.asc("url"));
-        c.addOrder(Order.asc("id"));
-        return c.list();
-    }
-
-    /**
-     * Helper method for creating new Virtual Host Manager {@link Credentials}
-     * @return new credential with type Virtual Host Manager
-     */
-    public static Credentials createVHMCredentials() {
-        Credentials creds = createCredentials();
-        creds.setType(CredentialsFactory
-                .findCredentialsTypeByLabel(Credentials.TYPE_VIRT_HOST_MANAGER));
-        return creds;
+    public static List<SCCCredentials> listSCCCredentials() {
+        return listCredentialsByType(SCCCredentials.class);
     }
 
     /**
@@ -121,82 +69,108 @@ public class CredentialsFactory extends HibernateFactory {
      * @return credentials object or null
      */
     public static Credentials lookupCredentialsById(long id) {
-        Session session = getSession();
-        Credentials creds = session.get(Credentials.class, id);
-        return creds;
+        return getSession().get(BaseCredentials.class, id);
     }
 
     /**
-     * Helper method for creating new Registry {@link Credentials}
-     * @return new credential with type Registry
+     * Retrieves the instance of {@link SCCCredentials} having the specified id
+     * @param id the id of the credentials
+     * @return an optional containing the SCCCredentials with the given id, or empty if not found
      */
-    public static Credentials createRegistryCredentials() {
-        Credentials creds = createCredentials();
-        creds.setType(CredentialsFactory
-                .findCredentialsTypeByLabel(Credentials.TYPE_REGISTRY));
-        return creds;
+    public static Optional<SCCCredentials> lookupSCCCredentialsById(long id) {
+        SCCCredentials creds = getSession().get(SCCCredentials.class, id);
+        return Optional.ofNullable(creds);
     }
 
     /**
-     * Helper method for creating new Cloud Rmt {@link Credentials}
-     * @return new credential with type Cloud Rmt
+     * Helper method for creating new SCC {@link Credentials}
+     * @param username the username
+     * @param password the password that will be BASE64 encoded
+     * @return new credential with type SCC
      */
-    public static Credentials createCloudRmtCredentials() {
-        Credentials creds = createCredentials();
-        creds.setType(CredentialsFactory
-                .findCredentialsTypeByLabel(Credentials.TYPE_CLOUD_RMT));
-        return creds;
+    public static SCCCredentials createSCCCredentials(String username, String password) {
+        return new SCCCredentials(username, password);
     }
 
     /**
      * Helper method for creating new Virtual Host Manager {@link Credentials}
+     * @param username the username
+     * @param password the password that will be BASE64 encoded
      * @return new credential with type Virtual Host Manager
      */
-    public static Credentials createReportCredentials() {
-        Credentials creds = createCredentials();
-        creds.setType(CredentialsFactory
-                .findCredentialsTypeByLabel(Credentials.TYPE_REPORT_CREDS));
-        return creds;
+    public static VHMCredentials createVHMCredentials(String username, String password) {
+        return new VHMCredentials(username, password);
     }
 
     /**
-     * Create Credentials of a specific type
-     * @param username - the username
-     * @param password - the password
-     * @param credentialsType - credentials type
-     * @param params - optional paramaters
-     * @return new Credentials instance
+     * Helper method for creating new Registry {@link Credentials}
+     * @param username the username
+     * @param password the password that will be BASE64 encoded
+     * @return new credential with type Registry
      */
-    public static Credentials createCredentials(String username, String password,
-            String credentialsType, Map<String, String> params) {
-        if (StringUtils.isEmpty(username)) {
-            return null;
-        }
+    public static RegistryCredentials createRegistryCredentials(String username, String password) {
+        return new RegistryCredentials(username, password);
+    }
 
-        Credentials credentials = null;
-        if (credentialsType.equals(Credentials.TYPE_REGISTRY)) {
-            credentials = CredentialsFactory.createRegistryCredentials();
-        }
-        else if (credentialsType.equals(Credentials.TYPE_VIRT_HOST_MANAGER)) {
-            credentials = CredentialsFactory.createVHMCredentials();
-        }
-        else if (credentialsType.equals(Credentials.TYPE_SCC)) {
-            credentials = CredentialsFactory.createSCCCredentials();
-        }
-        else if (credentialsType.equals(Credentials.TYPE_CLOUD_RMT)) {
-            credentials = CredentialsFactory.createCloudRmtCredentials();
-        }
-        else if (credentialsType.equals(Credentials.TYPE_REPORT_CREDS)) {
-            credentials = CredentialsFactory.createReportCredentials();
-        }
-        else {
-            return credentials;
-        }
-        credentials.setUsername(username);
-        credentials.setPassword(password);
-        CredentialsFactory.storeCredentials(credentials);
+    /**
+     * Helper method for creating new Cloud Rmt {@link Credentials}
+     * @param username the username
+     * @param password the password that will be BASE64 encoded
+     * @param url the server url
+     * @return new credential with type Cloud Rmt
+     */
+    public static CloudRMTCredentials createCloudRmtCredentials(String username, String password, String url) {
+        return new CloudRMTCredentials(username, password, url);
+    }
 
-        return credentials;
+    /**
+     * Helper method for creating new RHUI {@link Credentials}
+     * @return new credential with type RHUI
+     */
+    public static RHUICredentials createRhuiCredentials() {
+        return new RHUICredentials();
+    }
+
+    /**
+     * Helper method for creating new Report DB {@link ReportDBCredentials}
+     * @param username the username
+     * @param password the password that will be BASE64 encoded
+     * @return new credential with type Report DB
+     */
+    public static ReportDBCredentials createReportCredentials(String username, String password) {
+        ReportDBCredentials reportDBCredentials = new ReportDBCredentials(username, password);
+        reportDBCredentials.setUsername(username);
+        reportDBCredentials.setPassword(password);
+        return reportDBCredentials;
+    }
+
+    /**
+     * List all the existing credentials
+     * @return the list of all the existing credentials
+     */
+    public static List<Credentials> listCredentials() {
+        CriteriaBuilder criteriaBuilder = getSession().getCriteriaBuilder();
+        CriteriaQuery<BaseCredentials> query = criteriaBuilder.createQuery(BaseCredentials.class);
+        query.from(BaseCredentials.class);
+        return getSession()
+            .createQuery(query)
+            .stream()
+            .map(Credentials.class::cast)
+            .toList();
+    }
+
+    /**
+     * @param type the credential type label
+     * @return return a list of credentials of the given type
+     * @param <T> the type of credentials
+     */
+    public static <T extends Credentials> List<T> listCredentialsByType(Class<T> type) {
+        CriteriaBuilder criteriaBuilder = getSession().getCriteriaBuilder();
+        CriteriaQuery<T> query = criteriaBuilder.createQuery(type);
+        query.from(type);
+        return getSession()
+                .createQuery(query)
+                .list();
     }
 
     @Override

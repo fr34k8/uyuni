@@ -31,6 +31,12 @@ public class HostJson {
     /** Host Identifier. */
     private String hostIdentifier;
 
+    /**
+     * For VMWare we had to change the value for the host identifier. This fields contains the value previously used,
+     * to allow the code to match and update the value.
+     */
+    private String fallbackHostIdentifier;
+
     /** Total CPU socket count. */
     private Integer totalCpuSockets;
 
@@ -87,11 +93,19 @@ public class HostJson {
     }
 
     /**
+     * Gets the fallback host identifier
+     * @return the fallback host identifier
+     */
+    public String getFallbackHostIdentifier() {
+        return fallbackHostIdentifier;
+    }
+
+    /**
      * Gets the total CPU socket count.
-     * @return the number of sockets
+     * @return the number of sockets - can be 0 if insufficient data were send
      */
     public Integer getTotalCpuSockets() {
-        return totalCpuSockets;
+        return totalCpuSockets == null ? 0 : totalCpuSockets;
     }
 
     /**
@@ -99,7 +113,7 @@ public class HostJson {
      * @return the cpu cores
      */
     public Integer getTotalCpuCores() {
-        return totalCpuCores;
+        return totalCpuCores == null ? 1 : totalCpuCores;
     }
 
     /**
@@ -107,7 +121,7 @@ public class HostJson {
      * @return the CPU thread count
      */
     public Integer getTotalCpuThreads() {
-        return totalCpuThreads;
+        return totalCpuThreads == null ? 1 : totalCpuThreads;
     }
 
     /**
@@ -206,6 +220,14 @@ public class HostJson {
      */
     public void setHostIdentifier(String hostIdentifierIn) {
         this.hostIdentifier = hostIdentifierIn;
+    }
+
+    /**
+     * Sets the fallback host identifier.
+     * @param hostUuidIn the fallback host identifier
+     */
+    public void setFallbackHostIdentifier(String hostUuidIn) {
+        this.fallbackHostIdentifier = hostUuidIn;
     }
 
     /**

@@ -66,7 +66,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * ConfigChannelHandlerTest
@@ -283,7 +282,7 @@ public class ConfigChannelHandlerTest extends BaseHandlerTestCase {
      */
     private int removeAllGlobals() {
         var channels = handler.listGlobals(admin);
-        var labels = channels.stream().map(ConfigChannelDto::getLabel).collect(Collectors.toList());
+        var labels = channels.stream().map(ConfigChannelDto::getLabel).toList();
         return handler.deleteChannels(admin, labels);
     }
 
@@ -642,7 +641,7 @@ public class ConfigChannelHandlerTest extends BaseHandlerTestCase {
 
         try {
             // validate that system must have config deployment capability
-            // in order to deploy config files... (e.g. rhncfg* pkgs installed)
+            // in order to deploy config files...
             handler.deployAllSystems(regular, gcc1.getLabel(), date);
 
             fail("Shouldn't be permitted to deploy without config deploy capability.");

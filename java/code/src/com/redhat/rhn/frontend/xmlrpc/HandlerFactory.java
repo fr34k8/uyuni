@@ -19,6 +19,7 @@ import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.domain.server.ServerFactory;
 import com.redhat.rhn.domain.server.ServerGroupFactory;
 import com.redhat.rhn.frontend.xmlrpc.activationkey.ActivationKeyHandler;
+import com.redhat.rhn.frontend.xmlrpc.admin.configuration.AdminConfigurationHandler;
 import com.redhat.rhn.frontend.xmlrpc.admin.monitoring.AdminMonitoringHandler;
 import com.redhat.rhn.frontend.xmlrpc.ansible.AnsibleHandler;
 import com.redhat.rhn.frontend.xmlrpc.api.ApiHandler;
@@ -27,6 +28,7 @@ import com.redhat.rhn.frontend.xmlrpc.auth.AuthHandler;
 import com.redhat.rhn.frontend.xmlrpc.chain.ActionChainHandler;
 import com.redhat.rhn.frontend.xmlrpc.channel.ChannelHandler;
 import com.redhat.rhn.frontend.xmlrpc.channel.access.ChannelAccessHandler;
+import com.redhat.rhn.frontend.xmlrpc.channel.appstreams.ChannelAppStreamHandler;
 import com.redhat.rhn.frontend.xmlrpc.channel.org.ChannelOrgHandler;
 import com.redhat.rhn.frontend.xmlrpc.channel.software.ChannelSoftwareHandler;
 import com.redhat.rhn.frontend.xmlrpc.configchannel.ConfigChannelHandler;
@@ -55,6 +57,8 @@ import com.redhat.rhn.frontend.xmlrpc.packages.search.PackagesSearchHandler;
 import com.redhat.rhn.frontend.xmlrpc.preferences.locale.PreferencesLocaleHandler;
 import com.redhat.rhn.frontend.xmlrpc.proxy.ProxyHandler;
 import com.redhat.rhn.frontend.xmlrpc.recurringaction.RecurringActionHandler;
+import com.redhat.rhn.frontend.xmlrpc.recurringaction.RecurringCustomStateHandler;
+import com.redhat.rhn.frontend.xmlrpc.recurringaction.RecurringHighstateHandler;
 import com.redhat.rhn.frontend.xmlrpc.saltkey.SaltKeyHandler;
 import com.redhat.rhn.frontend.xmlrpc.schedule.ScheduleHandler;
 import com.redhat.rhn.frontend.xmlrpc.subscriptionmatching.PinnedSubscriptionHandler;
@@ -63,6 +67,7 @@ import com.redhat.rhn.frontend.xmlrpc.sync.master.MasterHandler;
 import com.redhat.rhn.frontend.xmlrpc.sync.slave.SlaveHandler;
 import com.redhat.rhn.frontend.xmlrpc.system.SystemHandler;
 import com.redhat.rhn.frontend.xmlrpc.system.XmlRpcSystemHelper;
+import com.redhat.rhn.frontend.xmlrpc.system.appstreams.SystemAppStreamHandler;
 import com.redhat.rhn.frontend.xmlrpc.system.config.ServerConfigHandler;
 import com.redhat.rhn.frontend.xmlrpc.system.custominfo.CustomInfoHandler;
 import com.redhat.rhn.frontend.xmlrpc.system.monitoring.SystemMonitoringHandler;
@@ -74,6 +79,7 @@ import com.redhat.rhn.frontend.xmlrpc.systemgroup.ServerGroupHandler;
 import com.redhat.rhn.frontend.xmlrpc.taskomatic.TaskomaticHandler;
 import com.redhat.rhn.frontend.xmlrpc.taskomatic.TaskomaticOrgHandler;
 import com.redhat.rhn.frontend.xmlrpc.user.UserHandler;
+import com.redhat.rhn.frontend.xmlrpc.user.UserNotificationsHandler;
 import com.redhat.rhn.frontend.xmlrpc.user.external.UserExternalHandler;
 import com.redhat.rhn.frontend.xmlrpc.virtualhostmanager.VirtualHostManagerHandler;
 import com.redhat.rhn.manager.formula.FormulaManager;
@@ -144,20 +150,33 @@ public class HandlerFactory {
         );
         ProxyHandler proxyHandler = new ProxyHandler(xmlRpcSystemHelper, systemManager);
         SystemHandler systemHandler = new SystemHandler(taskomaticApi, xmlRpcSystemHelper, systemEntitlementManager,
-                systemManager, serverGroupManager);
+                systemManager, serverGroupManager, GlobalInstanceHolder.PAYG_MANAGER,
+                GlobalInstanceHolder.ATTESTATION_MANAGER);
+
+        OrgHandler orgHandler = new OrgHandler(migrationManager);
+        ServerGroupHandler serverGroupHandler = new ServerGroupHandler(xmlRpcSystemHelper, serverGroupManager);
+        UserHandler userHandler = new UserHandler(serverGroupManager);
+        ActivationKeyHandler activationKeyHandler = new ActivationKeyHandler(serverGroupManager);
+        ChannelHandler channelHandler = new ChannelHandler();
+        ChannelSoftwareHandler channelSoftwareHandler = new ChannelSoftwareHandler(taskomaticApi, xmlRpcSystemHelper);
+        AdminConfigurationHandler adminConfigurationHandler = new AdminConfigurationHandler(
+                                  orgHandler, serverGroupHandler, userHandler, activationKeyHandler,
+                                  systemHandler, channelHandler, channelSoftwareHandler, saltApi);
 
         factory.addHandler("actionchain", new ActionChainHandler());
-        factory.addHandler("activationkey", new ActivationKeyHandler(serverGroupManager));
+        factory.addHandler("activationkey", activationKeyHandler);
+        factory.addHandler("admin.configuration", adminConfigurationHandler);
         factory.addHandler("admin.monitoring", new AdminMonitoringHandler());
         factory.addHandler("admin.payg", new AdminPaygHandler(taskomaticApi));
         factory.addHandler("ansible", new AnsibleHandler(new AnsibleManager(GlobalInstanceHolder.SALT_API)));
         factory.addHandler("api", new ApiHandler(factory));
         factory.addHandler("audit", new CVEAuditHandler());
         factory.addHandler("auth", new AuthHandler());
-        factory.addHandler("channel", new ChannelHandler());
+        factory.addHandler("channel", channelHandler);
         factory.addHandler("channel.access", new ChannelAccessHandler());
+        factory.addHandler("channel.appstreams", new ChannelAppStreamHandler());
         factory.addHandler("channel.org", new ChannelOrgHandler());
-        factory.addHandler("channel.software", new ChannelSoftwareHandler(taskomaticApi, xmlRpcSystemHelper));
+        factory.addHandler("channel.software", channelSoftwareHandler);
         factory.addHandler("configchannel", new ConfigChannelHandler());
         factory.addHandler("contentmanagement", new ContentManagementHandler());
         factory.addHandler("distchannel", new DistChannelHandler());
@@ -177,14 +196,16 @@ public class HandlerFactory {
         factory.addHandler("kickstart.snippet", new SnippetHandler());
         factory.addHandler("kickstart.tree", new KickstartTreeHandler());
         factory.addHandler("maintenance", new MaintenanceHandler());
-        factory.addHandler("org", new OrgHandler(migrationManager));
+        factory.addHandler("org", orgHandler);
         factory.addHandler("org.trusts", new OrgTrustHandler());
         factory.addHandler("packages", new PackagesHandler());
         factory.addHandler("packages.provider", new PackagesProviderHandler());
         factory.addHandler("packages.search", new PackagesSearchHandler());
         factory.addHandler("preferences.locale", new PreferencesLocaleHandler());
         factory.addHandler("proxy", proxyHandler);
-        factory.addHandler("recurringaction", new RecurringActionHandler());
+        factory.addHandler("recurring", new RecurringActionHandler());
+        factory.addHandler("recurring.highstate", new RecurringHighstateHandler());
+        factory.addHandler("recurring.custom", new RecurringCustomStateHandler());
         factory.addHandler("saltkey", new SaltKeyHandler(saltKeyUtils));
         factory.addHandler("schedule", new ScheduleHandler());
         factory.addHandler("subscriptionmatching.pinnedsubscription", new PinnedSubscriptionHandler());
@@ -192,6 +213,7 @@ public class HandlerFactory {
         factory.addHandler("sync.slave", new SlaveHandler());
         factory.addHandler("sync.content", new ContentSyncHandler());
         factory.addHandler("system", systemHandler);
+        factory.addHandler("system.appstreams", new SystemAppStreamHandler());
         factory.addHandler("system.config", new ServerConfigHandler(taskomaticApi, xmlRpcSystemHelper));
         factory.addHandler("system.custominfo", new CustomInfoHandler());
         factory.addHandler("system.monitoring", new SystemMonitoringHandler(formulaManager));
@@ -200,11 +222,12 @@ public class HandlerFactory {
         factory.addHandler("system.scap", new SystemScapHandler());
         factory.addHandler("system.search", new SystemSearchHandler());
         factory.addHandler("virtualhostmanager", new VirtualHostManagerHandler());
-        factory.addHandler("systemgroup", new ServerGroupHandler(xmlRpcSystemHelper, serverGroupManager));
+        factory.addHandler("systemgroup", serverGroupHandler);
         factory.addHandler("taskomatic", new TaskomaticHandler());
         factory.addHandler("taskomatic.org", new TaskomaticOrgHandler());
-        factory.addHandler("user", new UserHandler(serverGroupManager));
+        factory.addHandler("user", userHandler);
         factory.addHandler("user.external", new UserExternalHandler());
+        factory.addHandler("user.notifications", new UserNotificationsHandler());
         return factory;
     }
 

@@ -46,6 +46,9 @@ const FilterForm = (props: Props) => {
           if (clmFilterOptions.ISSUE_DATE.key === filter.type) {
             draft[clmFilterOptions.ISSUE_DATE.key] = localizedMoment();
           }
+          if (clmFilterOptions.PACKAGE_BUILD_DATE.key === filter.type) {
+            draft[clmFilterOptions.PACKAGE_BUILD_DATE.key] = localizedMoment();
+          }
         })
       );
     }
@@ -95,7 +98,7 @@ const FilterForm = (props: Props) => {
 
         {!props.editing ? (
           <div className="row form-group">
-            <div className="col-md-6 col-md-offset-3">
+            <div className="col-md-6 col-md-offset-3 offset-md-3">
               {filterBy === FilterBy.Type ? (
                 <button className="btn-link" onClick={() => setFilterBy(FilterBy.Template)}>
                   <i className="fa fa-file-text-o" role="presentation" /> {t("Use a template")}
@@ -195,6 +198,16 @@ const FilterForm = (props: Props) => {
               <DateTime
                 name={clmFilterOptions.ISSUE_DATE.key}
                 label={t("Issued")}
+                labelClass="col-md-3"
+                divClass="col-md-8"
+                required
+              />
+            )}
+
+            {clmFilterOptions.PACKAGE_BUILD_DATE.key === filterType && (
+              <DateTime
+                name={clmFilterOptions.PACKAGE_BUILD_DATE.key}
+                label={t("Build")}
                 labelClass="col-md-3"
                 divClass="col-md-8"
                 required

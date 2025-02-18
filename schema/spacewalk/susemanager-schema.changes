@@ -1,4 +1,187 @@
 -------------------------------------------------------------------
+Fri Jan 24 15:00:45 CET 2025 - marina.latini@suse.com
+
+- version 5.1.3-0
+  * Rename table suseProductSCCRepository to the more meaningful
+    name suseChannelTemplate
+  * Clean up code related to unused schema-override
+
+-------------------------------------------------------------------
+Thu Dec 12 09:30:26 CET 2024 - rosuna@suse.com
+
+- version 5.1.2-0
+  * Store direct call request in action details
+  * Allow group assignment for foreign servers (bsc#1222447)
+  * Ensure the reporting db uses a lowercase username (bsc#1220494)
+  * Do not use Postgres extensions dblink and pgcrypto
+  * Improve appstreams context selection (bsc#1231459)
+
+-------------------------------------------------------------------
+Mon Oct 14 16:00:55 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Add a new task to handle OVAL data synchronization
+  * During schema upgrade, avoid insert problem when
+    Extern - Oracle Linux 9 is not present (bsc#1230021)
+  * Remove superfluous joins from errata view
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Thu Aug 01 16:54:53 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.11-0
+  * Remove unused MinionActionChainCleanup job
+  * Execute the cobbler-sync-default task once per 5 minutes by
+    default (bsc#1219450)
+  * Introduce new attributes to detect PTF packages (bsc#1225619)
+  * Remove reboot from uptodate state, introduce reboot and
+    rebootifneeded states
+  * Fix queries related to Appstreams to avoid inconsistencies
+    when listing packages
+
+-------------------------------------------------------------------
+Thu Jul 11 17:42:49 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.10-0
+  * Fix custom state recurring actions being inserted into
+    recurringHighstate table on migration if the table was
+    empty (bsc#1227667)
+
+-------------------------------------------------------------------
+Tue Jul 09 13:25:19 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.9-0
+  * Fix recurring custom state configs being deleted during
+    migration (bsc#1227491)
+
+-------------------------------------------------------------------
+Mon Jun 10 16:38:45 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.8-0
+  * Add primary key for rhnChannelSyncFlag table
+  * Optimize AppStreams related queries
+
+-------------------------------------------------------------------
+Fri May 03 14:11:03 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.7-0
+  * Added column to store the process output of the attestation
+  * Update list of package GPG keys in the database
+  * Native support for AppStream repositories
+  * Import module metadata during reposync
+  * Added a setting for Confidential Computing attestation on boot
+  * Fix chained container proxies configuration
+
+-------------------------------------------------------------------
+Thu Apr 04 17:31:49 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6-0
+  * Implement database schema for confidential compute attestation
+  * Support containerized peripheral server
+  * Add new tables to store vulnerable packages metadata extracted
+    from OVAL files
+  * Store the CPE of servers
+  * Remove spacewalk and satellite schema upgrade files
+  * Move 001-oval-add-tables.sql script to new upgrade folder
+  * Missing size in rhnServer CVE column
+  * Drop bootstrap column from activation key table
+
+-------------------------------------------------------------------
+Tue Feb 13 17:17:56 CET 2024 - marina.latini@suse.com
+
+- version 5.0.5-1
+  * Add update-salt to internal state table
+
+-------------------------------------------------------------------
+Mon Jan 29 12:00:55 CET 2024 - rosuna@suse.com
+
+- version 5.0.4-1
+  * Change schedule of system-profile-refresh to run on the 2nd Saturday
+    of the month to not collide with normal working times (bsc#1215769)
+
+-------------------------------------------------------------------
+Thu Jan 18 11:04:39 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.3-1
+  * move schema files to /usr/share/susemanager/db out of
+    persistent storage
+
+-------------------------------------------------------------------
+Tue Jan 16 17:59:37 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.2-1
+  * Add missing migration paths to version 5.0.2
+
+-------------------------------------------------------------------
+Tue Jan 16 08:12:40 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Bump version to 5.0.0
+
+-------------------------------------------------------------------
+Thu Jan 11 16:42:14 CET 2024 - marina.latini@suse.com
+
+- version 4.4.10-1
+  * Refactor susecredentials to support the new hierarchy
+  * Update allowed postgres version
+  * Fix schema upgrade
+  * Improve performance of System (bsc#1211254)
+
+-------------------------------------------------------------------
+Fri Dec 15 17:30:34 CET 2023 - rosuna@suse.com
+
+- version 4.4.9-1
+  * Adjust upgrade script to work from SUSE Manager 4.3
+  * Add provider detection for Amazon Linux 2023 packages
+  * Rename ssh-push-bunch into ssh-service-bunch
+  * Copy current SUSE Manager 4.3 schema to master and remove
+    migration shortcuts
+  * Add schema definition and migration for armhf
+  * Revert adding unique index for rhnpackagechangelogdata table
+    (bsc#1218027)
+
+-------------------------------------------------------------------
+Wed Nov 01 19:59:54 CET 2023 - marina.latini@suse.com
+
+- version 4.4.8-1
+  * Add index on server needed cache to improve performance for some queries (bsc#1211912)
+  * Moved the Ubuntu errata processing in its own separate taskomatic
+    task (bsc#1211145)
+  * Drop special versioned schema files
+  * Tito requires to list the package source as %{name}-%{version}.tar.gz
+  * Add unique index for rhnpackagechangelogdata table
+
+-------------------------------------------------------------------
+Mon Sep 18 14:40:51 CEST 2023 - rosuna@suse.com
+
+- version 4.4.7-1
+  * Store the PAYG products
+  * Added new tables to handle PAYG instances computations
+  * Added PAYG dimension computation taskomatic job configuration
+  * add new credentials type RHUI
+  * Recurring custom states
+
+-------------------------------------------------------------------
+Wed Apr 19 12:57:12 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.6-1
+  * change GPG Key URL for openSUSE Leap to local file URL
+  * Fix renaming monitoring entitlement
+  * fix OL9 schema migration
+  * Fix update of sql function create_new_org
+  * Filter CLM modular packages using release strings (bsc#1207814)
+  * merge multiple older schema upgrade directories together
+
+-------------------------------------------------------------------
+Tue Feb 21 12:32:15 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.5-1
+  * enhance CPU table by core and thread information
+  * add trigger on cpu and virtual instance to re-sending
+    virtualization information to SCC
+  * Remove rhnTaskoRun log paths
+
+-------------------------------------------------------------------
 Mon Jan 23 08:25:41 CET 2023 - jgonzalez@suse.com
 
 - version 4.4.4-1

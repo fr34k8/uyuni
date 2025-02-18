@@ -16,6 +16,7 @@ package com.redhat.rhn.common.conf;
 
 import com.redhat.rhn.common.validator.HostPortValidator;
 import com.redhat.rhn.domain.kickstart.KickstartData;
+import com.redhat.rhn.manager.content.ContentSyncManager;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -61,6 +62,11 @@ public class ConfigDefaults {
     public static final String WEB_SMTP_STARTTLS = "java.smtp_starttls";
     public static final String WEB_SMTP_USER = "java.smtp_user";
     public static final String WEB_SMTP_PASS = "java.smtp_pass";
+    public static final String WEB_SMTP_TIMEOUT = "java.smtp_timeout";
+    public static final String WEB_SMTP_CONNECTION_TIMEOUT = "java.smtp_connection_timeout";
+    public static final String WEB_SMTP_WRITE_TIMEOUT = "java.smtp_write_timeout";
+    public static final String WEB_DISABLE_UPDATE_STATUS = "java.disable_update_status";
+    public static final String WEB_DISABLE_REMOTE_COMMANDS_FROM_UI = "java.disable_remote_commands_from_ui";
 
     public static final String ERRATA_CACHE_COMPUTE_THRESHOLD
     = "errata_cache_compute_threshold";
@@ -117,7 +123,7 @@ public class ConfigDefaults {
     public static final String REPOMD_CACHE_MOUNT_POINT = "repomd_cache_mount_point";
 
     //Comma separated names of possible kickstart packages
-    private static final String POSSIBLE_KICKSTART_PACKAGE_NAMES = "spacewalk-koan,salt";
+    private static final String POSSIBLE_KICKSTART_PACKAGE_NAMES = "salt";
 
     private static final String KICKSTART_PACKAGE_NAMES = "kickstart_packages";
 
@@ -228,6 +234,8 @@ public class ConfigDefaults {
     public static final String PRODUCT_TREE_TAG = "java.product_tree_tag";
 
     public static final String MESSAGE_QUEUE_THREAD_POOL_SIZE = "java.message_queue_thread_pool_size";
+
+    public static final String CVE_AUDIT_ENABLE_OVAL_METADATA = "java.cve_audit.enable_oval_metadata";
 
     /**
      * Token lifetime in seconds
@@ -367,6 +375,21 @@ public class ConfigDefaults {
      * Specify if custom channels are synced together with vendor channels
      */
     public static final String UNIFY_CUSTOM_CHANNEL_MANAGEMENT = "java.unify_custom_channel_management";
+
+    /**
+     * Specify the number of minutes to wait before performing a system reboot
+     * */
+    public static final String REBOOT_DELAY = "java.reboot_delay";
+
+    /**
+     * Disable SSL redirection
+     */
+    public static final String NO_SSL = "server.no_ssl";
+
+    /**
+     * Specify if custom repositories for RHUI should be created with a different org than 1
+     */
+    public static final String RHUI_DEFAULT_ORG_ID = "java.rhui_default_org_id";
 
     private ConfigDefaults() {
     }
@@ -624,6 +647,13 @@ public class ConfigDefaults {
         return "http://" + cobblerServer + ":" + cobblerServerPort;
     }
 
+    public Optional<String> getOfflineMirrorDir() {
+        return Optional.ofNullable(Config.get().getString(ContentSyncManager.RESOURCE_PATH, null));
+    }
+
+    public boolean isOfflineMirrorSetup() {
+        return getOfflineMirrorDir().isPresent();
+    }
 
     /**
      * Get just the cobbler hostname
@@ -631,6 +661,14 @@ public class ConfigDefaults {
      */
     public String getCobblerHost() {
         return Config.get().getString("cobbler.host", "localhost");
+    }
+
+    /**
+     * Get just the java hostname
+     * @return the java hostname
+     */
+    public String getJavaHostname() {
+        return Config.get().getString(SERVER_HOSTNAME, "localhost");
     }
 
     /**
@@ -655,7 +693,7 @@ public class ConfigDefaults {
      * @return true is this is an Uyuni or Spacewalk instance.
      */
     public boolean isSpacewalk() {
-        return SPACEWALK.contains(Config.get().getString(PRODUCT_NAME));
+        return SPACEWALK.contains(getProductName());
     }
 
     /**
@@ -664,6 +702,13 @@ public class ConfigDefaults {
      */
     public boolean isUyuni() {
         return isSpacewalk();
+    }
+
+    /**
+     * @return return the product name
+     */
+    public String getProductName() {
+        return Config.get().getString(PRODUCT_NAME, "");
     }
 
     /**
@@ -840,19 +885,11 @@ public class ConfigDefaults {
         }
         connectionUrl.append(name);
 
-        if (useSsl) {
+        if (!"localhost".equals(host) && useSsl) {
             connectionUrl.append("?ssl=true&sslrootcert=" + sslrootcert + "&sslmode=" + sslmode);
         }
 
         return connectionUrl.toString();
-    }
-
-    /**
-     * is documentation available
-     * @return true if so
-     */
-    public boolean isDocAvailable() {
-        return !isSpacewalk();
     }
 
     /**
@@ -1129,4 +1166,44 @@ public class ConfigDefaults {
         return Config.get().getBoolean(UNIFY_CUSTOM_CHANNEL_MANAGEMENT, true);
     }
 
+    /**
+     * @return true if SSL is enabled, false otherwise
+     */
+    public boolean isSsl() {
+        return !Config.get().getBoolean(NO_SSL, false);
+    }
+
+    /**
+     * Returns the organization id which should be used to create custom repositories for
+     * when creating RHUI repos. Configure via rhn.conf with java.rhui_default_org_id
+     * @return the org id
+     */
+    public long getRhuiDefaultOrgId() {
+        return Config.get().getInt(RHUI_DEFAULT_ORG_ID, 1);
+    }
+
+    /**
+     * Returns the number of minutes to wait before performing a system reboot
+     *
+     * @return the minutes to wait before a system reboot
+     * */
+    public int getRebootDelay() {
+        int rebootDelay = Config.get().getInt(REBOOT_DELAY, 3);
+        // A value of 0 would cause a direct shutdown which makes it impossible for salt to return
+        // the result back, resulting in a failed action.
+        if (rebootDelay < 1) {
+            rebootDelay = 1;
+        }
+
+        return rebootDelay;
+    }
+
+    /**
+     * Check if the usage of OVAL metadata is permitted in scanning systems for CVE vulnerabilities.
+     *
+     * @return {@code true} if OVAL usage is permitted and {@code false} otherwise.
+     * */
+    public boolean isOvalEnabledForCveAudit() {
+        return Config.get().getBoolean(CVE_AUDIT_ENABLE_OVAL_METADATA, false);
+    }
 }

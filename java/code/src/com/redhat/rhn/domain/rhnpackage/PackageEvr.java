@@ -21,10 +21,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.io.Serializable;
+
 /**
  * PackageEvr
  */
-public class PackageEvr implements Comparable<PackageEvr> {
+public class PackageEvr implements Comparable<PackageEvr>, Serializable {
 
     private static final RpmVersionComparator RPMVERCMP = new RpmVersionComparator();
     private static final DebVersionComparator DEBVERCMP = new DebVersionComparator();
@@ -164,12 +166,9 @@ public class PackageEvr implements Comparable<PackageEvr> {
      */
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof PackageEvr)) {
+        if (!(obj instanceof PackageEvr evr)) {
             return false;
         }
-
-        PackageEvr evr = (PackageEvr) obj;
-
         return new EqualsBuilder().append(this.getId(), evr.getId()).append(
                 this.getEpoch(), evr.getEpoch())
                 .append(this.getVersion(), evr.getVersion()).append(this.getRelease(),

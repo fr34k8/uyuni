@@ -17,11 +17,14 @@ package com.redhat.rhn.manager.action;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
+import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.domain.action.Action;
 import com.redhat.rhn.domain.action.ActionChain;
 import com.redhat.rhn.domain.action.ActionChainFactory;
 import com.redhat.rhn.domain.action.ActionFactory;
 import com.redhat.rhn.domain.action.ActionType;
+import com.redhat.rhn.domain.action.appstream.AppStreamAction;
+import com.redhat.rhn.domain.action.appstream.AppStreamActionDetails;
 import com.redhat.rhn.domain.action.channel.SubscribeChannelsAction;
 import com.redhat.rhn.domain.action.channel.SubscribeChannelsActionDetails;
 import com.redhat.rhn.domain.action.config.ConfigAction;
@@ -136,7 +139,7 @@ public class ActionChainManager {
      * @return scheduled actions
      * @throws TaskomaticApiException if there was a Taskomatic error
      * (typically: Taskomatic is down)
-     * @see ActionManager#addPackageActionDetails(Action, List) for "package map"
+     * @see ActionManager#addPackageActionDetails(Collection, List)  for "package map"
      */
     public static List<Action> schedulePackageUpgrades(User user,
             Map<Long, List<Map<String, Long>>> packageMaps, Date earliestAction,
@@ -146,9 +149,10 @@ public class ActionChainManager {
         if (actionChain != null) {
             List<Action> actions = new ArrayList<>();
             int sortOrder = ActionChainFactory.getNextSortOrderValue(actionChain);
-            for (Long sid : packageMaps.keySet()) {
+            for (Map.Entry<Long, List<Map<String, Long>>> entry : packageMaps.entrySet()) {
+                Long sid = entry.getKey();
                 Server server = SystemManager.lookupByIdAndUser(sid, user);
-                actions.add(schedulePackageActionByOs(user, server, packageMaps.get(sid),
+                actions.add(schedulePackageActionByOs(user, server, entry.getValue(),
                         earliestAction, actionChain, sortOrder,
                         ActionFactory.TYPE_PACKAGES_UPDATE));
             }
@@ -185,7 +189,7 @@ public class ActionChainManager {
      * @return scheduled action
      * @throws TaskomaticApiException if there was a Taskomatic error
      * (typically: Taskomatic is down)
-     * @see ActionManager#addPackageActionDetails(Action, List) for "package map"
+     * @see ActionManager#addPackageActionDetails(Collection, List)  for "package map"
      */
     public static PackageAction schedulePackageUpgrade(User user, Server server,
             List<Map<String, Long>> packages, Date earliest, ActionChain actionChain)
@@ -204,7 +208,7 @@ public class ActionChainManager {
      * @throws TaskomaticApiException if there was a Taskomatic error
      * (typically: Taskomatic is down)
      * @see com.redhat.rhn.manager.action.ActionManager#schedulePackageVerify
-     * @see ActionManager#addPackageActionDetails(Action, List) for "package map"
+     * @see ActionManager#addPackageActionDetails(Collection, List) for "package map"
      */
     public static PackageAction schedulePackageVerify(User user, Server server,
             List<Map<String, Long>> packages, Date earliest, ActionChain actionChain)
@@ -225,8 +229,8 @@ public class ActionChainManager {
      * @return scheduled action
      * @throws TaskomaticApiException if there was a Taskomatic error
      * (typically: Taskomatic is down)
-     * @see com.redhat.rhn.manager.action.ActionManager#schedulePackageAction
-     * @see ActionManager#addPackageActionDetails(Action, List) for "package map"
+     * @see ActionManager#schedulePackageAction(User, List, ActionType, Date, Server...)
+     * @see ActionManager#addPackageActionDetails(Collection, List) for "package map"
      */
     private static Action schedulePackageAction(User user, List<Map<String, Long>> packages,
             ActionType type, Date earliest, ActionChain actionChain, Integer sortOrder,
@@ -243,15 +247,15 @@ public class ActionChainManager {
      * @param user the user scheduling actions
      * @param packages a list of "package maps"
      * @param type the type
-     * @param earliest the earliest execution date
+     * @param earliestAction the earliest execution date
      * @param actionChain the action chain or null
      * @param sortOrder the sort order or null
-     * @param servers the servers involved
+     * @param serverIds the ids of servers involved
      * @return scheduled actions
      * @throws TaskomaticApiException if there was a Taskomatic error
      * (typically: Taskomatic is down)
-     * @see com.redhat.rhn.manager.action.ActionManager#schedulePackageAction
-     * @see ActionManager#addPackageActionDetails(Action, List) for "package map"
+     * @see ActionManager#schedulePackageAction(User, List, ActionType, Date, Server...)
+     * @see ActionManager#addPackageActionDetails(Collection, List) for "package map"
      */
     private static Set<Action> schedulePackageActions(User user,
             List<Map<String, Long>> packages, ActionType type, Date earliestAction,
@@ -260,12 +264,43 @@ public class ActionChainManager {
 
         String name = ActionManager.getActionName(type);
 
-        Set<Action> result = scheduleActions(user, type, name, earliestAction,
+        Set<Action> result = createActions(user, type, name, earliestAction,
             actionChain, sortOrder, serverIds);
 
         ActionManager.addPackageActionDetails(result, packages);
 
+        taskoScheduleActions(result, user, actionChain);
         return result;
+    }
+
+    /**
+     * Schedules AppStream action.
+     * @param user the user scheduling the action
+     * @param name the name of the action
+     * @param details the details to be linked with the action
+     * @param earliest the earliest execution date
+     * @param actionChain the action chain or null
+     * @param serverId the id of servers involved
+     * @return id of the scheduled action
+     * @throws TaskomaticApiException if there was a Taskomatic error
+     */
+    public static Long scheduleAppStreamAction(
+        User user,
+        String name,
+        Set<AppStreamActionDetails> details,
+        Date earliest,
+        ActionChain actionChain,
+        Long serverId
+    ) throws TaskomaticApiException {
+        var actions = createActions(
+            user, ActionFactory.TYPE_APPSTREAM_CONFIGURE, name, earliest, actionChain, null, singleton(serverId)
+        );
+        AppStreamAction action = (AppStreamAction) actions.stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Action scheduling result missing"));
+        action.setDetails(details);
+        ActionFactory.save(action);
+        taskoScheduleActions(actions, user, actionChain);
+        return action.getId();
     }
 
     /**
@@ -284,7 +319,7 @@ public class ActionChainManager {
      * @throws com.redhat.rhn.manager.MissingEntitlementException if any server
      *             in the list is missing Provisioning schedule fails
      * @see com.redhat.rhn.manager.action.ActionManager#scheduleScriptRun
-     * @see ActionManager#addPackageActionDetails(Action, List) for "package map"
+     * @see ActionManager#addPackageActionDetails(Collection, List)  for "package map"
      */
     public static Set<Action> scheduleScriptRuns(User user, List<Long> sids, String name,
             ScriptActionDetails script, Date earliest, ActionChain actionChain)
@@ -292,10 +327,9 @@ public class ActionChainManager {
 
         ActionManager.checkScriptingOnServers(sids);
 
-        Set<Long> sidSet = new HashSet<>();
-        sidSet.addAll(sids);
+        Set<Long> sidSet = new HashSet<>(sids);
 
-        Set<Action> result = scheduleActions(user, ActionFactory.TYPE_SCRIPT_RUN, name,
+        Set<Action> result = createActions(user, ActionFactory.TYPE_SCRIPT_RUN, name,
             earliest, actionChain, null, sidSet);
         for (Action action : result) {
             ScriptActionDetails actionScript = ActionFactory.createScriptActionDetails(
@@ -304,6 +338,7 @@ public class ActionChainManager {
             ((ScriptRunAction)action).setScriptActionDetails(actionScript);
             ActionFactory.save(action);
         }
+        taskoScheduleActions(result, user, actionChain);
         return result;
     }
 
@@ -322,17 +357,15 @@ public class ActionChainManager {
                                                    Date earliest, ActionChain actionChain)
             throws TaskomaticApiException {
 
-        if (!sids.stream().map(ServerFactory::lookupById)
-                .filter(server -> !MinionServerUtils.isMinionServer(server))
-                .collect(Collectors.toList()).isEmpty()) {
+        if (sids.stream().map(ServerFactory::lookupById)
+                .anyMatch(server -> !MinionServerUtils.isMinionServer(server))) {
             throw new IllegalArgumentException("Server ids include non minion servers.");
         }
 
-        Set<Long> sidSet = new HashSet<>();
-        sidSet.addAll(sids);
+        Set<Long> sidSet = new HashSet<>(sids);
 
         String summary = "Apply highstate" + (test.isPresent() && test.get() ? " in test-mode" : "");
-        Set<Action> result = scheduleActions(user, ActionFactory.TYPE_APPLY_STATES, summary,
+        Set<Action> result = createActions(user, ActionFactory.TYPE_APPLY_STATES, summary,
                 earliest, actionChain, null, sidSet);
         for (Action action : result) {
             ApplyStatesActionDetails applyState = new ApplyStatesActionDetails();
@@ -341,6 +374,7 @@ public class ActionChainManager {
             ((ApplyStatesAction)action).setDetails(applyState);
             ActionFactory.save(action);
         }
+        taskoScheduleActions(result, user, actionChain);
         return result;
     }
 
@@ -502,8 +536,10 @@ public class ActionChainManager {
      */
     public static Set<Action> scheduleRebootActions(User user, Set<Long> serverIds,
         Date earliest, ActionChain actionChain) throws TaskomaticApiException {
-        return scheduleActions(user, ActionFactory.TYPE_REBOOT,
+        Set<Action> result = createActions(user, ActionFactory.TYPE_REBOOT,
             ActionFactory.TYPE_REBOOT.getName(), earliest, actionChain, null, serverIds);
+        taskoScheduleActions(result, user, actionChain);
+        return result;
     }
 
     /**
@@ -522,10 +558,10 @@ public class ActionChainManager {
 
         // This won't actually apply the errata because we're passing in an action chain
         return ErrataManager.applyErrata(user,
-                errataIds.stream().map(Integer::longValue).collect(Collectors.toList()),
+                errataIds.stream().map(Integer::longValue).toList(),
                 earliest,
                 actionChain,
-                servers.stream().map(Server::getId).collect(Collectors.toList()), true, false
+                servers.stream().map(Server::getId).toList(), true, false
         );
 
     }
@@ -549,10 +585,10 @@ public class ActionChainManager {
 
         // This won't actually apply the errata because we're passing in an action chain
         return ErrataManager.applyErrata(user,
-                errataIds.stream().map(Integer::longValue).collect(Collectors.toList()),
+                errataIds.stream().map(Integer::longValue).toList(),
                 earliest,
                 actionChain,
-                servers.stream().map(Server::getId).collect(Collectors.toList()), onlyRelevant, false);
+                servers.stream().map(Server::getId).toList(), onlyRelevant, false);
     }
 
 
@@ -566,7 +602,7 @@ public class ActionChainManager {
      * @return scheduled actions
      * @throws TaskomaticApiException if there was a Taskomatic error
      * (typically: Taskomatic is down)
-     * @see ActionManager#addPackageActionDetails(Action, List) for "package map"
+     * @see ActionManager#addPackageActionDetails(Collection, List)  for "package map"
      */
     public static List<Action> schedulePackageInstalls(User user,
         Collection<Long> serverIds, List<Map<String, Long>> packages, Date earliest,
@@ -586,7 +622,7 @@ public class ActionChainManager {
      * @return scheduled actions
      * @throws TaskomaticApiException if there was a Taskomatic error
      * (typically: Taskomatic is down)
-     * @see ActionManager#addPackageActionDetails(Action, List) for "package map"
+     * @see ActionManager#addPackageActionDetails(Collection, List)  for "package map"
      */
     public static List<Action> schedulePackageRemovals(User user,
         Collection<Long> serverIds, List<Map<String, Long>> packages, Date earliest,
@@ -596,7 +632,7 @@ public class ActionChainManager {
     }
 
     /**
-     * Schedules generic actions on multiple servers.
+     * Creates generic actions on multiple servers.
      * @param user the user scheduling actions
      * @param type the type
      * @param name the name
@@ -604,32 +640,16 @@ public class ActionChainManager {
      * @param actionChain the action chain or null
      * @param sortOrder the sort order or null
      * @param serverIds the affected servers' IDs
-     * @return scheduled actions
-     * @throws TaskomaticApiException if there was a Taskomatic error
-     * (typically: Taskomatic is down)
-     * @see com.redhat.rhn.manager.action.ActionManager#scheduleAction
+     * @return created actions
      */
-    private static Set<Action> scheduleActions(User user, ActionType type, String name,
-            Date earliest, ActionChain actionChain, Integer sortOrder, Set<Long> serverIds)
-        throws TaskomaticApiException {
+    private static Set<Action> createActions(User user, ActionType type, String name,
+            Date earliest, ActionChain actionChain, Integer sortOrder, Set<Long> serverIds) {
         Set<Action> result = new HashSet<>();
 
         if (actionChain == null) {
             Action action = ActionManager.createAction(user, type, name, earliest);
             ActionManager.scheduleForExecution(action, serverIds);
             result.add(action);
-            if (ActionFactory.TYPE_SUBSCRIBE_CHANNELS.equals(type)) {
-                // Subscribing to channels is handled by the MinionActionExecutor even
-                // for traditional clients. Also the user must be passed for traditional
-                // clients.
-                taskomaticApi.scheduleSubscribeChannels(user, (SubscribeChannelsAction)action);
-            }
-            else {
-                taskomaticApi.scheduleActionExecution(action);
-            }
-            if (ActionFactory.TYPE_PACKAGES_UPDATE.equals(type)) {
-                MinionActionManager.scheduleStagingJobsForMinions(singletonList(action), user.getOrg());
-            }
         }
         else {
             Integer nextSortOrder = sortOrder;
@@ -641,12 +661,50 @@ public class ActionChainManager {
                 ActionChainFactory.queueActionChainEntry(action, actionChain, serverId,
                     nextSortOrder);
                 result.add(action);
-                if (ActionFactory.TYPE_PACKAGES_UPDATE.equals(type)) {
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Schedule multiple actions via taskomatic API.
+     * @param actions the actions
+     * @param user the user scheduling actions
+     * @param actionChain the action chain or null
+     * @throws TaskomaticApiException if there was a Taskomatic error
+     * (typically: Taskomatic is down)
+     */
+    private static void taskoScheduleActions(Set<Action> actions, User user, ActionChain actionChain)
+        throws TaskomaticApiException {
+        try {
+            for (Action action : actions) {
+                if (actionChain == null) {
+                    if (ActionFactory.TYPE_SUBSCRIBE_CHANNELS.equals(action.getActionType())) {
+                        // Subscribing to channels is handled by the MinionActionExecutor even
+                        // for traditional clients. Also the user must be passed for traditional
+                        // clients.
+                        taskomaticApi.scheduleSubscribeChannels(user, (SubscribeChannelsAction)action);
+                    }
+                    else {
+                        taskomaticApi.scheduleActionExecution(action);
+                    }
+                }
+                if (ActionFactory.TYPE_PACKAGES_UPDATE.equals(action.getActionType())) {
                     MinionActionManager.scheduleStagingJobsForMinions(singletonList(action), user.getOrg());
                 }
             }
         }
-        return result;
+        catch (TaskomaticApiException e) {
+            String cancellationMessage = "Taskomatic error, please check log files";
+            // do not leave actions queued forever
+            actions.stream().map(HibernateFactory::reload).forEach(a -> {
+                a.getServerActions().forEach(sa ->
+                        ActionManager.failSystemAction(user, sa.getServerId(), a.getId(), cancellationMessage));
+                ActionFactory.save(a);
+            });
+
+            throw e;
+        }
     }
 
     /**
@@ -687,8 +745,7 @@ public class ActionChainManager {
         throws TaskomaticApiException {
 
         List<Action> result = new LinkedList<>();
-        Set<Long> rhelServers = new HashSet<>();
-        rhelServers.addAll(ServerFactory.listLinuxSystems(serverIds));
+        Set<Long> rhelServers = new HashSet<>(ServerFactory.listLinuxSystems(serverIds));
 
         if (!rhelServers.isEmpty()) {
             result.addAll(schedulePackageActions(user, packages, linuxActionType, earliest,
@@ -717,7 +774,7 @@ public class ActionChainManager {
                                                               Date earliest,
                                                               ActionChain actionChain)
             throws TaskomaticApiException {
-        Set<Action> result = scheduleActions(user, ActionFactory.TYPE_SUBSCRIBE_CHANNELS, "Subscribe channels",
+        Set<Action> result = createActions(user, ActionFactory.TYPE_SUBSCRIBE_CHANNELS, "Subscribe channels",
                 earliest, actionChain, null, serverIds);
         for (Action action : result) {
             SubscribeChannelsActionDetails details = new SubscribeChannelsActionDetails();
@@ -727,6 +784,7 @@ public class ActionChainManager {
             ((SubscribeChannelsAction)action).setDetails(details);
             ActionFactory.save(action);
         }
+        taskoScheduleActions(result, user, actionChain);
         return result;
     }
 
@@ -747,7 +805,7 @@ public class ActionChainManager {
 
         ImageInfo info = ImageInfoFactory.createImageInfo(buildHostId, version, profile);
 
-        Set<Action> result = scheduleActions(user, ActionFactory.TYPE_IMAGE_BUILD, "Image Build " + profile.getLabel(),
+        Set<Action> result = createActions(user, ActionFactory.TYPE_IMAGE_BUILD, "Image Build " + profile.getLabel(),
                 earliest, actionChain, null, Collections.singleton(buildHostId));
 
         ImageBuildAction action = (ImageBuildAction)result.stream().findFirst()
@@ -767,6 +825,8 @@ public class ActionChainManager {
         info.setBuildAction(action);
 
         ImageInfoFactory.save(info);
+
+        taskoScheduleActions(result, user, actionChain);
 
         return action;
     }
@@ -789,9 +849,10 @@ public class ActionChainManager {
             throws TaskomaticApiException {
         String playbookName = FileUtils.getFile(playbookPath).getName();
 
-        PlaybookAction action = (PlaybookAction) scheduleActions(scheduler, ActionFactory.TYPE_PLAYBOOK,
+        Set<Action> result = createActions(scheduler, ActionFactory.TYPE_PLAYBOOK,
                 String.format("Execute playbook '%s'", playbookName), earliest, actionChain, null,
-                singleton(controlNodeId)).stream().findFirst()
+                singleton(controlNodeId));
+        PlaybookAction action = (PlaybookAction) result.stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("Action scheduling result missing"));
 
         PlaybookActionDetails details = new PlaybookActionDetails();
@@ -801,6 +862,7 @@ public class ActionChainManager {
         details.setFlushCache(flushCache);
         action.setDetails(details);
         ActionFactory.save(action);
+        taskoScheduleActions(result, scheduler, actionChain);
 
         return action;
     }

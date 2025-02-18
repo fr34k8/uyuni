@@ -82,32 +82,14 @@ if [ "$(echo ${DESTINATIONS}|cut -d',' -f2)" != "" ]; then
   export KEEP_SRPMS=TRUE
 fi
 
-# separate packages and container images
-IMAGES=
-PKGS=
-for P in ${PACKAGES}; do
-    if [ -f packages/${P} ]; then
-        PKGS="${PKGS} ${P}"
-    else
-        IMAGES="${IMAGES} ${P}"
-    fi
-done
-
 # Build SRPMS
-if [ -z "${PACKAGES}" -o -n "${PKGS}" ]; then
-  echo "*************** BUILDING PACKAGES ***************"
-  ./build-packages-for-obs.sh ${PKGS}
-fi
-
-if [ -z "${PACKAGES}" -o -n "${IMAGES}" ]; then
-  echo "********** BUILDING CONTAINER IMAGES ************"
-  ./build-containers-for-obs.sh ${IMAGES}
-fi
+echo "*************** BUILDING PACKAGES ***************"
+build-packages-for-obs ${PACKAGES}
 
 # Submit 
 for DESTINATION in $(echo ${DESTINATIONS}|tr ',' ' '); do
   export OSCAPI=$(echo ${DESTINATION}|cut -d'|' -f1)
   export OBS_PROJ=$(echo ${DESTINATION}|cut -d'|' -f2)
   echo "*************** PUSHING TO ${OBS_PROJ} ***************"
-  ./push-packages-to-obs.sh ${PACKAGES}
+  push-packages-to-obs ${PACKAGES}
 done

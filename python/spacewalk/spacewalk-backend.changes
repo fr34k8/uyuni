@@ -1,6 +1,204 @@
-- add logspec param in rhn.conf to set urlgrabber loglevel
-- Do not specify a cobbler version, as that is now centralized at the
-  patterns
+-------------------------------------------------------------------
+Fri Jan 24 14:57:56 CET 2025 - marina.latini@suse.com
+
+- version 5.1.4-0
+  * Rename table suseProductSCCRepository to the more meaningful
+    name suseChannelTemplate (bsc#1234994)
+  * Refresh pillar data together with regenration of channel metadata
+  * Add dependency to libzypp to support new token style
+  * Show Source String change for translations
+
+-------------------------------------------------------------------
+Thu Dec 12 16:05:39 CET 2024 - rosuna@suse.com
+
+- version 5.1.3-0
+  * Update translation strings
+
+-------------------------------------------------------------------
+Thu Dec 12 09:20:01 CET 2024 - rosuna@suse.com
+
+- version 5.1.2-0
+  * Support '^' in RPM version string when importing appstreams
+  * Detect and update errata when not all repository packages are
+    linked (bsc#1227644)
+  * Require 5.1 database schema
+  * Fix mgr-sign-metadata-ctl check-channels when checking for
+    signatures in repomd metadata (bsc#1233884)
+  * Set default RPM package summary if it's missing (bsc#1232530)
+
+-------------------------------------------------------------------
+Mon Oct 14 15:44:04 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Ignore 'buildorder' parsing errors when parsing entries in module
+    metadata (bsc#1230274)
+  * Provide http_headers also to Debian repository syncer
+  * Make spacewalk-data-fsck aware of orphaned RPMs (bsc#1227882)
+  * reposync: import GPG keys to RPM DB individually (bsc#1217003)
+  * Bump version to 5.1.0
+  * Add log string to the journal when services are stopped
+    because of insufficent disk space
+
+-------------------------------------------------------------------
+Thu Aug 01 09:36:37 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.9-0
+  * Support more NEVRA types when importing module metadata
+  * yum_src: use proper name variable name for
+    subprocess.TimeoutExpired
+  * Check and populate PTF attributes at the time of importing
+    packages (bsc#1225619)
+  * reposync: introduce timeout when syncing DEB channels
+    (bsc#1225960)
+  * Refresh channel newest packages after importing Appstreams
+    metadata
+
+-------------------------------------------------------------------
+Tue Jun 18 18:16:16 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.8-0
+  * Update translation strings
+
+-------------------------------------------------------------------
+Mon Jun 10 16:56:22 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.7-0
+  * Move server-only functions out of uyuni.common (bsc#1222325)
+  * Remove applet handler
+  * Drop spacewalk-backend-applet subpackage
+  * Remove server-side action handling (traditional stack)
+  * Print detailed parsing errors when indexing module metadata
+  * Remove configuration management (traditional stack)
+  * Drop spacewalk-backend-config-files-common,
+    spacewalk-backend-config-files, and
+    spacewalk-backend-config-files-tool
+  * Adjust minimal DB schema version requirements
+
+-------------------------------------------------------------------
+Fri May 03 14:52:07 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6-0
+  * Native support for AppStream repositories
+  * Import module metadata during reposync
+  * Add support for package signature type V4 RSA/SHA512
+    (bsc#1221465)
+  * Set permissions on exported Salt GPG key (bsc#1222996)
+  * Remove Configuration Management (traditional stack)
+  * Drop spacewalk-backend-config-files-common,
+    spacewalk-backend-config-files, and
+    spacewalk-backend-config-files-tool
+
+-------------------------------------------------------------------
+Thu Apr 04 18:51:42 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.5-0
+  * Fix inserting NULL into some columns during ISSv1 sync (bsc#1220980)
+  * Strip whitespace from .deb package metadata (bsc#1214387)
+
+-------------------------------------------------------------------
+Tue Feb 13 17:24:48 CET 2024 - marina.latini@suse.com
+
+- version 5.0.4-1
+  * Require latest 5.0 database schema version
+  * Fix issue in "spacewalk-repo-sync" when RPM packages contains
+    files with size greater than 4GB (bsc#1219151)
+
+-------------------------------------------------------------------
+Mon Jan 29 11:56:53 CET 2024 - rosuna@suse.com
+
+- version 5.0.3-1
+  * Remove normalize_orphan_vendor_packages and move it to taskomatic (bsc#1216781)
+  * Unquote HTML-encoded credentials before synchronizing repositories (bsc#1217204)
+  * Apply Black and Pylint to enforce Python style
+
+-------------------------------------------------------------------
+Thu Jan 18 11:06:01 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.2-1
+  * schema dir moved to /usr/share/susemanager/db
+
+-------------------------------------------------------------------
+Tue Jan 16 08:26:58 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Implement new default behaviour for channel synchronisation,
+    now automatically dropping packages which are deleted from the
+    upstream repository (strict mode)
+  * Use the new apache2-mod_wsgi package name
+  * Updated query to the new credentials structure
+
+-------------------------------------------------------------------
+Fri Dec 15 17:05:00 CET 2023 - rosuna@suse.com
+
+- version 4.4.13-1
+  * Fix decompressing and renaming bzip2 comps files in reposync
+  * Skip syncing packages with incorrect metadata (bsc#1213738)
+  * Move all file managed by RPM from /srv to /usr/share/susemanager
+  * Prevent reposync from processing failed packages
+  * Revert documentroot variable to be the common webserver location
+
+-------------------------------------------------------------------
+Wed Nov 01 20:47:46 CET 2023 - marina.latini@suse.com
+
+- version 4.4.12-1
+  * Added key import debug logging to reposync (bsc#1213675)
+  * Set stricter file permissions for config file
+  * Add table statistics and options to the support config database output
+  * Add CLM data collection to spacewalk-debug
+  * Fix clear of self.__config cache on rhnConfig.py only when timeDiff change
+  * Add unique index for rhnpackagechangelogdata table
+  * Tito requires to list the package source as %{name}-%{version}.tar.gz
+
+-------------------------------------------------------------------
+Mon Sep 18 14:26:50 CEST 2023 - rosuna@suse.com
+
+- version 4.4.11-1
+  * Use a constant to get the product name in python code rather than reading rhn.conf (bsc#1212943)
+  * add hint about missing auth header for PAYG instances (bsc#1213445)
+  * rhn-ssl-dbstore read ca from STDIN (bsc#1212856)
+  * Add cobbler collections to supportconfig
+  * Fix spacewalk-data-fsck src.rpm handling
+  * Accept missing rhn.conf file
+  * use credentials file for reposync if password is in URL
+  * Use context manager for Apache Webserver details.
+  * drop never used activation tool to connect to redhat cdn
+  * implement new RHUI support in reposync
+  * Only show missing /root/.curlrc error with log_level = 5 (bsc#1212507)
+  * Make spacewalk-data-fsck compatible to Enterprise Linux rpm version.
+
+-------------------------------------------------------------------
+Wed Apr 19 12:51:32 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.10-1
+  * Make "spacewalk-repo-sync --help" command to work if reposync is running.
+  * Enhance mirrorlist detection for dnf reposync plugin.
+  * Add httpd user and group to rhn.conf.
+  * Add package details to reposync error logging
+  * Added context manager usage for more files.
+  * remove pylint check at build time
+  * Fix the mgr-inter-sync not creating valid repository metadata when dealing
+    with empty channels (bsc#1207829)
+  * Filter CLM modular packages using release strings (bsc#1207814)
+  * fix repo sync for cloud payg connected repositories (bsc#1208772)
+  * Fix issues with kickstart syncing on mirrorlist repositories
+  * Do not sync .mirrorlist and other non needed files
+  * reposync: catch local file not found urlgrabber error properly (bsc#1208288)
+  * OS specific httpd user for logrotate config.
+
+-------------------------------------------------------------------
+Tue Feb 28 11:55:00 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.9-1
+  * Use json instead of simplejson for spacewalk-repo-sync
+
+-------------------------------------------------------------------
+Tue Feb 21 14:05:08 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.8-1
+  * set new CPU core value for traditional registration
+  * add logspec param in rhn.conf to set urlgrabber loglevel
+  * Do not specify a cobbler version, as that is now centralized at the
+    patterns
 
 -------------------------------------------------------------------
 Tue Jan 24 13:12:35 CET 2023 - jgonzalez@suse.com

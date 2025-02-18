@@ -7,19 +7,8 @@ require 'time'
 require 'date'
 require 'timeout'
 
-# retrieve build host id, needed for scheduleImageBuild call
-def retrieve_build_host_id
-  systems = $api_test.system.list_systems
-  refute_nil(systems)
-  build_host_id = systems
-                  .select { |s| s['name'] == $build_host.full_hostname }
-                  .map { |s| s['id'] }.first
-  refute_nil(build_host_id, "Build host #{$build_host.full_hostname} is not yet registered?")
-  build_host_id
-end
-
 When(/^I enter "([^"]*)" relative to profiles as "([^"]*)"$/) do |path, field|
-  git_profiles = ENV['GITPROFILES']
+  git_profiles = ENV.fetch('GITPROFILES', nil)
   step %(I enter "#{git_profiles}/#{path}" as "#{field}")
 end
 
@@ -42,13 +31,14 @@ When(/^I wait at most (\d+) seconds until image "([^"]*)" with version "([^"]*)"
       break
     end
   end
-  raise 'unable to find the image id' if image_id.zero?
+  raise KeyError, 'unable to find the image id' if image_id.zero?
 
   repeat_until_timeout(timeout: timeout.to_i, message: 'image build did not complete') do
     image_details = $api_test.image.get_details(image_id)
     log "Image Details: #{image_details}"
     break if image_details['buildStatus'] == 'completed'
-    raise 'image build failed.' if image_details['buildStatus'] == 'failed'
+    raise SystemCallError, 'image build failed.' if image_details['buildStatus'] == 'failed'
+
     sleep 5
   end
 end
@@ -63,13 +53,14 @@ When(/^I wait at most (\d+) seconds until image "([^"]*)" with version "([^"]*)"
       break
     end
   end
-  raise 'unable to find the image id' if image_id.zero?
+  raise SystemCallError, 'unable to find the image id' if image_id.zero?
 
   repeat_until_timeout(timeout: timeout.to_i, message: 'image inspection did not complete') do
     image_details = $api_test.image.get_details(image_id)
     log "Image Details: #{image_details}"
     break if image_details['inspectStatus'] == 'completed'
-    raise 'image inspect failed.' if image_details['inspectStatus'] == 'failed'
+    raise SystemCallError, 'image inspect failed.' if image_details['inspectStatus'] == 'failed'
+
     sleep 5
   end
 end
@@ -78,10 +69,11 @@ end
 # so it should be used only in the first image building scenario
 When(/^I wait at most (\d+) seconds until all "([^"]*)" container images are built correctly on the Image List page$/) do |timeout, count|
   repeat_until_timeout(timeout: timeout.to_i, message: 'at least one image was not built correctly') do
-    step %(I follow the left menu "Images > Image List")
-    step %(I wait until I do not see "There are no entries to show." text)
-    raise 'error detected while building images' if has_xpath?("//tr[td[text()='Container Image']][td//*[contains(@title, 'Failed')]]")
-    break if has_xpath?("//tr[td[text()='Container Image']][td//*[contains(@title, 'Built')]]", count: count)
+    step 'I follow the left menu "Images > Image List"'
+    step 'I wait until I do not see "There are no entries to show." text'
+    raise SystemCallError, 'error detected while building images' if has_xpath?('//tr[td[text()=\'Container Image\']][td//*[contains(@title, \'Failed\')]]')
+    break if has_xpath?('//tr[td[text()=\'Container Image\']][td//*[contains(@title, \'Built\')]]', count: count)
+
     sleep 5
   end
 end
@@ -128,17 +120,17 @@ Then(/^the list of packages of image "([^"]*)" with version "([^"]*)" is not emp
       break
     end
   end
-  raise 'unable to find the image id' if image_id.zero?
+  raise ScriptError, 'unable to find the image id' if image_id.zero?
 
   image_details = $api_test.image.get_details(image_id)
   log "Image Details: #{image_details}"
-  raise 'the list of image packages is empty' if (image_details['installedPackages']).zero?
+  raise ScriptError, 'the list of image packages is empty' if (image_details['installedPackages']).zero?
 end
 
 Then(/^the image "([^"]*)" with version "([^"]*)" doesn't exist via API calls$/) do |image_non_exist, version|
   images_list = $api_test.image.list_images
   images_list.each do |element|
-    raise "#{image_non_exist} should not exist anymore" if element['name'] == image_non_exist && element['version'] == version.strip
+    raise ScriptError, "#{image_non_exist} should not exist anymore" if element['name'] == image_non_exist && element['version'] == version.strip
   end
 end
 
@@ -150,15 +142,17 @@ When(/^I create and delete an image store via API$/) do
 end
 
 When(/^I list image store types and image stores via API$/) do
-  store_type = $api_test.image.store.list_image_store_types
-  raise 'We have only type support for Registry and OS Image Store type! New method added?! please update the tests' unless store_type.length == 2
-  raise "imagestore label type should be 'registry' but is #{store_type[0]['label']}" unless store_type[0]['label'] == 'registry'
-  raise "imagestore label type should be 'os_image' but is #{store_type[1]['label']}" unless store_type[1]['label'] == 'os_image'
+  store_types = $api_test.image.store.list_image_store_types
+  log "Store types: #{store_types}"
+  raise ScriptError, 'We have only type support for Registry and OS Image store type! New method added?! please update the tests' unless store_types.length == 2
+  raise ScriptError, 'We should have Registry as supported type' unless store_types.find { |store_type| store_type['label'] == 'registry' }
+  raise ScriptError, 'We should have OS Image as supported type' unless store_types.find { |store_type| store_type['label'] == 'os_image' }
 
-  registry_list = $api_test.image.store.list_image_stores
-  log "Image Stores: #{registry_list}"
-  raise "Label #{registry_list[0]['label']} is different than 'galaxy-registry'" unless registry_list[0]['label'] == 'galaxy-registry'
-  raise "URI #{registry_list[0]['uri']} is different than '#{$no_auth_registry}'" unless registry_list[0]['uri'] == $no_auth_registry.to_s
+  stores = $api_test.image.store.list_image_stores
+  log "Image Stores: #{stores}"
+  registry = stores.find { |store| store['storetype'] == 'registry' }
+  raise ScriptError, "Label #{registry['label']} is different than 'galaxy-registry'" unless registry['label'] == 'galaxy-registry'
+  raise ScriptError, "URI #{registry['uri']} is different than '#{$no_auth_registry}'" unless registry['uri'] == $no_auth_registry.to_s
 end
 
 When(/^I set and get details of image store via API$/) do
@@ -172,8 +166,9 @@ When(/^I set and get details of image store via API$/) do
   $api_test.image.store.set_details('Norimberga', details_store)
   # test getDetails call
   details = $api_test.image.store.get_details('Norimberga')
-  raise "uri should be Germania but is #{details['uri']}" unless details['uri'] == 'Germania'
-  raise "username should be empty but is #{details['username']}" unless details['username'] == ''
+  raise ScriptError, "uri should be Germania but is #{details['uri']}" unless details['uri'] == 'Germania'
+  raise ScriptError, "username should be empty but is #{details['username']}" unless details['username'] == ''
+
   $api_test.image.store.delete('Norimberga')
 end
 
@@ -192,11 +187,13 @@ When(/^I create and delete profile custom values via API$/) do
   values['arancio'] = 'arancia API tests'
   $api_test.image.profile.set_custom_values('fakeone', values)
   pro_det = $api_test.image.profile.get_custom_values('fakeone')
-  raise "setting custom profile value failed: #{pro_det['arancio']} != 'arancia API tests'" unless pro_det['arancio'] == 'arancia API tests'
+  raise ScriptError, "setting custom profile value failed: #{pro_det['arancio']} != 'arancia API tests'" unless pro_det['arancio'] == 'arancia API tests'
+
   pro_type = $api_test.image.profile.list_image_profile_types
-  raise "Number of image profile types is #{pro_type.length}" unless pro_type.length == 2
-  raise "type #{pro_type[0]} is not dockerfile" unless pro_type[0] == 'dockerfile'
-  raise "type #{pro_type[1]} is not kiwi" unless pro_type[1] == 'kiwi'
+  raise ScriptError, "Number of image profile types is #{pro_type.length}" unless pro_type.length == 2
+  raise ScriptError, "type #{pro_type[0]} is not dockerfile" unless pro_type[0] == 'dockerfile'
+  raise ScriptError, "type #{pro_type[1]} is not kiwi" unless pro_type[1] == 'kiwi'
+
   key = ['arancio']
   $api_test.image.profile.delete_custom_values('fakeone', key)
 end
@@ -205,7 +202,7 @@ When(/^I list image profiles via API$/) do
   ima_profiles = $api_test.image.profile.list_image_profiles
   log ima_profiles
   imagelabel = ima_profiles.select { |image| image['label'] = 'fakeone' }
-  raise "label of container should be fakeone! #{imagelabel[0]['label']} != 'fakeone'" unless imagelabel[0]['label'] == 'fakeone'
+  raise ScriptError, "label of container should be fakeone! #{imagelabel[0]['label']} != 'fakeone'" unless imagelabel[0]['label'] == 'fakeone'
 end
 
 When(/^I set and get profile details via API$/) do
@@ -215,7 +212,8 @@ When(/^I set and get profile details via API$/) do
   details['activationKey'] = ''
   $api_test.image.profile.set_details('fakeone', details)
   cont_detail = $api_test.image.profile.get_details('fakeone')
-  raise "label test fail! #{cont_detail['label']} != 'fakeone'" unless cont_detail['label'] == 'fakeone'
-  raise "imagetype test fail! #{cont_detail['imageType']} != 'dockerfile'" unless cont_detail['imageType'] == 'dockerfile'
+  raise ScriptError, "label test fail! #{cont_detail['label']} != 'fakeone'" unless cont_detail['label'] == 'fakeone'
+  raise ScriptError, "imagetype test fail! #{cont_detail['imageType']} != 'dockerfile'" unless cont_detail['imageType'] == 'dockerfile'
+
   $api_test.image.profile.delete('fakeone')
 end

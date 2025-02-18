@@ -67,7 +67,7 @@ INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
              VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'cleanup-data-bunch', 'Cleans up orphaned and outdated data', null);
 
 INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
-             VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'ssh-push-bunch', 'Push scheduled actions to clients via SSH', null);
+             VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'ssh-service-bunch', 'Provide services for salt ssh clients', null);
 
 INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
              VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'cve-server-channels-bunch', 'Generate data required for performing CVE audit queries', null);
@@ -100,16 +100,13 @@ INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
    VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'minion-action-chain-executor-bunch', 'Execute action chains on Minions', null);
 
 INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
-   VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'minion-action-chain-cleanup-bunch', 'Cleanup actions chains for Minions', null);
-
-INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
    VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'notifications-cleanup-bunch', 'Cleanup expired notification messages', null);
 
 INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
    VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'minion-checkin-bunch', 'Perform a regular check-in on minions', null);
 
 INSERT INTO RhnTaskoBunch (id, name, description, org_bunch)
-   VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'recurring-state-apply-bunch', 'Applies salt state to minion/group/org', null);
+   VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'recurring-action-executor-bunch', 'Schedules actions for minion/group/org', null);
 
 INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
    VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'ssh-minion-action-executor-bunch', 'Execute actions on SSH Minions', null);
@@ -134,5 +131,14 @@ VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'system-overview-update-queu
 
 INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
 VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'update-system-overview-bunch', 'Update the DB table gathering the systems data to show in lists', null);
+
+INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
+VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'system-profile-refresh-bunch', 'Refresh System Profiles of all registered servers', null);
+
+INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
+VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'payg-dimension-computation-bunch', 'Compute the dimensions data required for PAYG billing', null);
+
+INSERT INTO rhnTaskoBunch (id, name, description, org_bunch)
+VALUES (sequence_nextval('rhn_tasko_bunch_id_seq'), 'oval-data-sync-bunch', 'Generate OVAL data required to increase the accuracy of CVE audit queries.', null);
 
 commit;

@@ -53,7 +53,7 @@ function saveCredentials() {
 
   if (validated) {
     console.log("Saving credentials: " + editId);
-    var user = jQuery('#edit-user').val();
+    var user = escapeHtml(jQuery('#edit-user').val());
     var password = jQuery('#edit-password').val();
     showSpinner("edit-credentials-spinner");
 
@@ -107,7 +107,6 @@ function verifyCredentials(id, refresh) {
   const responseHandler = (result) => {
     jQuery('#' + elemId).html(result);
     jQuery('#' + elemId).fadeIn();
-    columnHeight();
     setDeleteAllowed(id, true);
   };
 

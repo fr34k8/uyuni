@@ -37,6 +37,7 @@ import com.suse.manager.webui.websocket.json.MinionCommandResultEventDto;
 import com.suse.manager.webui.websocket.json.MinionMatchResultEventDto;
 import com.suse.manager.webui.websocket.json.SSHMinionMatchResultDto;
 import com.suse.salt.netapi.datatypes.target.MinionList;
+import com.suse.salt.netapi.errors.GenericError;
 import com.suse.salt.netapi.errors.JsonParsingError;
 import com.suse.salt.netapi.errors.SaltError;
 import com.suse.salt.netapi.results.Result;
@@ -52,7 +53,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,7 +61,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -82,11 +81,11 @@ public class RemoteMinionCommands {
 
     private Long sessionId;
 
-    private MaintenanceManager mm = new MaintenanceManager();
-    private CompletableFuture failAfter;
+    private final MaintenanceManager mm = new MaintenanceManager();
+    private CompletableFuture<GenericError> failAfter;
     private List<String> previewedMinions;
-    private static ExecutorService eventHistoryExecutor = Executors.newCachedThreadPool();
-    private static SaltApi saltApi = GlobalInstanceHolder.SALT_API;
+    private static final ExecutorService EVENT_HISTORY_EXECUTOR = Executors.newCachedThreadPool();
+    private static final SaltApi SALT_API = GlobalInstanceHolder.SALT_API;
     private static final WebsocketHeartbeatService HEARTBEAT_SERVICE = GlobalInstanceHolder.WEBSOCKET_SESSION_MANAGER;
 
     /**
@@ -145,21 +144,19 @@ public class RemoteMinionCommands {
             if (msg.isPreview()) {
                 List<String> allVisibleMinions = MinionServerFactory
                         .lookupVisibleToUser(webSession.getUser())
-                        .filter(m -> mm.isSystemInMaintenanceMode(m))
+                        .filter(mm::isSystemInMaintenanceMode)
                         .map(MinionServer::getMinionId)
-                        .collect(Collectors.toList());
+                        .toList();
 
-                this.failAfter = FutureUtils.failAfter(timeOut);
+                failAfter = FutureUtils.failAfter(timeOut);
 
                 String target = StringUtils.trim(msg.getTarget());
 
                 Optional<CompletionStage<Map<String, Result<Boolean>>>> resSSH =
-                        saltApi.matchAsyncSSH(target, failAfter);
+                        SALT_API.matchAsyncSSH(target, failAfter);
 
-                Map<String, CompletionStage<Result<Boolean>>> res = new HashMap<>();
-
-                res = saltApi.matchAsync(target, failAfter);
-                if (res.isEmpty() && !resSSH.isPresent()) {
+                Map<String, CompletionStage<Result<Boolean>>> res = SALT_API.matchAsync(target, failAfter);
+                if (res.isEmpty() && resSSH.isEmpty()) {
                     // just return, no need to wait for salt-ssh results
                     sendMessage(session, new ActionErrorEventDto(null,
                             "ERR_TARGET_NO_MATCH", ""));
@@ -169,7 +166,7 @@ public class RemoteMinionCommands {
                 previewedMinions = Collections
                         .synchronizedList(new ArrayList<>(res.size()));
                 previewedMinions.addAll(
-                        res.keySet().stream().collect(Collectors.toList()));
+                        new ArrayList<>(res.keySet()));
                 previewedMinions.retainAll(allVisibleMinions);
 
                 sendMessage(session, new AsyncJobStartEventDto("preview",
@@ -220,7 +217,7 @@ public class RemoteMinionCommands {
                     }
                     if (result != null) {
                         List<String> sshMinions = result.entrySet().stream()
-                                .filter((entry) -> {
+                                .filter(entry -> {
                                     if (!allVisibleMinions.contains(entry.getKey())) {
                                         // minion is not visible to this user
                                         return false;
@@ -229,7 +226,7 @@ public class RemoteMinionCommands {
                                             entry.getValue().result().orElse(false);
                                 })
                                 .map(Map.Entry::getKey)
-                                .collect(Collectors.toList());
+                                .toList();
 
                         previewedMinions.addAll(sshMinions);
 
@@ -264,13 +261,13 @@ public class RemoteMinionCommands {
                 this.failAfter = FutureUtils.failAfter(timeOut);
                 Map<String, CompletionStage<Result<String>>> res;
                 try {
-                    res = saltApi
-                            .runRemoteCommandAsync(new MinionList(previewedMinions),
-                                    msg.getCommand(), failAfter);
+                    String cmd = msg.getCommand();
+                    res = SALT_API.runRemoteCommandAsync(new MinionList(previewedMinions), cmd, failAfter);
                     if (LOG.isInfoEnabled()) {
-                        LOG.info("User '{}' has sent the command '{}' to minions [{}]", webSession.getUser().getLogin(),
-                                msg.getCommand(), String.join(", ", previewedMinions));
+                        LOG.info("User '{}' has sent a command to minions [{}]", webSession.getUser().getLogin(),
+                                String.join(", ", previewedMinions));
                     }
+                    LOG.debug("Command '{}'", cmd);
 
                 }
                 catch (NullPointerException e) {
@@ -279,8 +276,7 @@ public class RemoteMinionCommands {
                     return;
                 }
 
-                List<String> allMinions = res.keySet().stream()
-                        .collect(Collectors.toList());
+                List<String> allMinions = new ArrayList<>(res.keySet());
                 sendMessage(session, new AsyncJobStartEventDto("run", allMinions, false));
 
                 res.forEach((minionId, future) -> future.whenComplete((cmdResult, err) -> {
@@ -297,10 +293,7 @@ public class RemoteMinionCommands {
                                             "DEBUG level.", webSession.getUser().getLogin(), minionId);
                                     addHistoryEvent(webSession.getUser().getLogin(), minionId,
                                             msg.getCommand(), result);
-                                    if (LOG.isDebugEnabled()) {
-                                        LOG.debug("Minion {} returned:\n{}", minionId, result);
-
-                                    }
+                                    LOG.debug("Minion {} returned:\n{}", minionId, result);
                                     return new MinionCommandResultEventDto(minionId, result);
                                 });
                         sendMessage(session, event);
@@ -334,7 +327,7 @@ public class RemoteMinionCommands {
     }
 
     private void addHistoryEvent(String user, String minionId, String command, String result) {
-        eventHistoryExecutor.submit(() ->
+        EVENT_HISTORY_EXECUTOR.submit(() ->
                 TransactionHelper.handlingTransaction(() -> {
                             Optional<MinionServer> minion =
                                     MinionServerFactory.findByMinionId(minionId);
@@ -401,8 +394,8 @@ public class RemoteMinionCommands {
     }
 
     private String parseSaltError(SaltError error) {
-        if (error instanceof JsonParsingError) {
-            JsonObject jsonErr = (JsonObject) ((JsonParsingError) error).getJson();
+        if (error instanceof JsonParsingError jParseErr) {
+            JsonObject jsonErr = (JsonObject) jParseErr.getJson();
             StringBuilder out = new StringBuilder("Error: ");
             if (StringUtils.isNotEmpty(jsonErr.get("retcode").getAsString())) {
                 out.append("[");

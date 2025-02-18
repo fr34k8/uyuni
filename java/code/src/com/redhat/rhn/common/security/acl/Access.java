@@ -22,6 +22,7 @@ import com.redhat.rhn.common.db.datasource.SelectMode;
 import com.redhat.rhn.common.hibernate.LookupException;
 import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.channel.ChannelFactory;
+import com.redhat.rhn.domain.channel.ClonedChannel;
 import com.redhat.rhn.domain.channel.ContentSource;
 import com.redhat.rhn.domain.errata.Errata;
 import com.redhat.rhn.domain.errata.ErrataFactory;
@@ -30,6 +31,8 @@ import com.redhat.rhn.domain.rhnset.RhnSet;
 import com.redhat.rhn.domain.role.RoleFactory;
 import com.redhat.rhn.domain.server.Server;
 import com.redhat.rhn.domain.server.ServerFactory;
+import com.redhat.rhn.domain.token.ActivationKey;
+import com.redhat.rhn.domain.token.ActivationKeyFactory;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.domain.user.UserFactory;
 import com.redhat.rhn.frontend.dto.ChannelPerms;
@@ -465,6 +468,19 @@ public class Access extends BaseHandler {
     }
 
     /**
+     * Checks if a given activation key is linked to any modular channel.
+     * @param ctx acl context (includes the activation key id tid and the user)
+     * @param params parameters for acl (ignored)
+     * @return true if it is an activation key associated with any modular channel.
+     */
+    public boolean aclHasModularChannel(Map<String, Object> ctx, String[] params) {
+        Long tid = getAsLong(ctx.get("tid"));
+        User user = (User) ctx.get("user");
+        ActivationKey activationKey = ActivationKeyFactory.lookupById(tid, user.getOrg());
+        return activationKey.getChannels().stream().anyMatch(Channel::isModular);
+    }
+
+    /**
      * Returns true if the user is channel admin of the corresponding channel.
      * If the channel is a vendor channel, the return value is false.
      * @param ctx acl context (includes the channel cid and the user name)
@@ -504,7 +520,7 @@ public class Access extends BaseHandler {
         Long cid = getAsLong(ctx.get("cid"));
         Channel c = ChannelFactory.lookupById(cid);
 
-        return c.getOrg().getId() == user.getOrg().getId();
+        return c.getOrg().getId().equals(user.getOrg().getId());
     }
 
     /**
@@ -581,6 +597,7 @@ public class Access extends BaseHandler {
         // Evaluate if any of the subscript channel refers to a PTF repository
         return server.getChannels()
                      .stream()
+                     .map(channel -> channel.asCloned().map(ClonedChannel::getOriginal).orElse(channel))
                      .flatMap(c -> c.getSources().stream())
                      .map(ContentSource::getSourceUrl)
                      .anyMatch(url -> url.contains("/PTF/"));
@@ -605,4 +622,58 @@ public class Access extends BaseHandler {
             ServerFactory.isPtfUninstallationSupported(server);
     }
 
+    /**
+     * Checks if a system is Pay-as-you-go
+     * @param ctx acl context
+     * @param params parameters for acl
+     * @return true if the system is Pay-as-you-go
+     */
+    public boolean aclSystemIsPayg(Map<String, Object> ctx, String[] params) {
+        Long sid = getAsLong(ctx.get("sid"));
+        User user = (User) ctx.get("user");
+
+        Server server = SystemManager.lookupByIdAndUser(sid, user);
+        if (server == null) {
+            return false;
+        }
+
+        return server.isPayg();
+    }
+
+
+    /**
+     * Checks if a system supports confidential computing and has a configuration
+     * @param ctx
+     * @param params
+     * @return true if the system supports confidential computing
+     */
+    public boolean aclSystemHasCoCoConfig(Map<String, Object> ctx, String[] params) {
+        Long sid = getAsLong(ctx.get("sid"));
+        User user = (User) ctx.get("user");
+
+        Server server = SystemManager.lookupByIdAndUser(sid, user);
+        if (server == null) {
+            return false;
+        }
+
+        return server.doesOsSupportCoCoAttestation();
+    }
+
+    /**
+     * Checks if a system has any AppStream channels assigned
+     * @param ctx the acl context
+     * @param params the parameters for the acl
+     * @return true if the system has any AppStream channels assigned
+     */
+    public boolean aclSystemHasModularChannels(Map<String, Object> ctx, String[] params) {
+        Long sid = getAsLong(ctx.get("sid"));
+        User user = (User) ctx.get("user");
+
+        Server server = SystemManager.lookupByIdAndUser(sid, user);
+        if (server == null) {
+            return false;
+        }
+
+        return server.getChannels().stream().anyMatch(Channel::isModular);
+    }
 }

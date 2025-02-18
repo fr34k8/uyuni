@@ -16,11 +16,11 @@
 package com.redhat.rhn.frontend.xmlrpc.sync.content;
 
 import com.redhat.rhn.common.util.FileLocks;
-import com.redhat.rhn.domain.credentials.Credentials;
 import com.redhat.rhn.domain.credentials.CredentialsFactory;
+import com.redhat.rhn.domain.credentials.SCCCredentials;
+import com.redhat.rhn.domain.product.ChannelTemplate;
 import com.redhat.rhn.domain.product.MgrSyncChannelDto;
 import com.redhat.rhn.domain.product.SUSEProductFactory;
-import com.redhat.rhn.domain.product.SUSEProductSCCRepository;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.frontend.xmlrpc.BaseHandler;
 import com.redhat.rhn.manager.content.ContentSyncException;
@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * API handler offering content synchronization methods.
@@ -252,8 +251,8 @@ public class ContentSyncHandler extends BaseHandler {
 
         List<String> mandatoryChannelLabels =
                 SUSEProductFactory.findNotSyncedMandatoryChannels(channelLabel)
-                .map(SUSEProductSCCRepository::getChannelLabel)
-                .collect(Collectors.toList());
+                .map(ChannelTemplate::getChannelLabel)
+                .toList();
 
         LinkedHashSet<String> channelLabelsToAdd = new LinkedHashSet<>(mandatoryChannelLabels);
         channelLabelsToAdd.add(channelLabel);
@@ -315,7 +314,7 @@ public class ContentSyncHandler extends BaseHandler {
     public Integer deleteCredentials(User loggedInUser, String username)
             throws ContentSyncException {
         ensureSatAdmin(loggedInUser);
-        for (Credentials c : CredentialsFactory.lookupSCCCredentials()) {
+        for (SCCCredentials c : CredentialsFactory.listSCCCredentials()) {
             if (c.getUsername().equals(username)) {
                 new MirrorCredentialsManager().deleteMirrorCredentials(c.getId(), null);
                 break;

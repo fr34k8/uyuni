@@ -18,7 +18,7 @@
         <hwclock>utc</hwclock>
 
         <rpm-excludedocs>true</rpm-excludedocs>
-        <type filesystem="ext3" image="pxe" initrd_system="dracut"/>
+        <type filesystem="ext3" image="pxe" initrd_system="dracut" compressed="true"/>
     </preferences>
 
     <drivers>
@@ -29,34 +29,34 @@
          in that case, sync those repos in Uyuni, and add them to the activation key;
          finally, re-enable option  '- -ignore-repos-used-for-build' in file 'kiwi-image-build.sls' -->
     <repository type="rpm-md">  <!-- product -->
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Products/SLE-Product-SLES/15-SP4/x86_64/product/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Products/SLE-Product-SLES/15-SP4/x86_64/product/"/>
     </repository>
     <repository type="rpm-md">
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Updates/SLE-Product-SLES/15-SP4/x86_64/update/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Updates/SLE-Product-SLES/15-SP4/x86_64/update/"/>
     </repository>
     <repository type="rpm-md">  <!-- base system -->
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Products/SLE-Module-Basesystem/15-SP4/x86_64/product/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Products/SLE-Module-Basesystem/15-SP4/x86_64/product/"/>
     </repository>
     <repository type="rpm-md">
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Updates/SLE-Module-Basesystem/15-SP4/x86_64/update/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Updates/SLE-Module-Basesystem/15-SP4/x86_64/update/"/>
     </repository>
     <repository type="rpm-md">  <!-- desktop applications -->
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Products/SLE-Module-Desktop-Applications/15-SP4/x86_64/product/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Products/SLE-Module-Desktop-Applications/15-SP4/x86_64/product/"/>
     </repository>
     <repository type="rpm-md">
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Updates/SLE-Module-Desktop-Applications/15-SP4/x86_64/update/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Updates/SLE-Module-Desktop-Applications/15-SP4/x86_64/update/"/>
     </repository>
     <repository type="rpm-md">  <!-- development tools -->
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Products/SLE-Module-Development-Tools/15-SP4/x86_64/product/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Products/SLE-Module-Development-Tools/15-SP4/x86_64/product/"/>
     </repository>
     <repository type="rpm-md">
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Updates/SLE-Module-Development-Tools/15-SP4/x86_64/update/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Updates/SLE-Module-Development-Tools/15-SP4/x86_64/update/"/>
     </repository>
     <repository type="rpm-md">  <!-- manager tools -->
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Products/SLE-Manager-Tools/15/x86_64/product/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Products/SLE-Manager-Tools/15/x86_64/product/"/>
     </repository>
     <repository type="rpm-md">
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Updates/SLE-Manager-Tools/15/x86_64/update/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Updates/SLE-Manager-Tools/15/x86_64/update/"/>
     </repository>
 
     <packages type="image">
@@ -65,6 +65,7 @@
         <package name="acl"/>
         <package name="chrony"/>
         <package name="curl"/>
+        <package name="procps"/>
         <package name="dracut"/>
         <package name="fipscheck"/>
         <package name="group(mail)"/>
@@ -91,11 +92,10 @@
         <package name="openssh"/>
         <package name="rsync"/>
         <package name="plymouth-plugin-label-ft"/>
-
         <package name="kernel-default"/>
-	<package name="salt-minion"/>
-
-	<package name="dracut-saltboot"/>
+        <package name="venv-salt-minion"/>
+        <package name="hostname"/>
+        <package name="dracut-saltboot"/>
         <package name="mdadm"/>
         <package name="cryptsetup"/>
         <package name="kernel-firmware"/>

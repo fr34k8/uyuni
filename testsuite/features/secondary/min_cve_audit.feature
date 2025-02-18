@@ -1,6 +1,7 @@
-# Copyright (c) 2015-2022 SUSE LLC
+# Copyright (c) 2015-2025 SUSE LLC
 # Licensed under the terms of the MIT license.
 
+@skip_if_github_validation
 @sle_minion
 @scope_cve_audit
 Feature: CVE Audit on SLE Salt Minions
@@ -81,15 +82,16 @@ Feature: CVE Audit on SLE Salt Minions
     When I call audit.list_systems_by_patch_status() with CVE identifier "CVE-1999-9979"
     Then I should get status "NOT_AFFECTED" for "sle_minion"
     When I call audit.list_systems_by_patch_status() with CVE identifier "CVE-1999-9999"
-    Then I should get status "AFFECTED_PATCH_APPLICABLE" for "sle_minion"
-    And I should get the test channel
+    Then I should get status "AFFECTED_FULL_PATCH_APPLICABLE" for "sle_minion"
+    And I should get the "fake-rpm-suse-channel" channel label
     And I should get the "milkyway-dummy-2345" patch
 
   Scenario: Apply patches
     Given I am on the Systems overview page of this "sle_minion"
     When I follow "Software" in the content area
     And I follow "Patches" in the content area
-    And I wait until I see "milkyway-dummy-2345" text, refreshing the page
+    And I enter "milkyway" as the filtered synopsis
+    And I click on the filter button
     And I check "milkyway-dummy-2345" in the list
     And I click on "Apply Patches"
     And I click on "Confirm"

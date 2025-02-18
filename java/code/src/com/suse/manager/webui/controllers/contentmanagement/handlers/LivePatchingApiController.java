@@ -14,7 +14,7 @@
  */
 package com.suse.manager.webui.controllers.contentmanagement.handlers;
 
-import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
+import static com.suse.manager.webui.utils.SparkApplicationHelper.result;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUser;
 import static java.util.stream.Collectors.toList;
 import static spark.Spark.get;
@@ -31,12 +31,13 @@ import com.redhat.rhn.manager.system.SystemManager;
 import com.suse.manager.model.products.Product;
 import com.suse.manager.webui.utils.gson.ResultJson;
 
+import com.google.gson.reflect.TypeToken;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import spark.Request;
@@ -112,7 +113,7 @@ public class LivePatchingApiController {
             Stream<Product> suseProducts = SUSEProductFactory.getLivePatchSupportedProducts()
                     .map(p -> new Product(p.getId(), p.getFriendlyName()));
 
-            return json(res, ResultJson.success(suseProducts.collect(toList())));
+            return result(res, ResultJson.success(suseProducts.collect(toList())), new TypeToken<>() { });
     }
 
     /**
@@ -127,9 +128,9 @@ public class LivePatchingApiController {
         String query = StringUtils.defaultString(req.queryParams("q"));
         List<System> slesSystems = ServerFactory.querySlesSystems(query, 20, user)
                 .map(System::new)
-                .collect(Collectors.toList());
+                .toList();
 
-        return json(res, ResultJson.success(slesSystems));
+        return result(res, ResultJson.success(slesSystems), new TypeToken<>() { });
     }
 
     /**
@@ -159,7 +160,7 @@ public class LivePatchingApiController {
                         .sorted(Comparator.reverseOrder())
                         .map(KernelVersion::new);
 
-        return json(res, ResultJson.success(kernelsInProductTree.collect(toList())));
+        return result(res, ResultJson.success(kernelsInProductTree.collect(toList())), new TypeToken<>() { });
     }
 
     /**
@@ -193,6 +194,6 @@ public class LivePatchingApiController {
                         .sorted(Comparator.reverseOrder())
                         .map(KernelVersion::new);
 
-        return json(res, ResultJson.success(kernelsInSystem.collect(toList())));
+        return result(res, ResultJson.success(kernelsInSystem.collect(toList())), new TypeToken<>() { });
     }
 }

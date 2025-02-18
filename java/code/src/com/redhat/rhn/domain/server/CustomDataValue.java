@@ -15,42 +15,28 @@
 package com.redhat.rhn.domain.server;
 
 import com.redhat.rhn.common.util.StringUtil;
-import com.redhat.rhn.domain.action.server.ServerAction;
+import com.redhat.rhn.domain.BaseDomainHelper;
 import com.redhat.rhn.domain.org.CustomDataKey;
 import com.redhat.rhn.domain.user.User;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.io.Serializable;
-import java.util.Date;
+import java.io.Serial;
 
 /**
  * CustomDataValue
  */
-public class CustomDataValue implements Serializable {
+public class CustomDataValue extends BaseDomainHelper {
 
+    @Serial
     private static final long serialVersionUID = 1L;
     private Server server;
     private CustomDataKey key;
     private String value;
     private User creator;
     private User lastModifier;
-    private Date created;
-    private Date modified;
 
-    /**
-     * @return Returns the created.
-     */
-    public Date getCreated() {
-        return created;
-    }
-    /**
-     * @param createdIn The created to set.
-     */
-    public void setCreated(Date createdIn) {
-        this.created = createdIn;
-    }
     /**
      * @return Returns the creator.
      */
@@ -74,18 +60,6 @@ public class CustomDataValue implements Serializable {
      */
     public void setKey(CustomDataKey keyIn) {
         this.key = keyIn;
-    }
-    /**
-     * @return Returns the modified.
-     */
-    public Date getModified() {
-        return modified;
-    }
-    /**
-     * @param modifiedIn The modified to set.
-     */
-    public void setModified(Date modifiedIn) {
-        this.modified = modifiedIn;
     }
     /**
      * @return Returns the lastModifier.
@@ -129,10 +103,9 @@ public class CustomDataValue implements Serializable {
      */
     @Override
     public boolean equals(final Object other) {
-        if (other == null || !(other instanceof ServerAction)) {
+        if (!(other instanceof CustomDataValue castOther)) {
             return false;
         }
-        CustomDataValue castOther = (CustomDataValue) other;
         return new EqualsBuilder().append(key, castOther.getKey())
                                   .append(server, castOther.getServer()).isEquals();
     }

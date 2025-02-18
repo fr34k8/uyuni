@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2023 SUSE LLC
+# Copyright (c) 2010-2025 SUSE LLC
 # Licensed under the terms of the MIT license.
 
 require 'English'
@@ -8,129 +8,241 @@ require 'base64'
 require 'capybara'
 require 'capybara/cucumber'
 require 'cucumber'
-#require 'simplecov'
+# require 'simplecov'
 require 'minitest/autorun'
+require 'minitest/unit'
 require 'securerandom'
 require 'selenium-webdriver'
 require 'multi_test'
 require 'set'
+require 'timeout'
+require_relative 'code_coverage'
+require_relative 'quality_intelligence'
+require_relative 'remote_nodes_env'
+require_relative 'commonlib'
 
-## code coverage analysis
+$stdout.puts("Using Ruby version: #{RUBY_VERSION}")
+
+# code coverage analysis
 # SimpleCov.start
 
-server = ENV['SERVER']
-$debug_mode = true if ENV['DEBUG']
+if ENV['DEBUG']
+  $debug_mode = true
+  $stdout.puts('DEBUG MODE ENABLED.')
+end
+if ENV['REDIS_HOST'] && ENV.fetch('CODE_COVERAGE', false)
+  $code_coverage_mode = true
+  $stdout.puts('CODE COVERAGE MODE ENABLED.')
+end
+if ENV.fetch('QUALITY_INTELLIGENCE', false)
+  $quality_intelligence_mode = true
+  $stdout.puts('QUALITY INTELLIGENCE MODE ENABLED.')
+end
 
-# Channels triggered by our tests to be synchronized
-$channels_synchronized = Set[]
+# Context per feature
+$context = {}
+
+# Other global variables
+$pxeboot_mac = ENV.fetch('PXEBOOT_MAC', nil)
+$pxeboot_image = ENV.fetch('PXEBOOT_IMAGE', nil) || 'sles15sp3o'
+$sle12sp5_terminal_mac = ENV.fetch('SLE12SP5_TERMINAL_MAC', nil)
+$sle15sp4_terminal_mac = ENV.fetch('SLE15SP4_TERMINAL_MAC', nil)
+$private_net = ENV.fetch('PRIVATENET', nil) if ENV['PRIVATENET']
+$mirror = ENV.fetch('MIRROR', nil)
+$server_http_proxy = ENV.fetch('SERVER_HTTP_PROXY', nil) if ENV['SERVER_HTTP_PROXY']
+$custom_download_endpoint = ENV.fetch('CUSTOM_DOWNLOAD_ENDPOINT', nil) if ENV['CUSTOM_DOWNLOAD_ENDPOINT']
+$no_auth_registry = ENV.fetch('NO_AUTH_REGISTRY', nil) if ENV['NO_AUTH_REGISTRY']
+$auth_registry = ENV.fetch('AUTH_REGISTRY', nil) if ENV['AUTH_REGISTRY']
+$current_user = 'admin'
+$current_password = 'admin'
+$chromium_dev_tools = ENV.fetch('REMOTE_DEBUG', false)
+$chromium_dev_port = 9222 + ENV['TEST_ENV_NUMBER'].to_i
 
 # maximal wait before giving up
 # the tests return much before that delay in case of success
-STDOUT.sync = true
+$stdout.sync = true
 STARTTIME = Time.new.to_i
 Capybara.default_max_wait_time = ENV['CAPYBARA_TIMEOUT'] ? ENV['CAPYBARA_TIMEOUT'].to_i : 10
 DEFAULT_TIMEOUT = ENV['DEFAULT_TIMEOUT'] ? ENV['DEFAULT_TIMEOUT'].to_i : 250
-$is_cloud_provider = ENV["PROVIDER"].include? 'aws'
-$is_using_build_image = ENV.fetch('IS_USING_BUILD_IMAGE') { false }
+$is_cloud_provider = ENV['PROVIDER'].include? 'aws'
+$is_gh_validation = ENV['PROVIDER'].include? 'podman'
+$is_containerized_server = %w[k3s podman].include? ENV.fetch('CONTAINER_RUNTIME', '')
+$is_using_build_image = ENV.fetch('IS_USING_BUILD_IMAGE', false)
 $is_using_scc_repositories = (ENV.fetch('IS_USING_SCC_REPOSITORIES', 'False') != 'False')
+$catch_timeout_message = (ENV.fetch('CATCH_TIMEOUT_MESSAGE', 'False') == 'True')
+$beta_enabled = (ENV.fetch('BETA_ENABLED', 'False') == 'True')
+$api_protocol = ENV.fetch('API_PROTOCOL', nil) if ENV['API_PROTOCOL'] # force the API protocol to be used. You can use 'http' or 'xmlrpc'
 
 # QAM and Build Validation pipelines will provide a json file including all custom (MI) repositories
-custom_repos_path = File.dirname(__FILE__) + '/../upload_files/' + 'custom_repositories.json'
+custom_repos_path = "#{File.dirname(__FILE__)}/../upload_files/custom_repositories.json"
 if File.exist?(custom_repos_path)
   custom_repos_file = File.read(custom_repos_path)
   $custom_repositories = JSON.parse(custom_repos_file)
   $build_validation = true
 end
 
-def enable_assertions
-  # include assertion globally
-  World(MiniTest::Assertions)
-end
-
 # Fix a problem with minitest and cucumber options passed through rake
 MultiTest.disable_autorun
 
-# register chromedriver headless mode
-Capybara.register_driver(:headless_chrome) do |app|
-  client = Selenium::WebDriver::Remote::Http::Default.new
-  # WORKAROUND failure at Scenario: Test IPMI functions: increase from 60 s to 180 s
-  client.read_timeout = 180
-  # Chrome driver options
-  chrome_options = %w[no-sandbox disable-dev-shm-usage ignore-certificate-errors disable-gpu window-size=2048,2048, js-flags=--max_old_space_size=2048]
-  chrome_options << 'headless' unless $debug_mode
-  capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(
-    chromeOptions: {
-      args: chrome_options,
-      w3c: false,
-      prefs: {
-        'download.default_directory': '/tmp/downloads'
-      }
-    },
-    unexpectedAlertBehaviour: 'accept',
-    unhandledPromptBehavior: 'accept'
-  )
+# register chromedriver in headless mode
+def capybara_register_driver
+  Capybara.register_driver :selenium_chrome_headless do |app|
+    # WORKAROUND failure at Scenario: Test IPMI functions: increase from 60 s to 180 s
+    client = Selenium::WebDriver::Remote::Http::Default.new(open_timeout: 30, read_timeout: 240)
+    chrome_options = Selenium::WebDriver::Chrome::Options.new(
+      args: %w[disable-dev-shm-usage ignore-certificate-errors window-size=2048,2048 js-flags=--max_old_space_size=2048]
+    )
+    chrome_options.args << 'headless=new' unless $debug_mode
+    chrome_options.args << "remote-debugging-port=#{$chromium_dev_port}" if $chromium_dev_tools
+    chrome_options.add_preference('prompt_for_download', false)
+    chrome_options.add_preference('download.default_directory', '/tmp/downloads')
+    chrome_options.add_preference('unhandledPromptBehavior', 'accept')
+    chrome_options.add_preference('unexpectedAlertBehaviour', 'accept')
 
-  Capybara::Selenium::Driver.new(
-    app,
-    browser: :chrome,
-    desired_capabilities: capabilities,
-    http_client: client
-  )
+    Capybara::Selenium::Driver.new(app, browser: :chrome, options: chrome_options, http_client: client)
+  end
 end
 
+# register chromedriver headless mode
+$capybara_driver = capybara_register_driver
 Selenium::WebDriver.logger.level = :error unless $debug_mode
-Capybara.default_driver = :headless_chrome
-Capybara.javascript_driver = :headless_chrome
+Capybara.default_driver = :selenium_chrome_headless
+Capybara.javascript_driver = :selenium_chrome_headless
 Capybara.default_normalize_ws = true
-Capybara.app_host = "https://#{server}"
+Capybara.enable_aria_label = true
+Capybara.automatic_label_click = true
+Capybara.app_host = "https://#{ENV.fetch('SERVER', nil)}"
 Capybara.server_port = 8888 + ENV['TEST_ENV_NUMBER'].to_i
-STDOUT.puts "Capybara APP Host: #{Capybara.app_host}:#{Capybara.server_port}"
+$stdout.puts "Capybara APP Host: #{Capybara.app_host}:#{Capybara.server_port}"
 
 # enable minitest assertions in steps
-enable_assertions
+World(MiniTest::Assertions)
 
-# embed a screenshot after each failed scenario
+# Initialize the API client
+$api_test = new_api_client
+
+# Init CodeCoverage Handler
+$code_coverage = CodeCoverage.new if $code_coverage_mode
+
+# Init Quality Intelligence Handler
+$quality_intelligence = QualityIntelligence.new if $quality_intelligence_mode
+
+# Define the current feature scope
+Before do |scenario|
+  $feature_scope = scenario.location.file.split(%r{(\.feature|/)})[-2]
+end
+
+# Embed a screenshot after each failed scenario
 After do |scenario|
   current_epoch = Time.new.to_i
   log "This scenario took: #{current_epoch - @scenario_start_time} seconds"
   if scenario.failed?
     begin
-      Dir.mkdir("screenshots") unless File.directory?("screenshots")
-      path = "screenshots/#{scenario.name.tr(' ./', '_')}.png"
-      # only click on Details when we have errors during bootstrapping and more Details available
-      click_button('Details') if has_content?('Bootstrap Minions') && has_content?('Details')
-      page.driver.browser.save_screenshot(path)
-      attach path, 'image/png'
-      attach current_url, 'text/plain'
-    rescue StandardError => e
-      warn e.message
+      if web_session_is_active?
+        handle_screenshot_and_relog(scenario, current_epoch)
+      else
+        warn 'There is no active web session; unable to take a screenshot or relog.'
+      end
     ensure
-      debug_server_on_realtime_failure
-      previous_url = current_url
-      step %(I am authorized for the "Admin" section)
-      visit previous_url
+      print_server_logs
     end
   end
-  page.instance_variable_set(:@touched, false)
+  page.instance_variable_set(:@touched, false) if Capybara::Session.instance_created?
+end
+
+# Test is web session is open
+def web_session_is_active?
+  return false unless Capybara::Session.instance_created?
+
+  page.has_selector?('header') || page.has_selector?('#username-field')
+end
+
+# Take a screenshot and try to log back at suse manager server
+def handle_screenshot_and_relog(scenario, current_epoch)
+  Dir.mkdir('screenshots') unless File.directory?('screenshots')
+  path = "screenshots/#{scenario.name.tr(' ./', '_')}.png"
+  begin
+    click_details_if_present
+    page.driver.browser.save_screenshot(path)
+    attach path, 'image/png'
+    # Attach additional information
+    attach "#{Time.at(@scenario_start_time).strftime('%H:%M:%S:%L')} - #{Time.at(current_epoch).strftime('%H:%M:%S:%L')} | Current URL: #{current_url}", 'text/plain'
+  rescue StandardError => e
+    warn "Error message: #{e.message}"
+  ensure
+    relog_and_visit_previous_url
+  end
+end
+
+# Try to get the minion details when on minion page
+def click_details_if_present
+  return unless page.has_content?('Bootstrap Minions', wait: 0) && page.has_content?('Details', wait: 0)
+
+  begin
+    click_button('Details')
+  rescue Capybara::ElementNotFound
+    log "Button 'Details' not found on the page."
+  rescue Capybara::ElementNotInteractable
+    log "Button 'Details' found but not interactable."
+  end
+end
+
+# Relog and visit the previous URL
+def relog_and_visit_previous_url
+  begin
+    Timeout.timeout(DEFAULT_TIMEOUT) do
+      previous_url = current_url
+      step %(I am authorized as "#{$current_user}" with password "#{$current_password}")
+      visit previous_url
+    end
+  rescue Timeout::Error
+    warn "Timed out while attempting to relog and visit the previous URL: #{current_url}"
+  rescue StandardError => e
+    warn "An error occurred while relogging and visiting the previous URL: #{e.message}"
+  end
+end
+
+# Process the code coverage for each feature when it ends
+def process_code_coverage
+  return if $feature_path.nil?
+
+  feature_filename = $feature_path.split(%r{(\.feature|/)})[-2]
+  $code_coverage.jacoco_dump(feature_filename)
+  $code_coverage.push_feature_coverage(feature_filename)
+end
+
+# Dump feature code coverage into a Redis DB
+After do |scenario|
+  next unless $code_coverage_mode
+  next unless $feature_path != scenario.location.file
+
+  process_code_coverage
+  $feature_path = scenario.location.file
+end
+
+# Dump feature code coverage into a Redis DB, for the last feature
+AfterAll do
+  next unless $code_coverage_mode
+
+  process_code_coverage
 end
 
 # get the Cobbler log output when it fails
 After('@scope_cobbler') do |scenario|
   if scenario.failed?
-    STDOUT.puts '=> /var/log/cobbler/cobbler.log'
-    out, _code = $server.run("tail -n20 /var/log/cobbler/cobbler.log")
+    $stdout.puts '=> /var/log/cobbler/cobbler.log'
+    out, _code = get_target('server').run('tail -n20 /var/log/cobbler/cobbler.log')
     out.each_line do |line|
-      STDOUT.puts line.to_s
+      $stdout.puts line.to_s
     end
-    STDOUT.puts
+    $stdout.puts
   end
 end
 
 AfterStep do
-  if has_css?('.senna-loading', wait: 0)
-    log 'WARN: Step ends with an ajax transition not finished, let\'s wait a bit!'
-    log 'Timeout: Waiting AJAX transition' unless has_no_css?('.senna-loading', wait: 20)
-  end
+  next unless Capybara::Session.instance_created?
+
+  log 'Timeout: Waiting AJAX transition' if has_css?('.senna-loading', wait: 0) && !has_no_css?('.senna-loading', wait: 30)
 end
 
 Before do
@@ -139,21 +251,42 @@ Before do
   log "This scenario ran at: #{current_time}\n"
 end
 
+Before('@skip') do
+  skip_this_scenario
+end
+
+Before('@skip_known_issue') do
+  raise Core::Test::Result::Failed, 'This scenario is known to fail, skipping it'
+end
+
+# Create a user for each feature
+Before do |scenario|
+  feature_path = scenario.location.file
+  $feature_filename = feature_path.split(%r{(\.feature|/)})[-2]
+  next if get_context('user_created') == true
+
+  # Create own user based on feature filename. Exclude core, reposync, finishing and build_validation features.
+  unless feature_path.match?(/core|reposync|finishing|build_validation/)
+    step %(I create a user with name "#{$feature_filename}" and password "linux")
+    add_context('user_created', true)
+  end
+end
+
 # do some tests only if the corresponding node exists
 Before('@proxy') do
-  skip_this_scenario unless $proxy
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['proxy']
 end
 
 Before('@sle_minion') do
-  skip_this_scenario unless $minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle_minion']
 end
 
 Before('@rhlike_minion') do
-  skip_this_scenario unless $rhlike_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['rhlike_minion']
 end
 
 Before('@deblike_minion') do
-  skip_this_scenario unless $deblike_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['deblike_minion']
 end
 
 Before('@pxeboot_minion') do
@@ -161,191 +294,255 @@ Before('@pxeboot_minion') do
 end
 
 Before('@ssh_minion') do
-  skip_this_scenario unless $ssh_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['ssh_minion']
 end
 
-Before('@buildhost') do
-  skip_this_scenario unless $build_host
+Before('@build_host') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['build_host']
 end
 
-Before('@virthost_kvm') do
-  skip_this_scenario unless $kvm_server
+Before('@alma8_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['alma8_minion']
 end
 
-Before('@centos7_minion') do
-  skip_this_scenario unless $centos7_minion
-end
-
-Before('@centos7_ssh_minion') do
-  skip_this_scenario unless $centos7_ssh_minion
-end
-
-Before('@rocky8_minion') do
-  skip_this_scenario unless $rocky8_minion
-end
-
-Before('@rocky8_ssh_minion') do
-  skip_this_scenario unless $rocky8_ssh_minion
-end
-
-Before('@rocky9_minion') do
-  skip_this_scenario unless $rocky9_minion
-end
-
-Before('@rhel9_minion') do
-  skip_this_scenario unless $rhel9_minion
-end
-
-Before('@rhel9_ssh_minion') do
-  skip_this_scenario unless $rhel9_ssh_minion
-end
-
-Before('@rocky9_ssh_minion') do
-  skip_this_scenario unless $rocky9_ssh_minion
+Before('@alma8_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['alma8_ssh_minion']
 end
 
 Before('@alma9_minion') do
-  skip_this_scenario unless $alma9_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['alma9_minion']
 end
 
 Before('@alma9_ssh_minion') do
-  skip_this_scenario unless $alma9_ssh_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['alma9_ssh_minion']
+end
+
+Before('@centos7_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['centos7_minion']
+end
+
+Before('@centos7_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['centos7_ssh_minion']
+end
+
+Before('@liberty9_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['liberty9_minion']
+end
+
+Before('@liberty9_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['liberty9_ssh_minion']
 end
 
 Before('@oracle9_minion') do
-  skip_this_scenario unless $oracle9_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['oracle9_minion']
 end
 
 Before('@oracle9_ssh_minion') do
-  skip_this_scenario unless $oracle9_ssh_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['oracle9_ssh_minion']
 end
 
-Before('@ubuntu1804_minion') do
-  skip_this_scenario unless $ubuntu1804_minion
+Before('@rhel9_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['rhel9_minion']
 end
 
-Before('@ubuntu1804_ssh_minion') do
-  skip_this_scenario unless $ubuntu1804_ssh_minion
+Before('@rhel9_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['rhel9_ssh_minion']
+end
+
+Before('@rocky8_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['rocky8_minion']
+end
+
+Before('@rocky8_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['rocky8_ssh_minion']
+end
+
+Before('@rocky9_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['rocky9_minion']
+end
+
+Before('@rocky9_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['rocky9_ssh_minion']
 end
 
 Before('@ubuntu2004_minion') do
-  skip_this_scenario unless $ubuntu2004_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['ubuntu2004_minion']
 end
 
 Before('@ubuntu2004_ssh_minion') do
-  skip_this_scenario unless $ubuntu2004_ssh_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['ubuntu2004_ssh_minion']
 end
 
 Before('@ubuntu2204_minion') do
-  skip_this_scenario unless $ubuntu2204_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['ubuntu2204_minion']
 end
 
 Before('@ubuntu2204_ssh_minion') do
-  skip_this_scenario unless $ubuntu2204_ssh_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['ubuntu2204_ssh_minion']
 end
 
-Before('@debian9_minion') do
-  skip_this_scenario unless $debian9_minion
+Before('@ubuntu2404_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['ubuntu2404_minion']
 end
 
-Before('@debian9_ssh_minion') do
-  skip_this_scenario unless $debian9_ssh_minion
-end
-
-Before('@debian10_minion') do
-  skip_this_scenario unless $debian10_minion
-end
-
-Before('@debian10_ssh_minion') do
-  skip_this_scenario unless $debian10_ssh_minion
+Before('@ubuntu2404_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['ubuntu2404_ssh_minion']
 end
 
 Before('@debian11_minion') do
-  skip_this_scenario unless $debian11_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['debian11_minion']
 end
 
 Before('@debian11_ssh_minion') do
-  skip_this_scenario unless $debian11_ssh_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['debian11_ssh_minion']
 end
 
-Before('@sle12sp4_ssh_minion') do
-  skip_this_scenario unless $sle12sp4_ssh_minion
+Before('@debian12_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['debian12_minion']
 end
 
-Before('@sle12sp4_minion') do
-  skip_this_scenario unless $sle12sp4_minion
-end
-
-Before('@sle12sp5_ssh_minion') do
-  skip_this_scenario unless $sle12sp5_ssh_minion
+Before('@debian12_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['debian12_ssh_minion']
 end
 
 Before('@sle12sp5_minion') do
-  skip_this_scenario unless $sle12sp5_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle12sp5_minion']
 end
 
-Before('@sle15sp1_ssh_minion') do
-  skip_this_scenario unless $sle15sp1_ssh_minion
-end
-
-Before('@sle15sp1_minion') do
-  skip_this_scenario unless $sle15sp1_minion
-end
-
-Before('@sle15sp2_ssh_minion') do
-  skip_this_scenario unless $sle15sp2_ssh_minion
+Before('@sle12sp5_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle12sp5_ssh_minion']
 end
 
 Before('@sle15sp2_minion') do
-  skip_this_scenario unless $sle15sp2_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp2_minion']
 end
 
-Before('@sle15sp3_ssh_minion') do
-  skip_this_scenario unless $sle15sp3_ssh_minion
+Before('@sle15sp2_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp2_ssh_minion']
 end
 
 Before('@sle15sp3_minion') do
-  skip_this_scenario unless $sle15sp3_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp3_minion']
 end
 
-Before('@sle15sp4_ssh_minion') do
-  skip_this_scenario unless $sle15sp4_ssh_minion
+Before('@sle15sp3_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp3_ssh_minion']
 end
 
 Before('@sle15sp4_minion') do
-  skip_this_scenario unless $sle15sp4_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp4_minion']
 end
 
-Before('@opensuse154arm_minion') do
-  skip_this_scenario unless $opensuse154arm_minion
+Before('@sle15sp4_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp4_ssh_minion']
 end
 
-Before('@opensuse154arm_ssh_minion') do
-  skip_this_scenario unless $opensuse154arm_ssh_minion
+Before('@sle15sp5_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp5_minion']
+end
+
+Before('@sle15sp5_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp5_ssh_minion']
+end
+
+Before('@sle15sp6_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp6_minion']
+end
+
+Before('@sle15sp6_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp6_ssh_minion']
+end
+
+Before('@opensuse155arm_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['opensuse155arm_minion']
+end
+
+Before('@opensuse155arm_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['opensuse155arm_ssh_minion']
+end
+
+Before('@opensuse156arm_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['opensuse156arm_minion']
+end
+
+Before('@opensuse156arm_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['opensuse156arm_ssh_minion']
+end
+
+Before('@sle15sp5s390_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp5s390_minion']
+end
+
+Before('@sle15sp5s390_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp5s390_ssh_minion']
+end
+
+Before('@salt_migration_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['salt_migration_minion']
 end
 
 Before('@slemicro') do |scenario|
   skip_this_scenario unless scenario.location.file.include? 'slemicro'
 end
 
+Before('@slemicro51_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro51_minion']
+end
+
+Before('@slemicro51_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro51_ssh_minion']
+end
+
 Before('@slemicro52_minion') do
-  skip_this_scenario unless $slemicro52_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro52_minion']
 end
 
 Before('@slemicro52_ssh_minion') do
-  skip_this_scenario unless $slemicro52_ssh_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro52_ssh_minion']
 end
 
 Before('@slemicro53_minion') do
-  skip_this_scenario unless $slemicro53_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro53_minion']
 end
 
 Before('@slemicro53_ssh_minion') do
-  skip_this_scenario unless $slemicro53_ssh_minion
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro53_ssh_minion']
+end
+
+Before('@slemicro54_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro54_minion']
+end
+
+Before('@slemicro54_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro54_ssh_minion']
+end
+
+Before('@slemicro55_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro55_minion']
+end
+
+Before('@slemicro55_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slemicro55_ssh_minion']
+end
+
+Before('@slmicro60_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slmicro60_minion']
+end
+
+Before('@slmicro60_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slmicro60_ssh_minion']
+end
+
+Before('@slmicro61_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slmicro61_minion']
+end
+
+Before('@slmicro61_ssh_minion') do
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['slmicro61_ssh_minion']
 end
 
 Before('@sle12sp5_buildhost') do
-  skip_this_scenario unless $sle12sp5_buildhost
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle12sp5_buildhost']
 end
 
 Before('@sle12sp5_terminal') do
@@ -353,11 +550,11 @@ Before('@sle12sp5_terminal') do
 end
 
 Before('@sle15sp4_buildhost') do
-  skip_this_scenario unless $sle15sp4_buildhost
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['sle15sp4_buildhost']
 end
 
 Before('@monitoring_server') do
-  skip_this_scenario unless $monitoring_server
+  skip_this_scenario unless ENV.key? ENV_VAR_BY_HOST['monitoring_server']
 end
 
 Before('@sle15sp4_terminal') do
@@ -370,26 +567,39 @@ Before('@suse_minion') do |scenario|
   skip_this_scenario unless (filename.include? 'sle') || (filename.include? 'suse')
 end
 
+Before('@sle_micro_minion') do |scenario|
+  skip_this_scenario unless scenario.location.file.include? 'slemicro'
+end
+
 Before('@skip_for_debianlike') do |scenario|
   filename = scenario.location.file
   skip_this_scenario if (filename.include? 'ubuntu') || (filename.include? 'debian')
+end
+
+Before('@skip_for_rocky9') do |scenario|
+  skip_this_scenario if scenario.location.file.include? 'rocky9'
+end
+
+Before('@skip_for_alma9') do |scenario|
+  skip_this_scenario if scenario.location.file.include? 'alma9'
 end
 
 Before('@skip_for_minion') do |scenario|
   skip_this_scenario if scenario.location.file.include? 'minion'
 end
 
-# TODO: remove these 2 "skip" tags when Rocky and Alma have patches available.
-Before('@skip_for_alma9') do
-  skip_this_scenario if $alma9_minion || $alma9_ssh_minion
-end
-
-Before('@skip_for_rocky9') do
-  skip_this_scenario if $rocky9_minion || $rocky_ssh_minion
-end
-
-Before('@skip_for_sle_micro') do
+Before('@skip_for_sle_micro') do |scenario|
   skip_this_scenario if scenario.location.file.include? 'slemicro'
+end
+
+Before('@skip_for_sle_micro_ssh_minion') do |scenario|
+  sle_micro_ssh_nodes = %w[slemicro51_ssh_minion slemicro52_ssh_minion slemicro53_ssh_minion slemicro54_ssh_minion slemicro55_ssh_minion slmicro60_ssh_minion slmicro61_ssh_minion]
+  current_feature_node = scenario.location.file.split(%r{(_smoke_tests.feature|/)})[-2]
+  skip_this_scenario if sle_micro_ssh_nodes.include? current_feature_node
+end
+
+Before('@skip_for_sl_micro') do |scenario|
+  skip_this_scenario if scenario.location.file.include? 'slmicro'
 end
 
 # do some tests only if we have SCC credentials
@@ -409,22 +619,22 @@ end
 
 # do some tests only if the server is using SUSE Manager
 Before('@susemanager') do
-  skip_this_scenario unless $product == 'SUSE Manager'
+  skip_this_scenario unless product == 'SUSE Manager'
 end
 
 # do some tests only if the server is using Uyuni
 Before('@uyuni') do
-  skip_this_scenario unless $product == 'Uyuni'
+  skip_this_scenario unless product == 'Uyuni'
 end
 
 # do some tests only if we are using salt bundle
 Before('@salt_bundle') do
-  skip_this_scenario unless $use_salt_bundle
+  skip_this_scenario unless use_salt_bundle
 end
 
 # do some tests only if we are using salt bundle
 Before('@skip_if_salt_bundle') do
-  skip_this_scenario if $use_salt_bundle
+  skip_this_scenario if use_salt_bundle
 end
 
 # do test only if HTTP proxy for Uyuni is defined
@@ -452,18 +662,55 @@ Before('@skip_if_cloud') do
   skip_this_scenario if $is_cloud_provider
 end
 
+# skip tests if executed in cloud environment
+Before('@cloud') do
+  skip_this_scenario unless $is_cloud_provider
+end
+
+# skip tests if executed in containers for the GitHub validation
+Before('@skip_if_github_validation') do
+  skip_this_scenario if $is_gh_validation
+end
+
+# skip tests if the server runs in a container
+Before('@skip_if_containerized_server') do
+  skip_this_scenario if $is_containerized_server
+end
+
+# do test only if we have a containerized server
+Before('@containerized_server') do
+  skip_this_scenario unless $is_containerized_server
+end
+
+# only test for excessive SCC accesses if SCC access is being logged
+Before('@srv_scc_access_logging') do
+  skip_this_scenario unless scc_access_logging_grain?
+end
+
+# do test only if we have beta channels enabled
+Before('@beta') do
+  skip_this_scenario unless $beta_enabled
+end
+
+# check whether the server has the scc_access_logging variable set
+def scc_access_logging_grain?
+  cmd = 'grep "\"scc_access_logging\": true" /etc/salt/grains'
+  _out, code = get_target('server').run(cmd, check_errors: false)
+  code.zero?
+end
+
 # have more infos about the errors
-def debug_server_on_realtime_failure
-  STDOUT.puts '=> /var/log/rhn/rhn_web_ui.log'
-  out, _code = $server.run("tail -n20 /var/log/rhn/rhn_web_ui.log | awk -v limit=\"$(date --date='5 minutes ago' '+%Y-%m-%d %H:%M:%S')\" ' $0 > limit'")
+def print_server_logs
+  $stdout.puts '=> /var/log/rhn/rhn_web_ui.log'
+  out, _code = get_target('server').run('tail -n20 /var/log/rhn/rhn_web_ui.log | awk -v limit="$(date --date="5 minutes ago" "+%Y-%m-%d %H:%M:%S")" " $0 > limit"')
   out.each_line do |line|
-    STDOUT.puts line.to_s
+    $stdout.puts line.to_s
   end
-  STDOUT.puts
-  STDOUT.puts '=> /var/log/rhn/rhn_web_api.log'
-  out, _code = $server.run("tail -n20 /var/log/rhn/rhn_web_api.log | awk -v limit=\"$(date --date='5 minutes ago' '+%Y-%m-%d %H:%M:%S')\" ' $0 > limit'")
+  $stdout.puts
+  $stdout.puts '=> /var/log/rhn/rhn_web_api.log'
+  out, _code = get_target('server').run('tail -n20 /var/log/rhn/rhn_web_api.log | awk -v limit="$(date --date="5 minutes ago" "+%Y-%m-%d %H:%M:%S")" " $0 > limit"')
   out.each_line do |line|
-    STDOUT.puts line.to_s
+    $stdout.puts line.to_s
   end
-  STDOUT.puts
+  $stdout.puts
 end

@@ -87,15 +87,15 @@
                 </div>
             </div>
             <div class="form-group">
-                <div class="col-lg-offset-3 col-lg-6">
+                <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
                     <c:choose>
                         <c:when test="${empty dcm}">
-                            <html:submit styleClass="btn btn-success">
+                            <html:submit styleClass="btn btn-primary">
                                 <bean:message key="distchannelmap.jsp.create.submit"/>
                             </html:submit>
                         </c:when>
                         <c:otherwise>
-                            <html:submit styleClass="btn btn-success">
+                            <html:submit styleClass="btn btn-primary">
                                 <bean:message key="distchannelmap.jsp.update.submit"/>
                             </html:submit>
                         </c:otherwise>

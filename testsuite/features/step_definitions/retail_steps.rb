@@ -4,204 +4,162 @@
 ### This file contains the definitions for all steps concerning the different
 ### kinds of minions as well as PXE boot and Retail.
 
-# This function returns the net prefix, caching it
-def net_prefix
-  $net_prefix = $private_net.sub(%r{\.0+/24$}, '.') if $net_prefix.nil?
-  $net_prefix
-end
-
-# extract various data from Retail yaml configuration
-def read_terminals_from_yaml
-  name = File.dirname(__FILE__) + '/../upload_files/massive-import-terminals.yml'
-  tree = YAML.load_file(name)
-  tree['branches'].values[0]['terminals'].keys
-end
-
-def read_branch_prefix_from_yaml
-  name = File.dirname(__FILE__) + '/../upload_files/massive-import-terminals.yml'
-  tree = YAML.load_file(name)
-  tree['branches'].values[0]['branch_prefix']
-end
-
-# determine profile for PXE boot and terminal tests
-def compute_image(host)
-  # TODO: now that the terminals derive from sumaform's pxe_boot module,
-  #       we could also specify the desired image as an environment variable
-  case host
-  when 'pxeboot_minion'
-    $pxeboot_image
-  when 'sle12sp5_terminal'
-    'sles12sp5o'
-  when 'sle15sp3_terminal'
-    'sles15sp3o'
-  when 'sle15sp4_terminal'
-    'sles15sp4o'
-  else
-    raise "Is #{host} a supported terminal?"
-  end
-end
-
-def compute_kiwi_profile_filename(host)
-  image = compute_image(host)
-  case image
-  when 'sles15sp3', 'sles15sp3o', 'sles15sp4', 'sles15sp4o'
-    # 'Kiwi/POS_Image-JeOS7_42' for 4.2 branch
-    $product == 'Uyuni' ? 'Kiwi/POS_Image-JeOS7_uyuni' : 'Kiwi/POS_Image-JeOS7_head'
-  when 'sles15sp2', 'sles15sp2o'
-    'Kiwi/POS_Image-JeOS7_41'
-  when 'sles15sp1', 'sles15sp1o'
-    raise 'This is not a supported image version.'
-  when 'sles12sp5', 'sles12sp5o'
-    # 'Kiwi/POS_Image-JeOS6_42' for 4.2 branch
-    'Kiwi/POS_Image-JeOS6_head'
-  else
-    raise "Is #{image} a supported image version?"
-  end
-end
-
-def compute_kiwi_profile_name(host)
-  image = compute_image(host)
-  case image
-  when 'sles15sp3', 'sles15sp3o', 'sles15sp4', 'sles15sp4o'
-    # 'POS_Image_JeOS7_42' for 4.2 branch
-    $product == 'Uyuni' ? 'POS_Image_JeOS7_uyuni' : 'POS_Image_JeOS7_head'
-  when 'sles15sp2', 'sles15sp2o'
-    'POS_Image_JeOS7_41'
-  when 'sles15sp1', 'sles15sp1o'
-    raise 'This is not a supported image version.'
-  when 'sles12sp5', 'sles12sp5o'
-    # 'POS_Image_JeOS6_42' for 4.2 branch
-    'POS_Image_JeOS6_head'
-  else
-    raise "Is #{image} a supported image version?"
-  end
-end
-
-def compute_kiwi_profile_version(host)
-  image = compute_image(host)
-  case image
-  when 'sles15sp3', 'sles15sp3o', 'sles15sp4', 'sles15sp4o'
-    '7.0.0'
-  when 'sles15sp1', 'sles15sp1o'
-    raise 'This is not a supported image version.'
-  when 'sles12sp5', 'sles12sp5o'
-    '6.0.0'
-  else
-    raise "Is #{image} a supported image version?"
-  end
-end
-
-When(/^I enable repositories before installing branch server$/) do
-  os_version = $proxy.os_version
-  os_family = $proxy.os_family
+When(/^I (enable|disable) repositories (before|after) installing branch server$/) do |action, _when|
+  os_version = get_target('proxy').os_version
+  os_family = get_target('proxy').os_family
 
   # Distribution
-  repos = 'os_pool_repo os_update_repo'
-  log $proxy.run("zypper mr --enable #{repos}")
+  repos = 'os_pool_repo os_update_repo '
+  repos += 'testing_overlay_devel_repo ' unless $build_validation || $is_containerized_server || product_version_full.include?('-released')
 
-  # Server Applications
-  if os_family =~ /^sles/ && os_version =~ /^15/
-    repos = 'module_server_applications_pool_repo module_server_applications_update_repo'
-    log $proxy.run("zypper mr --enable #{repos}")
+  # Server Applications, proxy product and modules, proxy devel
+  if os_family.match?(/^sles/) && os_version.match?(/^15/)
+    repos += 'proxy_module_pool_repo proxy_module_update_repo ' \
+             'proxy_product_pool_repo proxy_product_update_repo ' \
+             'module_server_applications_pool_repo module_server_applications_update_repo '
+    repos += 'proxy_devel_releasenotes_repo proxy_devel_repo ' unless $build_validation || product_version_full.include?('-released')
+  elsif os_family.match?(/^opensuse/)
+    repos += 'proxy_pool_repo ' unless $is_containerized_server
   end
-end
 
-When(/^I disable repositories after installing branch server$/) do
-  os_version = $proxy.os_version
-  os_family = $proxy.os_family
-
-  # Distribution
-  repos = 'os_pool_repo os_update_repo'
-  log $proxy.run("zypper mr --disable #{repos}")
-
-  # Server Applications
-  if os_family =~ /^sles/ && os_version =~ /^15/
-    repos = 'module_server_applications_pool_repo module_server_applications_update_repo'
-    log $proxy.run("zypper mr --disable #{repos}")
-  end
+  get_target('proxy').run("zypper mr --#{action} #{repos}", verbose: true)
 end
 
 When(/^I start tftp on the proxy$/) do
-  case $product
+  case product
   # TODO: Should we handle this in Sumaform?
   when 'Uyuni'
-    step %(I enable repositories before installing branch server)
+    step 'I enable repositories before installing branch server'
     cmd = 'zypper --non-interactive --ignore-unknown remove atftp && ' \
           'zypper --non-interactive install tftp && ' \
           'systemctl enable tftp.service && ' \
           'systemctl start tftp.service'
-    $proxy.run(cmd)
-    step %(I disable repositories after installing branch server)
+    get_target('proxy').run(cmd)
+    step 'I disable repositories after installing branch server'
   else
     cmd = 'systemctl enable tftp.service && systemctl start tftp.service'
-    $proxy.run(cmd)
+    get_target('proxy').run(cmd)
   end
 end
 
-When(/^I stop tftp on the proxy$/) do
-  $proxy.run('systemctl stop tftp.service')
-end
-
 When(/^I set up the private network on the terminals$/) do
-  proxy = net_prefix + ADDRESSES['proxy']
+  proxy = net_prefix + PRIVATE_ADDRESSES['proxy']
   # /etc/sysconfig/network/ifcfg-eth1 and /etc/resolv.conf
-  nodes = [$minion]
+  nodes = [get_target('sle_minion')]
   conf = "STARTMODE='auto'\\nBOOTPROTO='dhcp'"
   file = '/etc/sysconfig/network/ifcfg-eth1'
   script2 = "-e '/^#/d' -e 's/^search /search example.org /' -e '$anameserver #{proxy}' -e '/^nameserver /d'"
   file2 = '/etc/resolv.conf'
   nodes.each do |node|
     next if node.nil?
+
     node.run("echo -e \"#{conf}\" > #{file} && sed -i #{script2} #{file2} && ifup eth1")
   end
   # /etc/sysconfig/network-scripts/ifcfg-eth1 and /etc/sysconfig/network
-  nodes = [$rhlike_minion]
+  nodes = [get_target('rhlike_minion')]
   file = '/etc/sysconfig/network-scripts/ifcfg-eth1'
   conf2 = 'GATEWAYDEV=eth0'
   file2 = '/etc/sysconfig/network'
   nodes.each do |node|
     next if node.nil?
-    domain, _code = node.run("grep '^search' /etc/resolv.conf | sed 's/^search//'")
+
+    domain, _code = node.run('grep \'^search\' /etc/resolv.conf | sed \'s/^search//\'')
     conf = "DOMAIN='#{domain.strip}'\\nDEVICE='eth1'\\nSTARTMODE='auto'\\nBOOTPROTO='dhcp'\\nDNS1='#{proxy}'"
-    node.run("echo -e \"#{conf}\" > #{file} && echo -e \"#{conf2}\" > #{file2} && systemctl restart NetworkManager")
+    service =
+      if node.os_family.match?(/^rocky/)
+        'NetworkManager'
+      else
+        'network'
+      end
+    node.run("echo -e \"#{conf}\" > #{file} && echo -e \"#{conf2}\" > #{file2} && systemctl restart #{service}")
   end
   # /etc/netplan/01-netcfg.yaml
-  nodes = [$deblike_minion]
-  source = File.dirname(__FILE__) + '/../upload_files/01-netcfg.yaml'
+  nodes = [get_target('deblike_minion')]
+  source = "#{File.dirname(__FILE__)}/../upload_files/01-netcfg.yaml"
   dest = '/etc/netplan/01-netcfg.yaml'
   nodes.each do |node|
     next if node.nil?
-    return_code = file_inject(node, source, dest)
-    raise 'File injection failed' unless return_code.zero?
+
+    success = file_inject(node, source, dest)
+    raise ScriptError, 'File injection failed' unless success
+
     node.run('netplan apply')
   end
   # PXE boot minion
   if $pxeboot_mac
-    step %(I restart the network on the PXE boot minion)
+    step 'I restart the network on the PXE boot minion'
   end
 end
 
-Then(/^terminal "([^"]*)" should have got a retail network IP address$/) do |host|
+Then(/^"([^"]*)" should communicate with the server using public interface$/) do |host|
   node = get_target(host)
-  output, return_code = node.run('ip -4 address show eth1')
-  raise "Terminal #{host} did not get an address on eth1: #{output}" unless return_code.zero? and output.include? net_prefix
+  _result, return_code = node.run("ping -n -c 1 -I #{node.public_interface} #{get_target('server').public_ip}", check_errors: false)
+  unless return_code.zero?
+    sleep 2
+    puts 're-try ping'
+    node.run("ping -n -c 1 -I #{node.public_interface} #{get_target('server').public_ip}")
+  end
+  get_target('server').run("ping -n -c 1 #{node.public_ip}")
 end
 
-Then(/^name resolution should work on terminal "([^"]*)"$/) do |host|
-  node = get_target(host)
-  # we need "host" utility
-  step "I install package \"bind-utils\" on this \"#{host}\""
+When(/^I rename the proxy for Retail$/) do
+  node = get_target('proxy')
+  node.run('sed -i "s/^proxy_fqdn:.*$/proxy_fqdn: proxy.example.org/" /etc/uyuni/proxy/config.yaml')
+end
+
+When(/^I connect the second interface of the proxy to the private network$/) do
+  node = get_target('proxy')
+  _result, return_code = node.run('which nmcli')
+  if return_code.zero?
+    # Network manager: we give eth1 precedence over eth0
+    #                  otherwise the name server we get from DHCP is lost at the end of the list
+    #                  (the name servers list in resolv.conf is limited to 3 entries)
+    cmd = 'nmcli connection modify "Wired connection 1" ipv4.dns-priority 20 && ' \
+          'nmcli device modify eth0 ipv4.dns-priority 20 && ' \
+          'nmcli connection modify "Wired connection 2" ipv4.dns-priority 10 && ' \
+          'nmcli device modify eth1 ipv4.dns-priority 10'
+  else
+    # Wicked: is there a way to give eth1 precedence?
+    #         we use a static setting for the name server instead
+    static_dns = net_prefix + PRIVATE_ADDRESSES['dhcp_dns']
+    cmd = 'echo -e "BOOTPROTO=dhcp\nSTARTMODE=auto\n" > /etc/sysconfig/network/ifcfg-eth1 && ' \
+          'ifup eth1 && ' \
+          "sed -i 's/^NETCONFIG_DNS_STATIC_SERVERS=\".*\"/NETCONFIG_DNS_STATIC_SERVERS=\"#{static_dns}\"/' /etc/sysconfig/network/config && " \
+          'netconfig update -f'
+  end
+  node.run(cmd)
+end
+
+When(/^I restart all proxy containers$/) do
+  node = get_target('proxy')
+  node.run('systemctl restart uyuni-proxy-httpd.service')
+  node.run('systemctl restart uyuni-proxy-salt-broker.service')
+  node.run('systemctl restart uyuni-proxy-squid.service')
+  node.run('systemctl restart uyuni-proxy-ssh.service')
+  node.run('systemctl restart uyuni-proxy-tftpd.service')
+end
+
+Then(/^the "([^"]*)" host should be present on private network$/) do |host|
+  node = get_target('proxy')
+  output, return_code = node.run("ping -n -c 1 -I #{node.private_interface} #{net_prefix}#{PRIVATE_ADDRESSES[host]}")
+  raise SystemCallError, "Terminal #{host} does not answer on eth1: #{output}" unless return_code.zero?
+end
+
+Then(/^name resolution should work on private network$/) do
+  node = get_target('proxy')
   # direct name resolution
   %w[proxy.example.org dns.google.com].each do |dest|
     output, return_code = node.run("host #{dest}", check_errors: false)
-    raise "Direct name resolution of #{dest} on terminal #{host} doesn't work: #{output}" unless return_code.zero?
-    log "#{output}"
+    raise SystemCallError, "Direct name resolution of #{dest} on proxy doesn't work: #{output}" unless return_code.zero?
+
+    log output.to_s
   end
   # reverse name resolution
   [node.private_ip, '8.8.8.8'].each do |dest|
     output, return_code = node.run("host #{dest}", check_errors: false)
-    raise "Reverse name resolution of #{dest} on terminal #{host} doesn't work: #{output}" unless return_code.zero?
-    log "#{output}"
+    raise SystemCallError, "Reverse name resolution of #{dest} on proxy doesn't work: #{output}" unless return_code.zero?
+
+    log output.to_s
   end
 end
 
@@ -210,118 +168,122 @@ When(/^I restart the network on the PXE boot minion$/) do
   # so the only way to contact it is via IPv6 link-local.
   # We convert MAC address to IPv6 link-local address:
   mac = $pxeboot_mac.tr(':', '')
-  hex = ((mac[0..5] + 'fffe' + mac[6..11]).to_i(16) ^ 0x0200000000000000).to_s(16)
-  ipv6 = 'fe80::' + hex[0..3] + ':' + hex[4..7] + ':' + hex[8..11] + ':' + hex[12..15] + '%eth1'
+  hex = (("#{mac[0..5]}fffe#{mac[6..11]}").to_i(16) ^ 0x0200000000000000).to_s(16)
+  ipv6 = "fe80::#{hex[0..3]}:#{hex[4..7]}:#{hex[8..11]}:#{hex[12..15]}%eth1"
   file = 'restart-network-pxeboot.exp'
-  source = File.dirname(__FILE__) + '/../upload_files/' + file
-  dest = '/tmp/' + file
-  return_code = file_inject($proxy, source, dest)
-  raise 'File injection failed' unless return_code.zero?
+  source = "#{File.dirname(__FILE__)}/../upload_files/#{file}"
+  dest = "/tmp/#{file}"
+  success = file_inject(get_target('proxy'), source, dest)
+  raise ScriptError, 'File injection failed' unless success
+
   # We have no direct access to the PXE boot minion
   # so we run the command from the proxy
-  $proxy.run("expect -f /tmp/#{file} #{ipv6}")
+  get_target('proxy').run("expect -f /tmp/#{file} #{ipv6}")
 end
 
 When(/^I reboot the (Retail|Cobbler) terminal "([^"]*)"$/) do |context, host|
   # we might have no or any IPv4 address on that machine
   # convert MAC address to IPv6 link-local address
-  if host == 'pxeboot_minion'
+  case host
+  when 'pxeboot_minion'
     mac = $pxeboot_mac
-  elsif host == 'sle12sp5_terminal'
+  when 'sle12sp5_terminal'
     mac = $sle12sp5_terminal_mac
-  elsif host == 'sle15sp4_terminal'
+  when 'sle15sp4_terminal'
     mac = $sle15sp4_terminal_mac
   end
   mac = mac.tr(':', '')
-  hex = ((mac[0..5] + 'fffe' + mac[6..11]).to_i(16) ^ 0x0200000000000000).to_s(16)
-  ipv6 = 'fe80::' + hex[0..3] + ':' + hex[4..7] + ':' + hex[8..11] + ':' + hex[12..15] + '%eth1'
+  hex = (("#{mac[0..5]}fffe#{mac[6..11]}").to_i(16) ^ 0x0200000000000000).to_s(16)
+  ipv6 = "fe80::#{hex[0..3]}:#{hex[4..7]}:#{hex[8..11]}:#{hex[12..15]}%eth1"
   log "Rebooting #{ipv6}..."
   file = 'reboot-pxeboot.exp'
-  source = File.dirname(__FILE__) + '/../upload_files/' + file
-  dest = '/tmp/' + file
-  return_code = file_inject($proxy, source, dest)
-  raise 'File injection failed' unless return_code.zero?
-  $proxy.run("expect -f /tmp/#{file} #{ipv6} #{context}")
+  source = "#{File.dirname(__FILE__)}/../upload_files/#{file}"
+  dest = "/tmp/#{file}"
+  success = file_inject(get_target('proxy'), source, dest)
+  raise ScriptError, 'File injection failed' unless success
+
+  get_target('proxy').run("expect -f /tmp/#{file} #{ipv6} #{context}")
 end
 
-When(/^I create bootstrap script for "([^"]+)" hostname and set the activation key "([^"]*)" in the bootstrap script on the proxy$/) do |host, key|
+When(/^I create the bootstrap script for "([^"]+)" hostname and "([^"]*)" activation key on "([^"]*)"$/) do |hostname, key, host|
+  node = get_target(host)
   # WORKAROUND: Revert once pxeboot autoinstallation contains venv-salt-minion
-  # force_bundle = $use_salt_bundle ? '--force-bundle' : ''
-  # $proxy.run("mgr-bootstrap #{force_bundle}")
-  $proxy.run("mgr-bootstrap --hostname=#{host}")
+  # force_bundle = use_salt_bundle ? '--force-bundle' : ''
+  # get_target(host).run("mgr-bootstrap #{force_bundle}")
+  node.run("mgr-bootstrap --hostname=#{hostname} --activation-keys=#{key}")
 
-  $proxy.run("sed -i '/^ACTIVATION_KEYS=/c\\ACTIVATION_KEYS=#{key}' /srv/www/htdocs/pub/bootstrap/bootstrap.sh")
-  output, _code = $proxy.run('cat /srv/www/htdocs/pub/bootstrap/bootstrap.sh')
-  raise "Key: #{key} not included" unless output.include? key
-  raise "Hostname: #{host} not included" unless output.include? host
+  output, _code = node.run('cat /srv/www/htdocs/pub/bootstrap/bootstrap.sh')
+  raise ScriptError, "Key: #{key} not included" unless output.include? key
+  raise ScriptError, "Hostname: #{hostname} not included" unless output.include? hostname
 end
 
 When(/^I bootstrap pxeboot minion via bootstrap script on the proxy$/) do
   file = 'bootstrap-pxeboot.exp'
-  source = File.dirname(__FILE__) + '/../upload_files/' + file
-  dest = '/tmp/' + file
-  return_code = file_inject($proxy, source, dest)
-  raise 'File injection failed' unless return_code.zero?
-  ipv4 = net_prefix + ADDRESSES['pxeboot_minion']
-  $proxy.run("expect -f /tmp/#{file} #{ipv4}", verbose: true)
+  source = "#{File.dirname(__FILE__)}/../upload_files/#{file}"
+  dest = "/tmp/#{file}"
+  success = file_inject(get_target('proxy'), source, dest)
+  raise ScriptError, 'File injection failed' unless success
+
+  ipv4 = net_prefix + PRIVATE_ADDRESSES['pxeboot_minion']
+  get_target('proxy').run("expect -f /tmp/#{file} #{ipv4}", verbose: true)
 end
 
 When(/^I accept key of pxeboot minion in the Salt master$/) do
-  $server.run('salt-key -y --accept=pxeboot.example.org')
-end
-
-When(/^I stop salt-minion on the PXE boot minion$/) do
-  file = 'cleanup-pxeboot.exp'
-  source = File.dirname(__FILE__) + '/../upload_files/' + file
-  dest = '/tmp/' + file
-  return_code = file_inject($proxy, source, dest)
-  raise 'File injection failed' unless return_code.zero?
-  ipv4 = net_prefix + ADDRESSES['pxeboot_minion']
-  $proxy.run("expect -f /tmp/#{file} #{ipv4}")
+  get_target('server').run('salt-key -y --accept=pxeboot.example.org')
 end
 
 When(/^I install the GPG key of the test packages repository on the PXE boot minion$/) do
   file = 'uyuni.key'
-  source = File.dirname(__FILE__) + '/../upload_files/' + file
-  dest = '/tmp/' + file
-  return_code = file_inject($server, source, dest)
-  raise 'File injection failed' unless return_code.zero?
+  source = "#{File.dirname(__FILE__)}/../upload_files/#{file}"
+  dest = "/tmp/#{file}"
+  success = file_inject(get_target('server'), source, dest)
+  raise ScriptError, 'File injection failed' unless success
+
   system_name = get_system_name('pxeboot_minion')
-  $server.run("salt-cp #{system_name} #{dest} #{dest}")
-  $server.run("salt #{system_name} cmd.run 'rpmkeys --import #{dest}'")
+  get_target('server').run("salt-cp #{system_name} #{dest} #{dest}")
+  get_target('server').run("salt #{system_name} cmd.run 'rpmkeys --import #{dest}'")
+end
+
+When(/^I wait until Salt client is inactive on the PXE boot minion$/) do
+  file = 'wait-end-of-cleanup-pxeboot.exp'
+  source = "#{File.dirname(__FILE__)}/../upload_files/#{file}"
+  dest = "/tmp/#{file}"
+  success = file_inject(get_target('proxy'), source, dest)
+  raise ScriptError, 'File injection failed' unless success
+
+  ipv4 = net_prefix + PRIVATE_ADDRESSES['pxeboot_minion']
+  get_target('proxy').run("expect -f /tmp/#{file} #{ipv4}")
 end
 
 When(/^I prepare the retail configuration file on server$/) do
-  source = File.dirname(__FILE__) + '/../upload_files/massive-import-terminals.yml'
+  source = "#{File.dirname(__FILE__)}/../upload_files/massive-import-terminals.yml"
   dest = '/tmp/massive-import-terminals.yml'
-  return_code = file_inject($server, source, dest)
-  raise "File #{file} couldn't be copied to server" unless return_code.zero?
+  success = file_inject(get_target('server'), source, dest)
+  raise ScriptError, "File #{file} couldn't be copied to server" unless success
 
-  sed_values = "s/<PROXY_HOSTNAME>/#{$proxy.full_hostname}/; "
+  sed_values = "s/<PROXY_HOSTNAME>/#{get_target('proxy').full_hostname}/; "
   sed_values << "s/<NET_PREFIX>/#{net_prefix}/; "
-  sed_values << "s/<PROXY>/#{ADDRESSES['proxy']}/; "
-  sed_values << "s/<RANGE_BEGIN>/#{ADDRESSES['range begin']}/; "
-  sed_values << "s/<RANGE_END>/#{ADDRESSES['range end']}/; "
-  sed_values << "s/<PXEBOOT>/#{ADDRESSES['pxeboot_minion']}/; "
+  sed_values << "s/<PROXY>/#{PRIVATE_ADDRESSES['proxy']}/; "
+  sed_values << "s/<RANGE_BEGIN>/#{PRIVATE_ADDRESSES['range begin']}/; "
+  sed_values << "s/<RANGE_END>/#{PRIVATE_ADDRESSES['range end']}/; "
+  sed_values << "s/<PXEBOOT>/#{PRIVATE_ADDRESSES['pxeboot_minion']}/; "
   sed_values << "s/<PXEBOOT_MAC>/#{$pxeboot_mac}/; "
-  sed_values << "s/<MINION>/#{ADDRESSES['sle_minion']}/; "
-  sed_values << "s/<MINION_MAC>/#{get_mac_address('sle_minion')}/; "
   sed_values << "s/<IMAGE>/#{compute_kiwi_profile_name('pxeboot_minion')}/"
-  $server.run("sed -i '#{sed_values}' #{dest}")
+  get_target('server').run("sed -i '#{sed_values}' #{dest}")
 end
 
 When(/^I import the retail configuration using retail_yaml command$/) do
   filepath = '/tmp/massive-import-terminals.yml'
-  $server.run("retail_yaml --api-user admin --api-pass admin --from-yaml #{filepath}")
+  get_target('server').run("retail_yaml --api-user admin --api-pass admin --from-yaml #{filepath}")
 end
 
 # Click on the terminal
 When(/^I follow "([^"]*)" terminal$/) do |host|
   domain = read_branch_prefix_from_yaml
-  if !host.include? 'pxeboot'
-    step %(I follow "#{domain}.#{host}")
-  else
+  if host.include? 'pxeboot'
     step %(I follow "#{host}.#{domain}")
+  else
+    step %(I follow "#{domain}.#{host}")
   end
 end
 
@@ -334,6 +296,7 @@ Then(/^I should not see any terminals imported from the configuration file$/) do
   terminals = read_terminals_from_yaml
   terminals.each do |terminal|
     next if (terminal.include? 'minion') || (terminal.include? 'client')
+
     step %(I should not see a "#{terminal}" text)
   end
 end
@@ -342,6 +305,7 @@ When(/^I delete all the imported terminals$/) do
   terminals = read_terminals_from_yaml
   terminals.each do |terminal|
     next if (terminal.include? 'minion') || (terminal.include? 'client')
+
     log "Deleting terminal with name: #{terminal}"
     steps %(
       When I follow "#{terminal}" terminal
@@ -363,13 +327,13 @@ When(/^I enter the local IP address of "([^"]*)" in (.*) field$/) do |host, fiel
     'broadcast address'               => 'dhcpd#subnets#0#broadcast_address',
     'routers'                         => 'dhcpd#subnets#0#routers#0',
     'next server'                     => 'dhcpd#subnets#0#next_server',
-    'pxeboot next server'             => 'dhcpd#hosts#1#next_server',
+    'pxeboot next server'             => 'dhcpd#hosts#0#next_server',
     'first reserved IP'               => 'dhcpd#hosts#0#fixed_address',
     'second reserved IP'              => 'dhcpd#hosts#1#fixed_address',
     'internal network address'        => 'tftpd#listen_ip',
     'vsftpd internal network address' => 'vsftpd_config#listen_address'
   }
-  fill_in(fieldids[field], with: net_prefix + ADDRESSES[host], fill_options: { clear: :backspace })
+  fill_in(fieldids[field], with: net_prefix + PRIVATE_ADDRESSES[host], fill_options: { clear: :backspace })
 end
 
 When(/^I enter "([^"]*)" in (.*) field$/) do |value, field|
@@ -379,7 +343,7 @@ When(/^I enter "([^"]*)" in (.*) field$/) do |value, field|
     'listen interfaces'            => 'dhcpd#listen_interfaces#0',
     'network mask'                 => 'dhcpd#subnets#0#netmask',
     'filename'                     => 'dhcpd#subnets#0#filename',
-    'pxeboot filename'             => 'dhcpd#hosts#1#filename',
+    'pxeboot filename'             => 'dhcpd#hosts#0#filename',
     'first reserved hostname'      => 'dhcpd#hosts#0#$key',
     'second reserved hostname'     => 'dhcpd#hosts#1#$key',
     'virtual network IPv4 address' => 'default_net#ipv4#gateway',
@@ -433,8 +397,6 @@ When(/^I enter "([^"]*)" in (.*) field of (.*) zone$/) do |value, field, zone|
     'second A address'         => '#records#A#1#1',
     'third A name'             => '#records#A#2#0',
     'third A address'          => '#records#A#2#1',
-    'fourth A name'            => '#records#A#3#0',
-    'fourth A address'         => '#records#A#3#1',
     'first NS'                 => '#records#NS#@#0',
     'first CNAME alias'        => '#records#CNAME#0#0',
     'first CNAME name'         => '#records#CNAME#0#1',
@@ -451,7 +413,7 @@ When(/^I enter "([^"]*)" in (.*) field of (.*) zone$/) do |value, field, zone|
 end
 
 When(/^I enter the local IP address of "([^"]*)" in (.*) field of (.*) zone$/) do |host, field, zone|
-  step %(I enter "#{net_prefix + ADDRESSES[host]}" in #{field} field of #{zone} zone)
+  step %(I enter "#{net_prefix + PRIVATE_ADDRESSES[host]}" in #{field} field of #{zone} zone)
 end
 
 When(/^I enter the MAC address of "([^"]*)" in (.*) field$/) do |host, field|
@@ -463,7 +425,7 @@ When(/^I enter the MAC address of "([^"]*)" in (.*) field$/) do |host, field|
   elsif host == 'sle15sp4_terminal'
     mac = $sle15sp4_terminal_mac
     mac = 'EE:EE:EE:00:00:06' if mac.nil?
-  elsif (host.include? 'deblike') || (host.include? 'debian11') || (host.include? 'ubuntu')
+  elsif (host.include? 'deblike') || (host.include? 'debian11') || (host.include? 'debian12') || (host.include? 'ubuntu')
     node = get_target(host)
     output, _code = node.run('ip link show dev ens4')
     mac = output.split("\n")[1].split[1]
@@ -472,18 +434,18 @@ When(/^I enter the MAC address of "([^"]*)" in (.*) field$/) do |host, field|
     output, _code = node.run('ip link show dev eth1')
     mac = output.split("\n")[1].split[1]
   end
-  fill_in(FIELD_IDS[field], with: 'ethernet ' + mac, fill_options: { clear: :backspace })
+  fill_in(FIELD_IDS[field], with: "ethernet #{mac}", fill_options: { clear: :backspace })
 end
 
 When(/^I enter the local zone name in (.*) field$/) do |field|
   reverse_net = get_reverse_net($private_net)
-  STDOUT.puts "#{$private_net} => #{reverse_net}"
+  $stdout.puts "#{$private_net} => #{reverse_net}"
   step %(I enter "#{reverse_net}" in #{field} field)
 end
 
 When(/^I enter the local file name in (.*) field of zone with local name$/) do |field|
-  reverse_filename = 'master/db.' + get_reverse_net($private_net)
-  STDOUT.puts "#{$private_net} => #{reverse_filename}"
+  reverse_filename = "master/db.#{get_reverse_net($private_net)}"
+  $stdout.puts "#{$private_net} => #{reverse_filename}"
   step %(I enter "#{reverse_filename}" in #{field} field of zone with local name)
 end
 
@@ -504,10 +466,10 @@ end
 When(/^I press "Add Item" in (.*) section$/) do |section|
   sectionids = {
     'host reservations' => 'dhcpd#hosts#add_item',
-    'config options'    => 'bind#config#options#add_item',
-    'configured zones'  => 'bind#configured_zones#add_item',
-    'available zones'   => 'bind#available_zones#add_item',
-    'partitions'        => 'partitioning#0#partitions#add_item'
+    'config options' => 'bind#config#options#add_item',
+    'configured zones' => 'bind#configured_zones#add_item',
+    'available zones' => 'bind#available_zones#add_item',
+    'partitions' => 'partitioning#0#partitions#add_item'
   }
   find(:xpath, "//i[@id='#{sectionids[section]}']").click
 end
@@ -515,9 +477,9 @@ end
 When(/^I press "Add Item" in (A|NS|CNAME|for zones) section of (.*) zone$/) do |field, zone|
   sectionids = {
     'for zones' => 'for_zones',
-    'NS'       => 'NS#@',
-    'CNAME'    => 'CNAME',
-    'A'        => 'A'
+    'NS' => 'NS#@',
+    'CNAME' => 'CNAME',
+    'A' => 'A'
   }
   xpath = "//input[@name='Name' and @value='#{zone}']/ancestor::div[starts-with(@id, 'bind#available_zones#')]//i[contains(@id, '##{sectionids[field]}#add_item')]"
   find(:xpath, xpath).click
@@ -534,7 +496,7 @@ When(/^I press "Remove Item" in (.*) CNAME of (.*) zone section$/) do |alias_nam
 end
 
 When(/^I press "Remove" in the routers section$/) do
-  cname_xpath = "//div[@id='dhcpd#subnets#0#routers#0']/button"
+  cname_xpath = '//div[@id=\'dhcpd#subnets#0#routers#0\']/button'
   find(:xpath, cname_xpath).click
 end
 
@@ -548,7 +510,7 @@ end
 
 # OS image build
 When(/^I enter the image filename for "([^"]*)" relative to profiles as "([^"]*)"$/) do |host, field|
-  git_profiles = ENV['GITPROFILES']
+  git_profiles = ENV.fetch('GITPROFILES', nil)
   path = compute_kiwi_profile_filename(host)
   step %(I enter "#{git_profiles}/#{path}" as "#{field}")
 end
@@ -566,7 +528,7 @@ end
 
 When(/^I am on the image store of the Kiwi image for organization "([^"]*)"$/) do |org|
   # There is no navigation step to access this URL, so we must use a visit call (https://github.com/SUSE/spacewalk/issues/15256)
-  visit("https://#{$server.full_hostname}/os-images/#{org}/")
+  visit("https://#{get_target('server').full_hostname}/os-images/#{org}/")
 end
 
 Then(/^I should see the name of the image for "([^"]*)"$/) do |host|
@@ -576,6 +538,6 @@ end
 
 Then(/^the image for "([^"]*)" should exist on the branch server$/) do |host|
   image = compute_kiwi_profile_name(host)
-  images, _code = $proxy.run('ls /srv/saltboot/image/')
-  raise "Image #{image} for #{host} does not exist" unless images.include? image
+  images, _code = get_target('proxy').run('ls /srv/saltboot/image/')
+  raise ScriptError, "Image #{image} for #{host} does not exist" unless images.include? image
 end

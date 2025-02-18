@@ -1,9 +1,10 @@
-# Copyright (c) 2017-2023 SUSE LLC
+# Copyright (c) 2017-2025 SUSE LLC
 # Licensed under the terms of the MIT license.
 
 @scope_openscap
 @scope_deblike
 @deblike_minion
+@skip_if_github_validation
 Feature: OpenSCAP audit of Debian-like Salt minion
   In order to audit a Debian-like Salt minion
   As an authorized user
@@ -12,10 +13,11 @@ Feature: OpenSCAP audit of Debian-like Salt minion
   Scenario: Log in as admin user
     Given I am authorized for the "Admin" section
 
+  @skip_if_github_validation
   Scenario: Enable all the necessary repositories for OpenSCAP on Debian-like minion
     When I enable Debian-like "universe" repository on "deblike_minion"
-    And I enable the repositories "tools_update_repo tools_pool_repo" on this "deblike_minion"
 
+  @skip_if_github_validation
   Scenario: Install the OpenSCAP packages on the Debian-like minion
     Given I am on the Systems overview page of this "deblike_minion"
     When I refresh the metadata for "deblike_minion"
@@ -27,9 +29,12 @@ Feature: OpenSCAP audit of Debian-like Salt minion
   Scenario: Schedule an OpenSCAP audit job on the Debian-like minion
     Given I am on the Systems overview page of this "deblike_minion"
     When I follow "Audit" in the content area
+    And I follow "OpenSCAP" in the content area
     And I follow "Schedule" in the content area
     And I wait at most 30 seconds until I do not see "This system does not yet have OpenSCAP scan capability." text, refreshing the page
     And I enter "--profile standard" as "params"
+    # WORKAROUND: the security guide for 24.04 does not exist yet
+    #             for now we still use the security guide for 22.04
     And I enter "/usr/share/xml/scap/ssg/content/ssg-ubuntu2204-xccdf.xml" as "path"
     And I click on "Schedule"
     Then I should see a "XCCDF scan has been scheduled" text
@@ -38,6 +43,7 @@ Feature: OpenSCAP audit of Debian-like Salt minion
   Scenario: Check the results of the OpenSCAP scan on the Debian-like minion
     Given I am on the Systems overview page of this "deblike_minion"
     When I follow "Audit" in the content area
+    And I follow "OpenSCAP" in the content area
     And I follow "xccdf_org.open-scap_testresult"
     Then I should see a "Details of XCCDF Scan" text
     And I should see a "Ubuntu" text
@@ -58,6 +64,7 @@ Feature: OpenSCAP audit of Debian-like Salt minion
   Scenario: Cleanup: delete audit results from Debian-like minion
     Given I am on the Systems overview page of this "deblike_minion"
     When I follow "Audit" in the content area
+    And I follow "OpenSCAP" in the content area
     And I follow "List Scans" in the content area
     And I click on "Select All"
     And I click on "Remove Selected Scans"
@@ -72,9 +79,10 @@ Feature: OpenSCAP audit of Debian-like Salt minion
     And I click on "Update Organization"
     Then I should see a "Organization SUSE Test was successfully updated." text
 
+  @skip_if_github_validation
   Scenario: Cleanup: remove the OpenSCAP packages from the Debian-like minion
     When I remove OpenSCAP dependencies from "deblike_minion"
 
+  @skip_if_github_validation
   Scenario: Cleanup: remove all the necessary repositories for OpenSCAP on Debian-like minion
-    When I disable the repositories "tools_update_repo tools_pool_repo" on this "deblike_minion"
     And I disable Debian-like "universe" repository on "deblike_minion"

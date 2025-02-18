@@ -1,3 +1,5 @@
+const scrollTarget = "#page-body";
+
 function onDocumentReadyGeneral(){
   // See if there is a system already selected as soon as the page loads
   updateSsmToolbarOpacity();
@@ -18,19 +20,13 @@ function onDocumentReadyGeneral(){
   scrollTopBehavior();
 }
 
-function adaptFluidColLayout() {
-  jQuery('.col-class-calc-width').each(function() {
-    var totalWidth = jQuery(this).parent().width();
-    jQuery(this).siblings('.col').each(function() {
-      totalWidth = Math.floor(totalWidth - jQuery(this).outerWidth());
-    });
-    jQuery(this).css('width', totalWidth - 10);
-  });
-}
-
+let isReady = false;
 /* Getting the screen size to create a fixed padding-bottom in the Section tag to make both columns the same size */
 // On window load and resize
-jQuery(window).on("load resize", alignContentDimensions);
+jQuery(window).on("load resize", () => {
+  isReady = true;
+  alignContentDimensions();
+});
 
 // Ensure legacy layouts update their sizes when global notifications are added/removed
 var isListening = false;
@@ -49,28 +45,20 @@ function listenForGlobalNotificationChanges() {
 
 // On section#spacewalk-content scroll
 function scrollTopBehavior() {
-  jQuery(window).on("scroll", function () {
-    if(jQuery(this).scrollTop() > 100) {
-      jQuery('#scroll-top').show();
-    } else {
-      jQuery('#scroll-top').hide();
-    }
-
+  jQuery(scrollTarget).on("scroll", function () {
     sstScrollBehavior();
-  });
-
-  jQuery(document).on('click', '#scroll-top', function() {
-    window.scrollTo(0,0);
   });
 }
 
 // A container function for what should be fired
 // to set HTML tag dimensions
 function alignContentDimensions() {
-  adaptFluidColLayout();
-  adjustDistanceForFixedHeader();
+  if (!isReady) {
+    return;
+  }
+
   sstStyle();
-  columnHeight();
+  navbarToggleMobile();
 }
 
 // empty function by default hooked on window.scroll event
@@ -86,7 +74,7 @@ function sstScrollBehaviorSetup(sst) {
 
   // override the empty function hooked on window.scroll event                                              │
   sstScrollBehavior = function() {
-    var currentScroll = jQuery(window).scrollTop();
+    var currentScroll = jQuery(scrollTarget).scrollTop();
     if (currentScroll >= fixedTop) {
       sst.after(adjustSpaceObject);
       jQuery(sst).addClass('fixed');
@@ -101,7 +89,8 @@ function sstScrollBehaviorSetup(sst) {
 // when the page scrolls down and the toolbar is going up and hidden,
 // the toolbar takes a fixed place right below the header bar
 function handleSst() {
-  var sst = jQuery('.spacewalk-section-toolbar');
+  // Some pages may have multiple instances of this element
+  var sst = jQuery('.spacewalk-section-toolbar').first();
 
   if (jQuery('.move-to-fixed-toolbar').length > 0) {
     // if there is no 'spacewalk-section-toolbar', then create it
@@ -145,7 +134,7 @@ function handleSst() {
 }
 
 function sstStyle() {
-  var sst = jQuery('.spacewalk-section-toolbar');
+  var sst = jQuery('.spacewalk-section-toolbar').first();
   if (sst.hasClass('fixed')) {
     sst.css({
       top: jQuery('header').outerHeight() - 1,
@@ -161,32 +150,15 @@ function sstStyle() {
   sst.width(sst.parent().width() - sst.css('padding-left') - sst.css('padding-right'));
 }
 
-// Header is fixed, the main content column needs
-// padding-top equals the header height to be fully visible
-function adjustDistanceForFixedHeader() {
-  // subtract 1px in case the outerHeight comes to us already upper rounded
-  jQuery('body').css('padding-top', jQuery('header').outerHeight());
-}
-
-// Make columns 100% in height
-function columnHeight() {
-  const aside = jQuery('.spacewalk-main-column-layout aside');
-  const navToolBox = jQuery('.spacewalk-main-column-layout aside .nav-tool-box');
-  const headerHeight = jQuery('header').outerHeight();
-  const footerHeight = jQuery('footer').outerHeight();
-  const winHeight = jQuery(window).height();
-  // // Column height should equal the window height minus the header and footer height
-  aside.css('height', winHeight - headerHeight);
-  // aside.css('padding-bottom', footerHeight);
-  const nav = jQuery('.spacewalk-main-column-layout aside #nav nav ul.level1');
-  nav.css('height', aside.outerHeight() - navToolBox.outerHeight() - footerHeight);
-};
-
 jQuery(document).on('click', '.navbar-toggle', function() {
-  jQuery('aside').toggleClass('in');
-  jQuery('aside').toggleClass('collapse');
-  columnHeight();
+  jQuery('aside').toggleClass('in collapse');
 });
+
+function navbarToggleMobile() {
+  if (window.matchMedia("(max-width: 768px)").matches) {
+    jQuery('aside').addClass('in collapse');
+  }
+};
 
 // returns an object that can be passed to ajax renderer as a callback
 // puts rendered HTML in #divId, opens an alert with the same text if
@@ -198,7 +170,6 @@ function makeRendererHandler(divId, debug) {
     }
     jQuery('#' + divId).html(text);
     jQuery('#' + divId).fadeIn();
-    columnHeight();
   });
 }
 
@@ -244,6 +215,20 @@ function showFatalError(message, exception) {
   }
 }
 
+/**
+ * Escapes special HTML characters in a string.
+ * @param {string} original - The string that may contain special HTML characters.
+ * @returns {string} - A new string with special HTML characters replaced with their entities.
+ */
+function escapeHtml(original) {
+  return original
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/\//g, '&#x2F;');
+}
 
 // Extension to Twitter Bootstrap.
 // Gives you a col-XX-auto class like Bootstrap
@@ -270,56 +255,6 @@ function onDocumentReadyAutoBootstrapGrid() {
         });
       }
     });
-  });
-}
-
-// Humanizes all the time elements with the human class
-function humanizeDates() {
-  // should be consistent with UserPreferencesUtils.java
-  moment.lang(window.preferredLocale, {
-    longDateFormat : {
-      LT: "HH:mm",
-      LTS: "HH:mm:ss",
-      L: "YYYY-MM-DD",
-      LL: "YYYY-MM-DD",
-      LLL: "YYYY-MM-DD",
-      LLLL: "YYYY-MM-DD"
-    },
-  });
-
-  jQuery("time.human-from, time.human-calendar").each(function (index) {
-    var datetime = jQuery(this).attr('datetime');
-    if (datetime == undefined) {
-      // if the attribute is not set, the content
-      // should be a valid date
-      datetime = jQuery(this).html();
-    }
-    var parsed = moment(datetime);
-    if (parsed.isValid()) {
-      var originalContent = jQuery(this).html();
-      if (jQuery(this).hasClass("human-from")) {
-        var ref = jQuery(this).attr("data-reference-date");
-        if (ref) {
-          var refParsed = moment(ref);
-          if (refParsed.isValid()) {
-            jQuery(this).html(parsed.from(refParsed));
-          }
-        }
-        else {
-          jQuery(this).html(parsed.fromNow());
-        }
-      }
-      if (jQuery(this).hasClass("human-calendar")) {
-        jQuery(this).html(parsed.calendar());
-      }
-      // if the original did not had a datetime attribute, add it
-      var datetimeAttr = jQuery(this).attr('datetime');
-      if (datetimeAttr == undefined) {
-        jQuery(this).attr('datetime', datetime);
-      }
-      // add a tooltip
-      jQuery(this).attr('title', originalContent);
-    }
   });
 }
 
@@ -546,7 +481,6 @@ function onDocumentReadyInitOldJS() {
   sstScrollBehaviorSetupIsDone = false;
   onDocumentReadyGeneral();
   onDocumentReadyAutoBootstrapGrid();
-  humanizeDates();
   initIEWarningUse();
   listenForGlobalNotificationChanges();
 }
@@ -555,7 +489,6 @@ jQuery(document).ready(function() {
   onDocumentReadyGeneral();
   onDocumentReadyAutoBootstrapGrid();
   registerSpacewalkContentObservers();
-  humanizeDates();
   initIEWarningUse();
   listenForGlobalNotificationChanges();
 });

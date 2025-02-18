@@ -1,5 +1,64 @@
-- Do not specify a cobbler version, as that is now centralized at the
-  patterns
+-------------------------------------------------------------------
+Fri Jan 24 14:57:15 CET 2025 - marina.latini@suse.com
+
+- version 5.1.2-0
+  * Remove the spacewalk-postgresql package
+
+-------------------------------------------------------------------
+Mon Oct 14 15:42:29 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Mon Jun 10 16:54:14 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.3-0
+  * Drop dependency to spacewalk-backend-config-files,
+    spacewalk-backend-config-files-common,
+    spacewalk-backend-config-files-tool
+  * Remove dependency on spacewalk-backend-applet
+
+-------------------------------------------------------------------
+Fri May 03 14:16:07 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.2-0
+  * Drop dependency to spacewalk-backend-config-files,
+    spacewalk-backend-config-files-common,
+    spacewalk-backend-config-files-tool
+
+-------------------------------------------------------------------
+Tue Jan 16 08:23:48 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Remove the requirement for pxe-default image on SUSE Linux Enterprise,
+    as it is not provided anymore for SUSE Manager 5.0
+  * Move release files from spacewalk to spacewalk web, and add
+    the Mainteanance Update or Milestone version when the package
+    is built for SUSE Manager
+
+-------------------------------------------------------------------
+Fri Dec 15 16:59:01 CET 2023 - rosuna@suse.com
+
+- version 4.4.5-1
+  * Fix postgres require macros to be installable introducing
+    postgresql_version_min and postgresql_version_max to limit
+    allowed postgresql version
+  * Allow postgresql version dependency to be set in project config
+
+-------------------------------------------------------------------
+Mon Sep 18 14:23:53 CEST 2023 - rosuna@suse.com
+
+- version 4.4.4-1
+  * remove old obsoletes in spec
+  * Link /usr/bin/initdb for Enterprise Linux.
+
+-------------------------------------------------------------------
+Tue Feb 21 14:04:30 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.3-1
+  * Do not specify a cobbler version, as that is now centralized at the
+    patterns
 
 -------------------------------------------------------------------
 Wed Dec 14 14:13:41 CET 2022 - jgonzalez@suse.com

@@ -1076,7 +1076,7 @@
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/channels/manage/Edit.do</context>
         </context-group>
-        <target state="translated">软件源</target>
+        <target state="translated">储存库</target>
       </trans-unit>
       <trans-unit id="Managers" xml:space="preserve">
         <source>Managers</source>
@@ -1242,6 +1242,18 @@
           <context context-type="sourcefile">/rhn/software/channel/downloads/Download.do</context>
         </context-group>
         <target state="final">AppStream</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="nav.system.coco" xml:space="preserve">
+        <source>Confidential Computing</source>
+        <target state="final">机密计算</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="nav.system.coco.settings" xml:space="preserve">
+        <source>Settings</source>
+        <target state="final">设置</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="nav.system.coco.list_attestations" xml:space="preserve">
+        <source>List Attestations</source>
+        <target state="final">列出证明</target>
       </trans-unit>
     </body>
   </file>

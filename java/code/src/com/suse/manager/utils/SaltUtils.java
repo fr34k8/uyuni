@@ -27,7 +27,6 @@ import com.redhat.rhn.domain.action.Action;
 import com.redhat.rhn.domain.action.ActionFactory;
 import com.redhat.rhn.domain.action.ActionStatus;
 import com.redhat.rhn.domain.action.ActionType;
-import com.redhat.rhn.domain.action.channel.SubscribeChannelsAction;
 import com.redhat.rhn.domain.action.config.ConfigRevisionActionResult;
 import com.redhat.rhn.domain.action.config.ConfigVerifyAction;
 import com.redhat.rhn.domain.action.dup.DistUpgradeAction;
@@ -43,10 +42,6 @@ import com.redhat.rhn.domain.action.scap.ScapAction;
 import com.redhat.rhn.domain.action.script.ScriptResult;
 import com.redhat.rhn.domain.action.script.ScriptRunAction;
 import com.redhat.rhn.domain.action.server.ServerAction;
-import com.redhat.rhn.domain.action.virtualization.BaseVirtualizationGuestAction;
-import com.redhat.rhn.domain.action.virtualization.BaseVirtualizationNetworkAction;
-import com.redhat.rhn.domain.action.virtualization.BaseVirtualizationPoolAction;
-import com.redhat.rhn.domain.channel.AccessTokenFactory;
 import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.config.ConfigRevision;
 import com.redhat.rhn.domain.image.ImageFile;
@@ -72,7 +67,9 @@ import com.redhat.rhn.domain.rhnpackage.PackageType;
 import com.redhat.rhn.domain.server.InstalledPackage;
 import com.redhat.rhn.domain.server.InstalledProduct;
 import com.redhat.rhn.domain.server.MinionServer;
+import com.redhat.rhn.domain.server.SAPWorkload;
 import com.redhat.rhn.domain.server.Server;
+import com.redhat.rhn.domain.server.ServerAppStream;
 import com.redhat.rhn.domain.server.ServerFactory;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.frontend.action.common.BadParameterException;
@@ -84,6 +81,9 @@ import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.taskomatic.TaskomaticApi;
 import com.redhat.rhn.taskomatic.TaskomaticApiException;
 
+import com.suse.manager.attestation.AttestationManager;
+import com.suse.manager.model.attestation.CoCoAttestationStatus;
+import com.suse.manager.model.attestation.ServerCoCoAttestationReport;
 import com.suse.manager.reactor.hardware.CpuArchUtil;
 import com.suse.manager.reactor.hardware.HardwareMapper;
 import com.suse.manager.reactor.messaging.ApplyStatesEventMessage;
@@ -100,6 +100,8 @@ import com.suse.manager.webui.services.iface.SystemQuery;
 import com.suse.manager.webui.services.impl.runner.MgrUtilRunner;
 import com.suse.manager.webui.services.pillar.MinionPillarManager;
 import com.suse.manager.webui.utils.YamlHelper;
+import com.suse.manager.webui.utils.salt.custom.AppStreamsChangeSlsResult;
+import com.suse.manager.webui.utils.salt.custom.CoCoAttestationRequestData;
 import com.suse.manager.webui.utils.salt.custom.DistUpgradeDryRunSlsResult;
 import com.suse.manager.webui.utils.salt.custom.DistUpgradeOldSlsResult;
 import com.suse.manager.webui.utils.salt.custom.DistUpgradeSlsResult;
@@ -118,7 +120,6 @@ import com.suse.manager.webui.utils.salt.custom.OSImageInspectSlsResult;
 import com.suse.manager.webui.utils.salt.custom.PkgProfileUpdateSlsResult;
 import com.suse.manager.webui.utils.salt.custom.RetOpt;
 import com.suse.manager.webui.utils.salt.custom.SystemInfo;
-import com.suse.manager.webui.websocket.VirtNotifications;
 import com.suse.salt.netapi.calls.modules.Openscap;
 import com.suse.salt.netapi.calls.modules.Pkg;
 import com.suse.salt.netapi.calls.modules.Pkg.Info;
@@ -218,7 +219,11 @@ public class SaltUtils {
         /**
          * A separate full refresh is necessary.
          */
-        NEEDS_REFRESHING
+        NEEDS_REFRESHING,
+        /**
+         * A separate full refresh is necessary, but salt was updated and we need delay refreshing
+         */
+        NEEDS_DELAYED_REFRESHING
     }
 
     /**
@@ -347,6 +352,13 @@ public class SaltUtils {
         );
 
         if (fullRefreshNeeded) {
+            boolean needDelay = changes.entrySet()
+                    .stream().anyMatch(e ->
+                            e.getKey().startsWith("salt") ||
+                                    e.getKey().equals("venv-salt-minion"));
+            if (needDelay) {
+                return PackageChangeOutcome.NEEDS_DELAYED_REFRESHING;
+            }
             return PackageChangeOutcome.NEEDS_REFRESHING;
         }
         else {
@@ -453,14 +465,12 @@ public class SaltUtils {
                 }).orElseGet(Stream::empty))
                 // we sort by run order process multiple package changing states right
                 .sorted(Comparator.comparingInt(StateApplyResult::getRunNum))
-                .collect(Collectors.toList());
+                .toList();
         for (StateApplyResult<JsonElement> value : collect) {
-              Map<String, Change<Xor<String, List<Pkg.Info>>>> delta =
-                      extractPackageDelta(value.getChanges());
-
-            if (applyChangesFromStateModule(delta, server) ==
-                    PackageChangeOutcome.NEEDS_REFRESHING) {
-                return PackageChangeOutcome.NEEDS_REFRESHING;
+            Map<String, Change<Xor<String, List<Pkg.Info>>>> delta = extractPackageDelta(value.getChanges());
+            PackageChangeOutcome changeOutcome = applyChangesFromStateModule(delta, server);
+            if (changeOutcome != PackageChangeOutcome.DONE) {
+                return changeOutcome;
             }
         }
         return PackageChangeOutcome.DONE;
@@ -476,12 +486,50 @@ public class SaltUtils {
                         .getType()
             ).getRet();
         }
+        else if (json.getAsJsonObject().has("installed") && json.getAsJsonObject().has("removed")) {
+            var installedRemoved =
+            Json.GSON.<InstalledRemoved<Map<String, Change<Xor<String, List<Info>>>>>>fromJson(
+                json,
+                new TypeToken<InstalledRemoved<Map<String, Change<Xor<String, List<Info>>>>>>() { }
+                        .getType()
+            );
+
+            var delta = new HashMap<>(installedRemoved.getInstalled());
+            delta.putAll(installedRemoved.getRemoved());
+            return delta;
+        }
         else {
             return Json.GSON.fromJson(
                 json,
                 new TypeToken<Map<String, Change<Xor<String, List<Pkg.Info>>>>>() { }
                     .getType()
             );
+        }
+    }
+
+    /**
+     * Wrapper object representing a "changes" element containing "installed" and "removed" elements inside:
+     * "changes: { "installed": "pkg_name": { "new": "", "old": "1.7.9" } }
+     *
+     * @deprecated Temporarily here until available in a new version of salt-net-api.
+     *
+     * @param <T> the type that is wrapped
+     */
+    @Deprecated
+    static class InstalledRemoved<T> {
+        private T installed;
+        private T removed;
+
+        InstalledRemoved() {
+            // default constructor
+        }
+
+        public T getInstalled() {
+            return this.installed;
+        }
+
+        public T getRemoved() {
+            return this.removed;
         }
     }
 
@@ -512,6 +560,7 @@ public class SaltUtils {
 
         // Determine the final status of the action
         if (actionFailed(function, jsonResult, success, retcode)) {
+            LOG.debug("Status of action {} being set to Failed.", serverAction.getParentAction().getId());
             serverAction.setStatus(ActionFactory.STATUS_FAILED);
             // check if the minion is locked (blackout mode)
             String output = getJsonResultWithPrettyPrint(jsonResult);
@@ -529,11 +578,21 @@ public class SaltUtils {
             handleStateApplyData(serverAction, jsonResult, retcode, success);
         }
         else if (action.getActionType().equals(ActionFactory.TYPE_SCRIPT_RUN)) {
+            if (serverAction.getStatus().equals(ActionFactory.STATUS_FAILED)) {
+                serverAction.setResultMsg("Failed to execute script. [jid=" + jid + "]");
+            }
+            else {
+                serverAction.setResultMsg("Script executed successfully. [jid=" +
+                        jid + "]");
+            }
             Map<String, StateApplyResult<CmdResult>> stateApplyResult = Json.GSON.fromJson(jsonResult,
                     new TypeToken<Map<String, StateApplyResult<CmdResult>>>() { }.getType());
-            CmdResult result = stateApplyResult.entrySet().stream()
-                    .findFirst().map(e -> e.getValue().getChanges())
-                    .orElseGet(CmdResult::new);
+            CmdResult result = new CmdResult();
+            if (stateApplyResult != null) {
+                result = stateApplyResult.entrySet().stream()
+                        .findFirst().map(e -> e.getValue().getChanges())
+                        .orElseGet(CmdResult::new);
+            }
             ScriptRunAction scriptAction = (ScriptRunAction) action;
             ScriptResult scriptResult = Optional.ofNullable(
                     scriptAction.getScriptActionDetails().getResults())
@@ -555,13 +614,6 @@ public class SaltUtils {
             scriptResult.setStopDate(serverAction.getCompletionTime());
 
             // Depending on the status show stdout or stderr in the output
-            if (serverAction.getStatus().equals(ActionFactory.STATUS_FAILED)) {
-                serverAction.setResultMsg("Failed to execute script. [jid=" + jid + "]");
-            }
-            else {
-                serverAction.setResultMsg("Script executed successfully. [jid=" +
-                        jid + "]");
-            }
             scriptResult.setOutput(printStdMessages(result.getStderr(), result.getStdout()).getBytes());
         }
         else if (action.getActionType().equals(ActionFactory.TYPE_IMAGE_BUILD)) {
@@ -583,6 +635,9 @@ public class SaltUtils {
         }
         else if (action.getActionType().equals(ActionFactory.TYPE_PACKAGES_LOCK)) {
             handlePackageLockData(serverAction, jsonResult, action);
+        }
+        else if (action.getActionType().equals(ActionFactory.TYPE_APPSTREAM_CONFIGURE)) {
+            handleAppStreamsChange(serverAction, jsonResult);
         }
         else if (action.getActionType().equals(ActionFactory.TYPE_HARDWARE_REFRESH_LIST)) {
             if (serverAction.getStatus().equals(ActionFactory.STATUS_FAILED)) {
@@ -655,22 +710,15 @@ public class SaltUtils {
         else if (action.getActionType().equals(ActionFactory.TYPE_SUBSCRIBE_CHANNELS)) {
             handleSubscribeChannels(serverAction, jsonResult, action);
         }
-        else if (action instanceof BaseVirtualizationGuestAction) {
-            // Tell VirtNotifications that we got a change, passing actionId
-            VirtNotifications.spreadActionUpdate(action);
-            // Dump the whole message since the failure could be anywhere in the chain
-            serverAction.setResultMsg(getJsonResultWithPrettyPrint(jsonResult));
-        }
-        else if (action instanceof BaseVirtualizationPoolAction || action instanceof BaseVirtualizationNetworkAction) {
-            // Tell VirtNotifications that we got a pool action change, passing action
-            VirtNotifications.spreadActionUpdate(action);
-            // Intentionally don't get only the comment since the changes value could be interesting
-            serverAction.setResultMsg(getJsonResultWithPrettyPrint(jsonResult));
+        else if (action.getActionType().equals(ActionFactory.TYPE_COCO_ATTESTATION)) {
+            handleCocoAttestationResult(action, serverAction, jsonResult);
         }
         else {
            serverAction.setResultMsg(getJsonResultWithPrettyPrint(jsonResult));
         }
+        LOG.debug("Finished update server action for action {}", action.getId());
     }
+
 
     private void handleStateApplyData(ServerAction serverAction, JsonElement jsonResult, long retcode,
             boolean success) {
@@ -776,23 +824,8 @@ public class SaltUtils {
     private void handleSubscribeChannels(ServerAction serverAction, JsonElement jsonResult, Action action) {
         if (serverAction.getStatus().equals(ActionFactory.STATUS_COMPLETED)) {
             serverAction.setResultMsg("Successfully applied state: " + ApplyStatesEventMessage.CHANNELS);
-            SubscribeChannelsAction sca = (SubscribeChannelsAction)action;
-
-            // if successful update channels in db and trigger pillar refresh
-            SystemManager.updateServerChannels(
-                    action.getSchedulerUser(),
-                    serverAction.getServer(),
-                    Optional.ofNullable(sca.getDetails().getBaseChannel()),
-                    sca.getDetails().getChannels());
         }
         else {
-            //set the token as invalid
-            SubscribeChannelsAction sca = (SubscribeChannelsAction)action;
-            sca.getDetails().getAccessTokens().forEach(token -> {
-                token.setValid(false);
-                AccessTokenFactory.save(token);
-            });
-
             serverAction.setResultMsg("Failed to apply state: " + ApplyStatesEventMessage.CHANNELS + ".\n" +
                     getJsonResultWithPrettyPrint(jsonResult));
         }
@@ -800,23 +833,28 @@ public class SaltUtils {
 
     private String parseMigrationMessage(JsonElement jsonResult) {
         try {
-            DistUpgradeSlsResult distUpgradeSlsResult = Json.GSON.fromJson(
-                    jsonResult, DistUpgradeSlsResult.class);
-            StateApplyResult<RetOpt<Map<String, Change<String>>>> spmig =
-                    distUpgradeSlsResult.getSpmigration();
-            String message = spmig.getComment();
-            if (spmig.isResult()) {
-                message = spmig.getChanges().getRetOpt().map(ret -> ret.entrySet().stream().map(entry -> {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(entry.getKey());
-                    sb.append(":");
-                    sb.append(entry.getValue().getOldValue());
-                    sb.append("->");
-                    sb.append(entry.getValue().getNewValue());
-                    return sb.toString();
-                }).collect(Collectors.joining(","))).orElse(spmig.getComment());
+            DistUpgradeSlsResult distUpgradeSlsResult = Json.GSON.fromJson(jsonResult, DistUpgradeSlsResult.class);
+            if (distUpgradeSlsResult.getSpmigration() != null) {
+                StateApplyResult<RetOpt<Map<String, Change<String>>>> spmig =
+                        distUpgradeSlsResult.getSpmigration();
+                String message = spmig.getComment();
+                if (spmig.isResult()) {
+                    message = spmig.getChanges().getRetOpt().map(ret -> ret.entrySet().stream().map(entry ->
+                            entry.getKey() + ":" + entry.getValue().getOldValue() +
+                                    "->" + entry.getValue().getNewValue()
+                    ).collect(Collectors.joining(","))).orElse(spmig.getComment());
+                }
+                return message;
             }
-            return message;
+            else if (distUpgradeSlsResult.getLiberate() != null) {
+                StateApplyResult<CmdResult> liberate = distUpgradeSlsResult.getLiberate();
+                String message = getJsonResultWithPrettyPrint(jsonResult);
+                if (liberate.isResult()) {
+                    message = liberate.getChanges().getStdout();
+                }
+                return message;
+            }
+            return getJsonResultWithPrettyPrint(jsonResult);
         }
         catch (JsonSyntaxException e) {
             try {
@@ -835,7 +873,15 @@ public class SaltUtils {
                         }).orElse("");
             }
             catch (JsonSyntaxException ex) {
-                LOG.error("Unable to parse migration result", ex);
+                try {
+                    TypeToken<List<String>> typeToken = new TypeToken<>() {
+                    };
+                    List<String> saltError = Json.GSON.fromJson(jsonResult, typeToken.getType());
+                    return String.join("\n", saltError);
+                }
+                catch (JsonSyntaxException exc) {
+                    LOG.error("Unable to parse migration result", exc);
+                }
             }
         }
         return "Unable to parse migration result";
@@ -845,19 +891,20 @@ public class SaltUtils {
         try {
             DistUpgradeDryRunSlsResult distUpgradeSlsResult = Json.GSON.fromJson(
                     jsonResult, DistUpgradeDryRunSlsResult.class);
-            return distUpgradeSlsResult.getSpmigration()
-                    .getChanges().getRetOpt()
-                    .orElse("") + " " + distUpgradeSlsResult
-                    .getSpmigration().getComment();
+            if (distUpgradeSlsResult.getSpmigration() != null) {
+                return String.join(" ",
+                                   distUpgradeSlsResult.getSpmigration().getChanges().getRetOpt().orElse(""),
+                                   distUpgradeSlsResult.getSpmigration().getComment());
+            }
         }
         catch (JsonSyntaxException e) {
             try {
                 DistUpgradeOldSlsResult distUpgradeSlsResult = Json.GSON.fromJson(
                         jsonResult, DistUpgradeOldSlsResult.class);
-                return distUpgradeSlsResult.getSpmigration()
-                        .getChanges().getRetOpt().map(ModuleRun::getComment)
-                        .orElse("") + " " + distUpgradeSlsResult
-                        .getSpmigration().getComment();
+                return String.join(" ",
+                                   distUpgradeSlsResult.getSpmigration().getChanges().getRetOpt()
+                                           .map(ModuleRun::getComment).orElse(""),
+                                   distUpgradeSlsResult.getSpmigration().getComment());
             }
             catch (JsonSyntaxException ex) {
                 LOG.error("Unable to parse dry run result", ex);
@@ -1200,6 +1247,19 @@ public class SaltUtils {
         return results;
     }
 
+    /**
+     * Returns the root cause of a failed state.apply result by filtering out the subsequent failures.
+     * @param stateApplyResultMap the map of the state apply results
+     * @return the first failed state.apply result
+     * @param <R> the type of the state.apply result
+     */
+    private static <R> Optional<StateApplyResult<R>> getOriginalStateApplyError(
+            Map<String, StateApplyResult<R>> stateApplyResultMap) {
+        return stateApplyResultMap.values().stream()
+                .filter(r -> !r.getComment().startsWith("One or more requisite failed"))
+                .findFirst();
+    }
+
     private void handleImagePackageProfileUpdate(ImageInfo imageInfo,
             ImagesProfileUpdateSlsResult result, ServerAction serverAction) {
         ActionStatus as = ActionFactory.STATUS_COMPLETED;
@@ -1335,6 +1395,34 @@ public class SaltUtils {
         ErrataManager.insertErrataCacheTask(imageInfo);
     }
 
+    private void handleAppStreamsChange(ServerAction serverAction, JsonElement jsonResult) {
+        Optional<MinionServer> server = serverAction.getServer().asMinionServer();
+        if (server.isEmpty()) {
+            return;
+        }
+
+        if (ActionFactory.STATUS_FAILED.equals(serverAction.getStatus())) {
+            // Filter out the subsequent errors to find the root cause
+            var originalErrorMsg = jsonEventToStateApplyResults(jsonResult)
+                    .map(SaltUtils::getOriginalStateApplyError)
+                        .orElseThrow(() -> new RuntimeException("Failed to parse the state.apply error result"))
+                    .map(StateApplyResult::getComment)
+                    .map(msg -> msg.isEmpty() ? null : msg)
+                    .orElse("Error while configuring AppStreams on the system.\nGot no result from the system.");
+
+            serverAction.setResultMsg(originalErrorMsg);
+            return;
+        }
+
+        var currentlyEnabled = Json.GSON.fromJson(jsonResult, AppStreamsChangeSlsResult.class).getCurrentlyEnabled();
+        Set<ServerAppStream> enabledModules = currentlyEnabled.stream()
+            .map(nsvca -> new ServerAppStream(server.get(), nsvca))
+            .collect(Collectors.toSet());
+        server.get().getAppStreams().clear();
+        server.get().getAppStreams().addAll(enabledModules);
+        serverAction.setResultMsg("Successfully changed system AppStreams.");
+    }
+
     /**
      * Perform the actual update of the database based on given event data.
      *
@@ -1435,16 +1523,40 @@ public class SaltUtils {
             }
         }
 
+        // Update last boot time
+        handleUptimeUpdate(server, result.getUpTime()
+                .map(ut -> (Number)ut.getChanges().getRet().get("seconds"))
+                .map(n -> n.longValue())
+                .orElse(null));
+
+        result.getRebootRequired()
+            .map(rr -> rr.getChanges().getRet())
+            .filter(Objects::nonNull)
+            .map(ret -> (Boolean) ret.get("reboot_required"))
+            .ifPresent(flag -> server.setRebootRequiredAfter(flag ? new Date() : null));
+
         // Update live patching version
         server.setKernelLiveVersion(result.getKernelLiveVersionInfo()
                 .map(klv -> klv.getChanges().getRet()).filter(Objects::nonNull)
                 .map(KernelLiveVersionInfo::getKernelLiveVersion).orElse(null));
+
+        // Update AppStream modules
+        Set<ServerAppStream> enabledAppStreams = result.getEnabledAppstreamModules()
+                .map(m -> m.getChanges().getRet())
+                .orElse(Collections.emptySet())
+                .stream()
+                .map(nsvca -> new ServerAppStream(server, nsvca))
+                .collect(Collectors.toSet());
+
+        server.getAppStreams().clear();
+        server.getAppStreams().addAll(enabledAppStreams);
 
         // Update grains
         if (!result.getGrains().isEmpty()) {
             server.setOsFamily(grains.getValueAsString("os_family"));
             server.setRunningKernel(grains.getValueAsString("kernelrelease"));
             server.setOs(grains.getValueAsString("osfullname"));
+            server.setCpe(grains.getValueAsString("cpe"));
 
             /** Release is set directly from grain information for SUSE systems only.
                 RH systems require some parsing on the grains to get the correct release
@@ -1505,7 +1617,7 @@ public class SaltUtils {
 
         Collection<InstalledPackage> unchanged = oldPackageMap.entrySet().stream().filter(
             e -> newPackageMap.containsKey(e.getKey())
-        ).map(Map.Entry::getValue).collect(Collectors.toList());
+        ).map(Map.Entry::getValue).toList();
         packages.retainAll(unchanged);
 
         Map<String, Tuple2<String, Pkg.Info>> packagesToAdd = newPackageMap.entrySet().stream().filter(
@@ -1565,7 +1677,7 @@ public class SaltUtils {
         return packageInfoAndNameBySaltPackageKey.entrySet().stream().map(e -> createInstalledPackage(
                 packageNames.get(e.getValue().getA()),
                 packageEvrsBySaltPackageKey.get(e.getKey()), e.getValue().getB(), server))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -1656,6 +1768,57 @@ public class SaltUtils {
         return packageToKey(entry.getKey(), entry.getValue());
     }
 
+    private void handleCocoAttestationResult(Action action, ServerAction serverAction, JsonElement jsonResult) {
+        AttestationManager mgr = new AttestationManager();
+
+        Optional<ServerCoCoAttestationReport> optReport =
+                mgr.lookupReportByServerAndAction(serverAction.getServer(), action);
+        if (optReport.isEmpty()) {
+            serverAction.setStatus(ActionFactory.STATUS_FAILED);
+            serverAction.setResultMsg("Failed to find a report entry");
+            return;
+        }
+        ServerCoCoAttestationReport report = optReport.get();
+
+        if (jsonResult == null) {
+            serverAction.setStatus(ActionFactory.STATUS_FAILED);
+            if (StringUtils.isBlank(serverAction.getResultMsg())) {
+                serverAction.setResultMsg("Error while request attestation data from target system:\n" +
+                       "Got no result from system");
+            }
+            return;
+        }
+
+        try {
+            CoCoAttestationRequestData requestData = Json.GSON.fromJson(jsonResult, CoCoAttestationRequestData.class);
+            report.setOutData(requestData.asMap());
+            mgr.initializeResults(report);
+        }
+        catch (JsonSyntaxException e) {
+            String msg = "Failed to parse the attestation result:\n";
+            msg += Optional.of(jsonResult)
+                    .map(JsonElement::toString)
+                    .orElse("Got no result");
+            LOG.error(msg);
+            serverAction.setStatus(ActionFactory.STATUS_FAILED);
+            serverAction.setResultMsg(msg);
+            return;
+        }
+        if (serverAction.getStatus().equals(ActionFactory.STATUS_FAILED)) {
+            String msg = "Error while request attestation data from target system:\n";
+            msg += getJsonResultWithPrettyPrint(jsonResult);
+            serverAction.setResultMsg(msg);
+            if (report.getResults().isEmpty()) {
+                // results are not initialized yet. So we need to set the report status
+                // directly to failed.
+                report.setStatus(CoCoAttestationStatus.FAILED);
+            }
+        }
+        else {
+            serverAction.setResultMsg("Successfully collected attestation data");
+        }
+    }
+
     /**
      * Update the hardware profile for a minion in the database from incoming
      * event data.
@@ -1672,6 +1835,7 @@ public class SaltUtils {
                 new ValueMap(result.getGrains()));
         hwMapper.mapCpuInfo(new ValueMap(result.getCpuInfo()));
         server.setRam(hwMapper.getTotalMemory());
+        server.setSwap(hwMapper.getTotalSwapMemory());
         if (CpuArchUtil.isDmiCapable(hwMapper.getCpuArch())) {
             hwMapper.mapDmiInfo(
                     result.getSmbiosRecordsBios().orElse(Collections.emptyMap()),
@@ -1692,9 +1856,23 @@ public class SaltUtils {
                         result.getDnsFqdns().stream()
                     ),
                     result.getCustomFqdns().stream()
-                ).distinct().collect(Collectors.toList())
+                ).distinct().toList()
         );
-        hwMapper.mapPaygInfo();
+        server.setPayg(result.getInstanceFlavor().map(o -> o.equals("PAYG")).orElse(false));
+        server.setContainerRuntime(result.getContainerRuntime());
+        server.setUname(result.getUname());
+
+        var sapWorkloads = result.getSAPWorkloads()
+                .map(m -> m.getChanges().getRet())
+                .orElse(Collections.emptySet())
+                .stream()
+                .map(workload -> new SAPWorkload(
+                        server, workload.get("system_id"), workload.get("instance_type")
+                ))
+                .collect(Collectors.toSet());
+
+        server.getSapWorkloads().retainAll(sapWorkloads);
+        server.getSapWorkloads().addAll(sapWorkloads);
 
         // Let the action fail in case there is error messages
         if (!hwMapper.getErrors().isEmpty()) {
@@ -1811,7 +1989,7 @@ public class SaltUtils {
                 rhelProductInfo.get().getName(), rhelProductInfo.get().getVersion(),
                 rhelProductInfo.get().getRelease(), server.getServerArch().getName());
 
-        return rhelProductInfo.get().getSuseProduct().map(product -> {
+        return rhelProductInfo.get().getAllSuseProducts().stream().map(product -> {
             String arch = server.getServerArch().getLabel().replace("-redhat-linux", "");
 
             InstalledProduct installedProduct = new InstalledProduct();
@@ -1819,10 +1997,10 @@ public class SaltUtils {
             installedProduct.setVersion(product.getVersion());
             installedProduct.setRelease(product.getRelease());
             installedProduct.setArch(PackageFactory.lookupPackageArchByLabel(arch));
-            installedProduct.setBaseproduct(true);
+            installedProduct.setBaseproduct(product.isBase());
 
-            return Collections.singleton(installedProduct);
-        }).orElse(Collections.emptySet());
+            return installedProduct;
+        }).collect(Collectors.toSet());
     }
 
     private static Set<InstalledProduct> getInstalledProductsForRhel(
@@ -1853,7 +2031,7 @@ public class SaltUtils {
                  rhelProductInfo.get().getName(), rhelProductInfo.get().getVersion(),
                  rhelProductInfo.get().getRelease(), image.getImageArch().getName());
 
-         return rhelProductInfo.get().getSuseProduct().map(product -> {
+         return rhelProductInfo.get().getAllSuseProducts().stream().map(product -> {
              String arch = image.getImageArch().getLabel().replace("-redhat-linux", "");
 
              InstalledProduct installedProduct = new InstalledProduct();
@@ -1863,8 +2041,8 @@ public class SaltUtils {
              installedProduct.setArch(PackageFactory.lookupPackageArchByLabel(arch));
              installedProduct.setBaseproduct(true);
 
-             return Collections.singleton(installedProduct);
-         }).orElse(Collections.emptySet());
+             return installedProduct;
+         }).collect(Collectors.toSet());
      }
 
     /**
@@ -1942,14 +2120,17 @@ public class SaltUtils {
      * @param uptimeSeconds uptime time in seconds
      */
     public static void handleUptimeUpdate(MinionServer minion, Long uptimeSeconds) {
+        if (uptimeSeconds == null) {
+            return;
+        }
         Date bootTime = new Date(
                 System.currentTimeMillis() - (uptimeSeconds * 1000));
         LOG.debug("Set last boot for {} to {}", minion.getMinionId(), bootTime);
         minion.setLastBoot(bootTime.getTime() / 1000);
 
         // cleanup old reboot actions
-        List<ServerAction> serverActions = ActionFactory
-                .listServerActionsForServer(minion);
+        List<ServerAction> serverActions = ActionFactory.listServerActionsForServerAndTypes(minion,
+                List.of(ActionFactory.TYPE_REBOOT));
         int actionsChanged = 0;
         for (ServerAction sa : serverActions) {
             if (shouldCleanupAction(bootTime, sa)) {
@@ -1965,6 +2146,7 @@ public class SaltUtils {
             LOG.debug("{} reboot actions set to completed", actionsChanged);
         }
     }
+
 
     private static boolean shouldCleanupAction(Date bootTime, ServerAction sa) {
         Action action = sa.getParentAction();

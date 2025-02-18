@@ -106,7 +106,7 @@ public class ProductSyncManager {
             // Ident are in the form 'product_id-label'. If the product id is negative, the ident starts with a minus,
             // so we need to skip the first character when performing the indexOf
             id -> Long.valueOf(id.substring(0, id.indexOf('-', 1)))
-        ).collect(Collectors.toList());
+        ).toList();
 
         // Retrieve the tree structure
         final Map<Long, Long> productTreeMap =
@@ -231,15 +231,9 @@ public class ProductSyncManager {
         int failedCounter = 0;
         SyncStatus syncStatus;
         Date maxLastSyncDate = null;
-        StringBuilder debugDetails = new StringBuilder();
-
 
         for (Channel c : product.getMandatoryChannels()) {
             SyncStatus channelStatus = getChannelSyncStatus(c.getLabel(), channelByLabel);
-
-            if (StringUtils.isNotBlank(channelStatus.getDetails())) {
-                debugDetails.append(channelStatus.getDetails());
-            }
 
             if (channelStatus.isNotMirrored()) {
                 LOGGER.debug("Channel not mirrored: {}", c.getLabel());
@@ -276,7 +270,6 @@ public class ProductSyncManager {
         // Status is FAILED if at least one channel has failed
         else if (failedCounter > 0) {
             syncStatus = new SyncStatus(SyncStatus.SyncStage.FAILED);
-            syncStatus.setDetails(debugDetails.toString());
         }
         // Otherwise return IN_PROGRESS
         else {
@@ -327,12 +320,6 @@ public class ProductSyncManager {
                 repoSyncRunFound = true;
                 lastRunEndTime = run.getEndTime();
 
-                // Get debug information
-                String debugInfo = run.getTailOfStdError(1024);
-                if (debugInfo.isEmpty()) {
-                    debugInfo = run.getTailOfStdOutput(1024);
-                }
-
                 // Set the status and debug info
                 String runStatus = run.getStatus();
                 if (LOGGER.isDebugEnabled()) {
@@ -345,7 +332,6 @@ public class ProductSyncManager {
                     // Reposync has failed or has been interrupted
                     SyncStatus status = new SyncStatus(SyncStatus.SyncStage.FAILED);
                     status.setMessageKey(prefix + "message.reposync.failed");
-                    status.setDetails(debugInfo);
 
                     // Don't return from here, there might be a new schedule already
                     lastFailedStatus = Optional.of(status);
@@ -355,7 +341,6 @@ public class ProductSyncManager {
                     // Reposync is in progress
                     SyncStatus status = new SyncStatus(SyncStatus.SyncStage.IN_PROGRESS);
                     status.setMessageKey(prefix + "message.reposync.progress");
-                    status.setDetails(debugInfo);
                     return status;
                 }
 
@@ -443,10 +428,10 @@ public class ProductSyncManager {
         List<Channel> mandatoryChannelsOut = collect.get(true).stream()
         // Add base channel on top of everything else so it can be added first.
         .sorted((a, b) -> StringUtils.isBlank(a.getParentLabel()) ? -1 :
-                StringUtils.isBlank(b.getParentLabel()) ? 1 : 0).map(mapping).collect(Collectors.toList());
+                StringUtils.isBlank(b.getParentLabel()) ? 1 : 0).map(mapping).toList();
 
         List<Channel> optionalChannelsOut = collect.get(false).stream()
-                .map(mapping).collect(Collectors.toList());
+                .map(mapping).toList();
 
         // Setup the product that will be displayed
         SetupWizardProductDto displayProduct = new SetupWizardProductDto(

@@ -1,9 +1,10 @@
-/* eslint-disable simple-import-sort/imports */
 import * as React from "react";
 
-import { useWebSocket } from "../../shared/websocket/useWebSocket";
 import { Button } from "components/buttons";
+
 import Network from "utils/network";
+
+import { useWebSocket } from "../../shared/websocket/useWebSocket";
 
 type Props = {
   count?: number;
@@ -21,16 +22,17 @@ export function SsmCounter(props: Props) {
 
   return (
     <>
-      <a href="/rhn/ssm/index.do" id="manage-ssm" title={t("Manage")}>
-        <div id="ssm-counter" />
-        <div id="header_selcount">
+      <a href="/rhn/ssm/index.do" id="manage-ssm" title={t("Manage selected system set")} className="hide-overflow">
+        <div id="header_selcount" className="hide-overflow">
           <span id="spacewalk-set-system_list-counter" className="badge">
             {count}
           </span>
-          {count === 1 ? t("system selected") : t("systems selected")}
+          <span id="ssm-text" className="hide-overflow">
+            {count === 1 ? t("system selected") : t("systems selected")}
+          </span>
         </div>
       </a>
-      <Button id="clear-ssm" title={t("Clear")} handler={ssm_clear} icon="fa-eraser" />
+      <Button id="clear-ssm" title={t("Clear selected system set")} handler={ssm_clear} icon="fa-eraser" />
     </>
   );
 }

@@ -14,11 +14,8 @@
  */
 package com.redhat.rhn.domain.scc;
 
-import com.redhat.rhn.common.conf.Config;
 import com.redhat.rhn.domain.BaseDomainHelper;
-import com.redhat.rhn.domain.credentials.Credentials;
-import com.redhat.rhn.domain.product.SUSEProductSCCRepository;
-import com.redhat.rhn.manager.content.ContentSyncManager;
+import com.redhat.rhn.domain.product.ChannelTemplate;
 
 import com.suse.scc.model.SCCRepositoryJson;
 
@@ -37,7 +34,6 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
@@ -49,26 +45,23 @@ import javax.persistence.Transient;
  */
 @Entity
 @Table(name = "suseSCCRepository")
-@NamedQueries
-({
-    @NamedQuery(name = "SCCRepository.lookupByChannelFamily",
-                query = "select r from SCCRepository r " +
-                        " join r.products pr " +
-                        " join pr.product p " +
-                        " join p.channelFamily cf " +
-                        "where cf.label = :channelFamily"),
-        @NamedQuery(name = "SCCRepository.lookupByUrlEndpoint",
-                query = "select r from SCCRepository r " +
-                        "where r.url like :urlEndpoint"),
-        @NamedQuery(name = "SCCRepository.lookupByProductNameAndArchForPayg",
-                query = "select distinct r from SCCRepository r " +
-                        " join r.products pr " +
-                        " join pr.product p " +
-                        " join p.arch a " +
-                        " where lower(p.name) = lower(:product_name) " +
-                        " and lower(a.label) = lower(:arch_name) " +
-                        " and r.installerUpdates = 'N' ")
-})
+@NamedQuery(name = "SCCRepository.lookupByChannelFamily",
+            query = "select r from SCCRepository r " +
+                    " join r.channelTemplates ct " +
+                    " join ct.product p " +
+                    " join p.channelFamily cf " +
+                    "where cf.label = :channelFamily")
+@NamedQuery(name = "SCCRepository.lookupByUrlEndpoint",
+            query = "select r from SCCRepository r " +
+                    "where r.url like :urlEndpoint")
+@NamedQuery(name = "SCCRepository.lookupByProductNameAndArchForPayg",
+            query = "select distinct r from SCCRepository r " +
+                    " join r.channelTemplates ct " +
+                    " join ct.product p " +
+                    " join p.arch a " +
+                    " where lower(p.name) = lower(:product_name) " +
+                    " and lower(a.label) = lower(:arch_name) " +
+                    " and r.installerUpdates = 'N' ")
 public class SCCRepository extends BaseDomainHelper {
 
     private Long id;
@@ -81,7 +74,7 @@ public class SCCRepository extends BaseDomainHelper {
     private boolean signed = true;
     private boolean installerUpdates = false;
 
-    private Set<SUSEProductSCCRepository> products = new HashSet<>();
+    private Set<ChannelTemplate> channelTemplates = new HashSet<>();
     private Set<SCCRepositoryAuth> auth = new HashSet<>();
 
     /**
@@ -256,7 +249,7 @@ public class SCCRepository extends BaseDomainHelper {
     /**
      * @return Returns the auth.
      */
-    @OneToMany(mappedBy = "repo")
+    @OneToMany(mappedBy = "repo", orphanRemoval = true)
     public Set<SCCRepositoryAuth> getRepositoryAuth() {
         return auth;
     }
@@ -269,41 +262,20 @@ public class SCCRepository extends BaseDomainHelper {
         return !getRepositoryAuth().isEmpty();
     }
 
+    // local -> rmt if valid -> scc (priority by locality) (groups ordered by id for stability)
     /**
      * @return the best authentication object if there is one for this repository.
      */
     @Transient
     public Optional<SCCRepositoryAuth> getBestAuth() {
         Optional<SCCRepositoryAuth> result = Optional.empty();
-        for (SCCRepositoryAuth a : getRepositoryAuth()) {
-            if (Config.get().getString(ContentSyncManager.RESOURCE_PATH, null) != null) {
-                if (!a.getOptionalCredentials().isPresent()) {
-                    return Optional.of(a);
-                }
-            }
-            // Credentials present
-            else if (a.getOptionalCredentials().isPresent()) {
-                Credentials ct = a.getOptionalCredentials().get(); //NOSONAR empty option is check in previous line
-                if (ct.getType().getLabel().equals(Credentials.TYPE_CLOUD_RMT)) {
-                    // if it's Cloud rmt authentication, we want to use it only if SCC credential is not available
-                    if (result.flatMap(SCCRepositoryAuth::getOptionalCredentials)
-                            .map(c -> !Credentials.TYPE_SCC.equals(c.getType().getLabel()))
-                            .orElse(true)) {
-                        result = Optional.of(a);
-                    }
-                }
-                // Not RMT
-                else if (a.getOptionalCredentials().flatMap(c -> Optional.ofNullable(c.getUrl())).isPresent()) {
-                    return Optional.of(a);
-                }
-            }
 
-            if (result.isEmpty() || a.getId() < result.get().getId()) {
-                // get always the same result and use the oldest alternative if there are multiple
-                result = Optional.of(a);
-            }
+        Set<SCCRepositoryAuth> repositoryAuth = getRepositoryAuth();
+        if (repositoryAuth.isEmpty()) {
+            return result;
         }
-        return result;
+
+        return repositoryAuth.stream().min(new SCCRepositoryAuthComparator());
     }
 
     /**
@@ -317,24 +289,23 @@ public class SCCRepository extends BaseDomainHelper {
      * @return Returns the products.
      */
     @OneToMany(mappedBy = "repository", fetch = FetchType.LAZY)
-    public Set<SUSEProductSCCRepository> getProducts() {
-        return products;
+    public Set<ChannelTemplate> getChannelTemplates() {
+        return channelTemplates;
     }
 
     /**
-     * @param productsIn The products to set.
+     * @param channelTemplatesIn The products to set.
      */
-    public void setProducts(Set<SUSEProductSCCRepository> productsIn) {
-        this.products = productsIn;
+    public void setChannelTemplates(Set<ChannelTemplate> channelTemplatesIn) {
+        this.channelTemplates = channelTemplatesIn;
     }
 
     /**
-     * @param productIn the product to add
+     * @param templateIn the channel template to add
      */
-    public void addProduct(SUSEProductSCCRepository productIn) {
-        productIn.setRepository(this);
-        this.products.add(productIn);
-
+    public void addChannelTemplate(ChannelTemplate templateIn) {
+        templateIn.setRepository(this);
+        this.channelTemplates.add(templateIn);
     }
 
     /**
@@ -342,12 +313,17 @@ public class SCCRepository extends BaseDomainHelper {
      */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof SCCRepository)) {
+        if (!(other instanceof SCCRepository otherSCCRepository)) {
             return false;
         }
-        SCCRepository otherSCCRepository = (SCCRepository) other;
         return new EqualsBuilder()
-            .append(getUrl(), otherSCCRepository.getUrl())
+                .append(getUrl(), otherSCCRepository.getUrl())
+                .append(getSccId(), otherSCCRepository.getSccId())
+                .append(getName(), otherSCCRepository.getName())
+                .append(getDescription(), otherSCCRepository.getDescription())
+                .append(isAutorefresh(), otherSCCRepository.isAutorefresh())
+                .append(isSigned(), otherSCCRepository.isSigned())
+                .append(isInstallerUpdates(), otherSCCRepository.isInstallerUpdates())
             .isEquals();
     }
 
@@ -357,8 +333,9 @@ public class SCCRepository extends BaseDomainHelper {
     @Override
     public int hashCode() {
         return new HashCodeBuilder()
-            .append(getUrl())
-            .toHashCode();
+                .append(getUrl())
+                .append(getSccId())
+                .toHashCode();
     }
 
     /**

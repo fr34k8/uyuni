@@ -17,12 +17,14 @@ if [ ${#} -ne 1 ];then
     usage_and_exit ${SCRIPT}
 fi
 
-schema_rpm=${1}
+schema_rpms=${1}
 
-if [ ! -f /root/${schema_rpm} ];then
-    echo "RPM /root/${schema_rpm} does not exists"
-    usage_and_exit ${SCRIPT}
-fi
+for i in ${schema_rpms};do
+    if [ ! -f /root/${i} ];then
+        echo "RPM /root/${i} does not exists"
+        usage_and_exit ${SCRIPT}
+    fi
+done
 
 cd /manager/susemanager-utils/testing/docker/scripts/
 
@@ -35,7 +37,7 @@ fi
 # Database schema creation
 
 pushd /root/
-rpm -ivh ${schema_rpm}
+rpm -ivh ${schema_rpms}
 popd
 
 export PERLLIB=/manager/spacewalk/setup/lib/:/manager/web/modules/rhn/:/manager/web/modules/pxt/:/manager/schema/spacewalk/lib
@@ -47,7 +49,6 @@ echo $PATH
 echo $PERLLIB
 
 export SYSTEMD_NO_WRAP=1
-sysctl -w kernel.shmmax=18446744073709551615
 su - postgres -c "/usr/lib/postgresql/bin/pg_ctl stop" ||:
 su - postgres -c "/usr/lib/postgresql/bin/pg_ctl start"
 
@@ -56,9 +57,17 @@ touch /var/lib/rhn/rhn-satellite-prep/etc/rhn/rhn.conf
 cp /root/rhn.conf /etc/rhn/rhn.conf
 smdba system-check autotuning --max_connections=50
 
-# this command will fail with certificate error. This is ok, so ignore the error
-spacewalk-setup --skip-system-version-test --skip-selinux-test --skip-fqdn-test --skip-ssl-cert-generation --skip-ssl-vhost-setup --skip-services-check --clear-db --answer-file=clear-db-answers-pgsql.txt --external-postgresql --non-interactive ||:
+# we changed the schema dir, but we start with a schema which live still in the old location
+# provide a symlink to make the tooling work
+if [ -d /etc/sysconfig/rhn/postgres -a ! -e /usr/share/susemanager/db/postgres ]; then
+    mkdir -p /usr/share/susemanager/db
+    ln -s /etc/sysconfig/rhn/postgres /usr/share/susemanager/db/postgres
+fi
 
+# this command will fail with certificate error. This is ok, so ignore the error
+spacewalk-setup --skip-initial-configuration --skip-fqdn-test --skip-ssl-cert-generation --skip-ssl-vhost-setup --skip-services-check --clear-db --answer-file=clear-db-answers-pgsql.txt ||:
+
+spacewalk-sql /usr/share/susemanager/db/postgres/main.sql
 
 # this copy the latest schema from the git into the system
 ./build-schema.sh
@@ -66,7 +75,7 @@ spacewalk-setup --skip-system-version-test --skip-selinux-test --skip-fqdn-test 
 RPMVERSION=`rpm -q --qf "%{version}\n" --specfile /manager/schema/spacewalk/susemanager-schema.spec | head -n 1`
 NEXTVERSION=`echo $RPMVERSION | awk '{ pre=post=$0; gsub("[0-9]+$","",pre); gsub(".*\\\\.","",post); print pre post+1; }'`
 
-if [ -d /etc/sysconfig/rhn/schema-upgrade/susemanager-schema-$RPMVERSION-to-susemanager-schema-$NEXTVERSION ]; then
+if [ -d /usr/share/susemanager/db/schema-upgrade/susemanager-schema-$RPMVERSION-to-susemanager-schema-$NEXTVERSION ]; then
     export SUMA_TEST_SCHEMA_VERSION=$NEXTVERSION
 
 else

@@ -24,7 +24,7 @@ import com.redhat.rhn.common.conf.Config;
 import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.common.util.FileUtils;
-import com.redhat.rhn.common.util.MD5Crypt;
+import com.redhat.rhn.common.util.SHA256Crypt;
 import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.channel.test.ChannelFactoryTest;
 import com.redhat.rhn.domain.common.CommonFactory;
@@ -74,7 +74,7 @@ import org.cobbler.CobblerConnection;
 import org.cobbler.Distro;
 import org.cobbler.test.MockConnection;
 import org.hibernate.Session;
-import org.hibernate.type.LongType;
+import org.hibernate.type.StandardBasicTypes;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -333,7 +333,7 @@ public class KickstartDataTest extends BaseTestCaseWithUser {
         Session session = HibernateFactory.getSession();
         return (KickstartData) session.getNamedQuery("KickstartData.findByIdAndOrg")
                           .setParameter("id", id)
-                          .setParameter("org_id", orgIn.getId(), LongType.INSTANCE)
+                          .setParameter("org_id", orgIn.getId(), StandardBasicTypes.LONG)
                           .uniqueResult();
     }
 
@@ -397,12 +397,6 @@ public class KickstartDataTest extends BaseTestCaseWithUser {
     public static void addKickstartPackagesToChannel(Channel c, boolean rhel2)
             throws Exception {
        addPackages(c, KickstartFormatter.UPDATE_PKG_NAMES);
-       if (rhel2) {
-           addPackages(c, KickstartFormatter.FRESH_PKG_NAMES_RHEL2);
-       }
-       else {
-           addPackages(c, KickstartFormatter.FRESH_PKG_NAMES_RHEL34);
-       }
        PackageManagerTest.addPackageToChannel(
                ConfigDefaults.get().getKickstartPackageNames().get(0) + "testy", c);
        PackageManagerTest.addPackageToChannel(
@@ -531,7 +525,7 @@ public class KickstartDataTest extends BaseTestCaseWithUser {
 
         KickstartCommand root = new KickstartCommand();
         root.setCommandName(rootName);
-        root.setArguments(MD5Crypt.crypt("testing123"));
+        root.setArguments(SHA256Crypt.crypt("testing123"));
         root.setKickstartData(k);
         root.setCreated(created);
         root.setModified(modified);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009--2018 Red Hat, Inc.
+ * Copyright (c) 2024 SUSE LLC
  *
  * This software is licensed to you under the GNU General Public License,
  * version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -12,6 +13,7 @@
  * granted to use or replicate Red Hat trademarks that are incorporated
  * in this software or its documentation.
  */
+
 package com.redhat.rhn.manager.system;
 
 import static java.util.Collections.emptyList;
@@ -19,7 +21,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 
-import com.redhat.rhn.common.RhnRuntimeException;
 import com.redhat.rhn.common.client.ClientCertificate;
 import com.redhat.rhn.common.client.InvalidCertificateException;
 import com.redhat.rhn.common.conf.Config;
@@ -41,9 +42,10 @@ import com.redhat.rhn.common.validator.ValidatorWarning;
 import com.redhat.rhn.domain.channel.AccessTokenFactory;
 import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.channel.ChannelFamily;
-import com.redhat.rhn.domain.common.SatConfigFactory;
-import com.redhat.rhn.domain.credentials.Credentials;
+import com.redhat.rhn.domain.common.RhnConfiguration;
+import com.redhat.rhn.domain.common.RhnConfigurationFactory;
 import com.redhat.rhn.domain.credentials.CredentialsFactory;
+import com.redhat.rhn.domain.credentials.ReportDBCredentials;
 import com.redhat.rhn.domain.dto.SystemGroupID;
 import com.redhat.rhn.domain.dto.SystemGroupsDTO;
 import com.redhat.rhn.domain.dto.SystemIDInfo;
@@ -114,6 +116,7 @@ import com.redhat.rhn.manager.rhnset.RhnSetDecl;
 import com.redhat.rhn.manager.system.entitling.SystemEntitlementManager;
 import com.redhat.rhn.manager.system.entitling.SystemEntitler;
 import com.redhat.rhn.manager.system.entitling.SystemUnentitler;
+import com.redhat.rhn.manager.system.proxycontainerconfig.ProxyContainerConfigCreate;
 import com.redhat.rhn.manager.user.UserManager;
 import com.redhat.rhn.taskomatic.task.systems.SystemsOverviewUpdateDriver;
 import com.redhat.rhn.taskomatic.task.systems.SystemsOverviewUpdateWorker;
@@ -121,37 +124,27 @@ import com.redhat.rhn.taskomatic.task.systems.SystemsOverviewUpdateWorker;
 import com.suse.manager.model.maintenance.MaintenanceSchedule;
 import com.suse.manager.reactor.messaging.ApplyStatesEventMessage;
 import com.suse.manager.reactor.messaging.ChannelsChangedEventMessage;
+import com.suse.manager.reactor.messaging.ChannelsChangedEventMessageAction;
 import com.suse.manager.reactor.utils.ValueMap;
 import com.suse.manager.ssl.SSLCertData;
 import com.suse.manager.ssl.SSLCertGenerationException;
 import com.suse.manager.ssl.SSLCertManager;
 import com.suse.manager.ssl.SSLCertPair;
 import com.suse.manager.utils.PagedSqlQueryBuilder;
-import com.suse.manager.virtualization.VirtManagerSalt;
 import com.suse.manager.webui.controllers.StatesAPI;
 import com.suse.manager.webui.services.SaltStateGeneratorService;
 import com.suse.manager.webui.services.StateRevisionService;
 import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
-import com.suse.manager.webui.services.iface.VirtManager;
-import com.suse.manager.webui.services.impl.SaltSSHService;
-import com.suse.manager.webui.services.impl.runner.MgrUtilRunner;
-import com.suse.manager.webui.utils.YamlHelper;
 import com.suse.manager.xmlrpc.dto.SystemEventDetailsDto;
 import com.suse.utils.Opt;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.IDN;
 import java.security.SecureRandom;
 import java.sql.Date;
@@ -173,10 +166,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import javax.persistence.Tuple;
 
 
 /**
@@ -216,11 +206,10 @@ public class SystemManager extends BaseManager {
         this.serverGroupFactory = serverGroupFactoryIn;
         this.saltApi = saltApiIn;
         ServerGroupManager serverGroupManager = new ServerGroupManager(saltApiIn);
-        VirtManager virtManager = new VirtManagerSalt(saltApi);
         MonitoringManager monitoringManager = new FormulaMonitoringManager(saltApi);
         systemEntitlementManager = new SystemEntitlementManager(
-                new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-                new SystemEntitler(saltApiIn, virtManager, monitoringManager, serverGroupManager)
+                new SystemUnentitler(monitoringManager, serverGroupManager),
+                new SystemEntitler(saltApiIn, monitoringManager, serverGroupManager)
         );
     }
 
@@ -236,7 +225,7 @@ public class SystemManager extends BaseManager {
         List<SystemIDInfo> systemIDInfos =
                 this.serverFactory.lookupSystemsVisibleToUserWithEntitlement(user, entitlement);
 
-        List<Long> systemIDs = systemIDInfos.stream().map(SystemIDInfo::getSystemID).collect(Collectors.toList());
+        List<Long> systemIDs = systemIDInfos.stream().map(SystemIDInfo::getSystemID).toList();
 
         Map<Long, List<SystemGroupID>> managedGroupsPerServer =
                 this.serverGroupFactory.lookupManagedSystemGroupsForSystems(systemIDs);
@@ -244,7 +233,7 @@ public class SystemManager extends BaseManager {
         return systemIDInfos.stream()
                 .map(s -> new SystemGroupsDTO(s.getSystemID(),
                         managedGroupsPerServer.getOrDefault(s.getSystemID(), new ArrayList<>())))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -256,7 +245,7 @@ public class SystemManager extends BaseManager {
         if (!Config.get().getBoolean(ConfigDefaults.TAKE_SNAPSHOTS)) {
             return;
         }
-        List<Long> serverIds = servers.stream().map(Server::getId).collect(Collectors.toList());
+        List<Long> serverIds = servers.stream().map(Server::getId).toList();
         List<Long> snapshottableServerIds = filterServerIdsWithFeature(serverIds, "ftr_snapshotting");
 
         // If the server is null or doesn't have the snapshotting feature, don't bother.
@@ -486,15 +475,6 @@ public class SystemManager extends BaseManager {
         return m.execute(params);
     }
 
-    private static String createUniqueId(List<String> fields) {
-        // craft unique id based on given data
-        String delimiter = "_";
-        return delimiter + fields
-                .stream()
-                .reduce((i1, i2) -> i1 + delimiter + i2)
-                .orElseThrow();
-    }
-
     /**
      * Create an empty system profile with required values based on given data.
      *
@@ -522,11 +502,11 @@ public class SystemManager extends BaseManager {
         Set<String> hwAddrs = hwAddress.map(Collections::singleton).orElse(emptySet());
         List<MinionServer> matchingProfiles = findMatchingEmptyProfiles(hostname, hwAddrs);
         if (!matchingProfiles.isEmpty()) {
-            throw new SystemsExistException(matchingProfiles.stream().map(Server::getId).collect(Collectors.toList()));
+            throw new SystemsExistException(matchingProfiles.stream().map(Server::getId).toList());
         }
 
-        String uniqueId = createUniqueId(
-                Arrays.asList(hwAddress, hostname).stream().flatMap(Opt::stream).collect(Collectors.toList()));
+        String uniqueId = SystemManagerUtils.createUniqueId(
+                Arrays.asList(hwAddress, hostname).stream().flatMap(Opt::stream).toList());
 
         MinionServer server = new MinionServer();
         server.setName(systemName);
@@ -620,7 +600,7 @@ public class SystemManager extends BaseManager {
 
     /**
      * How to cleanup the server on deletion.
-      */
+     */
     public enum ServerCleanupType {
         /**
          * Fail in case of cleanup error.
@@ -758,13 +738,14 @@ public class SystemManager extends BaseManager {
 
         server.asMinionServer().ifPresent(minion -> minion.getAccessTokens().forEach(token -> {
             token.setValid(false);
+            token.setMinion(null);
             AccessTokenFactory.save(token);
         }));
 
 
         // clean known_hosts
         if (server.asMinionServer().isPresent()) {
-            removeSaltSSHKnownHosts(server);
+            SystemManagerUtils.removeSaltSSHKnownHosts(saltApi, server);
         }
 
         server.asMinionServer().ifPresent(minion -> {
@@ -787,19 +768,6 @@ public class SystemManager extends BaseManager {
         mode.executeUpdate(Map.of("sid", sid));
     }
 
-    private void removeSaltSSHKnownHosts(Server server) {
-        Integer sshPort = server.getProxyInfo() != null ? server.getProxyInfo().getSshPort() : null;
-        int port = sshPort != null ? sshPort : SaltSSHService.SSH_DEFAULT_PORT;
-        Optional.ofNullable(server.getHostname()).ifPresent(hostname -> {
-            Optional<MgrUtilRunner.RemoveKnowHostResult> result =
-                    saltApi.removeSaltSSHKnownHost(hostname, port);
-            boolean removed = result.map(r -> "removed".equals(r.getStatus())).orElse(false);
-            if (!removed) {
-                log.warn("Hostname {}:{} could not be removed from /var/lib/salt/.ssh/known_hosts: {}", hostname, port,
-                        result.map(r -> r.getComment()).orElse(""));
-            }
-        });
-    }
 
     /**
      * Adds servers to a server group
@@ -908,7 +876,7 @@ public class SystemManager extends BaseManager {
     public static DataResult<SystemOverview> systemListNew(User user,
                       Function<Optional<PageControl>, PagedSqlQueryBuilder.FilterWithValue> parser, PageControl pc) {
         return new PagedSqlQueryBuilder()
-                .select("O.*")
+                .select("O.*, (O.enhancement_errata + O.security_errata + O.bug_errata) as totalErrataCount")
                 .from("suseSystemOverview O, rhnUserServerPerms USP")
                 .where("O.id = USP.server_id AND USP.user_id = :user_id")
                 .run(Map.of("user_id", user.getId()), pc, parser, SystemOverview.class);
@@ -971,8 +939,9 @@ public class SystemManager extends BaseManager {
      */
     public static DataResult<ShortSystemInfo> systemListShortInactive(User user,
             PageControl pc) {
+        RhnConfigurationFactory factory = RhnConfigurationFactory.getSingleton();
         return systemListShortInactive(user,
-                SatConfigFactory.getSatConfigLongValue(SatConfigFactory.SYSTEM_CHECKIN_THRESHOLD, 1L), pc);
+                factory.getLongConfiguration(RhnConfiguration.KEYS.SYSTEM_CHECKIN_THRESHOLD).getValue(), pc);
     }
 
     /**
@@ -1055,7 +1024,7 @@ public class SystemManager extends BaseManager {
      * @return list of SystemOverviews.
      */
     public static DataResult<SystemOverview> systemsWithFeature(User user, String feature,
-            PageControl pc) {
+                                                                PageControl pc) {
         SelectMode m = ModeFactory.getMode("System_queries", "systems_with_feature");
         Map<String, Object> params = new HashMap<>();
         params.put("user_id", user.getId());
@@ -1076,20 +1045,6 @@ public class SystemManager extends BaseManager {
         pc.setFilterColumn("outdated_packages");
         pc.setFilterData(">0");
         return systemListNew(user, PagedSqlQueryBuilder::parseFilterAsNumber, pc);
-    }
-
-    /**
-     * Returns the number of systems with outdated packages
-     *
-     * @return number of systems with outdated packages
-     */
-    public static long countOutdatedSystems() {
-        String selectCountQuery = "SELECT COUNT(DISTINCT(id)) FROM susesystemoverview WHERE outdated_packages > 0";
-        return HibernateFactory.getSession()
-                .createNativeQuery(selectCountQuery, Tuple.class)
-                .getSingleResult()
-                .get(COUNT, Number.class)
-                .longValue();
     }
 
     /**
@@ -1172,9 +1127,9 @@ public class SystemManager extends BaseManager {
                             "S.channel_labels, " +
                             "S.status_type, " +
                             "VI.host_system_id, " +
-                            "(SELECT S.name FROM rhnServer S WHERE S.id = VI.host_system_id) as host_server_name, " +
                             "VI.virtual_system_id, " +
                             "VI.uuid, " +
+                            "COALESCE(RS.name, '(none)') AS host_server_name, " +
                             "COALESCE(VII.name, '(none)') AS server_name, " +
                             "COALESCE(VIS.name, '(unknown)') AS STATE_NAME, " +
                             "COALESCE(VIS.label, 'unknown') AS STATE_LABEL, " +
@@ -1187,7 +1142,8 @@ public class SystemManager extends BaseManager {
                 .from("rhnVirtualInstance VI " +
                         "    LEFT OUTER JOIN rhnVirtualInstanceInfo VII ON VI.id = VII.instance_id " +
                         "    LEFT OUTER JOIN rhnVirtualInstanceState VIS ON VII.state = VIS.id " +
-                        "    LEFT OUTER JOIN suseSystemOverview S ON S.id = VI.virtual_system_id")
+                        "    LEFT OUTER JOIN suseSystemOverview S ON S.id = VI.virtual_system_id" +
+                        "    LEFT OUTER JOIN rhnServer RS ON RS.id = VI.host_system_id")
                 .where("EXISTS ( " +
                         "   SELECT 1 " +
                         "   FROM rhnUserServerPerms USP " +
@@ -1241,12 +1197,20 @@ public class SystemManager extends BaseManager {
      */
     public static DataResult<SystemGroupOverview> groupList(User user, PageControl pc) {
         SelectMode m = ModeFactory.getMode("SystemGroup_queries", "visible_to_user");
+        if (Config.get().getBoolean(ConfigDefaults.WEB_DISABLE_UPDATE_STATUS)) {
+            m.removeElaboratorByName("most_severe_errata");
+        }
         Map<String, Object> params = new HashMap<>();
         params.put("user_id", user.getId());
         Map<String, Object> elabParams = new HashMap<>();
         elabParams.put("org_id", user.getOrg().getId());
         elabParams.put("user_id", user.getId());
-        return makeDataResult(params, elabParams, pc, m);
+
+        DataResult<SystemGroupOverview> dr = makeDataResult(params, elabParams, pc, m);
+        if (Config.get().getBoolean(ConfigDefaults.WEB_DISABLE_UPDATE_STATUS)) {
+            dr.stream().forEach(x -> x.setDisabled(true));
+        }
+        return dr;
     }
 
     /**
@@ -1263,10 +1227,18 @@ public class SystemManager extends BaseManager {
                     User user, PageControl pc) {
         SelectMode m = ModeFactory.getMode("SystemGroup_queries",
                         "visible_to_user_and_counts");
+        if (Config.get().getBoolean(ConfigDefaults.WEB_DISABLE_UPDATE_STATUS)) {
+            m.removeElaboratorByName("most_severe_errata");
+        }
         Map<String, Object> params = new HashMap<>();
         params.put("user_id", user.getId());
         Map<String, Object> elabParams = new HashMap<>();
-        return makeDataResult(params, elabParams, pc, m);
+
+        DataResult<SystemGroupOverview> dr = makeDataResult(params, elabParams, pc, m);
+        if (Config.get().getBoolean(ConfigDefaults.WEB_DISABLE_UPDATE_STATUS)) {
+            dr.stream().forEach(x -> x.setDisabled(true));
+        }
+        return dr;
     }
 
     /**
@@ -1451,7 +1423,7 @@ public class SystemManager extends BaseManager {
      * @return a list of ErrataOverviews
      */
     public static DataResult<ErrataOverview> relevantErrata(User user,
-            Long sid, List<String> types) {
+                                                            Long sid, List<String> types) {
         SelectMode m = ModeFactory.getMode("Errata_queries", "relevant_to_system_by_types");
 
         Map<String, Object> params = new HashMap<>();
@@ -1730,7 +1702,7 @@ public class SystemManager extends BaseManager {
         params.put("feature", feat);
 
         DataResult<Map<String, Long>> result = m.execute(params, sids);
-        return result.stream().map(Map::values).flatMap(Collection::stream).collect(Collectors.toList());
+        return result.stream().map(Map::values).flatMap(Collection::stream).toList();
     }
 
     /**
@@ -1853,7 +1825,7 @@ public class SystemManager extends BaseManager {
      *           returned server.
      */
     public static Server subscribeServerToChannel(User user,
-            Server server, Channel channel) {
+                                                  Server server, Channel channel) {
         return subscribeServerToChannel(user, server, channel, false);
     }
 
@@ -2154,58 +2126,6 @@ public class SystemManager extends BaseManager {
         }
     }
 
-    private Supplier<RhnRuntimeException> raiseAndLog(String message) {
-        log.error(message);
-        return () -> new RhnRuntimeException(message);
-    }
-
-    private Server getOrCreateProxySystem(User creator, String fqdn, Integer port) {
-        Optional<Server> existing = ServerFactory.findByFqdn(fqdn);
-        if (existing.isPresent()) {
-            Server server = existing.get();
-            if (!(server.hasEntitlement(EntitlementManager.FOREIGN) ||
-                    server.hasEntitlement(EntitlementManager.SALT))) {
-                throw new SystemsExistException(List.of(server.getId()));
-            }
-            // The SSH key is going to change remove it from the known hosts
-            removeSaltSSHKnownHosts(server);
-            ProxyInfo info = server.getProxyInfo();
-            if (info == null) {
-                info = new ProxyInfo();
-                info.setServer(server);
-                server.setProxyInfo(info);
-            }
-            info.setSshPort(port);
-            return server;
-        }
-        Server server = ServerFactory.createServer();
-        server.setName(fqdn);
-        server.setHostname(fqdn);
-        server.getFqdns().add(new ServerFQDN(server, fqdn));
-        server.setOrg(creator.getOrg());
-        server.setCreator(creator);
-
-        String uniqueId = createUniqueId(List.of(fqdn));
-        server.setDigitalServerId(uniqueId);
-        server.setMachineId(uniqueId);
-        server.setOs("(unknown)");
-        server.setRelease("(unknown)");
-        server.setSecret(RandomStringUtils.randomAlphanumeric(64));
-        server.setAutoUpdate("N");
-        server.setContactMethod(ServerFactory.findContactMethodByLabel("default"));
-        server.setLastBoot(System.currentTimeMillis() / 1000);
-        server.setServerArch(ServerFactory.lookupServerArchByLabel("x86_64-redhat-linux"));
-        server.updateServerInfo();
-        ServerFactory.save(server);
-
-        ProxyInfo info = new ProxyInfo();
-        info.setServer(server);
-        info.setSshPort(port);
-        server.setProxyInfo(info);
-
-        systemEntitlementManager.setBaseEntitlement(server, EntitlementManager.FOREIGN);
-        return server;
-    }
 
     /**
      * Create and provide proxy container configuration.
@@ -2220,116 +2140,25 @@ public class SystemManager extends BaseManager {
      * @param intermediateCAs intermediate CAs used to sign the SSL certificate in PEM format
      * @param proxyCertKey proxy CRT and key pair
      * @param caPair the CA certificate and key used to sign the certificate to generate.
-     *               Can be omitted if proxyCertKey is not provided
+     *               Can be omitted if proxyCertKey is provided
      * @param caPassword the CA private key password.
-     *               Can be omitted if proxyCertKey is not provided
+     *               Can be omitted if proxyCertKey is provided
      * @param certData the data needed to generate the new proxy SSL certificate.
-     *               Can be omitted if proxyCertKey is not provided
+     *               Can be omitted if proxyCertKey is provided
+     * @param certManager the SSLCertManager to use
      * @return the configuration file
      */
     public byte[] createProxyContainerConfig(User user, String proxyName, Integer proxyPort, String server,
                                              Long maxCache, String email,
                                              String rootCA, List<String> intermediateCAs,
                                              SSLCertPair proxyCertKey,
-                                             SSLCertPair caPair, String caPassword, SSLCertData certData)
-            throws IOException, InstantiationException, SSLCertGenerationException {
-        /* Prepare the archive streams where the config files will be stored into */
-        ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-        BufferedOutputStream bufOut = new BufferedOutputStream(bytesOut);
-        GzipCompressorOutputStream gzOut = new GzipCompressorOutputStream(bufOut);
-        TarArchiveOutputStream tarOut = new TarArchiveOutputStream(gzOut);
+                                             SSLCertPair caPair, String caPassword, SSLCertData certData,
+                                             SSLCertManager certManager)
+            throws SSLCertGenerationException {
 
-        /**
-         * config.yaml
-         */
-        Map<String, Object> config = new HashMap<>();
-
-        config.put("server", server);
-        config.put("max_cache_size_mb", maxCache);
-        config.put("email", email);
-        config.put("server_version", ConfigDefaults.get().getProductVersion());
-        config.put("proxy_fqdn", proxyName);
-
-        SSLCertPair proxyPair = proxyCertKey;
-        String rootCaCert = rootCA;
-        if (proxyCertKey == null || !proxyCertKey.isComplete()) {
-            proxyPair = new SSLCertManager().generateCertificate(caPair, caPassword, certData);
-            rootCaCert = caPair.getCertificate();
-        }
-        config.put("ca_crt", rootCaCert);
-
-        addTarEntry(tarOut, "config.yaml", YamlHelper.INSTANCE.dumpPlain(config).getBytes(), 0644);
-        /**
-         * config.yaml
-         */
-
-        /**
-         * httpd.yaml
-         */
-        Map<String, Object> httpdRootConfig = new HashMap<>();
-        Map<String, Object> httpdConfig = new HashMap<>();
-
-        Server proxySystem = getOrCreateProxySystem(user, proxyName, proxyPort);
-        ClientCertificate cert = SystemManager.createClientCertificate(proxySystem);
-        httpdConfig.put("system_id", cert.asXml());
-
-        // Check the SSL files using mgr-ssl-cert-setup
-        try {
-            String certificate = saltApi.checkSSLCert(rootCaCert, proxyPair,
-                    intermediateCAs != null ? intermediateCAs : Collections.emptyList());
-            httpdConfig.put("server_crt", certificate);
-            httpdConfig.put("server_key", proxyPair.getKey());
-        }
-        catch (IllegalArgumentException err) {
-            throw new RhnRuntimeException("Certificate check failure: " + err.getMessage());
-        }
-
-        httpdRootConfig.put("httpd", httpdConfig);
-        addTarEntry(tarOut, "httpd.yaml", YamlHelper.INSTANCE.dumpPlain(httpdRootConfig).getBytes(), 0600);
-        /**
-         * httpd.yaml
-         */
-
-        /**
-         * ssh.yaml
-         */
-        Map<String, Object> sshRootConfig = new HashMap<>();
-        Map<String, Object> sshConfig = new HashMap<>();
-
-        MgrUtilRunner.SshKeygenResult result = saltApi.generateSSHKey(SaltSSHService.SSH_KEY_PATH)
-                .orElseThrow(raiseAndLog("Could not generate salt-ssh public key."));
-        if (!(result.getReturnCode() == 0 || result.getReturnCode() == -1)) {
-            throw raiseAndLog("Generating salt-ssh public key failed: " + result.getStderr()).get();
-        }
-        sshConfig.put("server_ssh_key_pub", result.getPublicKey());
-
-        // Create the proxy SSH keys
-        result = saltApi.generateSSHKey(null).orElseThrow(raiseAndLog("Could not generate proxy salt-ssh SSH keys."));
-        if (!(result.getReturnCode() == 0 || result.getReturnCode() == -1)) {
-            throw raiseAndLog("Generating proxy salt-ssh SSH keys failed: " + result.getStderr()).get();
-        }
-        sshConfig.put("server_ssh_push", result.getKey());
-        sshConfig.put("server_ssh_push_pub", result.getPublicKey());
-
-        sshRootConfig.put("ssh", sshConfig);
-        addTarEntry(tarOut, "ssh.yaml", YamlHelper.INSTANCE.dumpPlain(sshRootConfig).getBytes(), 0600);
-        /**
-         * ssh.yaml
-         */
-
-        tarOut.finish();
-        tarOut.close();
-
-        return bytesOut.toByteArray();
-    }
-
-    private void addTarEntry(TarArchiveOutputStream tarOut, String name, byte[] data, int mode) throws IOException {
-        TarArchiveEntry entry = new TarArchiveEntry(name);
-        entry.setSize(data.length);
-        entry.setMode(mode);
-        tarOut.putArchiveEntry(entry);
-        tarOut.write(data);
-        tarOut.closeArchiveEntry();
+        return new ProxyContainerConfigCreate().create(
+                saltApi, systemEntitlementManager, user, server, proxyName, proxyPort, maxCache, email,
+                rootCA, intermediateCAs, proxyCertKey, caPair, caPassword, certData, certManager);
     }
 
     /**
@@ -2925,8 +2754,8 @@ public class SystemManager extends BaseManager {
      * @return description of server information as well as a list of relevant packages
      */
     public static DataResult<Row> ssmSystemPackagesToRemove(User user,
-            String packageSetLabel,
-            boolean shortened) {
+                                                            String packageSetLabel,
+                                                            boolean shortened) {
         SelectMode m;
         if (shortened) {
             m = ModeFactory.getMode("System_queries",
@@ -3090,7 +2919,7 @@ public class SystemManager extends BaseManager {
         SelectMode mode = ModeFactory.getMode("System_queries", "system_ids");
         Map<String, Object> params = new HashMap<>();
         DataResult<Map<String, Object>> dr = mode.execute(params);
-        return dr.stream().map(data -> (Long)data.get("id")).collect(Collectors.toList());
+        return dr.stream().map(data -> (Long)data.get("id")).toList();
     }
 
     /**
@@ -3178,7 +3007,7 @@ public class SystemManager extends BaseManager {
     }
 
     private static List<DuplicateSystemGrouping> listDuplicates(User user, String query,
-            List<String> ignored, Long inactiveHours) {
+                                                                List<String> ignored, Long inactiveHours) {
 
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.HOUR, (0 - inactiveHours.intValue()));
@@ -3686,7 +3515,7 @@ public class SystemManager extends BaseManager {
      * @param defaultIn The default value for the preference
      */
     public static void setUserSystemPreferenceBulk(User user, String preference,
-            Boolean value, Boolean defaultIn) {
+                                                   Boolean value, Boolean defaultIn) {
         CallableMode mode = ModeFactory.getCallableMode("System_queries",
                 "reset_user_system_preference_bulk");
         Map<String, Object> params = new HashMap<>();
@@ -3694,7 +3523,7 @@ public class SystemManager extends BaseManager {
         params.put("pref", preference);
         mode.execute(params, new HashMap<>());
         // preference values have a default, only insert if not default
-        if (value != defaultIn) {
+        if (!value.equals(defaultIn)) {
             mode = ModeFactory.getCallableMode("System_queries",
                     "set_user_system_preference_bulk");
             params = new HashMap<>();
@@ -3795,8 +3624,17 @@ public class SystemManager extends BaseManager {
     }
 
     /**
-     * Update the the base and child channels of a server. Calls
+     * Update the base and child channels of a server. Calls
      * the {@link UpdateBaseChannelCommand} and {@link UpdateChildChannelsCommand}.
+     * This method regenerate the Tokens and Pillar Data synchronous, but does not
+     * trigger a 'state.apply' for channels.
+     * <br/>
+     * To unsubscribe from all channels, set baseChannel to empty and provide an empty list of child channels
+     * To switch the base channel and let it find compatible child channels to the currently subscribed child channels,
+     * just provide the new base channel and provide an empty list for the child channels
+     * If no base channel is provided, the list of child channels should have the currently assigned base channel as
+     * parent.
+     * If both, base and child channels are provided, the system will be changed to use the defined channels
      *
      * @param user the user changing the channels
      * @param server the server for which to change channels
@@ -3804,36 +3642,39 @@ public class SystemManager extends BaseManager {
      * @param childChannels the full list of child channels to set. Any channel no provided will be unsubscribed.
      * and will be used when regenerating the Pillar data for Salt minions.
      */
-    public static void updateServerChannels(User user,
+    public void updateServerChannels(User user,
                                             Server server,
                                             Optional<Channel> baseChannel,
                                             Collection<Channel> childChannels) {
-        long baseChannelId =
-                baseChannel.map(Channel::getId).orElse(-1L);
 
-        // if there's no base channel present the there are no child channels to set
-        List<Long> childChannelIds = baseChannel.isPresent() ?
-                childChannels.stream().map(Channel::getId).collect(Collectors.toList()) :
-                emptyList();
+        long baseChannelId = baseChannel.map(Channel::getId).orElse(-1L);
+        List<Long> childChannelIds = childChannels.stream().map(Channel::getId).collect(Collectors.toList());
 
-        UpdateBaseChannelCommand baseChannelCommand =
-                new UpdateBaseChannelCommand(
-                        user,
-                        server,
-                        baseChannelId);
+        if (baseChannel.isPresent() || childChannels.isEmpty()) {
+            UpdateBaseChannelCommand baseChannelCommand = new UpdateBaseChannelCommand(
+                    user,
+                    server,
+                    baseChannelId);
 
-        UpdateChildChannelsCommand childChannelsCommand =
-                new UpdateChildChannelsCommand(
-                        user,
-                        server,
-                        childChannelIds);
+            baseChannelCommand.skipChannelChangedEvent(true);
+            baseChannelCommand.store();
+        }
 
-        baseChannelCommand.skipChannelChangedEvent(true);
-        baseChannelCommand.store();
-        childChannelsCommand.skipChannelChangedEvent(true);
-        childChannelsCommand.store();
+        if (!childChannels.isEmpty()) {
+            UpdateChildChannelsCommand childChannelsCommand = new UpdateChildChannelsCommand(
+                    user,
+                    server,
+                    childChannelIds);
 
-        MessageQueue.publish(new ChannelsChangedEventMessage(server.getId(), user.getId()));
+            childChannelsCommand.skipChannelChangedEvent(true);
+            childChannelsCommand.store();
+        }
+
+        // Calling this asynchronous block execution util main thread close the Hibernate Session
+        // as we require the result, we must call this synchronous
+        ChannelsChangedEventMessageAction channelsChangeAction =
+                new ChannelsChangedEventMessageAction(saltApi);
+        channelsChangeAction.execute(new ChannelsChangedEventMessage(server.getId(), user.getId()));
 
     }
 
@@ -3873,6 +3714,93 @@ public class SystemManager extends BaseManager {
 
         StateFactory.save(stateRev);
         StatesAPI.generateServerPackageState(minion);
+    }
+
+
+    /**
+     * Register foreign peripheral server.
+     *
+     * @param creator the creator user
+     * @param fqdn the fqdn of the server
+     * @return the created system
+     */
+    public Server registerPeripheralServer(User creator, String fqdn) {
+        String uniqueId = SystemManagerUtils.createUniqueId(List.of(fqdn));
+
+        Server existing = ServerFactory.lookupForeignSystemByDigitalServerId(uniqueId);
+        if (existing != null) {
+            throw new SystemsExistException(List.of(existing.getId()));
+        }
+
+        Server server = ServerFactory.createServer();
+        server.setName(fqdn);
+        server.setOrg(creator.getOrg());
+
+        // Set network device information to the server so we have something to match with
+        server.setCreator(creator);
+        server.setHostname(fqdn);
+        server.getFqdns().add(new ServerFQDN(server, fqdn));
+        server.setDigitalServerId(uniqueId);
+        server.setMachineId(uniqueId);
+        server.setOs("(unknown)");
+        server.setOsFamily("(unknown)");
+        server.setRelease("(unknown)");
+        server.setSecret(RandomStringUtils.random(64, 0, 0, true, true, null, new SecureRandom()));
+        server.setAutoUpdate("N");
+        server.setContactMethod(ServerFactory.findContactMethodByLabel("default"));
+        server.setLastBoot(System.currentTimeMillis() / 1000);
+        server.setServerArch(ServerFactory.lookupServerArchByLabel("x86_64-redhat-linux"));
+        server.updateServerInfo();
+        ServerFactory.save(server);
+        systemEntitlementManager.setBaseEntitlement(server, EntitlementManager.FOREIGN);
+        systemEntitlementManager.addEntitlementToServer(server, EntitlementManager.PERIPHERAL_SERVER);
+
+        return server;
+    }
+
+    /**
+     * Create or update peripheral server info.
+     *
+     * @param server the server
+     * @param reportDbName name of report database
+     * @param reportDbHost host of report database
+     * @param reportDbPort port of report database
+     * @param reportDbUser user of report database
+     * @param reportDbPassword password of report database
+     * @return 1 on success, 0 on failure
+     */
+    public static int updatePeripheralServerInfo(Server server, String reportDbName, String reportDbHost,
+                       int reportDbPort, String reportDbUser, String reportDbPassword) {
+        if (server.hasEntitlement(EntitlementManager.FOREIGN) &&
+            server.hasEntitlement(EntitlementManager.PERIPHERAL_SERVER)) {
+            MgrServerInfo serverInfo = Optional.ofNullable(server.getMgrServerInfo()).orElse(new MgrServerInfo());
+            serverInfo.setReportDbName(reportDbName);
+            serverInfo.setReportDbHost(reportDbHost);
+            serverInfo.setReportDbPort(reportDbPort);
+
+            ReportDBCredentials credentials = Optional.ofNullable(serverInfo.getReportDbCredentials())
+                .map(existingCredentials -> {
+                    existingCredentials.setPassword(reportDbUser);
+                    existingCredentials.setPassword(reportDbPassword);
+                    CredentialsFactory.storeCredentials(existingCredentials);
+                    return existingCredentials;
+                })
+                .orElseGet(() -> {
+                    ReportDBCredentials reportCredentials = CredentialsFactory.createReportCredentials(
+                                                                        reportDbUser, reportDbPassword);
+                    CredentialsFactory.storeCredentials(reportCredentials);
+                    return reportCredentials;
+                });
+
+            serverInfo.setReportDbCredentials(credentials);
+            serverInfo.setServer(server);
+            server.setMgrServerInfo(serverInfo);
+            return 1;
+        }
+        else {
+            log.warn("Server {} does not have Foreign Peripheral Server entitlement.", server.getName());
+            return 0;
+        }
     }
 
     /**
@@ -3928,16 +3856,31 @@ public class SystemManager extends BaseManager {
             // no reportdb configured
             return;
         }
-        Credentials credentials = Optional.ofNullable(mgrServerInfo.getReportDbCredentials())
-                .orElse(CredentialsFactory.createCredentials(
-                        "hermes_" + RandomStringUtils.random(8, "abcdefghijklmnopqrstuvwxyz"),
-                        RandomStringUtils.random(24, 0, 0, true, true, null, new SecureRandom()),
-                        Credentials.TYPE_REPORT_CREDS, null));
-        if (forcePwChange) {
-            credentials.setPassword(RandomStringUtils.random(24, 0, 0, true, true, null, new SecureRandom()));
-            CredentialsFactory.storeCredentials(credentials);
-        }
+
+        String password = RandomStringUtils.random(24, 0, 0, true, true, null, new SecureRandom());
+        ReportDBCredentials credentials = Optional.ofNullable(mgrServerInfo.getReportDbCredentials())
+            .map(existingCredentials -> {
+                if (forcePwChange) {
+                    existingCredentials.setPassword(password);
+                    CredentialsFactory.storeCredentials(existingCredentials);
+                }
+
+                return existingCredentials;
+            })
+            .orElseGet(() -> {
+                String randomSuffix = RandomStringUtils.random(8, 0, 0, true, false, null, new SecureRandom());
+                // Ensure the username is stored lowercase in the database, since the script uyuni-setup-reportdb-user
+                // will convert it to lowercase anyway
+                String username = "hermes_" + randomSuffix.toLowerCase();
+
+                ReportDBCredentials reportCredentials = CredentialsFactory.createReportCredentials(username, password);
+                CredentialsFactory.storeCredentials(reportCredentials);
+
+                return reportCredentials;
+            });
+
         mgrServerInfo.setReportDbCredentials(credentials);
+
         Map<String, Object> pillar = new HashMap<>();
         pillar.put("report_db_user", credentials.getUsername());
         pillar.put("report_db_password", credentials.getPassword());

@@ -7,7 +7,7 @@ import App, { HtmlScreen } from "senna";
 
 import SpaRenderer from "core/spa/spa-renderer";
 
-import { showErrorToastr } from "components/toastr/toastr";
+import { showErrorToastr } from "components/toastr";
 
 function isLoginPage(pathName) {
   const allLoginPossiblePaths = ["/", "/rhn/manager/login"];
@@ -120,10 +120,10 @@ window.pageRenderers.spaengine.init = function init(timeout?: number) {
   }
 };
 
-window.pageRenderers.spaengine.navigate = function navigate(url) {
+window.pageRenderers.spaengine.navigate = function navigate(url: string) {
   if (window.pageRenderers?.spaengine?.appInstance) {
     window.pageRenderers.spaengine.appInstance.navigate(url);
   } else {
-    window.location = url;
+    window.location.href = url;
   }
 };

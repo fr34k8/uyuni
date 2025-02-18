@@ -35,8 +35,8 @@ import com.redhat.rhn.domain.channel.ChannelProduct;
 import com.redhat.rhn.domain.channel.test.ChannelFactoryTest;
 import com.redhat.rhn.domain.channel.test.ChannelFamilyFactoryTest;
 import com.redhat.rhn.domain.common.ProvisionState;
-import com.redhat.rhn.domain.credentials.Credentials;
 import com.redhat.rhn.domain.credentials.CredentialsFactory;
+import com.redhat.rhn.domain.credentials.ReportDBCredentials;
 import com.redhat.rhn.domain.errata.Errata;
 import com.redhat.rhn.domain.errata.test.ErrataFactoryTest;
 import com.redhat.rhn.domain.org.CustomDataKey;
@@ -107,12 +107,10 @@ import com.suse.manager.maintenance.MaintenanceManager;
 import com.suse.manager.model.maintenance.MaintenanceSchedule;
 import com.suse.manager.utils.SaltKeyUtils;
 import com.suse.manager.utils.SaltUtils;
-import com.suse.manager.virtualization.VirtManagerSalt;
 import com.suse.manager.webui.services.SaltServerActionService;
 import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.test.TestSaltApi;
 import com.suse.manager.webui.services.test.TestSystemQuery;
 import com.suse.salt.netapi.calls.LocalCall;
@@ -130,7 +128,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * ServerFactoryTest
@@ -155,11 +152,10 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
             SALT_UTILS,
             SALT_KEY_UTILS
     );
-    private static final VirtManager VIRT_MANAGER = new VirtManagerSalt(SALT_API);
     private static final MonitoringManager MONITORING_MANAGER = new FormulaMonitoringManager(SALT_API);
     private static final SystemEntitlementManager SYSTEM_ENTITLEMENT_MANAGER = new SystemEntitlementManager(
-            new SystemUnentitler(VIRT_MANAGER, MONITORING_MANAGER, SERVER_GROUP_MANAGER),
-            new SystemEntitler(SALT_API, VIRT_MANAGER, MONITORING_MANAGER, SERVER_GROUP_MANAGER)
+            new SystemUnentitler(MONITORING_MANAGER, SERVER_GROUP_MANAGER),
+            new SystemEntitler(SALT_API, MONITORING_MANAGER, SERVER_GROUP_MANAGER)
     );
 
     @Override
@@ -608,8 +604,7 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
     }
 
 
-    public static Server createTestServer(User owner, boolean ensureOwnerAccess,
-            ServerGroupType type, int stype) {
+    public static Server createTestServer(User owner, boolean ensureOwnerAccess, ServerGroupType type, int stype) {
         return createTestServer(owner, ensureOwnerAccess, type, stype, new Date());
     }
 
@@ -708,19 +703,6 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
             TestUtils.saveAndFlush(sg2);
         }
 
-        /*
-         * Since adding a server to a group is done by a stored proc, the
-         * server object at this point doesn't know it has any groups; ie.,
-         * newS.getGroups() == null. To fix this, we need to evict newS
-         * from the session and look it back up.
-         * This shouldn't be a problem in prod, just something we have to do
-         * in our test code until we move to hib3 and can work with stored
-         * procs.
-         */
-        // commitAndCloseSession();
-        // System.out.println("COMMITED SESSION!\n\n");
-
-
         Long id = newS.getId();
         HibernateFactory.getSession().flush();
         HibernateFactory.getSession().evict(newS);
@@ -740,7 +722,7 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
         s.setRunningKernel(RUNNING_KERNEL);
         s.setName("serverfactorytest" + TestUtils.randomString() + ".rhn.redhat.com");
         s.setRelease("9");
-        s.setSecret("12345678901234567890123456789012");
+        s.setSecret("1234567890123456789012345678901234567890123456789012345678901234");
         s.setAutoUpdate("N");
         s.setLastBoot(System.currentTimeMillis() / 1000);
         s.setServerArch(ServerFactory.lookupServerArchByLabel("i386-redhat-linux"));
@@ -756,11 +738,13 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
             minionServer.setOsFamily("RedHat");
             minionServer.setMachineId(TestUtils.randomString());
 
+            ReportDBCredentials reportCredentials = CredentialsFactory.createReportCredentials("pythia", "secret");
+            CredentialsFactory.storeCredentials(reportCredentials);
+
             MgrServerInfo info = new MgrServerInfo();
             info.setVersion(PackageEvrFactory.lookupOrCreatePackageEvr(null, "2022.03", "0", s.getPackageType()));
             info.setReportDbName("reportdb");
-            info.setReportDbCredentials(CredentialsFactory.createCredentials(
-                    "pythia", "secret", Credentials.TYPE_REPORT_CREDS, null));
+            info.setReportDbCredentials(reportCredentials);
             info.setReportDbHost("localhost");
             info.setReportDbPort(5432);
             info.setServer(minionServer);
@@ -1157,7 +1141,7 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
         TestUtils.saveAndFlush(e1);
 
         List<MinionServer> minions = Arrays.asList(zypperSystem, nonZypperSystem);
-        List<MinionSummary> minionSummaries = minions.stream().map(MinionSummary::new).collect(Collectors.toList());
+        List<MinionSummary> minionSummaries = minions.stream().map(MinionSummary::new).toList();
 
         Map<LocalCall<?>, List<MinionSummary>> localCallListMap =
                 SALT_SERVER_ACTION_SERVICE.errataAction(minionSummaries, Collections.singleton(e1.getId()), false);
@@ -1446,10 +1430,12 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
         HibernateFactory.getSession().clear();
 
         // FQDN: precise lookup
-        assertEquals(s, ServerFactory.lookupProxyServer(HOSTNAME).get());
+        assertEquals(s, ServerFactory.lookupProxyServer(HOSTNAME).orElseThrow());
+
         // plain hostname: imprecise lookup
         String simpleHostname = HOSTNAME.split("\\.")[0];
-        assertEquals(s, ServerFactory.lookupProxyServer(simpleHostname).get());
+
+        assertEquals(s, ServerFactory.lookupProxyServer(simpleHostname).orElseThrow());
     }
 
     /**
@@ -1601,7 +1587,7 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
         HibernateFactory.getSession().flush();
         HibernateFactory.getSession().clear();
 
-        List<Server> result = ServerFactory.querySlesSystems("", 20, user).collect(Collectors.toList());
+        List<Server> result = ServerFactory.querySlesSystems("", 20, user).toList();
 
         assertEquals(1, result.size());
         assertEquals("first-system", result.get(0).getName());
@@ -1622,7 +1608,7 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
         HibernateFactory.getSession().flush();
         HibernateFactory.getSession().clear();
 
-        List<Server> result = ServerFactory.querySlesSystems("foo", 20, user).collect(Collectors.toList());
+        List<Server> result = ServerFactory.querySlesSystems("foo", 20, user).toList();
 
         assertEquals(2, result.size());
         assertTrue(result.stream().anyMatch(s -> "my-foo-system-1".equals(s.getName())));
@@ -1656,7 +1642,7 @@ public class ServerFactoryTest extends BaseTestCaseWithUser {
         HibernateFactory.getSession().flush();
         HibernateFactory.getSession().clear();
 
-        List<PackageEvr> result = ServerFactory.getInstalledKernelVersions(srv).collect(Collectors.toList());
+        List<PackageEvr> result = ServerFactory.getInstalledKernelVersions(srv).toList();
 
         assertEquals(2, result.size());
         assertTrue(result.stream().anyMatch(pkgEvr1::equals));

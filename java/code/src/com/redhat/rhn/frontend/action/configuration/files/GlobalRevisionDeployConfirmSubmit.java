@@ -122,8 +122,7 @@ public class GlobalRevisionDeployConfirmSubmit extends RhnListDispatchAction {
                 }
             }
             catch (TaskomaticApiException e) {
-                log.error("Could not schedule configuration deploy:");
-                log.error(e);
+                log.error("Could not schedule configuration deploy:", e);
             }
         }
 
@@ -131,12 +130,12 @@ public class GlobalRevisionDeployConfirmSubmit extends RhnListDispatchAction {
         if (successes > 0) {
             RhnSetManager.remove(systems);
             createSuccessMessage(successes, request, actionChain, "deployconfirm.jsp");
-            Map params = makeParamMap(form, request);
+            Map<String, Object> params = makeParamMap(form, request);
             return getStrutsDelegate().forwardParams(
                     mapping.findForward("success"), params);
         }
         createFailureMessage(request, "deployconfirm.jsp");
-        Map params = makeParamMap(form, request);
+        Map<String, Object> params = makeParamMap(form, request);
         return getStrutsDelegate().forwardParams(
                 mapping.findForward("failure"), params);
     }

@@ -18,7 +18,7 @@
         <hwclock>utc</hwclock>
 
         <rpm-excludedocs>true</rpm-excludedocs>
-        <type filesystem="ext3" image="pxe" initrd_system="dracut"/>
+        <type filesystem="ext3" image="pxe" initrd_system="dracut" compressed="true"/>
     </preferences>
 
     <drivers>
@@ -68,6 +68,7 @@
         <package name="acl"/>
         <package name="chrony"/>
         <package name="curl"/>
+        <package name="procps"/>
         <package name="dracut"/>
         <package name="fipscheck"/>
         <package name="group(mail)"/>
@@ -94,11 +95,10 @@
         <package name="openssh"/>
         <package name="rsync"/>
         <package name="plymouth-plugin-label-ft"/>
-
         <package name="kernel-default"/>
-	<package name="salt-minion"/>
-
-	<package name="dracut-saltboot"/>
+        <package name="venv-salt-minion"/>
+        <package name="hostname"/>
+        <package name="dracut-saltboot"/>
         <package name="mdadm"/>
         <package name="cryptsetup"/>
         <package name="kernel-firmware"/>

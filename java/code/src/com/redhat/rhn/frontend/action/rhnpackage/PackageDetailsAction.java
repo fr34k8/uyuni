@@ -40,7 +40,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -74,7 +73,6 @@ public class PackageDetailsAction extends RhnAction {
                 throw new PermissionException("Invalid pid");
             }
 
-            request.setAttribute("type", "rpm");
             request.setAttribute(PACKAGE_NAME, pkg.getFilename());
             if (!pkg.getPackageKeys().isEmpty()) {
                 request.setAttribute(PACKAGE_KEY, pkg.getPackageKeys().iterator().next()
@@ -145,7 +143,7 @@ public class PackageDetailsAction extends RhnAction {
 
             request.setAttribute("extraTags", pkg.getExtraTags()
                     .entrySet().stream().map(e -> Map.entry(e.getKey().getName(), e.getValue()))
-                    .collect(Collectors.toList()));
+                    .toList());
 
             return mapping.findForward(RhnHelper.DEFAULT_FORWARD);
         }

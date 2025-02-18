@@ -20,13 +20,15 @@ import com.redhat.rhn.domain.server.Server;
 import com.suse.manager.reactor.utils.ValueMap;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * Entitlements
  */
 public abstract class Entitlement implements Comparable<Entitlement> {
-    private String label;
+    private final String label;
 
     /**
      * Constructs an Entitlement labeled <code>lbl</code>.
@@ -68,6 +70,22 @@ public abstract class Entitlement implements Comparable<Entitlement> {
             return new ToStringBuilder(this).append("label", label).toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Entitlement that)) {
+            return false;
+        }
+        return new EqualsBuilder().append(label, that.label).isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37).append(label).toHashCode();
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -101,13 +119,8 @@ public abstract class Entitlement implements Comparable<Entitlement> {
      * @return boolean if the entitlement is compatible with the specified server.
      */
     public boolean isAllowedOnServer(Server server) {
-        if (server.getBaseEntitlement() instanceof ForeignEntitlement ||
-                server.getBaseEntitlement() instanceof BootstrapEntitlement) {
-            // no addon entitlement allowed for these
-            return false;
-        }
-
-        return true;
+        // no addon entitlement allowed for BootstrapEntitlement
+        return !(server.getBaseEntitlement() instanceof BootstrapEntitlement);
     }
 
     /**
@@ -118,12 +131,7 @@ public abstract class Entitlement implements Comparable<Entitlement> {
      * @return boolean if the entitlement is compatible with the specified server.
      */
     public boolean isAllowedOnServer(Server server, ValueMap grains) {
-        if (server.getBaseEntitlement() instanceof ForeignEntitlement ||
-                server.getBaseEntitlement() instanceof BootstrapEntitlement) {
-            // no addon entitlement allowed for these
-            return false;
-        }
-
-        return true;
+        // no addon entitlement allowed for BootstrapEntitlement
+        return !(server.getBaseEntitlement() instanceof BootstrapEntitlement);
     }
 }

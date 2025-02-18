@@ -55,7 +55,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -231,7 +230,7 @@ public class BaseSubscribeAction extends RhnLookupDispatchAction {
                             "basesub.jsp.unableToLookupSystemDefaultChannelWithParams",
                             String.join(", ", skippedServers.stream()
                                     .map(s -> "'" + s.getName() + "'")
-                                    .collect(Collectors.toList())), oldBaseChannelMessage);
+                                    .toList()), oldBaseChannelMessage);
                     msgs.add(ActionMessages.GLOBAL_MESSAGE, actionMessage);
                     strutsDelegate.saveMessages(request, msgs);
 
@@ -683,7 +682,7 @@ public class BaseSubscribeAction extends RhnLookupDispatchAction {
             if (srvrs.isEmpty()) {
                 continue;
             }
-            else if (toId == -1L) {
+            else if (toId != null && toId == -1L) {
                 am = new ActionMessage("basesub.jsp.success-default", srvrs.size());
                 msgs.add(ActionMessages.GLOBAL_MESSAGE, am);
             }
@@ -697,7 +696,7 @@ public class BaseSubscribeAction extends RhnLookupDispatchAction {
             if (srvrs.isEmpty()) {
                 continue;
             }
-            else if (toId == -1L) {
+            else if (toId != null && toId == -1L) {
                 am = new ActionMessage("basesub.jsp.skip-default", srvrs.size());
                 msgs.add(ActionMessages.GLOBAL_MESSAGE, am);
             }

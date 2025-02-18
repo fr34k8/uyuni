@@ -30,24 +30,31 @@ import com.redhat.rhn.frontend.struts.RequestContext;
 import com.redhat.rhn.manager.rhnset.RhnSetDecl;
 import com.redhat.rhn.manager.system.SystemManager;
 
+import com.suse.manager.reactor.utils.LocalDateTimeISOAdapter;
+import com.suse.manager.reactor.utils.OptionalTypeAdapterFactory;
 import com.suse.manager.webui.Languages;
 import com.suse.manager.webui.services.ThrottlingService;
 import com.suse.manager.webui.services.TooManyCallsException;
+import com.suse.manager.webui.utils.gson.ResultJson;
+import com.suse.utils.ParameterizedTypeImpl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.HibernateException;
 
+import java.lang.reflect.ParameterizedType;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import de.neuland.jade4j.JadeConfiguration;
 import spark.ModelAndView;
@@ -64,7 +71,10 @@ import spark.template.jade.JadeTemplateEngine;
 public class SparkApplicationHelper {
 
     private static final String TEMPLATE_ROOT = "com/suse/manager/webui";
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final Gson GSON = new GsonBuilder()
+            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeISOAdapter())
+            .registerTypeAdapterFactory(new OptionalTypeAdapterFactory())
+            .create();
     private static final ThrottlingService THROTTLER = GlobalInstanceHolder.THROTTLING_SERVICE;
 
     /**
@@ -203,11 +213,11 @@ public class SparkApplicationHelper {
         return (request, response) -> {
             ModelAndView modelAndView = route.handle(request, response);
             Object model = modelAndView.getModel();
-            if (model instanceof Map) {
+            if (model instanceof Map mod) {
                 User user = new RequestContext(request.raw()).getCurrentUser();
                 String docsLocale = Objects.requireNonNullElse(
                         user.getPreferredDocsLocale(), ConfigDefaults.get().getDefaultDocsLocale());
-                ((Map) model).put("docsLocale", docsLocale);
+                mod.put("docsLocale", docsLocale);
             }
             else {
                 throw new UnsupportedOperationException("docsLocale can only be added to a Map!");
@@ -228,10 +238,10 @@ public class SparkApplicationHelper {
             ModelAndView modelAndView = route.handle(request, response, user);
             List<String> roles = user.getRoles().stream()
                     .map(Role::getLabel)
-                    .collect(Collectors.toList());
+                    .toList();
             Object model = modelAndView.getModel();
-            if (model instanceof Map) {
-                ((Map) model).put("roles", GSON.toJson(roles));
+            if (model instanceof Map mod) {
+                mod.put("roles", GSON.toJson(roles));
             }
             else {
                 throw new UnsupportedOperationException("User roles can be added only to" +
@@ -321,9 +331,8 @@ public class SparkApplicationHelper {
         return (request, response) -> {
             ModelAndView modelAndView = route.handle(request, response);
             Object model = modelAndView.getModel();
-            if (model instanceof Map) {
-                ((Map) model).put("csrf_token",
-                        CSRFTokenValidator.getToken(request.session().raw()));
+            if (model instanceof Map mod) {
+                mod.put("csrf_token", CSRFTokenValidator.getToken(request.session().raw()));
             }
             else {
                 throw new UnsupportedOperationException("CSRF token can be added only to" +
@@ -347,8 +356,8 @@ public class SparkApplicationHelper {
             User user = new RequestContext(request.raw()).getCurrentUser();
             ModelAndView modelAndView = route.handle(request, response);
             Object model = modelAndView.getModel();
-            if (model instanceof Map) {
-                ((Map) model).put("pageSize", user.getPageSize());
+            if (model instanceof Map mod) {
+                mod.put("pageSize", user.getPageSize());
             }
             else {
                 throw new UnsupportedOperationException("User preferences can be added only to a Map!");
@@ -544,9 +553,40 @@ public class SparkApplicationHelper {
      * @param response the http response
      * @param result the object to serialize to JSON
      * @return a JSON string
+     * @deprecated use methods that provide type token instead
      */
+    @Deprecated
     public static String json(Response response, Object result) {
         response.type("application/json");
+        return GSON.toJson(result);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param response the http response
+     * @param result the object to serialize to JSON
+     * @return a JSON string
+     * @deprecated use methods that provide type token instead
+     */
+    @Deprecated
+    public static String json(Response response, Map<String, Object> result) {
+        response.type("application/json");
+        return GSON.toJson(result);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON
+     * and the http status code to the given value.
+     * @param response the http response
+     * @param httpStatusCode the http status code of the response
+     * @param result the object to serialize to JSON
+     * @return a JSON string
+     * @deprecated use methods that provide type token instead
+     */
+    @Deprecated
+    public static String json(Response response, int httpStatusCode, Object result) {
+        response.type("application/json");
+        response.status(httpStatusCode);
         return GSON.toJson(result);
     }
 
@@ -556,10 +596,155 @@ public class SparkApplicationHelper {
      * @param response the http response
      * @param result the object to serialize to JSON
      * @return a JSON string
+     * @deprecated use methods that provide type token instead
      */
+    @Deprecated
     public static String json(Gson gson, Response response, Object result) {
         response.type("application/json");
         return gson.toJson(result);
+    }
+
+    /**
+     * Serialize null json
+     * @param response the http response
+     * @return a JSON string
+     */
+    public static String jsonNull(Response response) {
+        response.type("application/json");
+        return GSON.toJson(null);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param response the http response
+     * @param result the json element to serialize
+     * @return a JSON string
+     */
+    public static String json(Response response, JsonElement result) {
+        response.type("application/json");
+        return GSON.toJson(result);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param response the http response
+     * @param result the boolean to serialize
+     * @return a JSON string
+     */
+    public static String json(Response response, boolean result) {
+        response.type("application/json");
+        return GSON.toJson(result);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param response the http response
+     * @param result the int to serialize
+     * @return a JSON string
+     */
+    public static String json(Response response, int result) {
+        response.type("application/json");
+        return GSON.toJson(result);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param response the http response
+     * @param result the string to serialize
+     * @return a JSON string
+     */
+    public static String json(Response response, String result) {
+        response.type("application/json");
+        return GSON.toJson(result);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param response the http response
+     * @param result the list of strings to serialize
+     * @return a JSON string
+     */
+    public static String json(Response response, List<String> result) {
+        response.type("application/json");
+        return GSON.toJson(result);
+    }
+
+    /**
+     * Serialize a message
+     * @param response the http response
+     * @param message the message to serialize
+     * @return a JSON string
+     */
+    public static String message(Response response, String message) {
+      return json(response, Collections.singletonMap("message", message), new TypeToken<>() { });
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param response the http response
+     * @param result the list of strings to serialize
+     * @param type type token needed for gson
+     * @param <T> type of the result
+     * @return a JSON string
+     */
+    public static <T> String json(Response response, T result, TypeToken<T> type) {
+        response.type("application/json");
+        return GSON.toJson(result, type.getType());
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param response the http response
+     * @param result the object to serialize to JSON
+     * @param httpStatusCode http status code
+     * @param type type token needed for gson
+     * @param <T> type of the result
+     * @return a JSON string
+     */
+    public static <T> String json(Response response, int httpStatusCode, T result, TypeToken<T> type) {
+        response.type("application/json");
+        response.status(httpStatusCode);
+        return GSON.toJson(result, type.getType());
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param response the http response
+     * @param result the object to serialize to JSON
+     * @param type type token needed for gson
+     * @param <T> type of the result
+     * @return a JSON string
+     */
+    public static <T> String result(Response response, ResultJson<T> result, TypeToken<T> type) {
+        response.type("application/json");
+        ParameterizedType parameterizedType = new ParameterizedTypeImpl(null, ResultJson.class, type.getType());
+        return GSON.toJson(result, parameterizedType);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param gson {@link Gson} object to use for serialization
+     * @param response the http response
+     * @param result the long to serialize to JSON
+     * @return a JSON string
+     */
+    public static String json(Gson gson, Response response, long result) {
+        response.type("application/json");
+        return gson.toJson(result);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON.
+     * @param gson {@link Gson} object to use for serialization
+     * @param response the http response
+     * @param result the object to serialize to JSON
+     * @param type type token needed for gson
+     * @param <T> type of the result
+     * @return a JSON string
+     */
+    public static <T> String json(Gson gson, Response response, T result, TypeToken<T> type) {
+        response.type("application/json");
+        return gson.toJson(result, type.getType());
     }
 
     /**
@@ -568,9 +753,80 @@ public class SparkApplicationHelper {
      * @param response the http response
      * @param httpStatusCode the http status code of the response
      * @param result the object to serialize to JSON
+     * @param type type token needed for gson
+     * @param <T> type of the result
      * @return a JSON string
      */
-    public static String json(Response response, int httpStatusCode, Object result) {
+    public static <T> String result(Response response, int httpStatusCode, ResultJson<T> result, TypeToken<T> type) {
+        response.type("application/json");
+        response.status(httpStatusCode);
+        ParameterizedType parameterizedType = new ParameterizedTypeImpl(null, ResultJson.class, type.getType());
+        return GSON.toJson(result, parameterizedType);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON
+     * and the http status code to bad request.
+     * @param response the http response
+     * @param messages messages
+     * @return a JSON string
+     */
+    public static String badRequest(Response response, String... messages) {
+        response.type("application/json");
+        response.status(HttpStatus.SC_BAD_REQUEST);
+        return GSON.toJson(ResultJson.error(messages));
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON
+     * and the http status code to not found.
+     * @param response the http response
+     * @param messages messages
+     * @return a JSON string
+     */
+    public static String notFound(Response response, String... messages) {
+        response.type("application/json");
+        response.status(HttpStatus.SC_NOT_FOUND);
+        return GSON.toJson(ResultJson.error(messages));
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON
+     * and the http status code to internal server error.
+     * @param response the http response
+     * @param messages messages
+     * @return a JSON string
+     */
+    public static String internalServerError(Response response, String... messages) {
+        response.type("application/json");
+        response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        return GSON.toJson(ResultJson.error(messages));
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON
+     * and the http status code to forbidden.
+     * @param response the http response
+     * @param messages messages
+     * @return a JSON string
+     */
+    public static String forbidden(Response response, String... messages) {
+        response.type("application/json");
+        response.status(HttpStatus.SC_FORBIDDEN);
+        return GSON.toJson(ResultJson.error(messages));
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON
+     * and the http status code to forbidden.
+     * @param response the http response
+     * @param result the result
+     * @param httpStatusCode http status code
+     * @return a JSON string
+     * @deprecated use the corresponding error methods instead
+     */
+    @Deprecated
+    public static String jsonError(Response response, int httpStatusCode, String result) {
         response.type("application/json");
         response.status(httpStatusCode);
         return GSON.toJson(result);
@@ -584,10 +840,48 @@ public class SparkApplicationHelper {
      * @param httpStatusCode the http status code of the response
      * @param result the object to serialize to JSON
      * @return a JSON string
+     * @deprecated use methods that provide type token instead
      */
+    @Deprecated
     public static String json(Gson gson, Response response, int httpStatusCode, Object result) {
         response.type("application/json");
         response.status(httpStatusCode);
         return gson.toJson(result);
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON
+     * and the http status code to the given value.
+     * @param gson {@link Gson} object to use for serialization
+     * @param response the http response
+     * @param httpStatusCode the http status code of the response
+     * @param result the object to serialize to JSON
+     * @param type type token needed for gson
+     * @param <T> type of the result
+     * @return a JSON string
+     */
+    public static <T> String json(Gson gson, Response response, int httpStatusCode, T result, TypeToken<T> type) {
+        response.type("application/json");
+        response.status(httpStatusCode);
+        return gson.toJson(result, type.getType());
+    }
+
+    /**
+     * Serialize the result and set the response content type to JSON
+     * and the http status code to the given value.
+     * @param gson {@link Gson} object to use for serialization
+     * @param response the http response
+     * @param httpStatusCode the http status code of the response
+     * @param result the object to serialize to JSON
+     * @param type type token needed for gson
+     * @param <T> type of the result
+     * @return a JSON string
+     */
+    public static <T> String result(Gson gson, Response response, int httpStatusCode, ResultJson<T> result,
+                                    TypeToken<T> type) {
+        response.type("application/json");
+        response.status(httpStatusCode);
+        ParameterizedType parameterizedType = new ParameterizedTypeImpl(null, ResultJson.class, type.getType());
+        return gson.toJson(result, parameterizedType);
     }
 }

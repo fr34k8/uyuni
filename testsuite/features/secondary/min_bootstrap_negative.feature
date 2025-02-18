@@ -1,6 +1,7 @@
-# Copyright (c) 2021-2022 SUSE LLC
+# Copyright (c) 2021-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
 
+@skip_if_github_validation
 @sle_minion
 @scope_onboarding
 Feature: Negative tests for bootstrapping normal minions
@@ -8,8 +9,8 @@ Feature: Negative tests for bootstrapping normal minions
   As an authorized user
   I want to avoid registration with invalid input parameters
 
-  Scenario: Log in as admin user
-    Given I am authorized for the "Admin" section
+  Scenario: Log in as org admin user
+    Given I am authorized
 
   Scenario: Bootstrap should fail when minion already exists
     When I follow the left menu "Systems > Bootstrapping"
@@ -36,7 +37,7 @@ Feature: Negative tests for bootstrapping normal minions
     When I click on "Details"
     And I wait at most 10 seconds until I see modal containing "Error Details" text
     Then I should see a "Standard Error" text
-    And I should see "Could not resolve hostname not-existing-name: Name or service not known" in the textarea
+    And I should see "Could not resolve hostname not-existing-name: Name or service not known" in the stderr textarea
     When I close the modal dialog
 
   Scenario: Bootstrap a SLES minion with wrong SSH credentials
@@ -52,7 +53,7 @@ Feature: Negative tests for bootstrapping normal minions
     When I click on "Details"
     And I wait at most 10 seconds until I see modal containing "Error Details" text
     Then I should see a "Standard Error" text
-    And I should see "Permission denied (publickey,keyboard-interactive)." or "Password authentication failed" in the textarea
+    And I should see "Permission denied (publickey" or "Password authentication failed" in the stderr textarea
     When I close the modal dialog
 
   Scenario: Bootstrap a SLES minion with wrong SSH port number
@@ -68,5 +69,5 @@ Feature: Negative tests for bootstrapping normal minions
     When I click on "Details"
     And I wait at most 10 seconds until I see modal containing "Error Details" text
     Then I should see a "Standard Error" text
-    And I should see "port 11: Connection refused" or "port 11: Invalid argument" in the textarea
+    And I should see "port 11: Connection refused" or "port 11: Network is unreachable" in the stderr textarea
     When I close the modal dialog

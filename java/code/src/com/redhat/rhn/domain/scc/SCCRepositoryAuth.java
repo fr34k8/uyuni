@@ -16,17 +16,22 @@ package com.redhat.rhn.domain.scc;
 
 import com.redhat.rhn.domain.BaseDomainHelper;
 import com.redhat.rhn.domain.channel.ContentSource;
+import com.redhat.rhn.domain.credentials.BaseCredentials;
 import com.redhat.rhn.domain.credentials.Credentials;
+import com.redhat.rhn.domain.credentials.RemoteCredentials;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -34,7 +39,6 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedNativeQueries;
 import javax.persistence.NamedNativeQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
@@ -48,10 +52,8 @@ import javax.persistence.Transient;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "auth_type")
 @Table(name = "suseSCCRepositoryAuth")
-@NamedNativeQueries({
-        @NamedNativeQuery(name = "SCCRepositoryAuth.lookupRepoIdWithAuth",
-                query = "select distinct ra.repo_id from suseSCCRepositoryAuth ra")
-})
+@NamedNativeQuery(name = "SCCRepositoryAuth.lookupRepoIdWithAuth",
+        query = "select distinct ra.repo_id from suseSCCRepositoryAuth ra")
 public abstract class SCCRepositoryAuth extends BaseDomainHelper {
 
     private Long id;
@@ -84,7 +86,7 @@ public abstract class SCCRepositoryAuth extends BaseDomainHelper {
      * Get the mirror credentials.
      * @return the credentials or null in case of fromdir
      */
-    @ManyToOne
+    @ManyToOne(targetEntity = BaseCredentials.class)
     @JoinColumn(name = "credentials_id", nullable = true)
     protected Credentials getCredentials() {
         return credentials;
@@ -96,22 +98,22 @@ public abstract class SCCRepositoryAuth extends BaseDomainHelper {
      * @return the credentials or empty
      */
     @Transient
-    public Optional<Credentials> getOptionalCredentials() {
-        return Optional.ofNullable(credentials);
+    public Optional<RemoteCredentials> getOptionalCredentials() {
+        return Optional.ofNullable(credentials).flatMap(c -> c.castAs(RemoteCredentials.class));
     }
 
     /**
      * Set the mirror credentials this repo can be retrieved with.
      * @param credentialsIn the credentials to set
      */
-    public void setCredentials(Credentials credentialsIn) {
+    public void setCredentials(RemoteCredentials credentialsIn) {
         credentials = credentialsIn;
     }
 
     /**
      * @return the contentSource
      */
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_id")
     public ContentSource getContentSource() {
         return contentSource;
@@ -127,8 +129,8 @@ public abstract class SCCRepositoryAuth extends BaseDomainHelper {
     /**
      * @return Returns the products.
      */
-    @ManyToOne
-    @JoinColumn(name = "repo_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "repo_id", nullable = false)
     public SCCRepository getRepo() {
         return repo;
     }
@@ -186,14 +188,20 @@ public abstract class SCCRepositoryAuth extends BaseDomainHelper {
     }
 
     /**
+     * @return {@link Optional} {@link SCCRepositoryCloudRmtAuth}
+     */
+    public Optional<SCCRepositoryCloudRmtAuth> cloudRmtAuth() {
+        return fold(b -> Optional.empty(), n -> Optional.empty(), t -> Optional.empty(), Optional::of);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof SCCRepositoryAuth)) {
+        if (!(other instanceof SCCRepositoryAuth otherSCCRepository)) {
             return false;
         }
-        SCCRepositoryAuth otherSCCRepository = (SCCRepositoryAuth) other;
         return new EqualsBuilder()
             .append(getCredentials(), otherSCCRepository.getCredentials())
             .append(getRepo(), otherSCCRepository.getRepo())
@@ -210,5 +218,16 @@ public abstract class SCCRepositoryAuth extends BaseDomainHelper {
             .append(getCredentials())
             .append(getRepo())
             .toHashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("id", getId())
+                .append("repo", Objects.toString(getRepo()))
+                .toString();
     }
 }

@@ -32,6 +32,7 @@ import com.redhat.rhn.taskomatic.task.MinionActionExecutor;
 import com.redhat.rhn.testing.JMockBaseTestCaseWithUser;
 import com.redhat.rhn.testing.TestUtils;
 
+import com.suse.cloud.test.TestCloudPaygManagerBuilder;
 import com.suse.manager.webui.services.SaltServerActionService;
 
 import org.jmock.imposters.ByteBuddyClassImposteriser;
@@ -122,7 +123,8 @@ public class MinionActionChainExecutorTest extends JMockBaseTestCaseWithUser {
 
         JobExecutionContext context = new JobExecutionContextImpl(scheduler, firedBundle, job);
 
-        MinionActionChainExecutor actionExecutor = new MinionActionChainExecutor(saltServerActionService);
+        MinionActionChainExecutor actionExecutor = new MinionActionChainExecutor(saltServerActionService,
+            new TestCloudPaygManagerBuilder().build());
         actionExecutor.execute(context);
 
         context().assertIsSatisfied();
@@ -130,8 +132,7 @@ public class MinionActionChainExecutorTest extends JMockBaseTestCaseWithUser {
         String expectedMessage = LOCALIZATION.getMessage("task.action.rejection.reason",
             MinionActionExecutor.MAXIMUM_TIMEDELTA_FOR_SCHEDULED_ACTIONS);
 
-        HibernateFactory.commitTransaction();
-        HibernateFactory.closeSession();
+        HibernateFactory.getSession().clear();
 
         sa1 = HibernateFactory.reload(sa1);
         sa2 = HibernateFactory.reload(sa2);

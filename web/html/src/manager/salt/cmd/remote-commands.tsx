@@ -228,7 +228,7 @@ class RemoteCommand extends React.Component<RemoteCommandProps, RemoteCommandSta
                     disabled={this.state.executing.state() === "pending"}
                     placeholder={t("Type the command here")}
                   />
-                  <span className="input-group-addon">@</span>
+                  <span className="input-group-addon input-group-text">@</span>
                   <input
                     id="target"
                     className="form-control"
@@ -283,6 +283,7 @@ class RemoteCommand extends React.Component<RemoteCommandProps, RemoteCommandSta
       errors: [],
       warnings: [],
       previewed: deferred,
+      executing: jQuery.Deferred(),
       result: {
         minions: new Map(),
       },
@@ -487,7 +488,7 @@ class RemoteCommand extends React.Component<RemoteCommandProps, RemoteCommandSta
           } else if (event.code === "ERR_TARGET_NO_MATCH") {
             globalErr = [t("No minions matched the target expression.")];
           } else if (!event.minion) {
-            globalErr = [t("Server returned an error: {0}", event.message)];
+            globalErr = [t("Server returned an error: {message}", { message: event.message })];
           }
 
           const noPending =

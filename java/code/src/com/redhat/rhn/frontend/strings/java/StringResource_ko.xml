@@ -206,70 +206,70 @@
         <target>9</target>
       </trans-unit>
       <trans-unit approved="yes" id="yes" xml:space="preserve">
-          <source>Yes</source>
+        <source>Yes</source>
         <target>예</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="no" xml:space="preserve">
-          <source>No</source>
+        <source>No</source>
         <target>아니요</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="Enabled" xml:space="preserve">
-          <source>Enabled</source>
+        <source>Enabled</source>
         <target>활성화됨</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="Disabled" xml:space="preserve">
-          <source>Disabled</source>
+        <source>Disabled</source>
         <target>비활성화됨</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="Tip" xml:space="preserve">
-          <source>Tip</source>
+        <source>Tip</source>
         <target>팁</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="Note" xml:space="preserve">
-          <source>Note</source>
+        <source>Note</source>
         <target>참고</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="Warning" xml:space="preserve">
-          <source>Warning</source>
+        <source>Warning</source>
         <target>경고</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="Custom" xml:space="preserve">
-          <source>Custom</source>
+        <source>Custom</source>
         <target>사용자 지정</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="Examples" xml:space="preserve">
-          <source>Examples</source>
+        <source>Examples</source>
         <target>예시</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="none specified" xml:space="preserve">
-          <source>none specified</source>
+        <source>none specified</source>
         <target>미지정</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
@@ -1543,13 +1543,6 @@
         </context-group>
         <target>비밀번호는 {0}자 이상이어야 합니다.</target>
       </trans-unit>
-      <trans-unit id="error.invalidpasswordcharacters" xml:space="preserve">
-        <source>Password contains tab or newline characters.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/users/CreateUser</context>
-        </context-group>
-        <target>암호에 탭이나 개행 문자가 포함되어 있습니다.</target>
-      </trans-unit>
       <trans-unit id="error.maxpassword" xml:space="preserve">
         <source>Passwords cannot be more than {0} characters.</source>
         <target>비밀번호는 {0}자를 초과할 수 없습니다.</target>
@@ -1796,14 +1789,14 @@
         <target>XCCDF 문서 경로</target>
       </trans-unit>
       <trans-unit approved="yes" id="first" xml:space="preserve">
-          <source>First Scan Id</source>
+        <source>First Scan Id</source>
         <target>첫 번째 스캔 ID</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/audit/scap/Diff.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="second" xml:space="preserve">
-          <source>Second Scan Id</source>
+        <source>Second Scan Id</source>
         <target>두 번째 스캔 ID</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/audit/scap/Diff.do</context>
@@ -2248,7 +2241,7 @@ channel is available to your @@PRODUCT_NAME@@. If it is not, please contact your
 and try again.
 &lt;/li&gt;
 &lt;li&gt;
-Make sure the spacewalk-koan package corresponding to this kickstart are
+Make sure the required packages corresponding to this kickstart are
 available in the kickstart's base channel's tools channel. If not, you
 will need to make them available for this kickstart profile to function properly.
 &lt;/li&gt;
@@ -2266,24 +2259,24 @@ available for this kickstart profile to function properly.
 &lt;p&gt;이 문제를 해결하려면 다음 사항을 확인하십시오.&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;
-이 킥스타트 프로파일의 기본 채널에 대한 'rhn-tools' 자식 소프트웨어 채널을
-조직에서 사용할 수 있습니까? 사용할 수 없는 경우 @@PRODUCT_NAME@@ 관리자로부터
-'rhn-tools' 소프트웨어 채널의 인타이틀먼트를 요청해야 합니다.
+이 킥스타트 프로파일의 기본 채널에 대한 클라이언트 도구 채널을 조직에서 사용할 수 있습니까?
+그렇지 않은 경우에는 @@PRODUCT_NAME@@ 관리자에게
+클라이언트 도구 채널에 대한 권한을 요청해야 합니다.
 &lt;/li&gt;
 &lt;li&gt;
-이 킥스타트 프로파일의 기본 채널에 대한 'rhn-tools' 자식 채널을 @@PRODUCT_NAME@@에서
-사용할 수 있는지 확인하십시오. 사용할 수 없는 경우 @@PRODUCT_NAME@@ 관리자에게 문의하여
-rhn-tools 채널의 @@PRODUCT_NAME@@ 동기화를 요청하고 다시 시도해야
-합니다.
+이 킥스타트 프로파일의 기본 채널에 대한 클라이언트 도구 채널을 @@PRODUCT_NAME@@에서
+사용할 수 있는지 확인하십시오. 사용할 수 없는 경우 @@PRODUCT_NAME@@ 관리자에게
+문의하여 클라이언트 도구 채널에 대한 관리자 간 동기화를
+요청하고 다시 시도하십시오.
 &lt;/li&gt;
 &lt;li&gt;
-이 킥스타트에 해당하는 rhn-kickstart* 패키지를 킥스타트의 기본 채널의
-'rhn-tools' 채널에서 사용할 수 있는지 확인하십시오 사용할 수 없는 경우,
-킥스타트 프로파일이 올바르게 작동하도록 하기 위해 이를 사용 가능하게 해야 합니다.
+이 킥스타트에 해당하는 필수 패키지가 킥스타트의 기본 채널의 도구 채널에서
+사용할 수 있는지 확인하십시오. 그렇지 않은 경우 이 킥스타트 프로파일이 올바르게 작동하려면
+해당 패키지를 사용할 수 있도록 설정해야 합니다.
 &lt;/li&gt;
 &lt;li&gt;
-위에 나열된 패키지를 킥스타트의 기본 채널에서 사용할 수 있습니까? 사용할 수 없는 경우 킥스타트 프로파일이 올바르게
-작동하도록 하기 위해 이를 사용 가능하게 해야 합니다.
+위에 나열된 패키지가 이 킥스타트의 기본 채널에서 사용할 수 있습니까? 그렇지 않은 경우
+이 킥스타트 프로파일이 올바르게 작동하기 위해서는 해당 패키지를 사용하도록 설정해야 합니다.
 &lt;/li&gt;
 &lt;/ul&gt;
 &lt;/div&gt;
@@ -4130,14 +4123,14 @@ user before attempting to deactivate their account.</source>
         <target>시스템 그룹 &lt;strong&gt;{0}&lt;/strong&gt; 생성됨.</target>
       </trans-unit>
       <trans-unit id="daterangepicker.error.invalid" xml:space="preserve">
-          <source>The date "{0}" is not valid and has been reset to its default. Check to make sure selected month has that many days.</source>
+        <source>The date "{0}" is not valid and has been reset to its default. Check to make sure selected month has that many days.</source>
         <target>"{0}" 날짜는 유효하지 않은 값이므로, 기본값으로 되돌립니다. 선택하신 달에 날짜수를 확인하시기 바랍니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">com.redhat.rhn.frontend.action.common.DateRangePicker</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="daterangepicker.error.start.before.end" xml:space="preserve">
-          <source>The start date "{0}" must be before the end date "{1}"</source>
+        <source>The start date "{0}" must be before the end date "{1}"</source>
         <target>시작 날짜 "{0}"은(는) 마지막 날짜 "{1}"보다 이전이어야 합니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">com.redhat.rhn.frontend.action.common.DateRangePicker</context>
@@ -5989,11 +5982,11 @@ user before attempting to deactivate their account.</source>
         <target>재시작</target>
       </trans-unit>
       <trans-unit approved="yes" id="message.firstusercreated" xml:space="preserve">
-        <source>You have just created your first @@PRODUCT_NAME@@ user. To finalize your installation please use the &lt;a href="/rhn/admin/setup/ProxySettings.do"&gt;Setup Wizard&lt;/a&gt;.</source>
+        <source>You have just created your first @@PRODUCT_NAME@@ user. To finalize your installation please use the &lt;a href="/rhn/manager/admin/setup/proxy"&gt;Setup Wizard&lt;/a&gt;.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">Navigation Menu</context>
         </context-group>
-        <target>@@PRODUCT_NAME@@ 서비스를 사용할 첫번째 사용자를 생성했습니다.&lt;a href="/rhn/admin/config/GeneralConfig.do"&gt;&lt;strong&gt;이곳을 클릭하여&lt;/strong&gt;&lt;/a&gt; 나머지 추가 설정을 완료하십시오.</target>
+        <target state="final">@@PRODUCT_NAME@@을(를) 사용할 첫번째 사용자를 생성했습니다. 설치를 완료하려면 &lt;a href="/rhn/manager/admin/setup/proxy"&gt;설정 마법사&lt;/a&gt;를 사용하십시오.</target>
       </trans-unit>
       <trans-unit id="message.kerbuserlogged" xml:space="preserve">
         <source>You've logged as externally authenticated &lt;strong&gt;{0}&lt;/strong&gt; user. To be able to login using this account with login and password, please set your password on &lt;a href="/rhn/account/UserDetails.do"&gt;&lt;strong&gt;{0} user page&lt;/strong&gt;&lt;/a&gt;.</source>
@@ -6074,11 +6067,11 @@ user before attempting to deactivate their account.</source>
         <target>처리할 수 없는 오류</target>
       </trans-unit>
       <trans-unit approved="yes" id="bootstrap.config.success" xml:space="preserve">
-        <source>Bootstrap script successfully generated.  You can access it &lt;a href="{0}/pub/bootstrap/"&gt;{0}/pub/bootstrap/&lt;/a&gt;</source>
+        <source>Bootstrap script successfully generated.  You can access it &lt;a href="{0}/pub/bootstrap/" target="_blank"&gt;{0}/pub/bootstrap/&lt;/a&gt;</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/admin/config/CertificateConfig.do</context>
         </context-group>
-        <target>부트스트랩 스크립트가 생성되었습니다. 여기에 액세스할 수 있습니다. &lt;a href="{0}/pub/bootstrap/"&gt;{0}/pub/bootstrap/&lt;/a&gt;</target>
+        <target state="final">부트스트랩 스크립트가 생성되었습니다. &lt;a href="{0}/pub/bootstrap/" target="_blank"&gt;{0}/pub/bootstrap/&lt;/a&gt;에서 액세스할 수 있습니다.</target>
       </trans-unit>
       <trans-unit approved="yes" id="restart.config.error" xml:space="preserve">
         <source>There was an error restarting the @@PRODUCT_NAME@@.  It can be manually restarted from the console by issuing the command: &lt;strong&gt;/usr/sbin/spacewalk-service restart&lt;/strong&gt;.  Please contact support for more information.</source>
@@ -6535,27 +6528,6 @@ Follow this url to see the full list of inactive systems:
         </context-group>
         <target>시스템 {0}에는 {1} 네트워크 장치가 없기 때문에 자동 설치할 수 없습니다.</target>
       </trans-unit>
-      <trans-unit approved="yes" id="kickstart.schedule.nopackage" xml:space="preserve">
-        <source>Could not find the needed @@PRODUCT_NAME@@ provisioning packages given this system's current base channel and desired target channel: {0}</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
-        </context-group>
-        <target>이 시스템의 현재 기본 채널에 주어지며 목표(target) 채널로 요구되는 필요한 @@PRODUCT_NAME@@ 프로비저닝 패키지를 찾을 수 없습니다. {0}</target>
-      </trans-unit>
-      <trans-unit approved="yes" id="kickstart.schedule.cantsubscribe" xml:space="preserve">
-        <source>You have no remaining subscriptions to the @@PRODUCT_NAME@@ provisioning channel for &lt;strong&gt;{0}&lt;/strong&gt;'s current base channel.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
-        </context-group>
-        <target>현재 이 시스템의 기본 채널에 대해 @@PRODUCT_NAME@@ 프로비저닝 채널에 남아있는 서브스크립션이 없습니다.</target>
-      </trans-unit>
-      <trans-unit approved="yes" id="kickstart.schedule.cantsubscribe.channel" xml:space="preserve">
-        <source>You have no remaining subscriptions to the channel {0} for &lt;strong&gt;{1}&lt;/strong&gt;'s current base channel.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
-        </context-group>
-        <target>현재 이 시스템의 기본 채널에 대해 {0} 채널에 남아있는 서브스크립션이 없습니다.</target>
-      </trans-unit>
       <trans-unit approved="yes" id="kickstart.schedule.noup2date" xml:space="preserve">
         <source>An autoinstallation was not scheduled for &lt;strong&gt;&lt;a href="/rhn/systems/details/Overview.do?sid={0}"&gt;{1}&lt;/a&gt;&lt;/strong&gt; because the package profile did not contain the 'up2date' package. An update of that system's package profile may be required.</source>
         <context-group name="ctx">
@@ -6634,11 +6606,11 @@ Follow this url to see the full list of inactive systems:
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="kickstart.tree.invalidlabel" xml:space="preserve">
-        <source>The label is not formatted properly.  The label should contain only letters, numbers, hyphens, periods, and underscores.  It must also be at least 4 characters long</source>
+        <source>The label is not formatted properly. The label should contain only letters, numbers, hyphens, and underscores. It must also be at least 4 characters long</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/kickstart/TreeEdit.do</context>
         </context-group>
-        <target>레이블 형식이 적절하지 않습니다. 레이블은 문자, 숫자, 하이픈, 마침표 및 밑줄만 포함해야 합니다. 또한 4자 이상이어야 합니다.</target>
+        <target state="final">레이블 형식이 적절하지 않습니다. 레이블은 문자, 숫자, 하이픈, 마침표 및 밑줄만 포함해야 합니다. 또한 4자 이상이어야 합니다.</target>
       </trans-unit>
       <trans-unit approved="yes" id="kickstart.tree.invalidkernel" xml:space="preserve">
         <source>The kernel could not be found at the specified location: {0}</source>
@@ -6733,98 +6705,98 @@ Follow this url to see the full list of inactive systems:
       </trans-unit>
       <!-- Activation Keys -->
       <trans-unit approved="yes" id="activation-key.java.invalid_chars" xml:space="preserve">
-          <source>Activation key label &lt;strong&gt;{0}&lt;/strong&gt; has one or more of the following invalid characters &lt;strong&gt;{1}&lt;/strong&gt;. Please remove these characters from the label.</source>
+        <source>Activation key label &lt;strong&gt;{0}&lt;/strong&gt; has one or more of the following invalid characters &lt;strong&gt;{1}&lt;/strong&gt;. Please remove these characters from the label.</source>
         <target>활성화 키 레이블 &lt;strong&gt;{0}&lt;/strong&gt;에 다음과 같은 잘못된 문자 &lt;strong&gt;{1}&lt;/strong&gt;이(가) 1개 이상 포함되어 있습니다. 레이블에서 잘못된 문자를 제거해 주십시오.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="activation-key.java.exists" xml:space="preserve">
-          <source>An activation key with label '{0}' is already taken. Please choose a different label.</source>
+        <source>An activation key with label '{0}' is already taken. Please choose a different label.</source>
         <target>'{0}'(으)로 레이블된 활성화 키는 이미 사용되고 있습니다. 다른 레이블을 선택하십시오.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="activation-key.java.created" xml:space="preserve">
-          <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been created.</source>
+        <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been created.</source>
         <target>&lt;strong&gt;{0}&lt;/strong&gt; 활성화 키가 생성되었습니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="activation-key.java.deleted" xml:space="preserve">
-          <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been deleted.</source>
+        <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been deleted.</source>
         <target>&lt;strong&gt;{0}&lt;/strong&gt; 활성화 키가 삭제되었습니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="activation-key.java.cloned" xml:space="preserve">
-          <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been cloned.</source>
+        <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been cloned.</source>
         <target>&lt;strong&gt;{0}&lt;/strong&gt; 활성화 키가 복제되었습니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="activation-key.java.modified" xml:space="preserve">
-          <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been modified.</source>
+        <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been modified.</source>
         <target>&lt;strong&gt;{0}&lt;/strong&gt; 활성화 키가 수정되었습니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="activation-key.java.org_prefixed" xml:space="preserve">
-          <source>The name of the key &lt;strong&gt;{0}&lt;/strong&gt; has been modified to &lt;strong&gt;{1}&lt;/strong&gt;.</source>
+        <source>The name of the key &lt;strong&gt;{0}&lt;/strong&gt; has been modified to &lt;strong&gt;{1}&lt;/strong&gt;.</source>
         <target>&lt;strong&gt;{0}&lt;/strong&gt;이 &lt;strong&gt;{1}&lt;/strong&gt; 로 수정되었습니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="activation-key.java.allowed-values" xml:space="preserve">
-          <source>The activation key cannot be saved: the key can contains only numbers [0-9], letters [a-z A-Z], '-', '_' and '.'</source>
+        <source>The activation key cannot be saved: the key can contains only numbers [0-9], letters [a-z A-Z], '-', '_' and '.'</source>
         <target>활성화 키를 저장할 수 없음: 키에는 숫자 [0-9], 문자 [a-z A-Z], '-', '_' 및 '.'만 포함할 수 있음</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="system.sdc.missing.config_deploy1" xml:space="preserve">
-          <source>This system does not yet have configuration deployment capability. Configuration deployment requires that particular software is installed and enabled on your system.</source>
+        <source>This system does not yet have configuration deployment capability. Configuration deployment requires that particular software is installed and enabled on your system.</source>
         <target>이 시스템에는 설정 배치 기능이 없습니다. 설정 배치 기능을 위해 시스템에 특정 소프트웨어가 설치되고 활성화되어 있어야 합니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="system.sdc.missing.config_deploy2" xml:space="preserve">
-          <source>You may ensure that configuration deployment capability will be enabled on this system by selecting this system in the  &lt;a href={0}&gt;{1}&lt;/a&gt; screen and then clicking "{2}"</source>
+        <source>You may ensure that configuration deployment capability will be enabled on this system by selecting this system in the  &lt;a href={0}&gt;{1}&lt;/a&gt; screen and then clicking "{2}"</source>
         <target>&lt;a href={0}&gt;{1}&lt;/a&gt; 화면에서 이 시스템을 선택하고 "{2}"을(를) 클릭하여 이 시스템에서 구성 배치 기능을 사용할 수 있는지를 확인할 수 있습니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="system.sdc.addtossm" xml:space="preserve">
-          <source>System added to the System Set Manager.</source>
+        <source>System added to the System Set Manager.</source>
         <target>시스템을 시스템 세트 관리자에 추가했습니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="system.sdc.removefromssm" xml:space="preserve">
-          <source>System removed from the System Set Manager.</source>
+        <source>System removed from the System Set Manager.</source>
         <target>시스템을 시스템 세트 관리자에서 삭제했습니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="usageLimit" xml:space="preserve">
-          <source>Usage Limit</source>
+        <source>Usage Limit</source>
         <target>사용 제한</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="key" xml:space="preserve">
-          <source>Key</source>
+        <source>Key</source>
         <target>키</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
@@ -7342,504 +7314,504 @@ Follow this url to see the full list of inactive systems:
         <target>&lt;strong&gt;{0}&lt;/strong&gt;의 시스템 등록정보가 변경되었습니다. &lt;br/&gt; &lt;strong&gt;{0}&lt;/strong&gt;은 자동 패치 업데이트 환경설정에 따라 &lt;strong&gt;완전 업데이트&lt;/strong&gt;됩니다.</target>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.deploy.noaction" xml:space="preserve">
-          <source>No deploy action completed.</source>
+        <source>No deploy action completed.</source>
         <target>배포 작업이 완료되지 않음.</target>
         <context-group name="sdc_action_deploy_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.deploy.failure" xml:space="preserve">
-          <source>All file and/or directory ({0}) deployments failed. [&lt;a href="{1}"&gt;View Details&lt;/a&gt;]</source>
+        <source>All file and/or directory ({0}) deployments failed. [&lt;a href="{1}"&gt;View Details&lt;/a&gt;]</source>
         <target>모든 파일 및 디렉토리 ({0})를 디플로이하지 못했습니다. [&lt;a href="{1}"&gt;자세한 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_deploy_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.deploy.success" xml:space="preserve">
-          <source>All files and/or directories ({0}) were successfully deployed. [&lt;a href="{1}"&gt;View Details&lt;/a&gt;]</source>
+        <source>All files and/or directories ({0}) were successfully deployed. [&lt;a href="{1}"&gt;View Details&lt;/a&gt;]</source>
         <target>모든 파일 및 디렉토리 ({0})를 성공적으로 디플로이했습니다. [&lt;a href="{1}"&gt;자세한 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_deploy_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.noaction" xml:space="preserve">
-          <source>No system comparisons completed.</source>
+        <source>No system comparisons completed.</source>
         <target>시스템 비교 작업이 완료되지 않음.</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_0_dirs_0_symlinks_0" xml:space="preserve">
-          <source>No files, directories or symlinks were selected for comparison. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>No files, directories or symlinks were selected for comparison. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>비교를 위해 파일, 디렉토리, 심볼릭 링크가 선택되어 있지 않습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_0_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{4} of 1 symlink on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{4} of 1 symlink on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 심볼릭 링크 중 {4}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_0_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {5}개의 심볼릭 링크 중 {4}개가 @@PRODUCT_NAME@@ 관리 파일과 성공적으로 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_0_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{2} of 1 directory on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of 1 directory on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 디렉토리 중 {2}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_0_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 심볼릭 링크 중 {4}개와 1 개의 디렉토리 중 {2}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_0_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {5}개의 심볼릭 링크 중 {4}개와 1개의 디렉토리 중 {2}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_0_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {3}개의 디렉토리 중 {2}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_0_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 심볼릭 링크 중 {4}개와 {3}개의 디렉토리 중 {2}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_0_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {5}개의 심볼릭 링크 중 {4}개와 {3} 개의 디렉토리 중 {2}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_1_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} of 1 file on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_1_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{0} of 1 file and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 심볼릭 링크 중 {4}개와 1개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_1_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{0} of 1 file and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {5}개의 심볼릭 링크 중 {4}개와 1 개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_1_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{0} of 1 file and {2} of 1 directory on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of 1 directory on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 디렉토리 중 {2}개와 1개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_1_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{0} of 1 file and {2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 심볼릭 링크 중 {4}개와 1개의 디렉토리 중 {2}개 그리고 1개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_1_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{0} of 1 file and {2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {5}개의 심볼릭 링크 중 {4}개와 1개의 디렉토리 중 {2}개 그리고 1개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_1_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{0} of 1 file and {2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {3}개의 디렉토리 중 {2}개와 1개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_1_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{0} of 1 file and {2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 심볼릭 링크 중 {4}개와 {3}개의 디렉토리 중 {2}개 그리고 1 개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_1_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{0} of 1 file and {2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {5}개의 심볼릭 링크 중 {4}개와 {3}개의 디렉토리 중 {2}개 그리고 1개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_2_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} of {1} files on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {1}개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_2_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{0} of {1} files and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 심볼릭 링크 중 {4}개와 {1}개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_2_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{0} of {1} files and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {5}개의 심볼릭 링크 중 {4}개와 {1} 개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_2_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{0} of {1} files and {2} of 1 directory on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of 1 directory on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 디렉토리 중 {2}개와 {1}개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_2_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{0} of {1} files and {2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 심볼릭 링크 중 {4}개와 1개의 디렉토리 중 {2}개 그리고 {1}개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_2_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{0} of {1} files and {2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {5}개의 심볼릭 링크 중 {4}개와 1개의 디렉토리 중 {2}개 그리고 {1}개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_2_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{0} of {1} files and {2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {3}개의 디렉토리 중 {2}개와 {1}개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_2_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{0} of {1} files and {2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 1개의 심볼릭 링크 중 {4}개와 {3}개의 디렉토리 중 {2}개 그리고 {1}개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.diff.files_2_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{0} of {1} files and {2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>시스템에 있는 {5}개의 심볼릭 링크 중 {4}개와 {3}개의 디렉토리 중 {2}개 그리고 {1}개의 파일 중 {0}개가 @@PRODUCT_NAME@@ 관리 파일과 비교되었습니다. [&lt;a href="{6}"&gt;상세 정보 보기&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.differing.files_0" xml:space="preserve">
-          <source>No existing files in the existing system differed from the @@PRODUCT_NAME@@-Managed files.</source>
+        <source>No existing files in the existing system differed from the @@PRODUCT_NAME@@-Managed files.</source>
         <target>기존 시스템에 있는 기존 파일은 @@PRODUCT_NAME@@-관리 파일과 다릅니다.</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.differing.files_1" xml:space="preserve">
-          <source>1 of 1 file on the system differed from the @@PRODUCT_NAME@@-Managed files</source>
+        <source>1 of 1 file on the system differed from the @@PRODUCT_NAME@@-Managed files</source>
         <target>시스템에 있는 1개 중 1개의 파일이 @@PRODUCT_NAME@@-관리 파일과 다릅니다.</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit approved="yes" id="sdc.config.differing.files_2" xml:space="preserve">
-          <source>{0} of {1} files on the system differed from the @@PRODUCT_NAME@@-Managed files.</source>
+        <source>{0} of {1} files on the system differed from the @@PRODUCT_NAME@@-Managed files.</source>
         <target>시스템에 있는 {1}개 중 {0}개의 파일이 @@PRODUCT_NAME@@-관리 파일과 다릅니다.</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.time.message" xml:space="preserve">
-          <source>{0} by {1}</source>
+        <source>{0} by {1}</source>
         <target>{0} - {1}</target>
         <context-group name="sdc_actions_time_messages">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.time.message_url" xml:space="preserve">
-          <source>{0} by &lt;a href="{1}"&gt;{2}&lt;/a&gt;</source>
+        <source>{0} by &lt;a href="{1}"&gt;{2}&lt;/a&gt;</source>
         <target>{0} - &lt;a href="{1}"&gt;{2}&lt;/a&gt;</target>
         <context-group name="sdc_actions_time_messages">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_0_symlinks_0_url" xml:space="preserve">
-          <source>No files, directories or symlinks. &lt;a href="{0}"&gt; Add&lt;/a&gt;</source>
+        <source>No files, directories or symlinks. &lt;a href="{0}"&gt; Add&lt;/a&gt;</source>
         <target>파일, 디렉토리 또는 symlink가 없습니다. &lt;a href="{0}"&gt; 추가&lt;/a&gt;</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_0_symlinks_0" xml:space="preserve">
-          <source>No files, directories or symlinks.</source>
+        <source>No files, directories or symlinks.</source>
         <target>파일, 디렉토리 또는 symlink가 없습니다.</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{3} symlink</source>
+        <source>{3} symlink</source>
         <target>{3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{3} symlinks</source>
+        <source>{3} symlinks</source>
         <target>{3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{2} directory</source>
+        <source>{2} directory</source>
         <target>{2}개 디렉토리</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{2} directory and {3} symlink</source>
+        <source>{2} directory and {3} symlink</source>
         <target>{2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{2} directory and {3} symlinks</source>
+        <source>{2} directory and {3} symlinks</source>
         <target>{2}개 디렉토리 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{2} directories</source>
+        <source>{2} directories</source>
         <target>{2}개 디렉토리</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{2} directories and {3} symlink</source>
+        <source>{2} directories and {3} symlink</source>
         <target>{2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{2} directories and {3} symlinks</source>
+        <source>{2} directories and {3} symlinks</source>
         <target>{2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{1} file</source>
+        <source>{1} file</source>
         <target>{1}개 파일</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{1} file and {3} symlink</source>
+        <source>{1} file and {3} symlink</source>
         <target>{1}개 파일 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{1} file and {3} symlinks</source>
+        <source>{1} file and {3} symlinks</source>
         <target>{1}개 파일 및 {3} symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{1} file and {2} directory</source>
+        <source>{1} file and {2} directory</source>
         <target>{1}개 파일 및 {2}개 디렉토리</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{1} file, {2} directory and {3} symlink</source>
+        <source>{1} file, {2} directory and {3} symlink</source>
         <target>{1}개 파일, {2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{1} file, {2} directory and {3} symlinks</source>
+        <source>{1} file, {2} directory and {3} symlinks</source>
         <target>{1}개 파일, {2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{1} file and {2} directories</source>
+        <source>{1} file and {2} directories</source>
         <target>{1}개 파일 및 {2}개 디렉토리</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{1} file, {2} directories and {3} symlink</source>
+        <source>{1} file, {2} directories and {3} symlink</source>
         <target>{1}개 파일, {2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{1} file, {2} directories and {3} symlinks</source>
+        <source>{1} file, {2} directories and {3} symlinks</source>
         <target>{1}개 파일, {2}개 디렉토리 및 {3} symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{1} files</source>
+        <source>{1} files</source>
         <target>{1}개 파일</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{1} files and {3} symlink</source>
+        <source>{1} files and {3} symlink</source>
         <target>{1}개 파일 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{1} files and {3} symlinks</source>
+        <source>{1} files and {3} symlinks</source>
         <target>{1}개 파일 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{1} files and {2} directory</source>
+        <source>{1} files and {2} directory</source>
         <target>{1}개 파일 및 {2}개 디렉토리</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{1} files, {2} directory and {3} symlink</source>
+        <source>{1} files, {2} directory and {3} symlink</source>
         <target>{1}개 파일, {2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{1} files, {2} directory and {3} symlinks</source>
+        <source>{1} files, {2} directory and {3} symlinks</source>
         <target>{1}개 파일, {2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{1} files and {2} directories</source>
+        <source>{1} files and {2} directories</source>
         <target>{1}개 파일 및 {2}개 디렉토리</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{1} files, {2} directories and {3} symlink</source>
+        <source>{1} files, {2} directories and {3} symlink</source>
         <target>{1}개 파일, {2개} 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{1} files, {2} directories and {3} symlinks</source>
+        <source>{1} files, {2} directories and {3} symlinks</source>
         <target>{1}개 파일, {2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_2_files_1_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{0} states, {1} file, {2} directories and {3} symlinks</source>
+        <source>{0} states, {1} file, {2} directories and {3} symlinks</source>
         <target>{0}개 상태, {1}개 파일, {2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_2_files_2_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{0} states, {1} files, {2} directories and {3} symlinks</source>
+        <source>{0} states, {1} files, {2} directories and {3} symlinks</source>
         <target>{0}개 상태, {1}개 파일, {2}개 디렉토리 및 {3}개 symlink</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_1_files_0_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} state</source>
+        <source>{0} state</source>
         <target>{0}개 상태</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_1_files_1_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} state and {1} file</source>
+        <source>{0} state and {1} file</source>
         <target>{0}개 상태 및 {1}개 파일</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_1_files_2_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} state and {1} files</source>
+        <source>{0} state and {1} files</source>
         <target>{0}개 상태 및 {1}개 파일</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.channels_0" xml:space="preserve">
-          <source>No configuration channels</source>
+        <source>No configuration channels</source>
         <target>설정 채널이 없음</target>
         <context-group name="config_channel_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeChannelCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.channels_1" xml:space="preserve">
-          <source>1 configuration channel</source>
+        <source>1 configuration channel</source>
         <target>1 설정 채널</target>
         <context-group name="config_channel_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeChannelCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.channels_2" xml:space="preserve">
-          <source>{0} configuration channels</source>
+        <source>{0} configuration channels</source>
         <target>{0} 설정 채널</target>
         <context-group name="config_channel_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeChannelCountsMessage</context>
@@ -8582,13 +8554,6 @@ Follow this url to see the full list of inactive systems:
         </context-group>
         <target>채널에 "{0}"(라)는 파일이 이미 존재합니다.</target>
       </trans-unit>
-      <trans-unit approved="yes" id="system.entitle.notoolschannel" xml:space="preserve">
-        <source>Could not automatically subscribe the system to the @@PRODUCT_NAME@@ Tools Channel. This channel contains packages required for virtualization.  This is most likely caused by a lack of channel entitlements.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-        <target state="final">시스템을 @@PRODUCT_NAME@@ 도구 채널에 자동으로 등록할 수 없습니다. 이 채널에는 가상화에 필요한 패키지가 들어있습니다. 이는 채널 인타인틀먼트의 부재로 인한 것일 수도 있습니다.</target>
-      </trans-unit>
       <trans-unit approved="yes" id="system.entitle.multiplechannelswithpackage" xml:space="preserve">
         <source>Found multiple child channels with package: {0}. Please manually subscribe this system to the appropriate child channel.</source>
         <context-group name="ctx">
@@ -8596,40 +8561,12 @@ Follow this url to see the full list of inactive systems:
         </context-group>
         <target>{0} 패키지가 있는 여러 하위 채널이 발견되었습니다. 이 시스템을 올바른 하위 채널에 수동으로 등록하십시오.</target>
       </trans-unit>
-      <trans-unit approved="yes" id="system.entitle.multiplechannelswithpackagepleaseinstall" xml:space="preserve">
-        <source>Found multiple child channels with package: {0}. Please manually subscribe this system to the appropriate child channel, and schedule this package for installation.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-        <target>패키지 {0}가 있는 여러 하위 채널이 발견되었습니다. 이 시스템을 올바른 하위 채널에 수동으로 등록하신 후 패키지 설치 스케줄을 계획하십시오.</target>
-      </trans-unit>
-      <trans-unit id="system.entitle.novirtchannel" xml:space="preserve">
-        <source>Could not automatically subscribe the system to the RHEL Virtualization Channel.  This channel contains packages required for virtualization.  This is most likely caused by a lack of channel entitlements.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-        <target>시스템을 RHEL 가상화 채널에 자동으로 등록할 수 없습니다. 이 채널에는 가상화에 필요한 패키지가 들어있습니다. 이는 채널 인타인틀먼트의 부재로 인한 것일 수 도 있습니다.</target>
-      </trans-unit>
-      <trans-unit approved="yes" id="system.entitle.novirtpackage" xml:space="preserve">
-        <source>Could not find a channel with the {0} package. This package is required to manage virtual guests with @@PRODUCT_NAME@@.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-        <target>{0} 패키지가 있는 채널을 찾을 수 없습니다. 이 패키지는 @@PRODUCT_NAME@@으로 가상 게스트를 관리하기 위해 필요합니다.</target>
-      </trans-unit>
       <trans-unit approved="yes" id="system.entitle.alreadyentitled" xml:space="preserve">
         <source>The system already has the {0} system type.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
         <target>이미 시스템에 {0}개의 시스템 유형이 있습니다.</target>
-      </trans-unit>
-      <trans-unit approved="yes" id="system.virtualization.help" xml:space="preserve">
-        <source>NOTE: To enable and use virtualization capabilities within @@PRODUCT_NAME@@ for this system, install the mgr-virtualization-host package from the associated Tools child channel. Review the documentation for any other considerations and requirements for enabling Virtualization of a Host system.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/virtualization/VirtualGuestsList.do</context>
-        </context-group>
-        <target state="final">참고: 이 시스템의 @@PRODUCT_NAME@@내에서 가상화 기능을 활성화하여 사용할 경우 해당 도구 하위 채널에서 mgr-virtualization-host 패키지를 설치합니다. 호스트 시스템의 가상화를 활성화하기 위한 기타 고려사항 및 요구사항은 문서를 참조하십시오.</target>
       </trans-unit>
       <trans-unit approved="yes" id="system.migrate.user_no_perms" xml:space="preserve">
         <source>This user lacks the required permissions to transfer this system.</source>
@@ -9940,12 +9877,12 @@ tree will not be usable for autoinstalling.</source>
         <source>Found login(s) sent to {0}. If you don't receive it, please make sure you have a registered account with the email provided.</source>
         <target state="translated">찾은 로그인을 {0}(으)로 전송했습니다. 메일이 수신되지 않는 경우 제공한 이메일로 등록된 계정이 있는지 확인하십시오.</target>
       </trans-unit>
-      <trans-unit id="config.multiple.channels" xml:space="preserve">
-        <source>A selected system has multiple child channels available that contain the mgr-cfg package. You must manually subscribe to the child channel you want and then try this action again.</source>
+      <trans-unit approved="yes" id="config.multiple.channels" xml:space="preserve">
+        <source>A selected system has multiple child channels available that contain the venv-salt-minion package. You must manually subscribe to the child channel you want and then try this action again.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/configuration/system/TargetSystemsSubmit.do</context>
         </context-group>
-        <target state="translated">선택한 시스템에는 mgr-cfg 패키지가 포함된 사용할 수 있는 하위 채널이 여러 개 있습니다. 원하는 하위 채널에 수동으로 가입한 후 이 작업을 다시 시도하십시오.</target>
+        <target state="final">선택한 시스템에는 venv-salt-minion 패키지가 포함된 사용할 수 있는 하위 채널이 여러 개 있습니다. 원하는 하위 채널에 수동으로 가입한 후 이 작업을 다시 시도하십시오.</target>
       </trans-unit>
       <trans-unit id="External Links" xml:space="preserve">
         <source>External Links</source>
@@ -10232,10 +10169,6 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         <source>Synchronizes @@PRODUCT_NAME@@ repositories</source>
         <target state="translated">@@PRODUCT_NAME@@ 저장소 동기화</target>
       </trans-unit>
-      <trans-unit id="bunch.jsp.description.ssh-push-bunch" xml:space="preserve">
-        <source>Manages clients via SSH Server Push</source>
-        <target>SSH 서버 푸시를 통한 클라이언트 관리</target>
-      </trans-unit>
       <trans-unit id="bunch.jsp.description.cve-server-channels-bunch" xml:space="preserve">
         <source>Generates data required for performing CVE audit queries</source>
         <target>CVE 감사 쿼리를 실행하기 위해 필요한 데이터 생성</target>
@@ -10312,10 +10245,6 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         <source>Foreign</source>
         <target>외부</target>
       </trans-unit>
-      <trans-unit id="visualization.nav.title" xml:space="preserve">
-        <source>Visualization</source>
-        <target>시각화</target>
-      </trans-unit>
       <trans-unit id="ssm.overview.misc.entitlements" xml:space="preserve">
         <source>&lt;a href="/rhn/systems/ssm/misc/Index.do#entitle"&gt;Add or Remove&lt;/a&gt; Add-On System Types</source>
         <target>추가 기능 시스템 유형 &lt;a href="/rhn/systems/ssm/misc/Index.do#entitle"&gt;추가 또는 제거&lt;/a&gt;</target>
@@ -10343,21 +10272,7 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="system.entitle.added.container_build_host.nodoc" xml:space="preserve">
-        <source>&lt;strong&gt;Container Build Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
-        <target>&lt;strong&gt;컨테이너 빌드 호스트&lt;/strong&gt; 유형이 적용되었습니다.&lt;br/&gt;&lt;strong&gt;참고:&lt;/strong&gt; 이 작업으로 인해 상태가 적용되지 &lt;em&gt;않습니다&lt;/em&gt;. 상태를 적용하려면 &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;상태 페이지&lt;/a&gt;를 사용하거나 명령줄에서 &lt;code class="text-info"&gt;state.highstate&lt;/code&gt;를 실행하십시오.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="system.entitle.added.osimage_build_host" xml:space="preserve">
-        <source>&lt;strong&gt;OS Image Build Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
-        <target>&lt;strong&gt;OS 이미지 빌드 호스트&lt;/strong&gt; 유형이 적용되었습니다. &lt;br/&gt;&lt;strong&gt;참고:&lt;/strong&gt; 이 작업으로 인해 상태가 적용되지 &lt;em&gt;않습니다&lt;/em&gt;. 상태를 적용하려면 &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;상태 페이지&lt;/a&gt;를 사용하거나 명령줄에서 &lt;code class="text-info"&gt;state.highstate&lt;/code&gt;를 실행하십시오.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.added.osimage_build_host.nodoc" xml:space="preserve">
         <source>&lt;strong&gt;OS Image Build Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
         <target>&lt;strong&gt;OS 이미지 빌드 호스트&lt;/strong&gt; 유형이 적용되었습니다. &lt;br/&gt;&lt;strong&gt;참고:&lt;/strong&gt; 이 작업으로 인해 상태가 적용되지 &lt;em&gt;않습니다&lt;/em&gt;. 상태를 적용하려면 &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;상태 페이지&lt;/a&gt;를 사용하거나 명령줄에서 &lt;code class="text-info"&gt;state.highstate&lt;/code&gt;를 실행하십시오.</target>
         <context-group name="ctx">
@@ -10371,23 +10286,9 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         </context-group>
         <target>시스템에 가상화 시스템 유형을 추가한 후에 시스템이 가상 게스트를 보다 효과적으로 관리할 수 있는지를 확인하기 위해 몇 가지 추가적인 단계를 실행했습니다. 보다 자세한 정보는 &lt;a href="{0}"&gt;여기&lt;/a&gt;를 참조하시기 바랍니다.</target>
       </trans-unit>
-      <trans-unit approved="yes" id="system.entitle.added.virtualization_host.nodoc" xml:space="preserve">
-        <source>Since you added a Virtualization system type to the system we also performed some extra steps to ensure your system will be able to manage virtual guests better.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-        <target>시스템에 가상화 시스템 유형을 추가한 후에, 시스템이 가상 게스트를 보다 효과적으로 관리할 수 있는지 확인하기 위해 몇 가지 추가적인 단계를 실행하였습니다.</target>
-      </trans-unit>
       <trans-unit approved="yes" id="system.entitle.added.monitoring_entitled" xml:space="preserve">
-        <source>&lt;strong&gt;Monitoring&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Since you added the Monitoring system type we automatically assigned the Prometheus Exporters formula to the system. Please apply the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt; in order to install and enable the Prometheus metrics exporters.</source>
-        <target state="final">&lt;strong&gt;모니터링&lt;/strong&gt; 유형이 적용되었습니다.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; 모니터링 시스템 유형을 추가했기 때문에 Prometheus Exporters 공식을 시스템에 자동으로 할당했습니다. Prometheus Metric Exporter를 설치하고 활성화하려면 &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt;를 적용하십시오.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit approved="yes" id="system.entitle.added.monitoring_entitled.nodoc" xml:space="preserve">
-        <source>&lt;strong&gt;Monitoring&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Since you added the Monitoring system type we automatically assigned the Prometheus Exporters formula to the system. Please apply the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt; in order to install and enable the Prometheus metrics exporters.</source>
-        <target state="final">&lt;strong&gt;모니터링&lt;/strong&gt; 유형이 적용되었습니다.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; 모니터링 시스템 유형을 추가했기 때문에 Prometheus Exporters 공식을 시스템에 자동으로 할당했습니다. Prometheus Metric Exporter를 설치하고 활성화하려면 &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt;를 적용하십시오.</target>
+        <source>&lt;strong&gt;Monitor this Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Since you added the Monitoring system type we automatically assigned the Prometheus Exporters formula to the system. Please apply the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt; in order to install and enable the Prometheus metrics exporters.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Please make sure to open the &lt;a href="/docs/{1}/installation-and-upgrade/ports.html#_external_client_ports" target="_blank"&gt;required network ports&lt;/a&gt; for all installed exporters.</source>
+        <target state="final">&lt;strong&gt;모니터링&lt;/strong&gt; 유형이 적용되었습니다.&lt;br/&gt;&lt;strong&gt;참고:&lt;/strong&gt; 모니터링 시스템 유형을 추가했기 때문에 Prometheus Exporters 공식을 시스템에 자동으로 할당했습니다. Prometheus Metric Exporter를 설치하고 활성화하려면 &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt;를 적용하십시오. 설치된 모든 내보내기에 대해 &lt;a href="/docs/{1}/installation-and-upgrade/ports.html#_external_client_ports" target="_blank"&gt;필수 네트워크 포트&lt;/a&gt;를 열어야 합니다.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
@@ -10492,18 +10393,6 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
       <trans-unit id="Sync Schedule" xml:space="preserve">
         <source>Sync Schedule</source>
         <target>동기화 일정</target>
-      </trans-unit>
-      <trans-unit id="Virtualization Hierarchy" xml:space="preserve">
-        <source>Virtualization Hierarchy</source>
-        <target>시각화 계층 구조</target>
-      </trans-unit>
-      <trans-unit id="Proxy Hierarchy" xml:space="preserve">
-        <source>Proxy Hierarchy</source>
-        <target>프록시 계층 구조</target>
-      </trans-unit>
-      <trans-unit id="Systems Grouping" xml:space="preserve">
-        <source>Systems Grouping</source>
-        <target>시스템 그룹화</target>
       </trans-unit>
       <trans-unit id="Salt Entitled Servers" xml:space="preserve">
         <source>Salt</source>
@@ -10914,13 +10803,6 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         </context-group>
         <target state="final">&lt;strong&gt;Ansible 제어 노드&lt;/strong&gt; 유형이 적용되었습니다. &lt;br/&gt;&lt;strong&gt;참조:&lt;/strong&gt; 이 작업을 수행하면 상태가 적용되지 &lt;em&gt;않습니다&lt;em&gt;. 상태를 적용하려면, &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;상태 페이지&lt;/a&gt;를 이용하거나 명령줄에서 &lt;code class="text-info"&gt;state.highstate&lt;/code&gt;를 실행하십시오.</target>
       </trans-unit>
-      <trans-unit approved="yes" id="system.entitle.added.ansible_control_node.nodoc" xml:space="preserve">
-        <source>&lt;strong&gt;Ansible Control Node&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-        <target state="final">&lt;strong&gt;Ansible 제어 노드&lt;/strong&gt;&lt; 유형이 적용되었습니다. &lt;br/&gt;&lt;strong&gt;참조:&lt;/strong&gt; 이 작업을 수행하면 &lt;em&gt; 상태가 적용되&lt;em&gt;않습니다. 상태를 적용하려면, &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;상태 페이지&lt;/a&gt;를 이용하거나 명령줄에서 &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; 를 실행하십시오.</target>
-      </trans-unit>
       <trans-unit approved="yes" id="ansible.invalid_path" xml:space="preserve">
         <source>Invalid path (must be a valid absolute path)</source>
         <context-group name="ctx">
@@ -11077,28 +10959,28 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         <target state="final">베스천 SSH 개인 키 암호 구문은 32자 이하여야 합니다.</target>
       </trans-unit>
       <trans-unit approved="yes" id="payg.ssh_data_created" xml:space="preserve">
-        <source>Pay-as-you-go {0} created successfully</source>
-        <target state="final">용량제 {0} 생성됨</target>
+        <source>PAYG {0} created successfully</source>
+        <target state="final">PAYG {0} 생성됨</target>
       </trans-unit>
       <trans-unit approved="yes" id="payg.host_exists" xml:space="preserve">
-        <source>Pay-as-you-go host already exists</source>
-        <target state="final">용량제 호스트 이미 있음</target>
+        <source>PAYG host already exists</source>
+        <target state="final">PAYG 호스트 이미 있음</target>
       </trans-unit>
       <trans-unit approved="yes" id="payg.ssh_data_deleted" xml:space="preserve">
-        <source>Pay-as-you-go {0} deleted successfully</source>
-        <target state="final">용량제 {0} 삭제됨</target>
+        <source>PAYG {0} deleted successfully</source>
+        <target state="final">PAYG {0} 삭제됨</target>
       </trans-unit>
       <trans-unit approved="yes" id="notification.paygauthenticationupdatefailed" xml:space="preserve">
         <source>Error when updating authentication data from: &lt;a href="/rhn/manager/admin/setup/payg/{0}"&gt;{1}&lt;/a&gt;</source>
         <target state="final">다음에서 인증 데이터 업데이트 중 오류: &lt;a href="/rhn/manager/admin/setup/payg/{0}"&gt;{1}&lt;/a&gt;</target>
       </trans-unit>
       <trans-unit approved="yes" id="task.status.update-payg-auth" xml:space="preserve">
-        <source>Pay-as-you-go authentication update</source>
-        <target state="final">용량제 인증 업데이트</target>
+        <source>PAYG authentication update</source>
+        <target state="final">PAYG 인증 업데이트</target>
       </trans-unit>
       <trans-unit approved="yes" id="task.status.update-payg-hosts" xml:space="preserve">
-        <source>Pay-as-you-go update RMT hosts</source>
-        <target state="final">용량제 업데이트 RMT 호스트</target>
+        <source>PAYG update RMT hosts</source>
+        <target state="final">PAYG 업데이트 RMT 호스트</target>
       </trans-unit>
       <trans-unit approved="yes" id="setup.product.error.dataneedsrefresh" xml:space="preserve">
         <source>Product data needs refresh.</source>
@@ -11214,19 +11096,19 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         <source>IPMI lanplus</source>
         <target state="final">IPMI lanplus</target>
       </trans-unit>
-      <trans-unit id="bunch.jsp.description.update-system-overview-bunch" xml:space="preserve">
+      <trans-unit approved="yes" id="bunch.jsp.description.update-system-overview-bunch" xml:space="preserve">
         <source>Regularly ensure the systems overview data are up to date</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/admin/BunchDetail.do</context>
         </context-group>
-        <target state="new"/>
+        <target state="final">시스템 개요 데이터가 최신 상태인지 정기적으로 확인</target>
       </trans-unit>
-      <trans-unit id="bunch.jsp.description.system-overview-update-queue-bunch" xml:space="preserve">
+      <trans-unit approved="yes" id="bunch.jsp.description.system-overview-update-queue-bunch" xml:space="preserve">
         <source>Update the systems overview data</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/admin/BunchDetail.do</context>
         </context-group>
-        <target state="new"/>
+        <target state="final">시스템 개요 데이터 업데이트</target>
       </trans-unit>
       <trans-unit approved="yes" id="api.schedule.cannotcancelpickedup" xml:space="preserve">
         <source>Cannot cancel an action in PICKED UP state.</source>
@@ -11236,12 +11118,12 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         <source>Cannot cancel an action with a pending prerequisite.</source>
         <target state="final">대기 중인 전제 조건이 있는 작업을 취소할 수 없습니다.</target>
       </trans-unit>
-      <trans-unit id="java|hostname" xml:space="preserve">
+      <trans-unit approved="yes" id="java|hostname" xml:space="preserve">
         <source>Hostname</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/errata/manage/CloneErrata.do</context>
         </context-group>
-        <target state="new"/>
+        <target state="final">호스트 이름</target>
       </trans-unit>
       <trans-unit approved="yes" id="notification.subscriptionwarning.summary" xml:space="preserve">
         <source>You have subscriptions that need attention.</source>
@@ -11251,48 +11133,469 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         <source>You have subscriptions that are expiring soon or already expired. Please check the &lt;a href="/rhn/manager/subscription-matching"&gt;Subscription Matching&lt;/a&gt; page.</source>
         <target state="final">곧 만료되거나 이미 만료된 구독이 있습니다. &lt;a href="/rhn/manager/subscription-matching"&gt;구독 일치&lt;/a&gt; 페이지를 확인하십시오.</target>
       </trans-unit>
-      <trans-unit id="api.package.ptfpackage" xml:space="preserve">
+      <trans-unit approved="yes" id="api.package.ptfpackage" xml:space="preserve">
         <source>Packages part of a Program Temporary Fix (PTF): {0}</source>
-        <target state="needs-adaptation"/>
+        <target state="final">프로그램 임시 수정(PTF)의 일부인 패키지: {0}</target>
       </trans-unit>
-      <trans-unit id="api.package.ptfmaster" xml:space="preserve">
+      <trans-unit approved="yes" id="api.package.ptfmaster" xml:space="preserve">
         <source>Program Temporary Fixes (PTFs) packages: {0}</source>
-        <target state="needs-adaptation"/>
+        <target state="final">프로그램 임시 수정(PTF) 패키지: {0}</target>
       </trans-unit>
       <trans-unit approved="yes" id="activation-key.java.nochannel" xml:space="preserve">
-          <source>No Base Channel selected.</source>
+        <source>No Base Channel selected.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
         <target state="final">선택한 기본 채널이 없습니다.</target>
       </trans-unit>
-    <trans-unit id="contentmanagement.validation.modularitydisabled" xml:space="preserve">
+      <trans-unit approved="yes" id="contentmanagement.validation.modularitydisabled" xml:space="preserve">
         <source>Modularity is currently disabled. To enable modules, please remove the 'disable all modules' filter.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">com.redhat.rhn.domain.contentmgmt.validation.ModularDependencyValidator</context>
         </context-group>
-      <target state="new"/>
-  </trans-unit>
-      <trans-unit id="contentmanagement.validation.nomodules" xml:space="preserve">
+        <target state="final">현재 모듈성이 비활성화되어 있습니다. 모듈을 활성화하려면 '모든 모듈 비활성화' 필터를 제거하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="contentmanagement.validation.nomodules" xml:space="preserve">
         <source>Modularity is disabled. No modules will be included in the target repositories.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">com.redhat.rhn.domain.contentmgmt.validation.ModularDependencyValidator</context>
         </context-group>
-      <target state="new"/>
-  </trans-unit>
-      <trans-unit id="PTF" xml:space="preserve">
+        <target state="final">모듈성이 비활성화되었습니다. 대상 리포지토리에 모듈이 포함되지 않습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="PTF" xml:space="preserve">
         <source>PTFs</source>
         <context-group name="ctx">
           <context context-type="sourcefile">Program Temporary Fixes (PTFs) Navigation Tabs</context>
         </context-group>
-      <target state="new"/>
-  </trans-unit>
-      <trans-unit id="contentmanagement.non_environment_channels_found" xml:space="preserve">
+        <target state="final">PTF</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="contentmanagement.non_environment_channels_found" xml:space="preserve">
         <source>Cannot remove. There are custom channels that are not part of the channels built by the environment. Please remove these channels first: {0}</source>
+        <target state="final">제거할 수 없습니다. 환경에서 구축한 채널의 일부가 아닌 사용자 정의 채널이 있습니다. {0} 채널을 먼저 제거하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="contentmanagement.used_in_autoinstallation_profile" xml:space="preserve">
+        <source>The target is being used in an autoinstallation profile. Cannot remove.</source>
+        <target state="final">자동 설치 프로파일에서 대상을 사용 중입니다. 제거할 수 없습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="task.action.rejection.reason" xml:space="preserve">
+        <source>This action was not executed because its earliest execution date was too old. When more than {0} hours pass between the scheduling and the picking up, the action is discarded because it is considered no longer relevant.
+          Please reschedule this action if you really want it to be executed.</source>
+        <target state="final">가장 빠른 실행 날짜가 너무 오래되어 이 작업이 실행되지 않았습니다. 예약과 픽업 사이 시간이 {0}시간 이상 경과하면 작업이 더 이상 관련이 없는 것으로 간주되어 삭제됩니다.
+           이 작업을 실행하려면 다시 예약하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="recurring_action.empty_action_type" xml:space="preserve">
+        <source>Recurring Action type must be provided</source>
+        <target state="final">반복 작업 유형을 제공해야 합니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="recurring_action.empty_states_config" xml:space="preserve">
+        <source>States configuration must be provided</source>
+        <target state="final">상태 구성을 제공해야 합니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="recurring_action.invalid_action_type" xml:space="preserve">
+        <source>Recurring action has invalid type.</source>
+        <target state="final">반복 작업의 유형이 유효하지 않습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.certs" xml:space="preserve">
+        <source>Install the server's SSL certificate and trust it on the target system</source>
+        <target state="final">서버의 SSL 인증서를 설치하고 대상 시스템에서 이를 신뢰합니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.channels" xml:space="preserve">
+        <source>Make sure that channel subscriptions are in sync with the server side configuration</source>
+        <target state="final">채널 구독과 서버 측 구성이 동기화되어 있는지 확인합니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.hardware_profileupdate" xml:space="preserve">
+        <source>Update information about installed hardware</source>
+        <target state="final">설치된 하드웨어에 대한 업데이트 정보</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.packages" xml:space="preserve">
+        <source>Apply package states as configured for the target system</source>
+        <target state="final">대상 시스템에 구성된 대로 패키지 상태를 적용합니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.packages_profileupdate" xml:space="preserve">
+        <source>Update information about installed software (packages and products)</source>
+        <target state="final">설치된 소프트웨어(패키지 및 제품)에 대한 업데이트 정보</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.uptodate" xml:space="preserve">
+        <source>Update the system</source>
+        <target state="final">시스템을 업데이트하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.util_syncbeacons" xml:space="preserve">
+        <source>Sync Salt beacons to the target system</source>
+        <target state="final">Salt 신호를 대상 시스템에 동기화</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.util_syncall" xml:space="preserve">
+        <source>Sync all Salt artifacts (modules, states, grains and beacons) to the target system</source>
+        <target state="final">모든 Salt 아티팩트(모듈, 상태, 입자 및 신호)를 대상 시스템에 동기화</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.util_syncgrains" xml:space="preserve">
+        <source>Sync Salt grains to the target system</source>
+        <target state="final">Salt 입자를 대상 시스템에 동기화</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.util_syncmodules" xml:space="preserve">
+        <source>Sync Salt modules to the target system</source>
+        <target state="final">Salt 모듈을 대상 시스템에 동기화</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.util_syncstates" xml:space="preserve">
+        <source>Sync Salt states to the target system</source>
+        <target state="final">Salt 상태를 대상 시스템에 동기화</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="edit.channel.forbiddenclonechannelpayg" xml:space="preserve">
+        <source>Cloning of channels under different product channels on PAYG instances is forbidden</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/channels/manage/Edit</context>
+        </context-group>
+        <target state="final">PAYG 인스턴스의 다른 제품 채널 아래에 있는 채널을 복제하는 것은 금지되어 있습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="spmigration.message.payg.error" xml:space="preserve">
+        <source>PAYG ALERT: Cross product migration attempt detected. Please note, migration from openSUSE to SLES or similar is not permitted under your current PAYG plan. Operation has been aborted.</source>
+        <target state="final">PAYG 경고: 제품 간 마이그레이션 시도가 감지되었습니다. 현재 PAYG 플랜에서는 openSUSE에서 SLES로 또는 이와 유사한 제품으로의 마이그레이션이 허용되지 않습니다. 작업이 중단되었습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="notification.channelsyncforbidden" xml:space="preserve">
+        <source>Syncing channels forbidden</source>
+        <target state="final">채널 동기화 금지됨</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="notification.channelsyncfailed.notcompliant" xml:space="preserve">
+        <source>Synchronization of repositories is forbidden as @@PRODUCT_NAME@@ PAYG is unable to send accounting data to the cloud provider.
+For a detailed analysis, please refer to the log files.</source>
+        <target state="final">@@PRODUCT_NAME@@ PAYG가 클라우드 공급자에게 회계 데이터를 보낼 수 없으므로 리포지토리 동기화는 금지됩니다.
+자세한 분석은 로그 파일을 참조하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="task.action.rejection.notcompliant" xml:space="preserve">
+        <source>
+The action you attempted could not be executed because the @@PRODUCT_NAME@@ PAYG system is unable to send accounting data to the cloud provider.
+For a detailed analysis, please refer to the log files.
+	</source>
+        <target state="final">
+@@PRODUCT_NAME@@ PAYG 시스템이 클라우드 공급자에게 회계 데이터를 보낼 수 없으므로 시도한 작업을 실행할 수 없습니다.
+자세한 분석은 로그 파일을 참조하십시오.
+	</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="bootstrap.minion.error.conflicting.minionid" xml:space="preserve">
+        <source>Systems with conflicting minion ID and machine ID were found ({0}, {1}). Onboarding aborted. Please remove conflicting systems first ({2}, {3})</source>
+        <target state="final">미니언 ID와 시스템 ID가 충돌하는 시스템이 발견되었습니다({0}, {1}). 온보딩이 중단되었습니다. 충돌하는 시스템을 먼저 제거하십시오({2}, {3}).</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="bootstrap.minion.error.payg.dcregistered" xml:space="preserve">
+        <source>Registration of '{0}' on SUSE Manager Server rejected. \nTo manage Datacenter clients you have to configure SCC Credentials at Admin =&gt; Setup Wizard =&gt; Organization Credentials.</source>
+        <target state="final">SUSE Manager 서버에서 '{0}' 등록이 거부되었습니다. \n데이터 센터 클라이언트를 관리하려면 관리자 =&gt; 설정 마법사 =&gt; 조직 자격 증명에서 SCC 자격 증명을 구성해야 합니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="bootstrap.minion.error.payg.byosregistered" xml:space="preserve">
+        <source>Registration of '{0}' on SUSE Manager Server rejected. \nTo manage BYOS (Bring-your-own-Subscription) clients you have to configure SCC Credentials at Admin =&gt; Setup Wizard =&gt; Organization Credentials. \n\nIf the instance being onboarded is PAYG, ensure the `python-instance-billing-flavor-check` package is installed and try again.</source>
+        <target state="final">SUSE Manager 서버에서 '{0}' 등록이 거부되었습니다. \nBYOS(Bring-your-own-Subscription) 클라이언트를 관리하려면 관리자 =&gt; 설치 마법사 =&gt; 조직 자격 증명에서 SCC 자격 증명을 구성해야 합니다. \n\n온보딩 중인 인스턴스가 PAYG인 경우 'python-instance-billing-flavor-check' 패키지가 설치되어 있는지 확인하고 다시 시도하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="notification.updateavailable.summary" xml:space="preserve">
+        <source>Updates are available.</source>
+        <target state="final">업데이트가 가능합니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="notification.updateavailable.detail" xml:space="preserve">
+        <source>A new update for @@PRODUCT_NAME@@ is now available. For further details, please refer to the &lt;a href="{0}"&gt;release notes&lt;a&gt;.</source>
+        <target state="final">@@PRODUCT_NAME@@의 새 업데이트를 이제 사용할 수 있습니다. 자세한 내용은 &lt;a href="{0}"&gt;릴리스 노트&lt;a&gt;를 참조하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="message.payg.errorbyosnoscc" xml:space="preserve">
+        <source>
+          @@PRODUCT_NAME@@ is not able to manage this instance since it is Bring-your-own-subscription and no SCC credentials are set.
+          To amend this situation, please add SCC credentials &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;here&lt;/a&gt;.
+        </source>
+        <target state="final">
+          @@PRODUCT_NAME@@은(는) BYO(Bring-your-own) 구독이고 SCC 자격 증명이 설정되어 있지 않으므로 이 인스턴스를 관리할 수 없습니다.
+          이 문제를 수정하려면 SCC 자격 증명을 &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;여기&lt;/a&gt;에 추가하십시오.
+        </target>
+      </trans-unit>
+      <trans-unit approved="yes" id="message.payg.errornotcompliant" xml:space="preserve">
+        <source>
+          This @@PRODUCT_NAME@@ PAYG is not compliant and some of its functions will be disabled. Please contact your administrator to
+          amend the situation before continuing using the product.
+        </source>
+        <target state="final">
+          이 @@PRODUCT_NAME@@ PAYG는 호환되지 않으며 일부 기능이 비활성화됩니다.
+          제품을 계속 사용하려면 관리자에게 문의하여 문제를 수정하십시오.
+        </target>
+      </trans-unit>
+      <trans-unit approved="yes" id="message.payg.errorbyosnosccssm" xml:space="preserve">
+        <source>
+@@PRODUCT_NAME@@ is not able to manage these instances since there are one or more Bring-your-own-subscription and no SCC credentials are set.
+To amend this situation, please add SCC credentials &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;here&lt;/a&gt; or select in SSM just Pay-as-you-go-instances.
+        </source>
+        <target state="final">
+하나 이상의 BYO(Bring-your-own) 구독이 있고 SCC 자격 증명이 설정되어 있지 않으므로 @@PRODUCT_NAME@@이(가) 이러한 인스턴스를 관리할 수 없습니다.
+이 문제를 수정하려면 &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;여기&lt;/a&gt;에서 SCC 자격 증명을 추가하거나 SSM에서 용량제 인스턴스만 선택하십시오.
+        </target>
+      </trans-unit>
+      <trans-unit approved="yes" id="bunch.jsp.description.ssh-service-bunch" xml:space="preserve">
+        <source>Manages checkins and action chain resumes for SSH Push Clients</source>
+        <target state="final">SSH 푸시 클라이언트에 대한 체크인 및 작업 체인 재개 관리</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="notification.paygnotcompliantwarning.summary" xml:space="preserve">
+        <source>@@PRODUCT_NAME@@ PAYG instance is not compliant.</source>
+        <target state="final">@@PRODUCT_NAME@@ PAYG 인스턴스가 호환되지 않습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="notification.paygnotcompliantwarning.detail" xml:space="preserve">
+        <source>This @@PRODUCT_NAME@@ PAYG instance is not compliant. Some @@PRODUCT_NAME@@ functions will be disabled. Please check with your system administrator.</source>
+        <target state="final">이 @@PRODUCT_NAME@@ PAYG 인스턴스는 호환되지 않습니다. @@PRODUCT_NAME@@의 일부 기능이 비활성화됩니다. 시스템 관리자에게 문의하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="task.action.rejection.notcompliantPaygByos" xml:space="preserve">
+        <source>
+          The action you attempted could not be executed because @@PRODUCT_NAME@@ is PAYG, there are BYOS servers in the current action and currently no SCC credentials are set.
+          To amend this situation, please set SCC credentials for this @@PRODUCT_NAME@@ instance and try again. You can also execute the action only on Pay-as-you-go instances.
+          Bring-your-own-subscription servers detected: {0}.
+        </source>
+        <target state="final">
+          @@PRODUCT_NAME@@이(가) PAYG이고, 현재 작업에 BYOS 서버가 있으며, 현재 SCC 자격 증명이 설정되어 있지 않기 때문에 시도한 작업을 실행할 수 없습니다.
+          이 문제를 수정하려면 이 @@PRODUCT_NAME@@ 인스턴스의 SCC 자격 증명을 설정하고 다시 시도하십시오. 용량제 인스턴스에서만 작업을 실행할 수도 있습니다.
+          BYO(Bring-your-own) 구독 서버 감지됨: {0}.
+        </target>
+      </trans-unit>
+      <trans-unit approved="yes" id="task.action.rejection.notcompliantPaygByosActionChain" xml:space="preserve">
+        <source>
+          The action chain you attempted could not be executed because @@PRODUCT_NAME@@ is PAYG, there are BYOS servers in the current action chain and currently no SCC credentials are set.
+          To amend this situation, please set SCC credentials for this @@PRODUCT_NAME@@ instance and try again. You can also execute the action chain only on Pay-as-you-go instances.
+          Bring-your-own-subscription servers detected: {0}.
+        </source>
+        <target state="final">
+          @@PRODUCT_NAME@@이(가) PAYG이고, 현재 작업에 BYOS 서버가 있으며, 현재 SCC 자격 증명이 설정되어 있지 않기 때문에 시도한 작업 체인을 실행할 수 없습니다.
+          이 문제를 수정하려면 이 @@PRODUCT_NAME@@ 인스턴스의 SCC 자격 증명을 설정하고 다시 시도하십시오. 용량제 인스턴스에서만 작업을 실행할 수도 있습니다.
+          BYO(Bring-your-own) 구독 서버 감지됨: {0}.
+        </target>
+      </trans-unit>
+      <trans-unit approved="yes" id="recurring_action.not_in_maint_mode" xml:space="preserve">
+        <source>One or more selected systems don't have a maintenance window assigned at the current time. Please limit your selection to systems that are in maintenance mode.</source>
+        <target state="final">현재 선택된 시스템 중 하나 이상에 유지보수 기간이 할당되어 있지 않습니다. 유지보수 모드에 있는 시스템으로 선택을 제한하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.update-salt" xml:space="preserve">
+        <source>Perform a standalone Salt update</source>
+        <target state="final">독립형 Salt 업데이트 수행</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="riscv64-deb" xml:space="preserve">
+        <source>RISCV64 Debian</source>
+        <target>RISCV64 Debian</target>
+        <target state="new"/>
+      </trans-unit>
+      <trans-unit id="ARM64 Debian" xml:space="preserve">
+        <source>ARM64 Debian</source>
+        <target>ARM64 Debian</target>
+        <target state="new"/>
+      </trans-unit>
+      <trans-unit approved="yes" id="armel-deb" xml:space="preserve">
+        <source>ARMEL Debian</source>
+        <target>ARMEL Debian</target>
+        <target state="new"/>
+      </trans-unit>
+      <trans-unit approved="yes" id="s390x-deb" xml:space="preserve">
+        <source>PPC64EL Debian</source>
+        <target>PPC64EL Debian</target>
+        <target state="new"/>
+      </trans-unit>
+      <trans-unit approved="yes" id="message.savereposyncflags" xml:space="preserve">
+        <source>Saved repository settings for {0}.</source>
+        <target state="final">{0}에 대한 리포지토리 설정을 저장했습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.attestation" xml:space="preserve">
+        <source>Confidential Computing Attestation</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/schedule/ActionDetails.do</context>
+        </context-group>
+        <target state="final">기밀 컴퓨팅 증명</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="appstreams.configure" xml:space="preserve">
+        <source>Configure AppStreams</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/schedule/ActionDetails.do</context>
+        </context-group>
+        <target state="final">AppStreams 구성</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="api.channel.modulespresent" xml:space="preserve">
+        <source>Operation not allowed for systems that have modular channels assigned. Please consider setting 'allowModules=true'.</source>
+        <target state="final">모듈형 채널이 할당된 시스템에서는 작동이 허용되지 않습니다. 'allowModules=true'로 설정하는 것이 좋습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="confidentialcomputing.nav.title" xml:space="preserve">
+        <source>Confidential Computing</source>
+        <target state="final">기밀 컴퓨팅</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.environment.none.description" xml:space="preserve">
+        <source>None</source>
+        <target state="final">없음</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.environment.none.label" xml:space="preserve">
+        <source>None</source>
+        <target state="final">없음</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.environment.kvm_amd_epyc_milan.description" xml:space="preserve">
+        <source>KVM on AMD Epyc Processor, second generation (milan)</source>
+        <target state="final">AMD Epyc 프로세서 기반 KVM, 2세대(milan)</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.environment.kvm_amd_epyc_milan.label" xml:space="preserve">
+        <source>KVM on AMD Epyc - Milan</source>
+        <target state="final">AMD Epyc 기반 KVM - Milan</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.environment.kvm_amd_epyc_genoa.description" xml:space="preserve">
+        <source>KVM on AMD Epyc Processor, third generation (genoa)</source>
+        <target state="final">AMD Epyc 프로세서 기반 KVM, 3세대(genoa)</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.environment.kvm_amd_epyc_genoa.label" xml:space="preserve">
+        <source>KVM on AMD Epyc - Genoa</source>
+        <target state="final">AMD Epyc 기반 KVM - Genoa</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.resultType.none.description" xml:space="preserve">
+        <source>Result Type not found</source>
+        <target state="final">결과 유형 없음</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.resultType.sev_snp.description" xml:space="preserve">
+        <source>AMD Secure Encrypted Virtualization-Secure Nested Paging (SEV-SNP)</source>
+        <target state="final">AMD 보안 암호화 가상화-보안 중첩 페이징(SEV-SNP)</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.resultType.sev_snp.label" xml:space="preserve">
+        <source>AMD SEV-SNP</source>
+        <target state="final">AMD SEV-SNP</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.resultType.secure_boot.description" xml:space="preserve">
+        <source>Secure Boot enabled</source>
+        <target state="final">보안 부팅 활성화됨</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.resultType.secure_boot.label" xml:space="preserve">
+        <source>Secure Boot</source>
+        <target state="final">보안 부팅</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.status.pending.description" xml:space="preserve">
+        <source>Pending</source>
+        <target state="final">대기 중</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.status.succeeded.description" xml:space="preserve">
+        <source>Succeeded</source>
+        <target state="final">성공</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="coco.status.failed.description" xml:space="preserve">
+        <source>Failed</source>
+        <target state="final">실패</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="system.audit.coco.unsupported" xml:space="preserve">
+        <source>This system does not have any Confidential Computing capability.</source>
+        <target state="final">이 시스템에는 기밀 컴퓨팅 기능이 없습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="system.audit.coco.configUpdated" xml:space="preserve">
+        <source>The Confidential Computing configuration has been updated successfully.</source>
+        <target state="final">기밀 컴퓨팅 구성이 업데이트되었습니다.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="system.audit.coco.configNotUpdated" xml:space="preserve">
+        <source>An error occurred while updating the Confidential Computing configuration. Please check the server logs for detailed information.</source>
+        <target state="final">기밀 컴퓨팅 구성을 업데이트하는 동안 오류가 발생했습니다. 서버 로그에서 세부 정보를 확인하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.reboot" xml:space="preserve">
+        <source>Perform a reboot</source>
+        <target state="final">재부팅하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="internal_state.rebootifneeded" xml:space="preserve">
+        <source>Perform a reboot, only if required</source>
+        <target state="final">필요한 경우에만 재부팅하십시오.</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="task.status.oval-data-sync" xml:space="preserve">
+        <source>Sync OVAL Data</source>
+        <target state="final">OVAL 데이터 동기화</target>
+      </trans-unit>
+      <trans-unit approved="yes" id="bunch.jsp.description.oval-data-sync-bunch" xml:space="preserve">
+        <source>Generate OVAL data required to increase the accuracy of CVE audit queries</source>
+        <target state="final">CVE 감사 쿼리의 정확도를 향상하기 위해 필요한 OVAL 데이터 생성</target>
+      </trans-unit>
+      <trans-unit id="scc-data-forwarding.enabled" xml:space="preserve" approved="yes">
+        <source>SCC Data Forwarding enabled successfully.</source>
+        <target state="final">SCC 데이터 전달이 활성화되었습니다.</target>
+      </trans-unit>
+      <trans-unit id="scc-data-forwarding.not-changed" xml:space="preserve" approved="yes">
+        <source>SCC Data Forwarding is already enabled.</source>
+        <target state="final">SCC 데이터 전달이 이미 활성화되어 있습니다.</target>
+      </trans-unit>
+      <trans-unit id="notification.sccoptoutwarning.summary" xml:space="preserve" approved="yes">
+        <source>Data is not being synchronized with SCC</source>
+        <target state="final">데이터가 SCC와 동기화되지 않고 있습니다</target>
+      </trans-unit>
+      <trans-unit id="notification.sccoptoutwarning.detail" xml:space="preserve" approved="yes">
+        <source>
+          &lt;p&gt;Disabling data synchronizing with SCC will lead to reduced visibility of your managed clients between RMT, SMT, @@PRODUCT_NAME@@ and SCC-directly registered clients.
+          By synchronizing data, you ensure a uniform view of all registered clients. &lt;a href="/rhn/manager/admin/enable-scc-data-forwarding"&gt;Click here to enable data forwarding&lt;/a&gt;.&lt;/p&gt;
+          &lt;a href="https://suselinux.fra1.qualtrics.com/jfe/form/SV_0ooNnrY0rYuQScS" target="_blank"&gt;Help us improve our services by sharing your reason for opting out&lt;/a&gt;
+        </source>
+        <target state="final">
+          &lt;p&gt;SCC와 데이터 동기화를 비활성화하면 RMT, SMT, @@PRODUCT_NAME@@ 및 SCC에 직접 등록된 클라이언트 사이에서 관리되는 클라이언트의 가시성이 감소합니다.
+          데이터를 동기화하면 등록된 모든 고객을 일관되게 볼 수 있습니다. &lt;a href="/rhn/manager/admin/enable-scc-data-forwarding"&gt;데이터 전달을 활성화하려면 클릭&lt;/a&gt;.&lt;/p&gt;
+          &lt;a href="https://suselinux.fra1.qualtrics.com/jfe/form/SV_0ooNnrY0rYuQScS" target="_blank"&gt;옵트아웃 사유를 공유하여 서비스 개선에 도움을 주십시오.&lt;/a&gt;
+        </target>
+      </trans-unit>
+    <trans-unit id="Password Policy" xml:space="preserve">
+        <source>Password Policy</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">Navigation Menu</context>
+        </context-group>
       <target state="new"/>
   </trans-unit>
-      <trans-unit id="contentmanagement.used_in_autoinstallation_profile" xml:space="preserve">
-        <source>The target is being used in an autoinstallation profile. Cannot remove.</source>
+      <trans-unit id="error.field_equal_or_less_than_zero" xml:space="preserve">
+        <source>Field {0} can't be equal or less than zero.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Field Field Name can't be equal or less than zero.</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.illegal_min_max_fields" xml:space="preserve">
+        <source>Field {0} can't be can't be greater or equal than field {1}.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Field One can't be can't be greater or equal than Field Two.</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.illegal_max_occurrences" xml:space="preserve">
+        <source>Password maximum allowed character occurrences can't be less or equal than 0.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Passwords maximum allowed character occurrences can't be less or equal than 0.</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.spacesinpassword" xml:space="preserve">
+        <source>Password contains tab or newline characters.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.consecutivecharactersinpassword" xml:space="preserve">
+        <source>Password contains consecutive characters.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.nodigitspassword" xml:space="preserve">
+        <source>Passwords must contain at least one digit.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.nouppercasepassword" xml:space="preserve">
+        <source>Passwords must contain at least one upper case character.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.nolowercasepassword" xml:space="preserve">
+        <source>Passwords must contain at least one lower case character.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.nospecialcharacterspassword" xml:space="preserve">
+        <source>Passwords must contain at least one special character, allowed special characters are: {0}.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.occurrencecharacterspassword" xml:space="preserve">
+        <source>Password characters occurrences exceeded maximum allowed {0}.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
       <target state="new"/>
   </trans-unit>
       </body>

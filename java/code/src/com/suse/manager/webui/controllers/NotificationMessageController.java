@@ -29,6 +29,8 @@ import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.taskomatic.TaskomaticApi;
 import com.redhat.rhn.taskomatic.TaskomaticApiException;
 
+import com.suse.cloud.CloudPaygManager;
+import com.suse.manager.attestation.AttestationManager;
 import com.suse.manager.reactor.messaging.RegisterMinionEventMessage;
 import com.suse.manager.reactor.messaging.RegisterMinionEventMessageAction;
 import com.suse.manager.webui.services.iface.SaltApi;
@@ -46,7 +48,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import spark.ModelAndView;
 import spark.Request;
@@ -65,14 +66,21 @@ public class NotificationMessageController {
 
     private final SaltApi saltApi;
     private final SystemQuery systemQuery;
+    private final CloudPaygManager paygManager;
+    private final AttestationManager attestationManager;
 
     /**
      * @param systemQueryIn instance for getting information from a system.
      * @param saltApiIn instance for getting information from a system.
+     * @param paygMgrIn instance of {@link CloudPaygManager}
+     * @param attMgrIn instance of {@link AttestationManager}
      */
-    public NotificationMessageController(SystemQuery systemQueryIn, SaltApi saltApiIn) {
+    public NotificationMessageController(SystemQuery systemQueryIn, SaltApi saltApiIn, CloudPaygManager paygMgrIn,
+                                         AttestationManager attMgrIn) {
         this.saltApi = saltApiIn;
         this.systemQuery = systemQueryIn;
+        this.paygManager = paygMgrIn;
+        this.attestationManager = attMgrIn;
     }
 
     /**
@@ -150,7 +158,7 @@ public class NotificationMessageController {
         List<UserNotification> notifications = messageIds.stream()
                 .map(id -> UserNotificationFactory.lookupByUserAndMessageId(id, user))
                 .flatMap(Optional::stream)
-                .collect(Collectors.toList());
+                .toList();
 
         UserNotificationFactory.delete(notifications);
 
@@ -216,7 +224,8 @@ public class NotificationMessageController {
         String severity = "success";
         String resultMessage = "Onboarding restarted of the minioniId '%s'";
 
-        RegisterMinionEventMessageAction action = new RegisterMinionEventMessageAction(systemQuery, saltApi);
+        RegisterMinionEventMessageAction action =
+                new RegisterMinionEventMessageAction(systemQuery, saltApi, paygManager, attestationManager);
         action.execute(new RegisterMinionEventMessage(minionId, Optional.empty()));
 
         Map<String, String> data = new HashMap<>();
@@ -286,6 +295,6 @@ public class NotificationMessageController {
     public List<NotificationMessageJson> getJSONNotificationMessages(List<UserNotification> list, User user) {
         return list.stream()
                 .map(un -> new NotificationMessageJson(un.getMessage(), un.getRead()))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

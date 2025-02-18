@@ -75,10 +75,8 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         <one-to-one name="comps" property-ref="channel"
             class="com.redhat.rhn.domain.channel.Comps" cascade="all" lazy="proxy"/>
 
-        <set name="modules" cascade="all-delete-orphan" lazy="true" inverse="true" where="comps_type_id = 2">
-            <key column="channel_id" not-null="true"/>
-            <one-to-many class="com.redhat.rhn.domain.channel.Modules"/>
-        </set>
+        <one-to-one name="modules" property-ref="channel"
+            class="com.redhat.rhn.domain.channel.Modules" cascade="all" lazy="proxy"/>
 
         <one-to-one name="mediaProducts" property-ref="channel"
             class="com.redhat.rhn.domain.channel.MediaProducts" cascade="all" lazy="proxy"/>
@@ -133,6 +131,9 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
             <key column="channel_id"/>
             <one-to-many class="com.redhat.rhn.domain.product.SUSEProductChannel"/>
         </set>
+
+        <one-to-one name="channelSyncFlag" class="com.redhat.rhn.domain.channel.ChannelSyncFlag"
+            cascade="all" outer-join="true"/>
 
         <joined-subclass
                 name="com.redhat.rhn.domain.channel.ClonedChannel"
@@ -601,13 +602,50 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         <![CDATA[select cp.package_id from rhnChannelPackage cp where cp.channel_id = :cid]]>
     </sql-query>
 
+    <sql-query name="Channel.getClonedErrataOriginalIdList">
+        <return-scalar type="long" column="original_id"/>
+        <![CDATA[SELECT errataCloned.original_id
+                    FROM rhnChannelErrata channelErrata
+                    INNER JOIN rhnErrataCloned errataCloned ON errataCloned.id = channelErrata.errata_id
+                    WHERE channelErrata.channel_id = :cid
+        ]]>
+    </sql-query>
+
     <sql-query name="Channel.isAccessibleBy">
-        <return-scalar type="int" column="count"/>
-        SELECT COUNT(*) AS count
-          FROM rhnChannel c
-          JOIN rhnAvailableChannels ac ON c.id = ac.channel_id
-          WHERE c.label = :channel_label
-            AND ac.org_id = :org_id
+        <return-scalar type="int" column="result"/>
+         <![CDATA[SELECT case when (EXISTS (
+              SELECT 1
+              FROM rhnChannel c
+              JOIN rhnChannelFamilyMembers cfm ON cfm.channel_id = c.id
+              JOIN rhnPrivateChannelFamily pcf ON pcf.channel_family_id = cfm.channel_family_id
+              WHERE c.label = :channel_label
+              AND pcf.org_id = :org_id
+              LIMIT 1
+        ) OR EXISTS (
+              SELECT 1
+              FROM rhnChannel c
+              JOIN rhnChannelFamilyMembers cfm ON cfm.channel_id = c.id
+              JOIN rhnPublicChannelFamily pcf ON pcf.channel_family_id = cfm.channel_family_id
+              WHERE c.label = :channel_label
+              LIMIT 1
+        ) OR EXISTS (
+              SELECT 1
+              FROM rhnChannel c
+              JOIN rhnTrustedOrgs tr ON c.org_id = tr.org_id
+              WHERE c.channel_access = 'public'
+              AND c.label = :channel_label
+              AND tr.org_trust_id = :org_id
+              LIMIT 1
+        ) OR EXISTS (
+              SELECT 1
+              FROM rhnChannel c
+              JOIN rhnChannelTrust tr ON c.id = tr.channel_id
+              WHERE c.channel_access = 'protected'
+              AND c.label = :channel_label
+              AND tr.org_trust_id = :org_id
+              LIMIT 1
+        )) then 1 else 0 end AS result
+        ]]>
     </sql-query>
 
     <sql-query name="Channel.isAccessibleByUser">
@@ -658,10 +696,10 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         <![CDATA[
           SELECT DISTINCT {r.*}
             FROM rhnChannel c
-            JOIN suseProductSCCRepository pr ON c.label = pr.channel_label
-            JOIN suseSCCRepository r ON pr.repo_id = r.id
+            JOIN suseChannelTemplate ct ON c.label = ct.channel_label
+            JOIN suseSCCRepository r ON ct.repo_id = r.id
            WHERE c.org_id IS NULL
-            AND c.id = :cid
+             AND c.id = :cid
         ]]>
         <return alias="r" class="com.redhat.rhn.domain.scc.SCCRepository" />
     </sql-query>
@@ -673,6 +711,18 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
             left join rhnChannelContentSource ccs on c.id = ccs.channel_id
             where c.org_id is NULL
             and ccs.source_id IS NULL
+        ]]>
+        <return alias="c" class="com.redhat.rhn.domain.channel.Channel" />
+    </sql-query>
+    <sql-query name="Channel.findModularChannels">
+        <![CDATA[
+            SELECT {c.*}
+            FROM rhnChannel c
+            LEFT JOIN rhnChannelCloned c_1_ ON c.id = c_1_.id
+            WHERE c.org_id = :org_id
+            AND c.id in (
+              SELECT DISTINCT a.channel_id
+              FROM suseAppstream a)
         ]]>
         <return alias="c" class="com.redhat.rhn.domain.channel.Channel" />
     </sql-query>

@@ -14,6 +14,7 @@
  */
 package com.redhat.rhn.manager.token.test;
 
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -25,15 +26,13 @@ import com.redhat.rhn.domain.config.ConfigChannel;
 import com.redhat.rhn.domain.config.ConfigChannelListProcessor;
 import com.redhat.rhn.domain.role.RoleFactory;
 import com.redhat.rhn.domain.server.Server;
-import com.redhat.rhn.domain.server.ServerConstants;
-import com.redhat.rhn.domain.server.ServerGroupType;
 import com.redhat.rhn.domain.server.test.ServerFactoryTest;
 import com.redhat.rhn.domain.token.ActivationKey;
 import com.redhat.rhn.domain.token.ActivationKeyFactory;
 import com.redhat.rhn.domain.token.Token;
-import com.redhat.rhn.domain.token.TokenPackage;
+import com.redhat.rhn.domain.token.TokenChannelAppStream;
 import com.redhat.rhn.domain.user.User;
-import com.redhat.rhn.manager.channel.ChannelManager;
+import com.redhat.rhn.frontend.xmlrpc.DuplicateAppStreamException;
 import com.redhat.rhn.manager.token.ActivationKeyManager;
 import com.redhat.rhn.testing.BaseTestCaseWithUser;
 import com.redhat.rhn.testing.ChannelTestUtils;
@@ -94,7 +93,6 @@ public class ActivationKeyManagerTest extends BaseTestCaseWithUser {
         ActivationKeyFactory.save(key);
         assertTrue(key.getDeployConfigs());
         assertFalse(key.getChannels().isEmpty());
-        assertFalse(key.getPackages().isEmpty());
     }
     @Test
     public void testConfigPermissions() throws Exception {
@@ -113,7 +111,6 @@ public class ActivationKeyManagerTest extends BaseTestCaseWithUser {
         ActivationKeyFactory.save(key);
         assertTrue(key.getDeployConfigs());
         assertFalse(key.getChannels().isEmpty());
-        assertFalse(key.getPackages().isEmpty());
         assertTrue(key.getConfigChannelsFor(user).contains(cc));
     }
 
@@ -231,35 +228,64 @@ public class ActivationKeyManagerTest extends BaseTestCaseWithUser {
         assertEquals(usageLimit, token.getUsageLimit());
     }
 
-    public ActivationKey createActivationKey() {
-        user.addPermanentRole(RoleFactory.ACTIVATION_KEY_ADMIN);
-        return  manager.createNewActivationKey(user, TestUtils.randomString());
+    @Test
+    public void testHasAppStreamModuleEnabled() throws Exception {
+        ActivationKey key = createActivationKey();
+        Channel channel = ChannelTestUtils.createBaseChannel(user);
+        key.getAppStreams().add(
+            new TokenChannelAppStream(key.getToken(), channel, "ruby:3.3")
+        );
+
+        assertTrue(manager.hasAppStreamModuleEnabled(key, channel, "ruby", "3.3"));
+        assertFalse(manager.hasAppStreamModuleEnabled(key, channel, "ruby", "3.2"));
+        assertFalse(manager.hasAppStreamModuleEnabled(key, channel, "nginx", "3.3"));
     }
 
     @Test
-    public void testVirtEnt() throws Exception {
-        UserTestUtils.addUserRole(user, RoleFactory.ACTIVATION_KEY_ADMIN);
-        UserTestUtils.addVirtualization(user.getOrg());
-        Channel baseChannel = ChannelTestUtils.createBaseChannel(user);
-        Channel [] channels =
-            ChannelTestUtils.setupBaseChannelForVirtualization(user, baseChannel);
+    public void testSaveChannelAppStreams() throws Exception {
+        ActivationKey key = createActivationKey();
+        Channel channel = ChannelTestUtils.createBaseChannel(user);
 
-        checkVirtEnt(ServerConstants.getServerGroupTypeVirtualizationEntitled(),
-                        channels[ChannelTestUtils.VIRT_INDEX],
-                        channels[ChannelTestUtils.TOOLS_INDEX]);
+        List<String> toInclude = List.of("php:8.1", "nginx:1.24");
+        List<String> toRemove = List.of();
+
+        manager.saveChannelAppStreams(key, channel, toInclude, toRemove);
+
+        assertTrue(key.getAppStreams().stream().anyMatch(appStream -> appStream.getAppStream().equals("php:8.1")));
+        assertTrue(key.getAppStreams().stream().anyMatch(appStream -> appStream.getAppStream().equals("nginx:1.24")));
+
+        assertThrows(DuplicateAppStreamException.class, () ->
+            manager.saveChannelAppStreams(key, channel, List.of("php:8.2"), List.of())
+        );
+
+        toInclude = List.of("php:8.2");
+        toRemove = List.of("php:8.1");
+        manager.saveChannelAppStreams(key, channel, toInclude, toRemove);
+        assertFalse(key.getAppStreams().stream().anyMatch(appStream -> appStream.getAppStream().equals("php:8.1")));
+        assertTrue(key.getAppStreams().stream().anyMatch(appStream -> appStream.getAppStream().equals("php:8.2")));
     }
 
-    private void checkVirtEnt(ServerGroupType sgt,
-                Channel virt, Channel tools) throws Exception {
+    @Test
+    public void testRemoveAppStreams() throws Exception {
         ActivationKey key = createActivationKey();
-        key.addEntitlement(sgt);
-        assertTrue(key.getChannels().contains(tools));
-        // SUSE Manager does not automatically subscribe to the tools channel (bnc#768856)
-        // assertTrue(key.getChannels().contains(virt));
-        assertFalse(key.getPackages().isEmpty());
-        TokenPackage pkg = key.getPackages().iterator().next();
-        assertEquals(ChannelManager.RHN_VIRT_HOST_PACKAGE_NAME,
-                                                    pkg.getPackageName().getName());
+        Channel channel = ChannelTestUtils.createBaseChannel(user);
+
+        key.getAppStreams().add(new TokenChannelAppStream(key.getToken(), channel, "nodejs:18"));
+        key.getAppStreams().add(new TokenChannelAppStream(key.getToken(), channel, "mariadb:10.11"));
+
+        List<String> toRemove = List.of("mariadb:10.11");
+
+        manager.removeAppStreams(key, toRemove);
+
+        assertFalse(key.getAppStreams().stream()
+                .anyMatch(appStream -> appStream.getAppStream().equals("mariadb:10.11")));
+        assertTrue(key.getAppStreams().stream()
+                .anyMatch(appStream -> appStream.getAppStream().equals("nodejs:18")));
+    }
+
+    public ActivationKey createActivationKey() {
+        user.addPermanentRole(RoleFactory.ACTIVATION_KEY_ADMIN);
+        return  manager.createNewActivationKey(user, TestUtils.randomString());
     }
 
     @Test
@@ -269,28 +295,6 @@ public class ActivationKeyManagerTest extends BaseTestCaseWithUser {
 
         List<ActivationKey> activationKeys =
                 ActivationKeyManager.getInstance().findAll(user);
-        assertEquals(1, activationKeys.size());
-    }
-
-    @Test
-    public void testFindAllBootstrap() {
-        ActivationKey activationKey = ActivationKeyFactory.createNewKey(user, null, "ak- " +
-            TestUtils.randomString(), "", 1L, null, true);
-        activationKey.setBootstrap("Y");
-
-        List<ActivationKey> activationKeys =
-                ActivationKeyManager.getInstance().findAll(user);
-        assertEquals(0, activationKeys.size());
-    }
-
-    @Test
-    public void testFindBootstrap() {
-        ActivationKey activationKey = ActivationKeyFactory.createNewKey(user, null, "ak- " +
-            TestUtils.randomString(), "", 1L, null, true);
-        activationKey.setBootstrap("Y");
-
-        List<ActivationKey> activationKeys =
-                ActivationKeyManager.getInstance().findBootstrap();
         assertEquals(1, activationKeys.size());
     }
 }

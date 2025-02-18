@@ -21,6 +21,7 @@ import static com.redhat.rhn.testing.ErrataTestUtils.createTestPackage;
 import static com.redhat.rhn.testing.ErrataTestUtils.createTestServer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -75,7 +76,6 @@ import com.redhat.rhn.testing.TestUtils;
 import com.redhat.rhn.testing.UserTestUtils;
 
 import org.apache.commons.lang3.time.StopWatch;
-import org.hibernate.criterion.Restrictions;
 import org.jmock.Expectations;
 import org.jmock.imposters.ByteBuddyClassImposteriser;
 import org.junit.jupiter.api.BeforeEach;
@@ -129,10 +129,10 @@ public class ErrataManagerTest extends JMockBaseTestCaseWithUser {
     @Test
     public void testCreate() {
         Errata e = new Errata();
-        assertTrue(e instanceof Errata);
+        assertInstanceOf(Errata.class, e);
 
         Bug b = ErrataManagerTest.createTestBug(42L, "test bug");
-        assertTrue(b instanceof Bug);
+        assertInstanceOf(Bug.class, b);
     }
 
     @Test
@@ -681,10 +681,10 @@ public class ErrataManagerTest extends JMockBaseTestCaseWithUser {
         List<Action> updateStackErrataActions1 = actionsServer1.stream()
             .filter(a -> errataActionFromAction(a).getErrata().stream()
                 .anyMatch(ErrataManagerTest::doesUpdateStack))
-            .collect(Collectors.toList());
+            .toList();
         List<Action> nonUpdateStackErrataActions1 = actionsServer1.stream()
             .filter(a -> !updateStackErrataActions1.contains(a))
-            .collect(Collectors.toList());
+            .toList();
 
         assertTrue(updateStackErrataActions1.stream()
                 .flatMap(a -> errataActionFromAction(a).getErrata().stream())
@@ -709,10 +709,10 @@ public class ErrataManagerTest extends JMockBaseTestCaseWithUser {
         List<Action> updateStackErrataActions2 = actionsServer2.stream()
                 .filter(a -> errataActionFromAction(a).getErrata().stream()
                     .anyMatch(ErrataManagerTest::doesUpdateStack))
-                .collect(Collectors.toList());
+                .toList();
         List<Action> nonUpdateStackErrataActions2 = actionsServer2.stream()
             .filter(a -> !updateStackErrataActions2.contains(a))
-            .collect(Collectors.toList());
+            .toList();
 
         assertTrue(updateStackErrataActions2.stream()
                 .flatMap(a -> errataActionFromAction(a).getErrata().stream())
@@ -1524,8 +1524,11 @@ public class ErrataManagerTest extends JMockBaseTestCaseWithUser {
      * @return the errata action
      */
     private ErrataAction errataActionFromAction(Action action) {
-        return (ErrataAction) HibernateFactory.getSession().createCriteria(ErrataAction.class)
-                .add(Restrictions.idEq(action.getId())).uniqueResult();
+        String sql = "SELECT * FROM rhnAction WHERE id = :id";
+        return HibernateFactory.getSession()
+                            .createNativeQuery(sql, ErrataAction.class)
+                            .setParameter("id", action.getId())
+                            .getSingleResult();
     }
 
     /**

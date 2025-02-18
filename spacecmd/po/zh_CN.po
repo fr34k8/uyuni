@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-13 14:59+0100\n"
-"PO-Revision-Date: 2023-01-06 05:14+0000\n"
+"POT-Creation-Date: 2025-02-14 14:16+0100\n"
+"PO-Revision-Date: 2025-02-12 11:50+0000\n"
 "Last-Translator: Grace Yu <grace.yu@excel-gits.com>\n"
 "Language-Team: Chinese (China) <https://l10n.opensuse.org/projects/uyuni/"
 "spacecmd/zh_CN/>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.9.1\n"
+"X-Generator: Weblate 5.9.2\n"
 
 #: ../src/spacecmd/activationkey.py:50
 msgid "activationkey_addpackages: Add packages to an activation key"
@@ -216,7 +216,7 @@ msgstr "名称（留空会自动生成）："
 msgid "Description [None]:"
 msgstr "说明 [None]："
 
-#: ../src/spacecmd/activationkey.py:756 ../src/spacecmd/distribution.py:79
+#: ../src/spacecmd/activationkey.py:756 ../src/spacecmd/distribution.py:96
 #: ../src/spacecmd/softwarechannel.py:903
 msgid "Base Channels"
 msgstr "基础通道"
@@ -247,8 +247,8 @@ msgstr "activationkey_delete：删除激活密钥"
 msgid "usage: activationkey_delete KEY"
 msgstr "用法：activationkey_delete KEY"
 
-#: ../src/spacecmd/activationkey.py:831 ../src/spacecmd/cryptokey.py:141
-#: ../src/spacecmd/cryptokey.py:200 ../src/spacecmd/custominfo.py:97
+#: ../src/spacecmd/activationkey.py:831 ../src/spacecmd/cryptokey.py:176
+#: ../src/spacecmd/cryptokey.py:235 ../src/spacecmd/custominfo.py:97
 #, python-format
 msgid "No keys matched argument %s"
 msgstr "没有任何密钥与参数 %s 相匹配"
@@ -316,92 +316,92 @@ msgstr "部署配置通道：%s"
 msgid "Contact Method:         %s"
 msgstr "联系方法：%s"
 
-#: ../src/spacecmd/activationkey.py:970 ../src/spacecmd/kickstart.py:432
-#: ../src/spacecmd/system.py:3112
+#: ../src/spacecmd/activationkey.py:970 ../src/spacecmd/kickstart.py:426
+#: ../src/spacecmd/system.py:2981
 msgid "Software Channels"
 msgstr "软件通道"
 
 #: ../src/spacecmd/activationkey.py:978 ../src/spacecmd/configchannel.py:807
-#: ../src/spacecmd/configchannel.py:921 ../src/spacecmd/system.py:3121
+#: ../src/spacecmd/configchannel.py:921 ../src/spacecmd/system.py:2990
 msgid "Configuration Channels"
 msgstr "配置通道"
 
-#: ../src/spacecmd/activationkey.py:984 ../src/spacecmd/system.py:3126
+#: ../src/spacecmd/activationkey.py:984 ../src/spacecmd/system.py:2995
 msgid "Entitlements"
 msgstr "权利"
 
-#: ../src/spacecmd/activationkey.py:989 ../src/spacecmd/system.py:3132
+#: ../src/spacecmd/activationkey.py:989 ../src/spacecmd/system.py:3001
 msgid "System Groups"
 msgstr "系统组"
 
-#: ../src/spacecmd/activationkey.py:994 ../src/spacecmd/package.py:210
-#: ../src/spacecmd/package.py:268 ../src/spacecmd/softwarechannel.py:1368
+#: ../src/spacecmd/activationkey.py:994 ../src/spacecmd/package.py:206
+#: ../src/spacecmd/package.py:264 ../src/spacecmd/softwarechannel.py:1368
 #: ../src/spacecmd/softwarechannel.py:1474
-#: ../src/spacecmd/softwarechannel.py:1558
+#: ../src/spacecmd/softwarechannel.py:1556
 #: ../src/spacecmd/softwarechannel.py:1810
 msgid "Packages"
 msgstr "软件包"
 
-#: ../src/spacecmd/activationkey.py:1009
+#: ../src/spacecmd/activationkey.py:1012
 msgid "activationkey_enableconfigdeployment: Enable config channel deployment"
 msgstr "activationkey_enableconfigdeployment：启用配置通道部署"
 
-#: ../src/spacecmd/activationkey.py:1011
+#: ../src/spacecmd/activationkey.py:1014
 msgid "usage: activationkey_enableconfigdeployment KEY"
 msgstr "用法：activationkey_enableconfigdeployment KEY"
 
-#: ../src/spacecmd/activationkey.py:1038
+#: ../src/spacecmd/activationkey.py:1041
 msgid ""
 "activationkey_disableconfigdeployment: Disable config channel deployment"
 msgstr "activationkey_disableconfigdeployment：禁用配置通道部署"
 
-#: ../src/spacecmd/activationkey.py:1040
+#: ../src/spacecmd/activationkey.py:1043
 msgid "usage: activationkey_disableconfigdeployment KEY"
 msgstr "用法：activationkey_disableconfigdeployment KEY"
 
-#: ../src/spacecmd/activationkey.py:1067
+#: ../src/spacecmd/activationkey.py:1070
 msgid "activationkey_setbasechannel: Set the base channel of an activation key"
 msgstr "activationkey_setbasechannel：设置激活密钥的基础通道"
 
-#: ../src/spacecmd/activationkey.py:1069
+#: ../src/spacecmd/activationkey.py:1072
 msgid "usage: activationkey_setbasechannel KEY CHANNEL"
 msgstr "用法：activationkey_setbasechannel KEY CHANNEL"
 
-#: ../src/spacecmd/activationkey.py:1118
+#: ../src/spacecmd/activationkey.py:1121
 msgid ""
 "activationkey_setusagelimit: Set the usage limit of an activation key, can "
 "be a number or \"unlimited\""
 msgstr ""
-"activationkey_setusagelimit：设置激活密钥的使用限制，可以是数字或 \"unlimited"
-"\""
+"activationkey_setusagelimit：设置激活密钥的使用限制，可以是数字或 "
+"\"unlimited\""
 
-#: ../src/spacecmd/activationkey.py:1120
+#: ../src/spacecmd/activationkey.py:1123
 msgid "usage: activationkey_setusagelimit KEY <usage limit>"
 msgstr "用法：activationkey_setusagelimit KEY <使用限制>"
 
-#: ../src/spacecmd/activationkey.py:1121
+#: ../src/spacecmd/activationkey.py:1124
 msgid "usage: activationkey_setusagelimit KEY unlimited "
 msgstr "用法：activationkey_setusagelimit KEY unlimited "
 
-#: ../src/spacecmd/activationkey.py:1153
+#: ../src/spacecmd/activationkey.py:1156
 #, python-format
 msgid "Couldn't convert argument %s to an integer"
 msgstr "无法将参数 %s 转换为整数"
 
-#: ../src/spacecmd/activationkey.py:1175
+#: ../src/spacecmd/activationkey.py:1178
 msgid ""
 "activationkey_setuniversaldefault: Set this key as the universal default"
 msgstr "activationkey_setuniversaldefault：将此密钥设置为通用默认值"
 
-#: ../src/spacecmd/activationkey.py:1177
+#: ../src/spacecmd/activationkey.py:1180
 msgid "usage: activationkey_setuniversaldefault KEY"
 msgstr "用法：activationkey_setuniversaldefault KEY"
 
-#: ../src/spacecmd/activationkey.py:1218
+#: ../src/spacecmd/activationkey.py:1221
 msgid "activationkey_export: Export activation key(s) to JSON format file"
 msgstr "activationkey_export：将激活密钥导出到 JSON 格式的文件"
 
-#: ../src/spacecmd/activationkey.py:1219
+#: ../src/spacecmd/activationkey.py:1222
 msgid ""
 "usage: activationkey_export [options] [<KEY> ...])\n"
 "\n"
@@ -425,71 +425,71 @@ msgstr ""
 "注意：密钥列表是可选的，默认为导出所有密钥 "
 
 #. Get the key details
-#: ../src/spacecmd/activationkey.py:1235
+#: ../src/spacecmd/activationkey.py:1238
 #, python-format
 msgid "Getting activation key details for %s"
 msgstr "正在获取 %s 的激活密钥细节"
 
-#: ../src/spacecmd/activationkey.py:1289
+#: ../src/spacecmd/activationkey.py:1292
 #, python-format
 msgid "Exporting ALL activation keys to %s"
 msgstr "正在将所有激活密钥导出到 %s"
 
-#: ../src/spacecmd/activationkey.py:1298
+#: ../src/spacecmd/activationkey.py:1301
 msgid "Invalid activation key passed"
 msgstr "传递了无效的激活密钥"
 
-#: ../src/spacecmd/activationkey.py:1313
+#: ../src/spacecmd/activationkey.py:1316
 #, python-format
 msgid "Exporting key %s to %s"
 msgstr "正在将密钥 %s 导出到 %s"
 
-#: ../src/spacecmd/activationkey.py:1322
+#: ../src/spacecmd/activationkey.py:1325
 #, python-format
 msgid "File %s exists, confirm overwrite file? (y/n)"
 msgstr "文件 %s 已存在，请确认是否重写文件？(y/n)"
 
-#: ../src/spacecmd/activationkey.py:1327
+#: ../src/spacecmd/activationkey.py:1330
 msgid "Failed to save exported keys to file: {}"
 msgstr "无法将导出的密钥保存到文件：{}"
 
-#: ../src/spacecmd/activationkey.py:1336
+#: ../src/spacecmd/activationkey.py:1339
 msgid "activationkey_import: import activation key(s) from JSON file(s)"
 msgstr "activationkey_import：从 JSON 文件导入激活密钥"
 
-#: ../src/spacecmd/activationkey.py:1337
+#: ../src/spacecmd/activationkey.py:1340
 msgid "usage: activationkey_import <JSONFILE ...>"
 msgstr "用法：activationkey_import <JSON 文件 ...>"
 
-#: ../src/spacecmd/activationkey.py:1346
+#: ../src/spacecmd/activationkey.py:1349
 msgid "No filename passed"
 msgstr "未传递文件名"
 
-#: ../src/spacecmd/activationkey.py:1355
+#: ../src/spacecmd/activationkey.py:1358
 #, python-format
 msgid "Could not read json data from %s"
 msgstr "无法读取 %s 中的 json 数据"
 
-#: ../src/spacecmd/activationkey.py:1360 ../src/spacecmd/activationkey.py:1404
+#: ../src/spacecmd/activationkey.py:1363 ../src/spacecmd/activationkey.py:1407
 #, python-format
 msgid "Failed to import key %s"
 msgstr "无法导入密钥 %s"
 
-#: ../src/spacecmd/activationkey.py:1374
+#: ../src/spacecmd/activationkey.py:1377
 #, python-format
 msgid "%s already exists! Skipping!"
 msgstr "%s 已存在！正在跳过！"
 
-#: ../src/spacecmd/activationkey.py:1429
+#: ../src/spacecmd/activationkey.py:1432
 #, python-format
 msgid "System group %s doesn't exist, creating"
 msgstr "系统组 %s 不存在，正在创建"
 
-#: ../src/spacecmd/activationkey.py:1450
+#: ../src/spacecmd/activationkey.py:1453
 msgid "activationkey_clone: Clone an activation key"
 msgstr "activationkey_clone：克隆激活密钥"
 
-#: ../src/spacecmd/activationkey.py:1451
+#: ../src/spacecmd/activationkey.py:1454
 msgid ""
 "usage examples:\n"
 "                 activationkey_clone foo_key -c bar_key\n"
@@ -519,122 +519,122 @@ msgstr ""
 "                   基础通道标签、子通道标签、配置通道名称中的\n"
 "                   foo 替换为 bar "
 
-#: ../src/spacecmd/activationkey.py:1479 ../src/spacecmd/kickstart.py:467
-#: ../src/spacecmd/system.py:3107
+#: ../src/spacecmd/activationkey.py:1482 ../src/spacecmd/kickstart.py:461
+#: ../src/spacecmd/system.py:2976
 msgid "Activation Keys"
 msgstr "激活密钥"
 
-#: ../src/spacecmd/activationkey.py:1485
+#: ../src/spacecmd/activationkey.py:1488
 #, python-format
 msgid "Key to clone: %s"
 msgstr "要克隆的密钥：%s"
 
-#: ../src/spacecmd/activationkey.py:1489
+#: ../src/spacecmd/activationkey.py:1492
 msgid "Original Key:"
 msgstr "原始密钥："
 
-#: ../src/spacecmd/activationkey.py:1491
+#: ../src/spacecmd/activationkey.py:1494
 msgid "Cloned Key:"
 msgstr "克隆的密钥："
 
-#: ../src/spacecmd/activationkey.py:1494 ../src/spacecmd/configchannel.py:1441
+#: ../src/spacecmd/activationkey.py:1497 ../src/spacecmd/configchannel.py:1441
 msgid "Error - must specify either -c or -x options!"
 msgstr "错误 - 必须指定 -c 或 -x 选项！"
 
-#: ../src/spacecmd/activationkey.py:1499
+#: ../src/spacecmd/activationkey.py:1502
 #, python-format
 msgid "Key %s already exists"
 msgstr "密钥 %s 已存在"
 
-#: ../src/spacecmd/activationkey.py:1503
+#: ../src/spacecmd/activationkey.py:1506
 msgid "Error no activationkey to clone passed!"
 msgstr "错误：未传递要克隆的激活密钥！"
 
-#: ../src/spacecmd/activationkey.py:1557
+#: ../src/spacecmd/activationkey.py:1560
 #, python-format
 msgid "Found child channel %s key %s, %s"
 msgstr "已找到子通道 %s - 密钥为 %s，%s"
 
-#: ../src/spacecmd/activationkey.py:1559
+#: ../src/spacecmd/activationkey.py:1562
 msgid " does not exist, skipping!"
 msgstr " 不存在，正在跳过！"
 
-#: ../src/spacecmd/activationkey.py:1566
+#: ../src/spacecmd/activationkey.py:1569
 #, python-format
 msgid "Regex-replacement results in new base-channel %s which does not exist!"
 msgstr "正则表达式替换导致新基础通道 %s 不存在！"
 
-#: ../src/spacecmd/activationkey.py:1582
+#: ../src/spacecmd/activationkey.py:1585
 #, python-format
 msgid "Found config channel %s for key %s, %s "
 msgstr "已找到配置通道 %s - 密钥为 %s，%s "
 
-#: ../src/spacecmd/activationkey.py:1584
+#: ../src/spacecmd/activationkey.py:1587
 msgid "does not exist, skipping!"
 msgstr "不存在，正在跳过！"
 
-#: ../src/spacecmd/activationkey.py:1602
+#: ../src/spacecmd/activationkey.py:1605
 #, python-format
 msgid "Cloning key %s as %s"
 msgstr "正在将密钥 %s 克隆为 %s"
 
-#: ../src/spacecmd/activationkey.py:1606 ../src/spacecmd/configchannel.py:1493
+#: ../src/spacecmd/activationkey.py:1609 ../src/spacecmd/configchannel.py:1493
 #, python-format
 msgid "Failed to clone %s to %s"
 msgstr "无法将 %s 克隆到 %s"
 
-#: ../src/spacecmd/activationkey.py:1624
+#: ../src/spacecmd/activationkey.py:1627
 msgid "no activationkey label given"
 msgstr "未指定激活密钥标签"
 
-#: ../src/spacecmd/activationkey.py:1627
+#: ../src/spacecmd/activationkey.py:1630
 msgid "invalid activationkey label "
 msgstr "无效的激活密钥标签 "
 
-#: ../src/spacecmd/activationkey.py:1644
+#: ../src/spacecmd/activationkey.py:1647
 msgid "activationkey_diff: Diff activation keys"
 msgstr "activationkey_diff：比较激活密钥的差异"
 
-#: ../src/spacecmd/activationkey.py:1646
+#: ../src/spacecmd/activationkey.py:1649
 msgid "usage: activationkey_diff SOURCE_KEY TARGET_KEY"
 msgstr "用法：activationkey_diff SOURCE_KEY TARGET_KEY"
 
-#: ../src/spacecmd/activationkey.py:1696
+#: ../src/spacecmd/activationkey.py:1699
 msgid "activationkey_disable: Disable an activation key"
 msgstr "activationkey_disable：禁用激活密钥"
 
-#: ../src/spacecmd/activationkey.py:1698
+#: ../src/spacecmd/activationkey.py:1701
 msgid "usage: activationkey_disable KEY [KEY ...]"
 msgstr "用法：activationkey_disable KEY [KEY ...]"
 
-#: ../src/spacecmd/activationkey.py:1732
+#: ../src/spacecmd/activationkey.py:1735
 msgid "activationkey_enable: Enable an activation key"
 msgstr "activationkey_enable：启用激活密钥"
 
-#: ../src/spacecmd/activationkey.py:1734
+#: ../src/spacecmd/activationkey.py:1737
 msgid "usage: activationkey_enable KEY [KEY ...]"
 msgstr "用法：activationkey_enable KEY [KEY ...]"
 
-#: ../src/spacecmd/activationkey.py:1768
+#: ../src/spacecmd/activationkey.py:1771
 msgid "activationkey_setdescription: Set the activation key description"
 msgstr "activationkey_setdescription：设置激活密钥说明"
 
-#: ../src/spacecmd/activationkey.py:1770
+#: ../src/spacecmd/activationkey.py:1773
 msgid "usage: activationkey_setdescription KEY DESCRIPTION"
 msgstr "用法：activationkey_setdescription KEY DESCRIPTION"
 
-#: ../src/spacecmd/activationkey.py:1804
+#: ../src/spacecmd/activationkey.py:1807
 msgid ""
 "activationkey_setcontactmethod: Set the contact method to use for systems "
 "registered with this key."
 msgstr ""
 "activationkey_setcontactmethod：设置要对通过此密钥注册的系统使用的联系方法。"
 
-#: ../src/spacecmd/activationkey.py:1806 ../src/spacecmd/system.py:4411
+#: ../src/spacecmd/activationkey.py:1809 ../src/spacecmd/system.py:4280
 msgid "Available contact methods: "
 msgstr "可用联系方法： "
 
-#: ../src/spacecmd/activationkey.py:1807
+#: ../src/spacecmd/activationkey.py:1810
 msgid "usage: activationkey_setcontactmethod KEY CONTACT_METHOD"
 msgstr "用法：activationkey_setcontactmethod KEY CONTACT_METHOD"
 
@@ -710,8 +710,8 @@ msgstr "用法：configchannel_listsystems CHANNEL"
 
 #: ../src/spacecmd/configchannel.py:82 ../src/spacecmd/configchannel.py:117
 #: ../src/spacecmd/group.py:547 ../src/spacecmd/group.py:601
-#: ../src/spacecmd/group.py:639 ../src/spacecmd/system.py:3343
-#: ../src/spacecmd/system.py:3441
+#: ../src/spacecmd/group.py:639 ../src/spacecmd/system.py:3212
+#: ../src/spacecmd/system.py:3310
 msgid "This version of the API doesn't support this method"
 msgstr "此 API 版本不支持此方法"
 
@@ -855,7 +855,7 @@ msgid "Binary:          %s"
 msgstr "二进制文件：%s"
 
 #: ../src/spacecmd/configchannel.py:303 ../src/spacecmd/configchannel.py:738
-#: ../src/spacecmd/configchannel.py:994 ../src/spacecmd/kickstart.py:1980
+#: ../src/spacecmd/configchannel.py:994 ../src/spacecmd/kickstart.py:1974
 #: ../src/spacecmd/snippet.py:163
 msgid "Contents"
 msgstr "内容"
@@ -898,26 +898,26 @@ msgid "usage: configchannel_details CHANNEL ..."
 msgstr "用法：configchannel_details CHANNEL ..."
 
 #: ../src/spacecmd/configchannel.py:444 ../src/spacecmd/group.py:571
-#: ../src/spacecmd/kickstart.py:421
+#: ../src/spacecmd/kickstart.py:415
 #, python-format
 msgid "Label:       %s"
 msgstr "标签：%s"
 
 #: ../src/spacecmd/configchannel.py:445 ../src/spacecmd/group.py:572
-#: ../src/spacecmd/kickstart.py:420
+#: ../src/spacecmd/kickstart.py:414
 #, python-format
 msgid "Name:        %s"
 msgstr "名称：%s"
 
-#: ../src/spacecmd/configchannel.py:446 ../src/spacecmd/cryptokey.py:217
+#: ../src/spacecmd/configchannel.py:446 ../src/spacecmd/cryptokey.py:252
 #: ../src/spacecmd/group.py:573 ../src/spacecmd/system.py:683
 #, python-format
 msgid "Description: %s"
 msgstr "说明：%s"
 
-#: ../src/spacecmd/configchannel.py:447 ../src/spacecmd/cryptokey.py:218
-#: ../src/spacecmd/group.py:574 ../src/spacecmd/kickstart.py:507
-#: ../src/spacecmd/kickstart.py:1976
+#: ../src/spacecmd/configchannel.py:447 ../src/spacecmd/cryptokey.py:253
+#: ../src/spacecmd/group.py:574 ../src/spacecmd/kickstart.py:501
+#: ../src/spacecmd/kickstart.py:1970
 #, python-format
 msgid "Type:        %s"
 msgstr "类型：%s"
@@ -949,7 +949,7 @@ msgstr ""
 "  -t 类型 ('normal,'state')"
 
 #: ../src/spacecmd/configchannel.py:480 ../src/spacecmd/custominfo.py:55
-#: ../src/spacecmd/custominfo.py:200 ../src/spacecmd/distribution.py:72
+#: ../src/spacecmd/custominfo.py:200 ../src/spacecmd/distribution.py:89
 #: ../src/spacecmd/filepreservation.py:71 ../src/spacecmd/group.py:185
 #: ../src/spacecmd/repo.py:353 ../src/spacecmd/repo.py:469
 #: ../src/spacecmd/softwarechannel.py:776
@@ -960,10 +960,10 @@ msgstr "名称："
 msgid "Label:"
 msgstr "标签："
 
-#: ../src/spacecmd/configchannel.py:482 ../src/spacecmd/cryptokey.py:67
+#: ../src/spacecmd/configchannel.py:482 ../src/spacecmd/cryptokey.py:107
 #: ../src/spacecmd/custominfo.py:60 ../src/spacecmd/custominfo.py:205
 #: ../src/spacecmd/group.py:190 ../src/spacecmd/softwarechannel.py:788
-#: ../src/spacecmd/system.py:3798
+#: ../src/spacecmd/system.py:3667
 msgid "Description:"
 msgstr "说明："
 
@@ -975,7 +975,7 @@ msgstr "类型 [normal, state]："
 msgid "Only [normal/state] values are acceptable for type"
 msgstr "类型仅接受 [normal/state] 值"
 
-#: ../src/spacecmd/configchannel.py:494 ../src/spacecmd/distribution.py:110
+#: ../src/spacecmd/configchannel.py:494 ../src/spacecmd/distribution.py:127
 #: ../src/spacecmd/repo.py:361 ../src/spacecmd/repo.py:475
 msgid "A name is required"
 msgstr "必须指定名称"
@@ -1047,12 +1047,12 @@ msgstr "修订版必须是整数"
 
 #. get the contents of the script
 #: ../src/spacecmd/configchannel.py:638 ../src/spacecmd/configchannel.py:946
-#: ../src/spacecmd/cryptokey.py:69 ../src/spacecmd/kickstart.py:2033
+#: ../src/spacecmd/cryptokey.py:109 ../src/spacecmd/kickstart.py:2027
 #: ../src/spacecmd/snippet.py:143
 msgid "Read an existing file [y/N]:"
 msgstr "读取现有文件 [y/N]:"
 
-#: ../src/spacecmd/configchannel.py:640 ../src/spacecmd/kickstart.py:2035
+#: ../src/spacecmd/configchannel.py:640 ../src/spacecmd/kickstart.py:2029
 msgid "File:"
 msgstr "文件："
 
@@ -1321,11 +1321,11 @@ msgstr "configchannel_import：从 json 文件导入配置通道"
 msgid "usage: configchannel_import <JSONFILES...>"
 msgstr "用法：configchannel_import <JSON 文件...>"
 
-#: ../src/spacecmd/configchannel.py:1287 ../src/spacecmd/kickstart.py:2417
+#: ../src/spacecmd/configchannel.py:1287 ../src/spacecmd/kickstart.py:2411
 msgid "Error, no filename passed"
 msgstr "错误：未传递文件名"
 
-#: ../src/spacecmd/configchannel.py:1295 ../src/spacecmd/kickstart.py:2425
+#: ../src/spacecmd/configchannel.py:1295 ../src/spacecmd/kickstart.py:2419
 #, python-format
 msgid "Error, could not read json data from %s"
 msgstr "错误：无法读取 %s 中的 json 数据"
@@ -1518,59 +1518,79 @@ msgstr ""
 "  -d 说明\n"
 "  -f 密钥文件"
 
-#: ../src/spacecmd/cryptokey.py:63
+#: ../src/spacecmd/cryptokey.py:69
+msgid "cryptokey_update: Update a cryptographic key"
+msgstr "cryptokey_update：更新加密密钥"
+
+#: ../src/spacecmd/cryptokey.py:70
+msgid ""
+"usage: cryptokey_update [options])\n"
+"\n"
+"options:\n"
+"  -t GPG or SSL\n"
+"  -d DESCRIPTION\n"
+"  -f KEY_FILE"
+msgstr ""
+"用法：cryptokey_update [选项]\n"
+"\n"
+"选项：\n"
+"  -t GPG 或 SSL\n"
+"  -d 说明\n"
+"  -f 密钥文件"
+
+#: ../src/spacecmd/cryptokey.py:103
 msgid "GPG or SSL [G/S]:"
 msgstr "GPG 或 SSL [G/S]："
 
-#: ../src/spacecmd/cryptokey.py:76
+#: ../src/spacecmd/cryptokey.py:116
 msgid "The key type is required"
 msgstr "必须指定密钥类型"
 
-#: ../src/spacecmd/cryptokey.py:80
+#: ../src/spacecmd/cryptokey.py:120
 msgid "A description is required"
 msgstr "必须填写说明"
 
-#: ../src/spacecmd/cryptokey.py:84
+#: ../src/spacecmd/cryptokey.py:124
 msgid "A file containing the key is required"
 msgstr "必须指定包含该密钥的文件"
 
-#: ../src/spacecmd/cryptokey.py:92
+#: ../src/spacecmd/cryptokey.py:132
 msgid "No contents of the file"
 msgstr "无文件内容"
 
-#: ../src/spacecmd/cryptokey.py:101
+#: ../src/spacecmd/cryptokey.py:141
 msgid "Invalid key type"
 msgstr "无效密钥类型"
 
-#: ../src/spacecmd/cryptokey.py:115
+#: ../src/spacecmd/cryptokey.py:150
 msgid "cryptokey_delete: Delete a cryptographic key"
 msgstr "cryptokey_delete：删除加密密钥"
 
-#: ../src/spacecmd/cryptokey.py:116
+#: ../src/spacecmd/cryptokey.py:151
 msgid "usage: cryptokey_delete NAME"
 msgstr "用法：cryptokey_delete NAME"
 
-#: ../src/spacecmd/cryptokey.py:147
+#: ../src/spacecmd/cryptokey.py:182
 msgid "Delete key(s) [y/N]:"
 msgstr "删除密钥 [y/N]："
 
-#: ../src/spacecmd/cryptokey.py:158
+#: ../src/spacecmd/cryptokey.py:193
 msgid "cryptokey_list: List all cryptographic keys (SSL, GPG)"
 msgstr "cryptokey_list：列出所有加密密钥（SSL、GPG）"
 
-#: ../src/spacecmd/cryptokey.py:159
+#: ../src/spacecmd/cryptokey.py:194
 msgid "usage: cryptokey_list"
 msgstr "用法：cryptokey_list"
 
-#: ../src/spacecmd/cryptokey.py:177
+#: ../src/spacecmd/cryptokey.py:212
 msgid "cryptokey_details: Show the contents of a cryptographic key"
 msgstr "cryptokey_details：显示加密密钥的内容"
 
-#: ../src/spacecmd/cryptokey.py:178
+#: ../src/spacecmd/cryptokey.py:213
 msgid "usage: cryptokey_details KEY ..."
 msgstr "用法：cryptokey_details KEY ..."
 
-#: ../src/spacecmd/cryptokey.py:210
+#: ../src/spacecmd/cryptokey.py:245
 #, python-format
 msgid "%s is not a valid crypto key"
 msgstr "%s 不是有效的加密密钥"
@@ -1667,103 +1687,103 @@ msgstr ""
 msgid "The name of the distribution is required"
 msgstr "必须指定发行套件的名称"
 
-#: ../src/spacecmd/distribution.py:74
+#: ../src/spacecmd/distribution.py:91
 msgid "Path to Kickstart Tree:"
 msgstr "Kickstart 树的路径："
 
-#: ../src/spacecmd/distribution.py:84
+#: ../src/spacecmd/distribution.py:101
 msgid "Base Channel:"
 msgstr "基础通道："
 
-#: ../src/spacecmd/distribution.py:87
+#: ../src/spacecmd/distribution.py:104
 msgid "Invalid channel label"
 msgstr "无效通道标签"
 
-#: ../src/spacecmd/distribution.py:98
+#: ../src/spacecmd/distribution.py:115
 msgid "Install Types"
 msgstr "安装类型"
 
-#: ../src/spacecmd/distribution.py:103
+#: ../src/spacecmd/distribution.py:120
 msgid "Install Type:"
 msgstr "安装类型："
 
-#: ../src/spacecmd/distribution.py:106
+#: ../src/spacecmd/distribution.py:123
 msgid "Invalid install type"
 msgstr "无效安装类型"
 
-#: ../src/spacecmd/distribution.py:114
+#: ../src/spacecmd/distribution.py:131
 msgid "A path is required"
 msgstr "必须指定路径"
 
-#: ../src/spacecmd/distribution.py:118 ../src/spacecmd/system.py:2600
+#: ../src/spacecmd/distribution.py:135 ../src/spacecmd/system.py:2639
 msgid "A base channel is required"
 msgstr "必须指定基础通道"
 
-#: ../src/spacecmd/distribution.py:122
+#: ../src/spacecmd/distribution.py:139
 msgid "An install type is required"
 msgstr "必须指定安装类型"
 
-#: ../src/spacecmd/distribution.py:144
+#: ../src/spacecmd/distribution.py:161
 msgid "distribution_list: List the available autoinstall trees"
 msgstr "distribution_list：列出可用的自动安装树"
 
-#: ../src/spacecmd/distribution.py:145
+#: ../src/spacecmd/distribution.py:162
 msgid "usage: distribution_list"
 msgstr "用法：distribution_list"
 
-#: ../src/spacecmd/distribution.py:170
+#: ../src/spacecmd/distribution.py:187
 msgid "distribution_delete: Delete a Kickstart tree"
 msgstr "distribution_delete：删除 Kickstart 树"
 
-#: ../src/spacecmd/distribution.py:171
+#: ../src/spacecmd/distribution.py:188
 msgid "usage: distribution_delete LABEL"
 msgstr "用法：distribution_delete LABEL"
 
-#: ../src/spacecmd/distribution.py:197 ../src/spacecmd/distribution.py:236
+#: ../src/spacecmd/distribution.py:214 ../src/spacecmd/distribution.py:253
 #, python-format
 msgid "No distributions matched argument %s"
 msgstr "没有与参数 %s 匹配的发行套件"
 
-#: ../src/spacecmd/distribution.py:203
+#: ../src/spacecmd/distribution.py:220
 msgid "Delete distribution tree(s) [y/N]:"
 msgstr "删除分发树 [y/N]："
 
-#: ../src/spacecmd/distribution.py:213
+#: ../src/spacecmd/distribution.py:230
 msgid "distribution_details: Show the details of a Kickstart tree"
 msgstr "distribution_details：显示 Kickstart 树的细节"
 
-#: ../src/spacecmd/distribution.py:214
+#: ../src/spacecmd/distribution.py:231
 msgid "usage: distribution_details LABEL"
 msgstr "用法：distribution_details LABEL"
 
-#: ../src/spacecmd/distribution.py:252
+#: ../src/spacecmd/distribution.py:269
 #, python-format
 msgid "Name:    %s"
 msgstr "名称：%s"
 
-#: ../src/spacecmd/distribution.py:253
+#: ../src/spacecmd/distribution.py:270
 #, python-format
 msgid "Path:    %s"
 msgstr "路径：%s"
 
-#: ../src/spacecmd/distribution.py:254 ../src/spacecmd/softwarechannel.py:632
+#: ../src/spacecmd/distribution.py:271 ../src/spacecmd/softwarechannel.py:632
 #, python-format
 msgid "Channel: %s"
 msgstr "通道：%s"
 
-#: ../src/spacecmd/distribution.py:262
+#: ../src/spacecmd/distribution.py:279
 msgid "distribution_rename: Rename a Kickstart tree"
 msgstr "distribution_rename：重命名 Kickstart 树"
 
-#: ../src/spacecmd/distribution.py:263
+#: ../src/spacecmd/distribution.py:280
 msgid "usage: distribution_rename OLDNAME NEWNAME"
 msgstr "用法：distribution_rename OLDNAME NEWNAME"
 
-#: ../src/spacecmd/distribution.py:294
+#: ../src/spacecmd/distribution.py:311
 msgid "distribution_update: Update the path of a Kickstart tree"
 msgstr "distribution_update：更新 Kickstart 树的路径"
 
-#: ../src/spacecmd/distribution.py:295
+#: ../src/spacecmd/distribution.py:312
 msgid ""
 "usage: distribution_update NAME [options]\n"
 "\n"
@@ -1816,8 +1836,8 @@ msgstr ""
 #: ../src/spacecmd/errata.py:117 ../src/spacecmd/system.py:422
 #: ../src/spacecmd/system.py:731 ../src/spacecmd/system.py:887
 #: ../src/spacecmd/system.py:1024 ../src/spacecmd/system.py:1799
-#: ../src/spacecmd/system.py:3952 ../src/spacecmd/system.py:4262
-#: ../src/spacecmd/system.py:4324 ../src/spacecmd/system.py:4489
+#: ../src/spacecmd/system.py:3821 ../src/spacecmd/system.py:4131
+#: ../src/spacecmd/system.py:4193 ../src/spacecmd/system.py:4358
 msgid "Start Time [now]:"
 msgstr "开始时间 [now]："
 
@@ -1833,8 +1853,8 @@ msgstr "勘误             系统"
 #: ../src/spacecmd/errata.py:172 ../src/spacecmd/system.py:235
 #: ../src/spacecmd/system.py:472 ../src/spacecmd/system.py:826
 #: ../src/spacecmd/system.py:949 ../src/spacecmd/system.py:1104
-#: ../src/spacecmd/system.py:1818 ../src/spacecmd/system.py:3964
-#: ../src/spacecmd/system.py:4508
+#: ../src/spacecmd/system.py:1818 ../src/spacecmd/system.py:3833
+#: ../src/spacecmd/system.py:4377
 #, python-format
 msgid "Start Time: %s"
 msgstr "开始时间：%s"
@@ -2090,7 +2110,7 @@ msgstr "用法：group_removesystems GROUP <系统>"
 #: ../src/spacecmd/group.py:151 ../src/spacecmd/system.py:121
 #: ../src/spacecmd/system.py:237 ../src/spacecmd/system.py:480
 #: ../src/spacecmd/system.py:1511 ../src/spacecmd/system.py:1820
-#: ../src/spacecmd/system.py:4510
+#: ../src/spacecmd/system.py:4379
 msgid "Systems"
 msgstr "系统"
 
@@ -2100,8 +2120,8 @@ msgstr "去除这些系统 [y/N]："
 
 #: ../src/spacecmd/group.py:164 ../src/spacecmd/schedule.py:386
 #: ../src/spacecmd/ssm.py:88 ../src/spacecmd/ssm.py:136
-#: ../src/spacecmd/ssm.py:186 ../src/spacecmd/system.py:4552
-#: ../src/spacecmd/system.py:4639
+#: ../src/spacecmd/ssm.py:186 ../src/spacecmd/system.py:4421
+#: ../src/spacecmd/system.py:4508
 msgid "No systems found"
 msgstr "未找到系统"
 
@@ -2328,7 +2348,7 @@ msgstr "kickstart_list：列出可用的 Kickstart 配置文件"
 msgid "usage: kickstart_list"
 msgstr "用法：kickstart_list"
 
-#: ../src/spacecmd/kickstart.py:86 ../src/spacecmd/kickstart.py:2189
+#: ../src/spacecmd/kickstart.py:86 ../src/spacecmd/kickstart.py:2183
 msgid "No kickstart profiles available"
 msgstr "没有可用的 kickstart 配置文件"
 
@@ -2354,15 +2374,15 @@ msgstr ""
 "  -p ROOT 口令\n"
 "  -v 虚拟化类型 ['none'、'para_host'、'qemu'、'xenfv'、'xenpv']"
 
-#: ../src/spacecmd/kickstart.py:116 ../src/spacecmd/kickstart.py:254
+#: ../src/spacecmd/kickstart.py:116 ../src/spacecmd/kickstart.py:248
 msgid "Virtualization Types"
 msgstr "虚拟化类型"
 
-#: ../src/spacecmd/kickstart.py:121 ../src/spacecmd/kickstart.py:259
+#: ../src/spacecmd/kickstart.py:121 ../src/spacecmd/kickstart.py:253
 msgid "Virtualization Type [none]:"
 msgstr "虚拟化类型 [none]："
 
-#: ../src/spacecmd/kickstart.py:129 ../src/spacecmd/kickstart.py:267
+#: ../src/spacecmd/kickstart.py:129 ../src/spacecmd/kickstart.py:261
 msgid "Distributions"
 msgstr "发行套件"
 
@@ -2385,12 +2405,12 @@ msgstr "口令必须至少包含 5 个字符"
 msgid "Passwords don't match"
 msgstr "口令不匹配"
 
-#: ../src/spacecmd/kickstart.py:150 ../src/spacecmd/kickstart.py:275
-#: ../src/spacecmd/kickstart.py:2059 ../src/spacecmd/kickstart.py:2203
+#: ../src/spacecmd/kickstart.py:150 ../src/spacecmd/kickstart.py:269
+#: ../src/spacecmd/kickstart.py:2053 ../src/spacecmd/kickstart.py:2197
 msgid "The Kickstart name is required"
 msgstr "必须指定 Kickstart 名称"
 
-#: ../src/spacecmd/kickstart.py:154 ../src/spacecmd/kickstart.py:279
+#: ../src/spacecmd/kickstart.py:154 ../src/spacecmd/kickstart.py:273
 msgid "The distribution is required"
 msgstr "必须指定发行套件"
 
@@ -2414,25 +2434,21 @@ msgstr "用法：kickstart_delete PROFILE1 PROFILE2"
 msgid "usage: kickstart_delete \"PROF*\""
 msgstr "用法：kickstart_delete \"PROF*\""
 
-#: ../src/spacecmd/kickstart.py:208 ../src/spacecmd/kickstart.py:2686
-#: ../src/spacecmd/kickstart.py:2742 ../src/spacecmd/kickstart.py:2786
+#: ../src/spacecmd/kickstart.py:208 ../src/spacecmd/kickstart.py:2680
+#: ../src/spacecmd/kickstart.py:2736 ../src/spacecmd/kickstart.py:2780
 msgid "No valid kickstart labels passed as arguments!"
 msgstr "未传递有效 kickstart 标签作为参数！"
 
-#: ../src/spacecmd/kickstart.py:214
-msgid "The following kickstart labels are invalid:"
-msgstr "以下 kickstart 标签无效："
-
-#: ../src/spacecmd/kickstart.py:219
+#: ../src/spacecmd/kickstart.py:213
 #, python-format
 msgid "Delete profile %s [y/N]:"
 msgstr "删除配置文件 %s [y/N]："
 
-#: ../src/spacecmd/kickstart.py:227
+#: ../src/spacecmd/kickstart.py:221
 msgid "kickstart_import: Import a Kickstart profile from a file"
 msgstr "kickstart_import：从文件中导入 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:228
+#: ../src/spacecmd/kickstart.py:222
 msgid ""
 "usage: kickstart_import [options])\n"
 "\n"
@@ -2450,16 +2466,16 @@ msgstr ""
 "  -d 发行套件\n"
 "  -v 虚拟化类型 ['none'、'para_host'、'qemu'、'xenfv'、'xenpv']"
 
-#: ../src/spacecmd/kickstart.py:283 ../src/spacecmd/kickstart.py:2063
+#: ../src/spacecmd/kickstart.py:277 ../src/spacecmd/kickstart.py:2057
 msgid "A filename is required"
 msgstr "必须指定文件名"
 
-#: ../src/spacecmd/kickstart.py:313
+#: ../src/spacecmd/kickstart.py:307
 msgid ""
 "kickstart_import_raw: Import a raw Kickstart or autoyast profile from a file"
 msgstr "kickstart_import_raw：从文件中导入原始 Kickstart 或 autoyast 配置文件"
 
-#: ../src/spacecmd/kickstart.py:314
+#: ../src/spacecmd/kickstart.py:308
 msgid ""
 "usage: kickstart_import_raw [options])\n"
 "\n"
@@ -2477,427 +2493,427 @@ msgstr ""
 "  -d 发行套件\n"
 "  -v 虚拟化类型 ['none'、'para_host'、'qemu'、'xenfv'、'xenpv']"
 
-#: ../src/spacecmd/kickstart.py:330
+#: ../src/spacecmd/kickstart.py:324
 msgid "kickstart_details: Show the details of a Kickstart profile"
 msgstr "kickstart_details：显示 Kickstart 配置文件的细节"
 
-#: ../src/spacecmd/kickstart.py:331
+#: ../src/spacecmd/kickstart.py:325
 msgid "usage: kickstart_details PROFILE"
 msgstr "用法：kickstart_details PROFILE"
 
-#: ../src/spacecmd/kickstart.py:360
+#: ../src/spacecmd/kickstart.py:354
 msgid "Invalid Kickstart profile"
 msgstr "无效的 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:422
+#: ../src/spacecmd/kickstart.py:416
 #, python-format
 msgid "Tree:        %s"
 msgstr "树：%s"
 
-#: ../src/spacecmd/kickstart.py:423
+#: ../src/spacecmd/kickstart.py:417
 #, python-format
 msgid "Active:      %s"
 msgstr "活动：%s"
 
-#: ../src/spacecmd/kickstart.py:424
+#: ../src/spacecmd/kickstart.py:418
 #, python-format
 msgid "Advanced:    %s"
 msgstr "高级：%s"
 
-#: ../src/spacecmd/kickstart.py:425
+#: ../src/spacecmd/kickstart.py:419
 #, python-format
 msgid "Org Default: %s"
 msgstr "组织默认值：%s"
 
-#: ../src/spacecmd/kickstart.py:428
+#: ../src/spacecmd/kickstart.py:422
 #, python-format
 msgid "Configuration Management: %s"
 msgstr "配置管理：%s"
 
-#: ../src/spacecmd/kickstart.py:429
+#: ../src/spacecmd/kickstart.py:423
 #, python-format
 msgid "Remote Commands:          %s"
 msgstr "远程命令：%s"
 
-#: ../src/spacecmd/kickstart.py:441
+#: ../src/spacecmd/kickstart.py:435
 msgid "Advanced Options"
 msgstr "高级选项"
 
-#: ../src/spacecmd/kickstart.py:449
+#: ../src/spacecmd/kickstart.py:443
 msgid "Custom Options"
 msgstr "自定义选项"
 
-#: ../src/spacecmd/kickstart.py:456
+#: ../src/spacecmd/kickstart.py:450
 msgid "Partitioning"
 msgstr "分区"
 
-#: ../src/spacecmd/kickstart.py:461
+#: ../src/spacecmd/kickstart.py:455
 msgid "Software"
 msgstr "软件"
 
-#: ../src/spacecmd/kickstart.py:474
+#: ../src/spacecmd/kickstart.py:468
 msgid "Crypto Keys"
 msgstr "加密密钥"
 
-#: ../src/spacecmd/kickstart.py:481
+#: ../src/spacecmd/kickstart.py:475
 msgid "File Preservations"
 msgstr "文件保留项"
 
-#: ../src/spacecmd/kickstart.py:490
+#: ../src/spacecmd/kickstart.py:484
 msgid "Variables"
 msgstr "变量"
 
-#: ../src/spacecmd/kickstart.py:497
+#: ../src/spacecmd/kickstart.py:491
 msgid "Scripts"
 msgstr "脚本"
 
-#: ../src/spacecmd/kickstart.py:508 ../src/spacecmd/kickstart.py:1977
+#: ../src/spacecmd/kickstart.py:502 ../src/spacecmd/kickstart.py:1971
 #, python-format
 msgid "Chroot:      %s"
 msgstr "Chroot：%s"
 
-#: ../src/spacecmd/kickstart.py:511 ../src/spacecmd/kickstart.py:1978
+#: ../src/spacecmd/kickstart.py:505 ../src/spacecmd/kickstart.py:1972
 #, python-format
 msgid "Interpreter: %s"
 msgstr "解释器：%s"
 
-#: ../src/spacecmd/kickstart.py:538
+#: ../src/spacecmd/kickstart.py:532
 msgid "Could not retrieve the Kickstart file"
 msgstr "无法检索 Kickstart 文件"
 
-#: ../src/spacecmd/kickstart.py:544
+#: ../src/spacecmd/kickstart.py:538
 msgid "kickstart_getcontents: Show the contents of a Kickstart profile"
 msgstr "kickstart_getcontents：显示 Kickstart 配置文件在"
 
-#: ../src/spacecmd/kickstart.py:545
+#: ../src/spacecmd/kickstart.py:539
 msgid "                   as they would be presented to a client"
 msgstr "                   提供给客户端时的内容"
 
-#: ../src/spacecmd/kickstart.py:546
+#: ../src/spacecmd/kickstart.py:540
 msgid "usage: kickstart_getcontents LABEL"
 msgstr "用法：kickstart_getcontents LABEL"
 
-#: ../src/spacecmd/kickstart.py:580
+#: ../src/spacecmd/kickstart.py:574
 msgid "kickstart_rename: Rename a Kickstart profile"
 msgstr "kickstart_rename：重命名 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:581
+#: ../src/spacecmd/kickstart.py:575
 msgid "usage: kickstart_rename OLDNAME NEWNAME"
 msgstr "用法：kickstart_rename OLDNAME NEWNAME"
 
-#: ../src/spacecmd/kickstart.py:611
+#: ../src/spacecmd/kickstart.py:605
 msgid ""
 "kickstart_listcryptokeys: List the crypto keys associated with a Kickstart "
 "profile"
 msgstr "kickstart_listcryptokeys：列出与 Kickstart 配置文件关联的加密密钥"
 
-#: ../src/spacecmd/kickstart.py:613
+#: ../src/spacecmd/kickstart.py:607
 msgid "usage: kickstart_listcryptokeys PROFILE"
 msgstr "用法：kickstart_listcryptokeys PROFILE"
 
-#: ../src/spacecmd/kickstart.py:643
+#: ../src/spacecmd/kickstart.py:637
 msgid "No crypto keys has been found"
 msgstr "未找到加密密钥"
 
-#: ../src/spacecmd/kickstart.py:651
+#: ../src/spacecmd/kickstart.py:645
 msgid "kickstart_addcryptokeys: Add crypto keys to a Kickstart profile"
 msgstr "kickstart_addcryptokeys：将加密密钥添加到 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:652
+#: ../src/spacecmd/kickstart.py:646
 msgid "usage: kickstart_addcryptokeys PROFILE <KEY ...>"
 msgstr "用法：kickstart_addcryptokeys PROFILE <密钥 ...>"
 
-#: ../src/spacecmd/kickstart.py:680
+#: ../src/spacecmd/kickstart.py:674
 msgid "kickstart_removecryptokeys: Remove crypto keys from a Kickstart profile"
 msgstr "kickstart_removecryptokeys：从 Kickstart 配置文件中去除加密密钥"
 
-#: ../src/spacecmd/kickstart.py:682
+#: ../src/spacecmd/kickstart.py:676
 msgid "usage: kickstart_removecryptokeys PROFILE <KEY ...>"
 msgstr "用法：kickstart_removecryptokeys PROFILE <密钥 ...>"
 
-#: ../src/spacecmd/kickstart.py:724
+#: ../src/spacecmd/kickstart.py:718
 msgid ""
 "kickstart_listactivationkeys: List the activation keys associated with a "
 "Kickstart profile"
 msgstr "kickstart_listactivationkeys：列出与 Kickstart 配置文件关联的激活密钥"
 
-#: ../src/spacecmd/kickstart.py:726
+#: ../src/spacecmd/kickstart.py:720
 msgid "usage: kickstart_listactivationkeys PROFILE"
 msgstr "用法：kickstart_listactivationkeys PROFILE"
 
-#: ../src/spacecmd/kickstart.py:760
+#: ../src/spacecmd/kickstart.py:754
 msgid "kickstart_addactivationkeys: Add activation keys to a Kickstart profile"
 msgstr "kickstart_addactivationkeys：将激活密钥添加到 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:762
+#: ../src/spacecmd/kickstart.py:756
 msgid "usage: kickstart_addactivationkeys PROFILE <KEY ...>"
 msgstr "用法：kickstart_addactivationkeys PROFILE <密钥 ...>"
 
-#: ../src/spacecmd/kickstart.py:793
+#: ../src/spacecmd/kickstart.py:787
 msgid ""
 "kickstart_removeactivationkeys: Remove activation keys from a Kickstart "
 "profile"
 msgstr "kickstart_removeactivationkeys：从 Kickstart 配置文件中去除激活密钥"
 
-#: ../src/spacecmd/kickstart.py:795
+#: ../src/spacecmd/kickstart.py:789
 msgid "usage: kickstart_removeactivationkeys PROFILE <KEY ...>"
 msgstr "用法：kickstart_removeactivationkeys PROFILE <密钥 ...>"
 
-#: ../src/spacecmd/kickstart.py:821
+#: ../src/spacecmd/kickstart.py:815
 msgid "Remove these keys [y/N]:"
 msgstr "去除这些密钥 [y/N]："
 
-#: ../src/spacecmd/kickstart.py:836
+#: ../src/spacecmd/kickstart.py:830
 msgid ""
 "kickstart_enableconfigmanagement: Enable configuration management on a "
 "Kickstart profile"
 msgstr "kickstart_enableconfigmanagement：在 Kickstart 配置文件中启用配置管理"
 
-#: ../src/spacecmd/kickstart.py:838
+#: ../src/spacecmd/kickstart.py:832
 msgid "usage: kickstart_enableconfigmanagement PROFILE"
 msgstr "用法：kickstart_enableconfigmanagement PROFILE"
 
-#: ../src/spacecmd/kickstart.py:871
+#: ../src/spacecmd/kickstart.py:865
 msgid ""
 "kickstart_disableconfigmanagement: Disable configuration management on a "
 "Kickstart profile"
 msgstr "kickstart_disableconfigmanagement：在 Kickstart 配置文件中禁用配置管理"
 
-#: ../src/spacecmd/kickstart.py:873
+#: ../src/spacecmd/kickstart.py:867
 msgid "usage: kickstart_disableconfigmanagement PROFILE"
 msgstr "用法：kickstart_disableconfigmanagement PROFILE"
 
-#: ../src/spacecmd/kickstart.py:906
+#: ../src/spacecmd/kickstart.py:900
 msgid ""
 "kickstart_enableremotecommands: Enable remote commands on a Kickstart profile"
 msgstr "kickstart_enableremotecommands：在 Kickstart 配置文件中启用远程命令"
 
-#: ../src/spacecmd/kickstart.py:908
+#: ../src/spacecmd/kickstart.py:902
 msgid "usage: kickstart_enableremotecommands PROFILE"
 msgstr "用法：kickstart_enableremotecommands PROFILE"
 
-#: ../src/spacecmd/kickstart.py:941
+#: ../src/spacecmd/kickstart.py:935
 msgid ""
 "kickstart_disableremotecommands: Disable remote commands on a Kickstart "
 "profile"
 msgstr "kickstart_disableremotecommands：在 Kickstart 配置文件中禁用远程命令"
 
-#: ../src/spacecmd/kickstart.py:943
+#: ../src/spacecmd/kickstart.py:937
 msgid "usage: kickstart_disableremotecommands PROFILE"
 msgstr "用法：kickstart_disableremotecommands PROFILE"
 
-#: ../src/spacecmd/kickstart.py:975
+#: ../src/spacecmd/kickstart.py:969
 msgid "kickstart_setlocale: Set the locale for a Kickstart profile"
 msgstr "kickstart_setlocale：设置 Kickstart 配置文件的区域设置"
 
-#: ../src/spacecmd/kickstart.py:976
+#: ../src/spacecmd/kickstart.py:970
 msgid "usage: kickstart_setlocale PROFILE LOCALE"
 msgstr "用法：kickstart_setlocale PROFILE LOCALE"
 
-#: ../src/spacecmd/kickstart.py:1016
+#: ../src/spacecmd/kickstart.py:1010
 msgid "kickstart_setselinux: Set the SELinux mode for a Kickstart profile"
 msgstr "kickstart_setselinux：设置 Kickstart 配置文件的 SELinux 模式"
 
-#: ../src/spacecmd/kickstart.py:1018
+#: ../src/spacecmd/kickstart.py:1012
 msgid "usage: kickstart_setselinux PROFILE MODE"
 msgstr "用法：kickstart_setselinux PROFILE MODE"
 
-#: ../src/spacecmd/kickstart.py:1055
+#: ../src/spacecmd/kickstart.py:1049
 msgid ""
 "kickstart_setpartitions: Set the partitioning scheme for a Kickstart profile"
 msgstr "kickstart_setpartitions：设置 Kickstart 配置文件的分区模式"
 
-#: ../src/spacecmd/kickstart.py:1057
+#: ../src/spacecmd/kickstart.py:1051
 msgid "usage: kickstart_setpartitions PROFILE"
 msgstr "用法：kickstart_setpartitions PROFILE"
 
-#: ../src/spacecmd/kickstart.py:1108
+#: ../src/spacecmd/kickstart.py:1102
 msgid "kickstart_setdistribution: Set the distribution for a Kickstart profile"
 msgstr "kickstart_setdistribution：设置 Kickstart 配置文件的分发"
 
-#: ../src/spacecmd/kickstart.py:1110
+#: ../src/spacecmd/kickstart.py:1104
 msgid "usage: kickstart_setdistribution PROFILE DISTRIBUTION"
 msgstr "用法：kickstart_setdistribution PROFILE DISTRIBUTION"
 
-#: ../src/spacecmd/kickstart.py:1146
+#: ../src/spacecmd/kickstart.py:1140
 msgid "kickstart_enablelogging: Enable logging for a Kickstart profile"
 msgstr "kickstart_enablelogging：启用 Kickstart 配置文件的日志记录"
 
-#: ../src/spacecmd/kickstart.py:1147
+#: ../src/spacecmd/kickstart.py:1141
 msgid "usage: kickstart_enablelogging PROFILE"
 msgstr "用法：kickstart_enablelogging PROFILE"
 
-#: ../src/spacecmd/kickstart.py:1181
+#: ../src/spacecmd/kickstart.py:1175
 msgid "kickstart_addvariable: Add a variable to a Kickstart profile"
 msgstr "kickstart_addvariable：将变量添加到 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:1182
+#: ../src/spacecmd/kickstart.py:1176
 msgid "usage: kickstart_addvariable PROFILE KEY VALUE"
 msgstr "用法：kickstart_addvariable PROFILE KEY VALUE"
 
-#: ../src/spacecmd/kickstart.py:1222
+#: ../src/spacecmd/kickstart.py:1216
 msgid "kickstart_updatevariable: Update a variable in a Kickstart profile"
 msgstr "kickstart_updatevariable：更新 Kickstart 配置文件中的变量"
 
-#: ../src/spacecmd/kickstart.py:1224
+#: ../src/spacecmd/kickstart.py:1218
 msgid "usage: kickstart_updatevariable PROFILE KEY VALUE"
 msgstr "用法：kickstart_updatevariable PROFILE KEY VALUE"
 
-#: ../src/spacecmd/kickstart.py:1261
+#: ../src/spacecmd/kickstart.py:1255
 msgid "kickstart_removevariables: Remove variables from a Kickstart profile"
 msgstr "kickstart_removevariables：从 Kickstart 配置文件中去除变量"
 
-#: ../src/spacecmd/kickstart.py:1263
+#: ../src/spacecmd/kickstart.py:1257
 msgid "usage: kickstart_removevariables PROFILE <KEY ...>"
 msgstr "用法：kickstart_removevariables PROFILE <密钥 ...>"
 
-#: ../src/spacecmd/kickstart.py:1314
+#: ../src/spacecmd/kickstart.py:1308
 msgid "kickstart_listvariables: List the variables of a Kickstart profile"
 msgstr "kickstart_listvariables：列出 Kickstart 配置文件的变量"
 
-#: ../src/spacecmd/kickstart.py:1316
+#: ../src/spacecmd/kickstart.py:1310
 msgid "usage: kickstart_listvariables PROFILE"
 msgstr "用法：kickstart_listvariables PROFILE"
 
-#: ../src/spacecmd/kickstart.py:1351
+#: ../src/spacecmd/kickstart.py:1345
 msgid "kickstart_addoption: Set an option for a Kickstart profile"
 msgstr "kickstart_addoption：设置 Kickstart 配置文件的选项"
 
-#: ../src/spacecmd/kickstart.py:1352
+#: ../src/spacecmd/kickstart.py:1346
 msgid "usage: kickstart_addoption PROFILE KEY [VALUE]"
 msgstr "用法：kickstart_addoption PROFILE KEY [值]"
 
-#: ../src/spacecmd/kickstart.py:1401
+#: ../src/spacecmd/kickstart.py:1395
 #, python-format
 msgid "%s needs to be set as a custom option"
 msgstr "%s 需设置为自定义选项"
 
-#: ../src/spacecmd/kickstart.py:1409
+#: ../src/spacecmd/kickstart.py:1403
 msgid "kickstart_removeoptions: Remove options from a Kickstart profile"
 msgstr "kickstart_removeoptions：从 Kickstart 配置文件中去除选项"
 
-#: ../src/spacecmd/kickstart.py:1410
+#: ../src/spacecmd/kickstart.py:1404
 msgid "usage: kickstart_removeoptions PROFILE <OPTION ...>"
 msgstr "用法：kickstart_removeoptions PROFILE <选项 ...>"
 
-#: ../src/spacecmd/kickstart.py:1464
+#: ../src/spacecmd/kickstart.py:1458
 msgid "kickstart_listoptions: List the options of a Kickstart profile"
 msgstr "kickstart_listoptions：列出 Kickstart 配置文件的选项"
 
-#: ../src/spacecmd/kickstart.py:1466
+#: ../src/spacecmd/kickstart.py:1460
 msgid "usage: kickstart_listoptions PROFILE"
 msgstr "用法：kickstart_listoptions PROFILE"
 
-#: ../src/spacecmd/kickstart.py:1502
+#: ../src/spacecmd/kickstart.py:1496
 msgid ""
 "kickstart_listcustomoptions: List the custom options of a Kickstart profile"
 msgstr "kickstart_listcustomoptions：列出 Kickstart 配置文件的自定义选项"
 
-#: ../src/spacecmd/kickstart.py:1504
+#: ../src/spacecmd/kickstart.py:1498
 msgid "usage: kickstart_listcustomoptions PROFILE"
 msgstr "用法：kickstart_listcustomoptions PROFILE"
 
-#: ../src/spacecmd/kickstart.py:1540
+#: ../src/spacecmd/kickstart.py:1534
 msgid "kickstart_setcustomoptions: Set custom options for a Kickstart profile"
 msgstr "kickstart_setcustomoptions：设置 Kickstart 配置文件的自定义选项"
 
-#: ../src/spacecmd/kickstart.py:1542
+#: ../src/spacecmd/kickstart.py:1536
 msgid "usage: kickstart_setcustomoptions PROFILE"
 msgstr "用法：kickstart_setcustomoptions PROFILE"
 
-#: ../src/spacecmd/kickstart.py:1592
+#: ../src/spacecmd/kickstart.py:1586
 msgid "kickstart_addchildchannels: Add a child channels to a Kickstart profile"
 msgstr "kickstart_addchildchannels：将子通道添加到 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:1594
+#: ../src/spacecmd/kickstart.py:1588
 msgid "usage: kickstart_addchildchannels PROFILE <CHANNEL ...>"
 msgstr "用法：kickstart_addchildchannels PROFILE <通道 ...>"
 
-#: ../src/spacecmd/kickstart.py:1654
+#: ../src/spacecmd/kickstart.py:1648
 msgid ""
 "kickstart_removechildchannels: Remove child channels from a Kickstart profile"
 msgstr "kickstart_removechildchannels：从 Kickstart 配置文件中去除子通道"
 
-#: ../src/spacecmd/kickstart.py:1656
+#: ../src/spacecmd/kickstart.py:1650
 msgid "usage: kickstart_removechildchannels PROFILE <CHANNEL ...>"
 msgstr "用法：kickstart_removechildchannels PROFILE <通道 ...>"
 
-#: ../src/spacecmd/kickstart.py:1701
+#: ../src/spacecmd/kickstart.py:1695
 msgid ""
 "kickstart_listchildchannels: List the child channels of a Kickstart profile"
 msgstr "kickstart_listchildchannels：列出 Kickstart 配置文件的子通道"
 
-#: ../src/spacecmd/kickstart.py:1703
+#: ../src/spacecmd/kickstart.py:1697
 msgid "usage: kickstart_listchildchannels PROFILE"
 msgstr "用法：kickstart_listchildchannels PROFILE"
 
-#: ../src/spacecmd/kickstart.py:1740
+#: ../src/spacecmd/kickstart.py:1734
 msgid ""
 "kickstart_addfilepreservations: Add file preservations to a Kickstart profile"
 msgstr "kickstart_addfilepreservations：将文件保留项添加到 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:1742
+#: ../src/spacecmd/kickstart.py:1736
 msgid "usage: kickstart_addfilepreservations PROFILE <FILELIST ...>"
 msgstr "用法：kickstart_addfilepreservations PROFILE <文件列表 ...>"
 
-#: ../src/spacecmd/kickstart.py:1779
+#: ../src/spacecmd/kickstart.py:1773
 msgid ""
 "kickstart_removefilepreservations: Remove file preservations from a "
 "Kickstart profile"
 msgstr ""
 "kickstart_removefilepreservations：从 Kickstart 配置文件中去除文件保留项"
 
-#: ../src/spacecmd/kickstart.py:1781
+#: ../src/spacecmd/kickstart.py:1775
 msgid "usage: kickstart_removefilepreservations PROFILE <FILE ...>"
 msgstr "用法：kickstart_removefilepreservations PROFILE <文件 ...>"
 
-#: ../src/spacecmd/kickstart.py:1828
+#: ../src/spacecmd/kickstart.py:1822
 msgid "kickstart_listpackages: List the packages for a Kickstart profile"
 msgstr "kickstart_listpackages：列出 Kickstart 配置文件的软件包"
 
-#: ../src/spacecmd/kickstart.py:1830
+#: ../src/spacecmd/kickstart.py:1824
 msgid "usage: kickstart_listpackages PROFILE"
 msgstr "用法：kickstart_listpackages PROFILE"
 
-#: ../src/spacecmd/kickstart.py:1863
+#: ../src/spacecmd/kickstart.py:1857
 msgid "kickstart_addpackages: Add packages to a Kickstart profile"
 msgstr "kickstart_addpackages：将软件包添加到 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:1864
+#: ../src/spacecmd/kickstart.py:1858
 msgid "usage: kickstart_addpackages PROFILE <PACKAGE ...>"
 msgstr "用法：kickstart_addpackages PROFILE <软件包 ...>"
 
-#: ../src/spacecmd/kickstart.py:1899
+#: ../src/spacecmd/kickstart.py:1893
 msgid "kickstart_removepackages: Remove packages from a Kickstart profile"
 msgstr "kickstart_removepackages：从 Kickstart 配置文件中去除软件包"
 
-#: ../src/spacecmd/kickstart.py:1901
+#: ../src/spacecmd/kickstart.py:1895
 msgid "usage: kickstart_removepackages PROFILE <PACKAGE ...>"
 msgstr "用法：kickstart_removepackages PROFILE <软件包 ...>"
 
-#: ../src/spacecmd/kickstart.py:1946
+#: ../src/spacecmd/kickstart.py:1940
 msgid "kickstart_listscripts: List the scripts for a Kickstart profile"
 msgstr "kickstart_listscripts：列出 Kickstart 配置文件的脚本"
 
-#: ../src/spacecmd/kickstart.py:1948
+#: ../src/spacecmd/kickstart.py:1942
 msgid "usage: kickstart_listscripts PROFILE"
 msgstr "用法：kickstart_listscripts PROFILE"
 
-#: ../src/spacecmd/kickstart.py:1967
+#: ../src/spacecmd/kickstart.py:1961
 #, python-format
 msgid "No scripts has been found for profile '%s'"
 msgstr "未找到配置文件 '%s' 的脚本"
 
-#: ../src/spacecmd/kickstart.py:1975
+#: ../src/spacecmd/kickstart.py:1969
 #, python-format
 msgid "ID:          %i"
 msgstr "ID：%i"
 
-#: ../src/spacecmd/kickstart.py:1990
+#: ../src/spacecmd/kickstart.py:1984
 msgid "kickstart_addscript: Add a script to a Kickstart profile"
 msgstr "kickstart_addscript：将脚本添加到 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:1991
+#: ../src/spacecmd/kickstart.py:1985
 msgid ""
 "usage: kickstart_addscript PROFILE [options])\n"
 "\n"
@@ -2919,80 +2935,80 @@ msgstr ""
 "  -c 在 chroot 环境中执行\n"
 "  -t 启用模板"
 
-#: ../src/spacecmd/kickstart.py:2026
+#: ../src/spacecmd/kickstart.py:2020
 msgid "Profile Name:"
 msgstr "配置文件名称："
 
-#: ../src/spacecmd/kickstart.py:2028
+#: ../src/spacecmd/kickstart.py:2022
 msgid "Pre/Post Script [post]:"
 msgstr "前/后脚本 [post]："
 
-#: ../src/spacecmd/kickstart.py:2029
+#: ../src/spacecmd/kickstart.py:2023
 msgid "Chrooted [Y/n]:"
 msgstr "Chroot [Y/n]："
 
-#: ../src/spacecmd/kickstart.py:2030
+#: ../src/spacecmd/kickstart.py:2024
 msgid "Interpreter [/bin/bash]:"
 msgstr "解释器 [/bin/bash]："
 
-#: ../src/spacecmd/kickstart.py:2067
+#: ../src/spacecmd/kickstart.py:2061
 msgid "The execution time is required"
 msgstr "必须指定执行时间"
 
-#: ../src/spacecmd/kickstart.py:2083
+#: ../src/spacecmd/kickstart.py:2077
 #, python-format
 msgid "Profile Name:   %s"
 msgstr "配置文件名称：%s"
 
-#: ../src/spacecmd/kickstart.py:2084
+#: ../src/spacecmd/kickstart.py:2078
 #, python-format
 msgid "Execution Time: %s"
 msgstr "执行时间：%s"
 
-#: ../src/spacecmd/kickstart.py:2085
+#: ../src/spacecmd/kickstart.py:2079
 #, python-format
 msgid "Chroot:         %s"
 msgstr "Chroot：%s"
 
-#: ../src/spacecmd/kickstart.py:2086
+#: ../src/spacecmd/kickstart.py:2080
 #, python-format
 msgid "Template:       %s"
 msgstr "模板：%s"
 
-#: ../src/spacecmd/kickstart.py:2087
+#: ../src/spacecmd/kickstart.py:2081
 #, python-format
 msgid "Interpreter:    %s"
 msgstr "解释器：%s"
 
-#: ../src/spacecmd/kickstart.py:2088
+#: ../src/spacecmd/kickstart.py:2082
 msgid "Contents:"
 msgstr "内容："
 
-#: ../src/spacecmd/kickstart.py:2108
+#: ../src/spacecmd/kickstart.py:2102
 msgid "kickstart_removescript: Remove a script from a Kickstart profile"
 msgstr "kickstart_removescript：从 Kickstart 配置文件中去除脚本"
 
-#: ../src/spacecmd/kickstart.py:2109
+#: ../src/spacecmd/kickstart.py:2103
 msgid "usage: kickstart_removescript PROFILE [ID]"
 msgstr "用法：kickstart_removescript PROFILE [ID]"
 
-#: ../src/spacecmd/kickstart.py:2139 ../src/spacecmd/kickstart.py:2152
+#: ../src/spacecmd/kickstart.py:2133 ../src/spacecmd/kickstart.py:2146
 msgid "Invalid script ID"
 msgstr "无效脚本 ID"
 
-#: ../src/spacecmd/kickstart.py:2147
+#: ../src/spacecmd/kickstart.py:2141
 msgid "Script ID:"
 msgstr "脚本 ID："
 
-#: ../src/spacecmd/kickstart.py:2154
+#: ../src/spacecmd/kickstart.py:2148
 msgid "Remove this script [y/N]:"
 msgstr "去除此脚本 [y/N]："
 
-#: ../src/spacecmd/kickstart.py:2167
+#: ../src/spacecmd/kickstart.py:2161
 msgid "kickstart_clone: Clone a Kickstart profile"
 msgstr "kickstart_clone：克隆 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:2168
+#: ../src/spacecmd/kickstart.py:2162
 msgid ""
 "usage: kickstart_clone [options])\n"
 "\n"
@@ -3006,31 +3022,31 @@ msgstr ""
 "  -n 名称\n"
 "  -c 克隆版本名称"
 
-#: ../src/spacecmd/kickstart.py:2193
+#: ../src/spacecmd/kickstart.py:2187
 msgid "Kickstart Profiles"
 msgstr "Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:2198
+#: ../src/spacecmd/kickstart.py:2192
 msgid "Original Profile:"
 msgstr "原始配置文件："
 
-#: ../src/spacecmd/kickstart.py:2199
+#: ../src/spacecmd/kickstart.py:2193
 msgid "Cloned Profile:"
 msgstr "克隆的配置文件："
 
-#: ../src/spacecmd/kickstart.py:2207
+#: ../src/spacecmd/kickstart.py:2201
 msgid "The Kickstart clone name is required"
 msgstr "必须指定 Kickstart 克隆版本名称"
 
-#: ../src/spacecmd/kickstart.py:2212
+#: ../src/spacecmd/kickstart.py:2206
 msgid "Kickstart profile you've entered was not found"
 msgstr "找不到您输入的 Kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:2225
+#: ../src/spacecmd/kickstart.py:2219
 msgid "kickstart_export: export kickstart profile(s) to json format file"
 msgstr "kickstart_export：将 Kickstart 配置文件导出到 json 格式的文件"
 
-#: ../src/spacecmd/kickstart.py:2226
+#: ../src/spacecmd/kickstart.py:2220
 msgid ""
 "usage: kickstart_export <KSPROFILE>... [options])\n"
 "options:\n"
@@ -3053,12 +3069,12 @@ msgstr ""
 "\n"
 "注意：KSPROFILE 列表是可选的，默认为全部导出"
 
-#: ../src/spacecmd/kickstart.py:2358
+#: ../src/spacecmd/kickstart.py:2352
 #, python-format
 msgid "Exporting ALL kickstart profiles to %s"
 msgstr "正在将所有 kickstart 配置文件导出到 %s"
 
-#: ../src/spacecmd/kickstart.py:2366
+#: ../src/spacecmd/kickstart.py:2360
 msgid ""
 "Error, no valid kickstart profile passed, check name is  correct with "
 "spacecmd kickstart_list"
@@ -3066,74 +3082,74 @@ msgstr ""
 "错误：未传递有效 kickstart 配置文件，请使用 spacecmd kickstart_list 检查名称"
 "是否正确"
 
-#: ../src/spacecmd/kickstart.py:2386
+#: ../src/spacecmd/kickstart.py:2380
 #, python-format
 msgid "Exporting ks %s to %s"
 msgstr "正在将 ks %s 导出到 %s"
 
-#: ../src/spacecmd/kickstart.py:2393
+#: ../src/spacecmd/kickstart.py:2387
 #, python-format
 msgid "File %s exists, "
 msgstr "文件 %s 已存在， "
 
-#: ../src/spacecmd/kickstart.py:2394
+#: ../src/spacecmd/kickstart.py:2388
 msgid "confirm overwrite file? (y/n)"
 msgstr "请确认是否重写文件？(y/n)"
 
-#: ../src/spacecmd/kickstart.py:2397
+#: ../src/spacecmd/kickstart.py:2391
 msgid "Error saving exported kickstart profiles to file"
 msgstr "将导出的 kickstart 配置文件保存到文件时出错"
 
-#: ../src/spacecmd/kickstart.py:2407
+#: ../src/spacecmd/kickstart.py:2401
 msgid "kickstart_import: import kickstart profile(s) from json file"
 msgstr "kickstart_import：从 json 文件中导入 kickstart 配置文件"
 
-#: ../src/spacecmd/kickstart.py:2408
+#: ../src/spacecmd/kickstart.py:2402
 msgid "usage: kickstart_import <JSONFILES...>"
 msgstr "用法：kickstart_import <JSON 文件...>"
 
-#: ../src/spacecmd/kickstart.py:2429
+#: ../src/spacecmd/kickstart.py:2423
 #, python-format
 msgid "Error importing kickstart %s"
 msgstr "导入 kickstart %s 时出错"
 
-#: ../src/spacecmd/kickstart.py:2442
+#: ../src/spacecmd/kickstart.py:2436
 #, python-format
 msgid "ERROR : kickstart profile %s already exists! Skipping!"
 msgstr "错误：kickstart 配置文件 %s 已存在！正在跳过！"
 
 #. create the ks, we need to drop the org prefix from the ks name
-#: ../src/spacecmd/kickstart.py:2446
+#: ../src/spacecmd/kickstart.py:2440
 #, python-format
 msgid "Found ks %s"
 msgstr "已找到 ks %s"
 
-#: ../src/spacecmd/kickstart.py:2502
+#: ../src/spacecmd/kickstart.py:2496
 #, python-format
 msgid "Error adding %s script"
 msgstr "添加 %s 脚本时出错"
 
-#: ../src/spacecmd/kickstart.py:2510
+#: ../src/spacecmd/kickstart.py:2504
 #, python-format
 msgid "failed to add ip range %s-%s, continuing"
 msgstr "无法添加 IP 范围 %s-%s，正在继续"
 
-#: ../src/spacecmd/kickstart.py:2524
+#: ../src/spacecmd/kickstart.py:2518
 #, python-format
 msgid "failed to add file preservation %s, skipping"
 msgstr "无法添加文件保留项 %s，正在跳过"
 
-#: ../src/spacecmd/kickstart.py:2526
+#: ../src/spacecmd/kickstart.py:2520
 #, python-format
 msgid "file preservation list %s doesn't exist, skipping"
 msgstr "文件保留列表 %s 不存在，正在跳过"
 
-#: ../src/spacecmd/kickstart.py:2537
+#: ../src/spacecmd/kickstart.py:2531
 #, python-format
 msgid "Actvationkey %s does not exist on the "
 msgstr "激活密钥 %s 不存在于 "
 
-#: ../src/spacecmd/kickstart.py:2548
+#: ../src/spacecmd/kickstart.py:2542
 #, python-format
 msgid "GPG/SSL key %s does not exist on the Spacewalk server, skipping"
 msgstr "Spacewalk 服务器上不存在 GPG/SSL 密钥 %s，正在跳过"
@@ -3141,77 +3157,77 @@ msgstr "Spacewalk 服务器上不存在 GPG/SSL 密钥 %s，正在跳过"
 #. There are some frustrating ommisions from the API which means we can't
 #. export/import some settings, so we post a warning that some manual
 #. fixup may be required
-#: ../src/spacecmd/kickstart.py:2557
+#: ../src/spacecmd/kickstart.py:2551
 msgid ""
 "Due to API ommissions, there are some settings which cannot be imported, "
 "please check and fixup manually if necessary"
 msgstr "由于省略了一些 API 选项，无法导入某些设置，请检查并视需要手动予以修复"
 
-#: ../src/spacecmd/kickstart.py:2559
+#: ../src/spacecmd/kickstart.py:2553
 msgid " * Details->Preserve ks.cfg"
 msgstr " * 细节->保留 ks.cfg"
 
-#: ../src/spacecmd/kickstart.py:2560
+#: ../src/spacecmd/kickstart.py:2554
 msgid " * Details->Comment"
 msgstr " * 细节->注释"
 
-#: ../src/spacecmd/kickstart.py:2564
+#: ../src/spacecmd/kickstart.py:2558
 msgid " * Details->Organization Default Profile"
 msgstr " * 细节->组织默认配置文件"
 
 #. No way to set the kernel options
-#: ../src/spacecmd/kickstart.py:2566
+#: ../src/spacecmd/kickstart.py:2560
 msgid " * Details->Kernel Options"
 msgstr " * 细节->内核选项"
 
-#: ../src/spacecmd/kickstart.py:2570
+#: ../src/spacecmd/kickstart.py:2564
 #, python-format
 msgid " * Details->Post Kernel Options : %s"
 msgstr " * 细节->后内核选项：%s"
 
-#: ../src/spacecmd/kickstart.py:2586
+#: ../src/spacecmd/kickstart.py:2580
 msgid "no kickstart label given"
 msgstr "未指定 kickstart 标签"
 
-#: ../src/spacecmd/kickstart.py:2589
+#: ../src/spacecmd/kickstart.py:2583
 msgid "invalid kickstart label "
 msgstr "无效的 kickstart 标签 "
 
-#: ../src/spacecmd/kickstart.py:2606
+#: ../src/spacecmd/kickstart.py:2600
 msgid "kickstart_diff: diff kickstart files"
 msgstr "kickstart_diff：比较 kickstart 文件的差异"
 
-#: ../src/spacecmd/kickstart.py:2608
+#: ../src/spacecmd/kickstart.py:2602
 msgid "usage: kickstart_diff SOURCE_CHANNEL TARGET_CHANNEL"
 msgstr "用法：kickstart_diff SOURCE_CHANNEL TARGET_CHANNEL"
 
-#: ../src/spacecmd/kickstart.py:2658
+#: ../src/spacecmd/kickstart.py:2652
 msgid "kickstart_getupdatetype: Get the update type for a kickstart profile(s)"
 msgstr "kickstart_getupdatetype：获取 kickstart 配置文件的更新类型"
 
-#: ../src/spacecmd/kickstart.py:2659
+#: ../src/spacecmd/kickstart.py:2653
 msgid "usage: kickstart_getupdatetype PROFILE"
 msgstr "用法：kickstart_getupdatetype PROFILE"
 
-#: ../src/spacecmd/kickstart.py:2660
+#: ../src/spacecmd/kickstart.py:2654
 msgid "usage: kickstart_getupdatetype PROFILE1 PROFILE2"
 msgstr "用法：kickstart_getupdatetype PROFILE1 PROFILE2"
 
-#: ../src/spacecmd/kickstart.py:2661
+#: ../src/spacecmd/kickstart.py:2655
 msgid "usage: kickstart_getupdatetype \"PROF*\""
 msgstr "用法：kickstart_getupdatetype \"PROF*\""
 
-#: ../src/spacecmd/kickstart.py:2692 ../src/spacecmd/kickstart.py:2748
-#: ../src/spacecmd/kickstart.py:2792
+#: ../src/spacecmd/kickstart.py:2686 ../src/spacecmd/kickstart.py:2742
+#: ../src/spacecmd/kickstart.py:2786
 #, python-format
 msgid "kickstart label %s doesn't exist!"
 msgstr "kickstart 标签 %s 不存在！"
 
-#: ../src/spacecmd/kickstart.py:2708
+#: ../src/spacecmd/kickstart.py:2702
 msgid "kickstart_setupdatetype: Set the update type for a kickstart profile(s)"
 msgstr "kickstart_setupdatetype：设置 kickstart 配置文件的更新类型"
 
-#: ../src/spacecmd/kickstart.py:2709
+#: ../src/spacecmd/kickstart.py:2703
 msgid ""
 "usage: kickstart_setupdatetype [options] KS_LABEL)\n"
 "\n"
@@ -3223,62 +3239,62 @@ msgstr ""
 "选项：\n"
 "    -u 更新类型 ['red_hat'、'all'、'none']"
 
-#: ../src/spacecmd/kickstart.py:2723
+#: ../src/spacecmd/kickstart.py:2717
 msgid "Update Types"
 msgstr "更新类型"
 
-#: ../src/spacecmd/kickstart.py:2728
+#: ../src/spacecmd/kickstart.py:2722
 msgid "Update Type [none]:"
 msgstr "更新类型 [none]："
 
-#: ../src/spacecmd/kickstart.py:2759
+#: ../src/spacecmd/kickstart.py:2753
 msgid "kickstart_getsoftwaredetails: Gets kickstart profile software details"
 msgstr "kickstart_getsoftwaredetails：获取 kickstart 配置文件软件细节"
 
-#: ../src/spacecmd/kickstart.py:2760
+#: ../src/spacecmd/kickstart.py:2754
 msgid "usage: kickstart_getsoftwaredetails KS_LABEL"
 msgstr "用法：kickstart_getsoftwaredetails KS_LABEL"
 
-#: ../src/spacecmd/kickstart.py:2761
+#: ../src/spacecmd/kickstart.py:2755
 msgid "usage: kickstart_getsoftwaredetails KS_LABEL KS_LABEL2 ..."
 msgstr "用法：kickstart_getsoftwaredetails KS_LABEL KS_LABEL2 ..."
 
-#: ../src/spacecmd/kickstart.py:2798
+#: ../src/spacecmd/kickstart.py:2792
 #, python-format
 msgid "noBase:        %s"
 msgstr "noBase：%s"
 
-#: ../src/spacecmd/kickstart.py:2799
+#: ../src/spacecmd/kickstart.py:2793
 #, python-format
 msgid "ignoreMissing: %s"
 msgstr "ignoreMissing：%s"
 
-#: ../src/spacecmd/kickstart.py:2801
+#: ../src/spacecmd/kickstart.py:2795
 #, python-format
 msgid "Kickstart Label: %s"
 msgstr "Kickstart Label：%s"
 
-#: ../src/spacecmd/kickstart.py:2802
+#: ../src/spacecmd/kickstart.py:2796
 #, python-format
 msgid "noBase:          %s"
 msgstr "noBase：%s"
 
-#: ../src/spacecmd/kickstart.py:2803
+#: ../src/spacecmd/kickstart.py:2797
 #, python-format
 msgid "ignoreMissing:   %s"
 msgstr "ignoreMissing：%s"
 
-#: ../src/spacecmd/kickstart.py:2812
+#: ../src/spacecmd/kickstart.py:2806
 msgid "kickstart_setsoftwaredetails: Sets kickstart profile software details."
 msgstr "kickstart_setsoftwaredetails：设置 kickstart 配置文件软件细节。"
 
-#: ../src/spacecmd/kickstart.py:2813
+#: ../src/spacecmd/kickstart.py:2807
 msgid ""
 "usage: kickstart_setsoftwaredetails PROFILE KICKSTART_PACKAGES_INFO VALUE"
 msgstr ""
 "用法：kickstart_setsoftwaredetails PROFILE KICKSTART_PACKAGES_INFO VALUE"
 
-#: ../src/spacecmd/kickstart.py:2814
+#: ../src/spacecmd/kickstart.py:2808
 msgid ""
 "usage: kickstart_setsoftwaredetails PROFILE KICKSTART_PACKAGES_INFO VALUE "
 "KICKSTART_PACKAGES_INFO VALUE"
@@ -3286,11 +3302,11 @@ msgstr ""
 "用法：kickstart_setsoftwaredetails PROFILE KICKSTART_PACKAGES_INFO VALUE "
 "KICKSTART_PACKAGES_INFO VALUE"
 
-#: ../src/spacecmd/kickstart.py:2850
+#: ../src/spacecmd/kickstart.py:2844
 msgid "Selected profile does not exist"
 msgstr "选定的配置文件不存在"
 
-#: ../src/spacecmd/kickstart.py:2853 ../src/spacecmd/kickstart.py:2858
+#: ../src/spacecmd/kickstart.py:2847 ../src/spacecmd/kickstart.py:2852
 msgid "Enter valid input"
 msgstr "提供有效输入"
 
@@ -3459,8 +3475,8 @@ msgstr "无法连接到 %s"
 msgid "API (%s) is too old (>= %s required)"
 msgstr "API (%s) 太旧（必须指定 >= %s）"
 
-#: ../src/spacecmd/misc.py:345 ../src/spacecmd/utils.py:250
-#: ../src/spacecmd/utils.py:564
+#: ../src/spacecmd/misc.py:345 ../src/spacecmd/utils.py:257
+#: ../src/spacecmd/utils.py:600
 #, python-format
 msgid "Could not read %s"
 msgstr "无法读取 %s"
@@ -3528,54 +3544,59 @@ msgstr "用法：whoamitalkingto"
 msgid "Yourself"
 msgstr "您自己"
 
+#. hasTraditionalSystems endpoint is not available prior to 4.3
+#: ../src/spacecmd/misc.py:475
+msgid "Skipping traditional system check"
+msgstr "正在跳过传统系统检查"
+
 #. tell the user what's going on
-#: ../src/spacecmd/misc.py:543
+#: ../src/spacecmd/misc.py:547
 msgid "** Generating errata cache **"
 msgstr "** 正在生成勘误缓存 **"
 
 #. tell the user what's going on
-#: ../src/spacecmd/misc.py:593
+#: ../src/spacecmd/misc.py:597
 msgid "** Generating package cache **"
 msgstr "** 正在生成软件包缓存 **"
 
 #. tell the user what's going on
-#: ../src/spacecmd/misc.py:702
+#: ../src/spacecmd/misc.py:706
 msgid "** Generating system cache **"
 msgstr "** 正在生成系统缓存 **"
 
-#: ../src/spacecmd/misc.py:737
+#: ../src/spacecmd/misc.py:741
 #, python-format
 msgid "Could not create directory %s"
 msgstr "无法创建目录 %s"
 
-#: ../src/spacecmd/misc.py:809
+#: ../src/spacecmd/misc.py:813
 #, python-format
 msgid "Can't find system ID for %s"
 msgstr "找不到 %s 的系统 ID"
 
-#: ../src/spacecmd/misc.py:814
+#: ../src/spacecmd/misc.py:818
 msgid "Duplicate system profile names found!"
 msgstr "找到了重复的系统配置文件名称！"
 
-#: ../src/spacecmd/misc.py:815
+#: ../src/spacecmd/misc.py:819
 msgid "Please reference systems by ID or resolve the"
 msgstr "请按 ID 引用系统，或者解决"
 
-#: ../src/spacecmd/misc.py:816
+#: ../src/spacecmd/misc.py:820
 msgid "underlying issue with 'system_delete' or 'system_rename'"
 msgstr "'system_delete' 或 'system_rename' 的根本性问题"
 
-#: ../src/spacecmd/misc.py:884
+#: ../src/spacecmd/misc.py:888
 #, python-format
 msgid "No systems in group %s"
 msgstr "组 %s 中没有系统"
 
-#: ../src/spacecmd/misc.py:898
+#: ../src/spacecmd/misc.py:902
 #, python-format
 msgid "No systems subscribed to %s"
 msgstr "没有系统订阅 %s"
 
-#: ../src/spacecmd/misc.py:958
+#: ../src/spacecmd/misc.py:962
 msgid "Is this ok [y/N]:"
 msgstr "是否正常 [y/N]："
 
@@ -3999,12 +4020,12 @@ msgstr "用法：package_remove PACKAGE ..."
 msgid "No packages found to remove"
 msgstr "未找到要去除的软件包"
 
-#: ../src/spacecmd/package.py:206 ../src/spacecmd/package.py:264
-#: ../src/spacecmd/softwarechannel.py:1562 ../src/spacecmd/system.py:951
+#: ../src/spacecmd/package.py:210 ../src/spacecmd/package.py:268
+#: ../src/spacecmd/softwarechannel.py:1560 ../src/spacecmd/system.py:951
 msgid "Remove these packages [y/N]:"
 msgstr "去除这些软件包 [y/N]："
 
-#: ../src/spacecmd/package.py:207
+#: ../src/spacecmd/package.py:211
 msgid "No packages has been removed"
 msgstr "未去除任何软件包"
 
@@ -4037,7 +4058,7 @@ msgstr "未找到孤立的软件包"
 msgid "No orphaned packages"
 msgstr "无孤立软件包"
 
-#: ../src/spacecmd/package.py:265
+#: ../src/spacecmd/package.py:269
 msgid "No packages were removed"
 msgstr "未去除任何软件包"
 
@@ -4076,8 +4097,7 @@ msgid ""
 "EMAIL ROOT_CA CRT KEY\n"
 "\n"
 "parameters:\n"
-"  PROXY_FQDN  the unique, DNS-resolvable FQDN of this proxy. It should be "
-"different from any registered clients.\n"
+"  PROXY_FQDN  the unique, DNS-resolvable FQDN of this proxy.\n"
 "  SERVER_FQDN the fully qualified domain name of the server to connect to "
 "proxy to.\n"
 "  MAX_CACHE   the maximum cache size in MB. 60% of the storage is a good "
@@ -4099,14 +4119,13 @@ msgid ""
 "  proxy_container_config -o config.zip proxy.lab server.lab 1024 proxy@acme."
 "org root_ca.crt proxy.crt proxy.key\n"
 msgstr ""
-"用法：proxy_container_config [选项] PROXY_FQDN SERVER_FQDN MAX_CACHE EMAIL "
-"ROOT_CA CRT KEY\n"
+"% o用法：proxy_container_config [选项] PROXY_FQDN SERVER_FQDN MAX_CACHE "
+"EMAIL ROOT_CA CRT KEY\n"
 "\n"
 "参数：\n"
-"  PROXY_FQDN  此代理的唯一且可由 DNS 解析的完全限定域名。必须与任何已注册的客"
-"户端均不同。\n"
+"  PROXY_FQDN  此代理的唯一且可由 DNS 解析的完全限定域名。\n"
 "  SERVER_FQDN 代理要连接到的服务器的完全限定域名。\n"
-"  MAX_CACHE   最大缓存大小（以 MB 为单位）。理想值为储存空间的 60%。\n"
+"  MAX_CACHE   最大缓存大小（以 MB 为单位）。理想值为存储空间的 60%。\n"
 "  EMAIL       代理管理员的电子邮件\n"
 "  CA          用于为 PEM 格式的代理证书签名的根 CA 的路径\n"
 "  CRT         PEM 格式的代理证书的路径\n"
@@ -4135,8 +4154,7 @@ msgid ""
 "EMAIL\n"
 "\n"
 "parameters:\n"
-"  PROXY_FQDN  the unique, DNS-resolvable FQDN of this proxy. It should be "
-"different from any registered clients.\n"
+"  PROXY_FQDN  the unique, DNS-resolvable FQDN of this proxy.\n"
 "  SERVER_FQDN the fully qualified domain name of the server to connect to "
 "proxy to.\n"
 "  MAX_CACHE   the maximum cache size in MB. 60% of the storage is a good "
@@ -4178,10 +4196,9 @@ msgstr ""
 "EMAIL\n"
 "\n"
 "参数：\n"
-"  PROXY_FQDN  此代理的唯一且可由 DNS 解析的完全限定域名。必须与任何已注册的客"
-"户端均不同。\n"
+"  PROXY_FQDN  此代理的唯一且可由 DNS 解析的完全限定域名。\n"
 "  SERVER_FQDN 代理要连接到的服务器的完全限定域名。\n"
-"  MAX_CACHE   最大缓存大小（以 MB 为单位）。理想值为储存空间的 60%。\n"
+"  MAX_CACHE   最大缓存大小（以 MB 为单位）。理想值为存储空间的 60%。\n"
 "  EMAIL      代理管理员的电子邮件\n"
 "\n"
 "选项：\n"
@@ -4213,7 +4230,7 @@ msgstr ""
 
 #: ../src/spacecmd/repo.py:48
 msgid "repo_list: List all available user repos"
-msgstr "repo_list：列出所有可用的用户软件源"
+msgstr "repo_list：列出所有可用的用户储存库"
 
 #: ../src/spacecmd/repo.py:49
 msgid "usage: repo_list"
@@ -4221,49 +4238,49 @@ msgstr "用法：repo_list"
 
 #: ../src/spacecmd/repo.py:67
 msgid "repo_details: Show the details of a user repo"
-msgstr "repo_details：显示用户软件源的细节"
+msgstr "repo_details：显示用户储存库的细节"
 
 #: ../src/spacecmd/repo.py:68
 msgid "usage: repo_details <repo ...>"
-msgstr "用法：repo_details <软件源 ...>"
+msgstr "用法：repo_details <储存库 ...>"
 
 #: ../src/spacecmd/repo.py:96
 #, python-format
 msgid "Repository Label:                  %s"
-msgstr "软件源标签：%s"
+msgstr "储存库标签：%s"
 
 #: ../src/spacecmd/repo.py:97
 #, python-format
 msgid "Repository URL:                    %s"
-msgstr "软件源 URL：%s"
+msgstr "储存库 URL：%s"
 
 #: ../src/spacecmd/repo.py:98
 #, python-format
 msgid "Repository Type:                   %s"
-msgstr "软件源类型：%s"
+msgstr "储存库类型：%s"
 
 #: ../src/spacecmd/repo.py:99
 #, python-format
 msgid "Repository SSL Ca Certificate:     %s"
-msgstr "软件源 SSL CA 证书：%s"
+msgstr "储存库 SSL CA 证书：%s"
 
 #: ../src/spacecmd/repo.py:100
 #, python-format
 msgid "Repository SSL Client Certificate: %s"
-msgstr "软件源 SSL 客户端证书：%s"
+msgstr "储存库 SSL 客户端证书：%s"
 
 #: ../src/spacecmd/repo.py:101
 #, python-format
 msgid "Repository SSL Client Key:         %s"
-msgstr "软件源 SSL 客户端密钥：%s"
+msgstr "储存库 SSL 客户端密钥：%s"
 
 #: ../src/spacecmd/repo.py:103
 msgid "No repositories found for '{}' query"
-msgstr "未找到查询 '{}' 的软件源"
+msgstr "未找到查询 '{}' 的储存库"
 
 #: ../src/spacecmd/repo.py:112
 msgid "repo_listfilters: Show the filters for a user repo"
-msgstr "repo_listfilters：显示用户软件源的过滤器"
+msgstr "repo_listfilters：显示用户储存库的过滤器"
 
 #: ../src/spacecmd/repo.py:113
 msgid "usage: repo_listfilters repo"
@@ -4275,7 +4292,7 @@ msgstr "未找到过滤器"
 
 #: ../src/spacecmd/repo.py:143
 msgid "repo_addfilters: Add filters for a user repo"
-msgstr "repo_addfilters：添加用户软件源的过滤器"
+msgstr "repo_addfilters：添加用户储存库的过滤器"
 
 #: ../src/spacecmd/repo.py:144
 msgid "usage: repo_addfilters repo <filter ...>"
@@ -4288,7 +4305,7 @@ msgstr "每个过滤器必须以 + 或 - 开头"
 
 #: ../src/spacecmd/repo.py:184
 msgid "repo_removefilters: Remove filters from a user repo"
-msgstr "repo_removefilters：从用户软件源中去除过滤器"
+msgstr "repo_removefilters：从用户储存库中去除过滤器"
 
 #: ../src/spacecmd/repo.py:185
 msgid "usage: repo_removefilters repo <filter ...>"
@@ -4296,7 +4313,7 @@ msgstr "用法：repo_removefilters repo <过滤器 ...>"
 
 #: ../src/spacecmd/repo.py:221
 msgid "repo_setfilters: Set the filters for a user repo"
-msgstr "repo_setfilters：设置用户软件源的过滤器"
+msgstr "repo_setfilters：设置用户储存库的过滤器"
 
 #: ../src/spacecmd/repo.py:222
 msgid "usage: repo_setfilters repo <filter ...>"
@@ -4304,7 +4321,7 @@ msgstr "用法：repo_setfilters repo <过滤器 ...>"
 
 #: ../src/spacecmd/repo.py:259
 msgid "repo_clearfilters: Clears the filters for a user repo"
-msgstr "repo_clearfilters：清除用户软件源的过滤器"
+msgstr "repo_clearfilters：清除用户储存库的过滤器"
 
 #: ../src/spacecmd/repo.py:260
 msgid ""
@@ -4326,28 +4343,28 @@ msgstr "去除这些过滤器 [y/N]："
 
 #: ../src/spacecmd/repo.py:291
 msgid "repo_delete: Delete a user repo"
-msgstr "repo_delete：删除用户软件源"
+msgstr "repo_delete：删除用户储存库"
 
 #: ../src/spacecmd/repo.py:292
 msgid "usage: repo_delete <repo ...>"
-msgstr "用法：repo_delete <软件源 ...>"
+msgstr "用法：repo_delete <储存库 ...>"
 
 #: ../src/spacecmd/repo.py:311 ../src/spacecmd/softwarechannel.py:586
 msgid "Repos"
-msgstr "软件源"
+msgstr "储存库"
 
 #: ../src/spacecmd/repo.py:315
 msgid "Delete these repos [y/N]:"
-msgstr "删除这些软件源 [y/N]："
+msgstr "删除这些储存库 [y/N]："
 
 #: ../src/spacecmd/repo.py:320
 #, python-format
 msgid "Failed to remove repo %s"
-msgstr "无法去除软件源 %s"
+msgstr "无法去除储存库 %s"
 
 #: ../src/spacecmd/repo.py:328
 msgid "repo_create: Create a user repository"
-msgstr "repo_create：创建用户软件源"
+msgstr "repo_create：创建用户储存库"
 
 #: ../src/spacecmd/repo.py:329
 msgid ""
@@ -4365,9 +4382,9 @@ msgstr ""
 "用法：repo_create <选项>)\n"
 "\n"
 "选项：\n"
-"  -n、--name   软件源的名称\n"
-"  -u、--url    软件源的 URL\n"
-"  -t、--type   软件源的类型（默认为 yum）\n"
+"  -n、--name   储存库的名称\n"
+"  -u、--url    储存库的 URL\n"
+"  -t、--type   储存库的类型（默认为 yum）\n"
 "\n"
 "  --ca         SSL CA 证书（不是必需的）\n"
 "  --cert       SSL 客户端证书（不是必需的）\n"
@@ -4399,7 +4416,7 @@ msgstr "URL 是必需的"
 
 #: ../src/spacecmd/repo.py:385
 msgid "repo_rename: Rename a user repository"
-msgstr "repo_rename：重命名用户软件源"
+msgstr "repo_rename：重命名用户储存库"
 
 #: ../src/spacecmd/repo.py:386
 msgid "usage: repo_rename OLDNAME NEWNAME"
@@ -4408,19 +4425,19 @@ msgstr "用法：repo_rename OLDNAME NEWNAME"
 #: ../src/spacecmd/repo.py:410
 #, python-format
 msgid "Could not find repo %s"
-msgstr "找不到软件源 %s"
+msgstr "找不到储存库 %s"
 
 #: ../src/spacecmd/repo.py:423
 msgid "repo_updateurl: Change the URL of a user repository"
-msgstr "repo_updateurl：更改用户软件源的 URL"
+msgstr "repo_updateurl：更改用户储存库的 URL"
 
 #: ../src/spacecmd/repo.py:424
 msgid "usage: repo_updateurl <repo> <url>"
-msgstr "用法：repo_updateurl <软件源> <URL>"
+msgstr "用法：repo_updateurl <储存库> <URL>"
 
 #: ../src/spacecmd/repo.py:451
 msgid "repo_updatessl: Change the SSL certificates of a user repository"
-msgstr "repo_updatessl：更改用户软件源的 SSL 证书"
+msgstr "repo_updatessl：更改用户储存库的 SSL 证书"
 
 #: ../src/spacecmd/repo.py:452
 msgid ""
@@ -4499,20 +4516,20 @@ msgstr "用法：report_ipaddresses [<系统>]"
 #: ../src/spacecmd/system.py:1626 ../src/spacecmd/system.py:1690
 #: ../src/spacecmd/system.py:1734 ../src/spacecmd/system.py:1814
 #: ../src/spacecmd/system.py:1956 ../src/spacecmd/system.py:1998
-#: ../src/spacecmd/system.py:2087 ../src/spacecmd/system.py:2155
-#: ../src/spacecmd/system.py:2238 ../src/spacecmd/system.py:2293
-#: ../src/spacecmd/system.py:2353 ../src/spacecmd/system.py:2412
-#: ../src/spacecmd/system.py:2470 ../src/spacecmd/system.py:2531
-#: ../src/spacecmd/system.py:2610 ../src/spacecmd/system.py:2691
-#: ../src/spacecmd/system.py:2746 ../src/spacecmd/system.py:3019
-#: ../src/spacecmd/system.py:3172 ../src/spacecmd/system.py:3241
-#: ../src/spacecmd/system.py:3295 ../src/spacecmd/system.py:3364
-#: ../src/spacecmd/system.py:3460 ../src/spacecmd/system.py:3560
-#: ../src/spacecmd/system.py:3624 ../src/spacecmd/system.py:3680
-#: ../src/spacecmd/system.py:3856 ../src/spacecmd/system.py:4134
-#: ../src/spacecmd/system.py:4277 ../src/spacecmd/system.py:4339
-#: ../src/spacecmd/system.py:4387 ../src/spacecmd/system.py:4445
-#: ../src/spacecmd/system.py:4504
+#: ../src/spacecmd/system.py:2126 ../src/spacecmd/system.py:2194
+#: ../src/spacecmd/system.py:2277 ../src/spacecmd/system.py:2332
+#: ../src/spacecmd/system.py:2392 ../src/spacecmd/system.py:2451
+#: ../src/spacecmd/system.py:2509 ../src/spacecmd/system.py:2570
+#: ../src/spacecmd/system.py:2649 ../src/spacecmd/system.py:2730
+#: ../src/spacecmd/system.py:2785 ../src/spacecmd/system.py:2888
+#: ../src/spacecmd/system.py:3041 ../src/spacecmd/system.py:3110
+#: ../src/spacecmd/system.py:3164 ../src/spacecmd/system.py:3233
+#: ../src/spacecmd/system.py:3329 ../src/spacecmd/system.py:3429
+#: ../src/spacecmd/system.py:3493 ../src/spacecmd/system.py:3549
+#: ../src/spacecmd/system.py:3725 ../src/spacecmd/system.py:4003
+#: ../src/spacecmd/system.py:4146 ../src/spacecmd/system.py:4208
+#: ../src/spacecmd/system.py:4256 ../src/spacecmd/system.py:4314
+#: ../src/spacecmd/system.py:4373
 msgid "No systems selected"
 msgstr "未选择系统"
 
@@ -4558,12 +4575,12 @@ msgstr "用法：scap_listxccdfscans <系统>"
 
 #: ../src/spacecmd/scap.py:79 ../src/spacecmd/system.py:613
 #: ../src/spacecmd/system.py:1256 ../src/spacecmd/system.py:1308
-#: ../src/spacecmd/system.py:1407 ../src/spacecmd/system.py:2098
-#: ../src/spacecmd/system.py:2423 ../src/spacecmd/system.py:2481
-#: ../src/spacecmd/system.py:2704 ../src/spacecmd/system.py:2759
-#: ../src/spacecmd/system.py:3185 ../src/spacecmd/system.py:3310
-#: ../src/spacecmd/system.py:3402 ../src/spacecmd/system.py:3485
-#: ../src/spacecmd/system.py:3573
+#: ../src/spacecmd/system.py:1407 ../src/spacecmd/system.py:2137
+#: ../src/spacecmd/system.py:2462 ../src/spacecmd/system.py:2520
+#: ../src/spacecmd/system.py:2743 ../src/spacecmd/system.py:2798
+#: ../src/spacecmd/system.py:3054 ../src/spacecmd/system.py:3179
+#: ../src/spacecmd/system.py:3271 ../src/spacecmd/system.py:3354
+#: ../src/spacecmd/system.py:3442
 #, python-format
 msgid "System: %s"
 msgstr "系统：%s"
@@ -4771,7 +4788,7 @@ msgid "Date:      %s"
 msgstr "日期：%s"
 
 #: ../src/spacecmd/schedule.py:283 ../src/spacecmd/schedule.py:380
-#: ../src/spacecmd/system.py:3317
+#: ../src/spacecmd/system.py:3186
 #, python-format
 msgid "Completed: %s"
 msgstr "已完成：%s"
@@ -4932,7 +4949,7 @@ msgstr "如果不提供日期，将存档所有已完成操作"
 
 #: ../src/spacecmd/schedule.py:551
 msgid "Do you want to archive ({}) completed actions? [y/N]"
-msgstr "您要删除 ({}) 个已完成操作吗？[y/N]"
+msgstr "您要存档 ({}) 个已完成操作吗？[y/N]"
 
 #: ../src/spacecmd/schedule.py:571
 msgid "No completed actions found."
@@ -5092,7 +5109,7 @@ msgid "softwarechannel_listchildchannels: List child software channels"
 msgstr "softwarechannel_listchildchannels：列出子软件通道"
 
 #: ../src/spacecmd/softwarechannel.py:178
-#: ../src/spacecmd/softwarechannel.py:2723
+#: ../src/spacecmd/softwarechannel.py:2724
 msgid "usage:"
 msgstr "用法："
 
@@ -5382,7 +5399,7 @@ msgstr "                            软件通道体系结构"
 msgid "usage: softwarechannel_listarches"
 msgstr "用法：softwarechannel_listarches"
 
-#: ../src/spacecmd/softwarechannel.py:660 ../src/spacecmd/system.py:4105
+#: ../src/spacecmd/softwarechannel.py:660 ../src/spacecmd/system.py:3974
 msgid "options:"
 msgstr "选项："
 
@@ -5688,8 +5705,8 @@ msgstr "softwarechannel_clonetree：克隆软件通道及其子通道"
 msgid ""
 "usage: softwarechannel_clonetree [options])\n"
 "             e.g    softwarechannel_clonetree foobasechannel -p \"my_\"\n"
-"                    softwarechannel_clonetree foobasechannel -x \"s/foo/bar"
-"\"\n"
+"                    softwarechannel_clonetree foobasechannel -x \"s/foo/"
+"bar\"\n"
 "                    softwarechannel_clonetree foobasechannel -x \"s/^/my_\"\n"
 "\n"
 "options:\n"
@@ -5706,8 +5723,8 @@ msgid ""
 msgstr ""
 "用法：softwarechannel_clonetree [选项])\n"
 "             示例    softwarechannel_clonetree foobasechannel -p \"my_\"\n"
-"                    softwarechannel_clonetree foobasechannel -x \"s/foo/bar"
-"\"\n"
+"                    softwarechannel_clonetree foobasechannel -x \"s/foo/"
+"bar\"\n"
 "                    softwarechannel_clonetree foobasechannel -x \"s/^/my_\"\n"
 "\n"
 "选项：\n"
@@ -5809,7 +5826,7 @@ msgstr "softwarechannel_removepackages：从软件通道中去除软件包"
 msgid "usage: softwarechannel_removepackages CHANNEL <PACKAGE ...>"
 msgstr "用法：softwarechannel_removepackages CHANNEL <软件包 ...>"
 
-#: ../src/spacecmd/softwarechannel.py:1555
+#: ../src/spacecmd/softwarechannel.py:1553
 msgid "No packages to remove"
 msgstr "没有可去除的软件包"
 
@@ -5835,9 +5852,9 @@ msgstr "日期格式：YYYYMMDD"
 
 #: ../src/spacecmd/softwarechannel.py:1579
 #: ../src/spacecmd/softwarechannel.py:1714
-#: ../src/spacecmd/softwarechannel.py:2608
-#: ../src/spacecmd/softwarechannel.py:2651
-#: ../src/spacecmd/softwarechannel.py:2871
+#: ../src/spacecmd/softwarechannel.py:2609
+#: ../src/spacecmd/softwarechannel.py:2652
+#: ../src/spacecmd/softwarechannel.py:2872
 msgid "Options:"
 msgstr "选项："
 
@@ -6062,15 +6079,15 @@ msgstr "softwarechannel_errata_diff：比较软件通道文件的差异"
 msgid "usage: softwarechannel_errata_diff SOURCE_CHANNEL TARGET_CHANNEL"
 msgstr "用法：softwarechannel_errata_diff SOURCE_CHANNEL TARGET_CHANNEL"
 
-#: ../src/spacecmd/softwarechannel.py:2236
+#: ../src/spacecmd/softwarechannel.py:2237
 msgid "softwarechannel_sync: "
 msgstr "softwarechannel_sync： "
 
-#: ../src/spacecmd/softwarechannel.py:2237
+#: ../src/spacecmd/softwarechannel.py:2238
 msgid "sync the packages of two software channels"
 msgstr "同步两个软件通道的软件包"
 
-#: ../src/spacecmd/softwarechannel.py:2239
+#: ../src/spacecmd/softwarechannel.py:2240
 msgid ""
 "usage: softwarechannel_sync SOURCE_CHANNEL TARGET_CHANNEL [options])\n"
 "    -q,--quiet : quiet mode (omits the output of common packages in both "
@@ -6079,127 +6096,127 @@ msgstr ""
 "用法：softwarechannel_sync SOURCE_CHANNEL TARGET_CHANNEL [选项])\n"
 "    -q、--quiet：静默模式（省略两个通道共有的软件包的输出）"
 
-#: ../src/spacecmd/softwarechannel.py:2281
+#: ../src/spacecmd/softwarechannel.py:2282
 #, python-format
 msgid "%s packages from softwarechannel %s to %s"
 msgstr "%s 软件包从软件通道 %s 到 %s"
 
-#: ../src/spacecmd/softwarechannel.py:2300
-#: ../src/spacecmd/softwarechannel.py:2308
-#: ../src/spacecmd/softwarechannel.py:2422
-#: ../src/spacecmd/softwarechannel.py:2430
-#: ../src/spacecmd/softwarechannel.py:2562
-#: ../src/spacecmd/softwarechannel.py:2570
+#: ../src/spacecmd/softwarechannel.py:2301
+#: ../src/spacecmd/softwarechannel.py:2309
+#: ../src/spacecmd/softwarechannel.py:2423
+#: ../src/spacecmd/softwarechannel.py:2431
+#: ../src/spacecmd/softwarechannel.py:2563
+#: ../src/spacecmd/softwarechannel.py:2571
 msgid "failed to read key id"
 msgstr "无法读取密钥 ID"
 
-#: ../src/spacecmd/softwarechannel.py:2311
+#: ../src/spacecmd/softwarechannel.py:2312
 msgid "packages common in both channels:"
 msgstr "两个通道共有的软件包："
 
-#: ../src/spacecmd/softwarechannel.py:2316
+#: ../src/spacecmd/softwarechannel.py:2317
 msgid "Omitting common packages in both specified channels"
 msgstr "正在省略两个指定通道共有的软件包"
 
-#: ../src/spacecmd/softwarechannel.py:2321
+#: ../src/spacecmd/softwarechannel.py:2322
 msgid "packages to add to channel \""
 msgstr "要添加到以下通道的软件包 \""
 
-#: ../src/spacecmd/softwarechannel.py:2329
+#: ../src/spacecmd/softwarechannel.py:2330
 msgid "packages to remove from channel \""
 msgstr "要从以下通道中去除的软件包 \""
 
-#: ../src/spacecmd/softwarechannel.py:2335
-#: ../src/spacecmd/softwarechannel.py:2457
-#: ../src/spacecmd/softwarechannel.py:2587
+#: ../src/spacecmd/softwarechannel.py:2336
+#: ../src/spacecmd/softwarechannel.py:2458
+#: ../src/spacecmd/softwarechannel.py:2588
 msgid "summary:"
 msgstr "摘要："
 
-#: ../src/spacecmd/softwarechannel.py:2336
 #: ../src/spacecmd/softwarechannel.py:2337
+#: ../src/spacecmd/softwarechannel.py:2338
 msgid " packages"
 msgstr " 软件包"
 
-#: ../src/spacecmd/softwarechannel.py:2338
+#: ../src/spacecmd/softwarechannel.py:2339
 msgid "    add    "
 msgstr "    添加    "
 
-#: ../src/spacecmd/softwarechannel.py:2339
+#: ../src/spacecmd/softwarechannel.py:2340
 msgid " packages to   "
 msgstr " 软件包至   "
 
-#: ../src/spacecmd/softwarechannel.py:2342
+#: ../src/spacecmd/softwarechannel.py:2343
 msgid "    remove "
 msgstr "    去除 "
 
-#: ../src/spacecmd/softwarechannel.py:2343
+#: ../src/spacecmd/softwarechannel.py:2344
 msgid " packages from "
 msgstr " 软件包自 "
 
-#: ../src/spacecmd/softwarechannel.py:2345
-#: ../src/spacecmd/softwarechannel.py:2465
+#: ../src/spacecmd/softwarechannel.py:2346
+#: ../src/spacecmd/softwarechannel.py:2466
 msgid "Perform these changes to channel "
 msgstr "对以下通道执行这些更改 "
 
-#: ../src/spacecmd/softwarechannel.py:2366
+#: ../src/spacecmd/softwarechannel.py:2367
 msgid "softwarechannel_errata_sync: "
 msgstr "softwarechannel_errata_sync： "
 
-#: ../src/spacecmd/softwarechannel.py:2367
+#: ../src/spacecmd/softwarechannel.py:2368
 msgid "sync errata of two software channels"
 msgstr "同步两个软件通道的勘误"
 
-#: ../src/spacecmd/softwarechannel.py:2369
+#: ../src/spacecmd/softwarechannel.py:2370
 msgid "usage: softwarechannel_errata_sync SOURCE_CHANNEL TARGET_CHANNEL"
 msgstr "用法：softwarechannel_errata_sync SOURCE_CHANNEL TARGET_CHANNEL"
 
-#: ../src/spacecmd/softwarechannel.py:2408
+#: ../src/spacecmd/softwarechannel.py:2409
 msgid "syncing errata from softwarechannel "
 msgstr "正在将以下软件通道中的勘误同步 "
 
-#: ../src/spacecmd/softwarechannel.py:2409
-#: ../src/spacecmd/softwarechannel.py:2541
+#: ../src/spacecmd/softwarechannel.py:2410
+#: ../src/spacecmd/softwarechannel.py:2542
 msgid " to "
 msgstr " 到 "
 
-#: ../src/spacecmd/softwarechannel.py:2433
+#: ../src/spacecmd/softwarechannel.py:2434
 msgid "errata common in both channels:"
 msgstr "两个通道共有的勘误："
 
-#: ../src/spacecmd/softwarechannel.py:2442
+#: ../src/spacecmd/softwarechannel.py:2443
 msgid "errata to add to channel \""
 msgstr "要添加到以下通道的勘误 \""
 
-#: ../src/spacecmd/softwarechannel.py:2451
+#: ../src/spacecmd/softwarechannel.py:2452
 msgid "errata to remove from channel \""
 msgstr "要从以下通道中去除的勘误 \""
 
-#: ../src/spacecmd/softwarechannel.py:2460
-#: ../src/spacecmd/softwarechannel.py:2590
+#: ../src/spacecmd/softwarechannel.py:2461
+#: ../src/spacecmd/softwarechannel.py:2591
 msgid "    add   "
 msgstr "    添加   "
 
-#: ../src/spacecmd/softwarechannel.py:2461
+#: ../src/spacecmd/softwarechannel.py:2462
 msgid "errata to  "
 msgstr "勘误至  "
 
-#: ../src/spacecmd/softwarechannel.py:2462
+#: ../src/spacecmd/softwarechannel.py:2463
 msgid "    remove"
 msgstr "    去除"
 
-#: ../src/spacecmd/softwarechannel.py:2463
+#: ../src/spacecmd/softwarechannel.py:2464
 msgid "errata from"
 msgstr "勘误自"
 
-#: ../src/spacecmd/softwarechannel.py:2488
+#: ../src/spacecmd/softwarechannel.py:2489
 msgid "softwarechannel_errata_merge: "
 msgstr "softwarechannel_errata_merge： "
 
-#: ../src/spacecmd/softwarechannel.py:2489
+#: ../src/spacecmd/softwarechannel.py:2490
 msgid "merge errata of one software channel into another"
 msgstr "将一个软件通道中的勘误合并到另一个软件通道"
 
-#: ../src/spacecmd/softwarechannel.py:2491
+#: ../src/spacecmd/softwarechannel.py:2492
 msgid ""
 "usage:   softwarechannel_errata_merge SOURCE_CHANNEL TARGET_CHANNEL "
 "[FROM_DATE] [TO_DATE]"
@@ -6207,206 +6224,206 @@ msgstr ""
 "用法：  softwarechannel_errata_merge SOURCE_CHANNEL TARGET_CHANNEL [开始日"
 "期] [结束日期]"
 
-#: ../src/spacecmd/softwarechannel.py:2492
+#: ../src/spacecmd/softwarechannel.py:2493
 msgid ""
 "example: softwarechannel_errata_merge OldSoftChannel NewSoftChannel "
 "2018-01-01"
 msgstr ""
 "示例：softwarechannel_errata_merge OldSoftChannel NewSoftChannel 2018-01-01"
 
-#: ../src/spacecmd/softwarechannel.py:2493
+#: ../src/spacecmd/softwarechannel.py:2494
 msgid ""
 "note:    Providing only FROM_DATE will merge all errata since that date."
 msgstr "注意：仅提供开始日期会合并自该日期开始的所有勘误。"
 
-#: ../src/spacecmd/softwarechannel.py:2494
+#: ../src/spacecmd/softwarechannel.py:2495
 msgid "note:    When no date is provided, all errata will be merged."
 msgstr "注意：如果未提供日期，将合并所有勘误。"
 
-#: ../src/spacecmd/softwarechannel.py:2524
-#: ../src/spacecmd/softwarechannel.py:2531
+#: ../src/spacecmd/softwarechannel.py:2525
+#: ../src/spacecmd/softwarechannel.py:2532
 msgid "wrong dateformat: "
 msgstr "错误的日期格式： "
 
-#: ../src/spacecmd/softwarechannel.py:2524
-#: ../src/spacecmd/softwarechannel.py:2531
+#: ../src/spacecmd/softwarechannel.py:2525
+#: ../src/spacecmd/softwarechannel.py:2532
 msgid " please specify as: YYYY-MM-DD"
 msgstr " 请指定为：YYYY-MM-DD"
 
-#: ../src/spacecmd/softwarechannel.py:2540
+#: ../src/spacecmd/softwarechannel.py:2541
 msgid "merging errata from softwarechannel "
 msgstr "正在合并以下软件通道中的勘误 "
 
 #. pylint: disable=len-as-condition
-#: ../src/spacecmd/softwarechannel.py:2577
+#: ../src/spacecmd/softwarechannel.py:2578
 msgid "{} contains no errata which is not already present in {}"
 msgstr "{} 不包含 {} 中尚不存在的勘误"
 
-#: ../src/spacecmd/softwarechannel.py:2582
+#: ../src/spacecmd/softwarechannel.py:2583
 msgid "errata to add to channel {}: "
 msgstr "要添加到通道 {} 的勘误： "
 
-#: ../src/spacecmd/softwarechannel.py:2588
 #: ../src/spacecmd/softwarechannel.py:2589
+#: ../src/spacecmd/softwarechannel.py:2590
 msgid " errata"
 msgstr " 勘误"
 
-#: ../src/spacecmd/softwarechannel.py:2591
+#: ../src/spacecmd/softwarechannel.py:2592
 msgid " errata to  "
 msgstr " 勘误至  "
 
-#: ../src/spacecmd/softwarechannel.py:2593
+#: ../src/spacecmd/softwarechannel.py:2594
 msgid "Perform these changes to channel {} [y/N]:"
 msgstr "对通道 {} 执行这些更改 [y/N]："
 
-#: ../src/spacecmd/softwarechannel.py:2604
+#: ../src/spacecmd/softwarechannel.py:2605
 msgid "softwarechannel_syncrepos: "
 msgstr "softwarechannel_syncrepos： "
 
-#: ../src/spacecmd/softwarechannel.py:2605
+#: ../src/spacecmd/softwarechannel.py:2606
 msgid "Sync users repos for a software channel"
-msgstr "同步软件通道的用户软件源"
+msgstr "同步软件通道的用户储存库"
 
-#: ../src/spacecmd/softwarechannel.py:2607
+#: ../src/spacecmd/softwarechannel.py:2608
 msgid "usage: softwarechannel_syncrepos <CHANNEL ...>"
 msgstr "用法：softwarechannel_syncrepos <通道 ...>"
 
-#: ../src/spacecmd/softwarechannel.py:2609
-#: ../src/spacecmd/softwarechannel.py:2652
+#: ../src/spacecmd/softwarechannel.py:2610
+#: ../src/spacecmd/softwarechannel.py:2653
 msgid "    -e/--no-errata : Do not sync errata"
 msgstr "    -e/--no-errata：不同步勘误"
 
-#: ../src/spacecmd/softwarechannel.py:2610
-#: ../src/spacecmd/softwarechannel.py:2653
+#: ../src/spacecmd/softwarechannel.py:2611
+#: ../src/spacecmd/softwarechannel.py:2654
 msgid "    -f/--fail : Terminate upon any error"
 msgstr "    -f/--fail：出现任何错误时终止"
 
-#: ../src/spacecmd/softwarechannel.py:2611
-#: ../src/spacecmd/softwarechannel.py:2654
+#: ../src/spacecmd/softwarechannel.py:2612
+#: ../src/spacecmd/softwarechannel.py:2655
 msgid "    -k/--sync-kickstart : Create kickstartable tree"
 msgstr "    -k/--sync-kickstart：创建 kickstart 树"
 
-#: ../src/spacecmd/softwarechannel.py:2612
-#: ../src/spacecmd/softwarechannel.py:2655
+#: ../src/spacecmd/softwarechannel.py:2613
+#: ../src/spacecmd/softwarechannel.py:2656
 msgid "    -l/--latest : Only download latest package versions when repo syncs"
-msgstr "    -l/--latest：同步软件源时仅下载最新软件包版本"
+msgstr "    -l/--latest：同步储存库时仅下载最新软件包版本"
 
-#: ../src/spacecmd/softwarechannel.py:2647
+#: ../src/spacecmd/softwarechannel.py:2648
 msgid "softwarechannel_setsyncschedule: "
 msgstr "softwarechannel_setsyncschedule： "
 
-#: ../src/spacecmd/softwarechannel.py:2648
+#: ../src/spacecmd/softwarechannel.py:2649
 msgid "Sets the repo sync schedule for a software channel"
-msgstr "设置软件通道的软件源同步日程安排"
+msgstr "设置软件通道的储存库同步日程安排"
 
-#: ../src/spacecmd/softwarechannel.py:2650
+#: ../src/spacecmd/softwarechannel.py:2651
 msgid "usage: softwarechannel_setsyncschedule <CHANNEL> <SCHEDULE>"
 msgstr "用法：softwarechannel_setsyncschedule <通道> <日程安排>"
 
-#: ../src/spacecmd/softwarechannel.py:2657
+#: ../src/spacecmd/softwarechannel.py:2658
 msgid ""
 "The schedule is specified in Quartz CronTrigger format without enclosing "
 "quotes."
 msgstr "日程安排以不带左右引号的 Quartz CronTrigger 格式指定。"
 
-#: ../src/spacecmd/softwarechannel.py:2658
+#: ../src/spacecmd/softwarechannel.py:2659
 msgid ""
 "For example, to set a schedule of every day at 1am, <SCHEDULE> would be 0 0 "
 "1 * * ?"
 msgstr "例如，要将日程安排设置为每日凌晨 1 点，<日程安排> 应是 0 0 1 * * ?"
 
-#: ../src/spacecmd/softwarechannel.py:2659
+#: ../src/spacecmd/softwarechannel.py:2660
 msgid "If <SCHEDULE> is left empty, it will be disabled."
 msgstr "如果将 <日程安排> 留空，则会禁用日程安排。"
 
-#: ../src/spacecmd/softwarechannel.py:2694
+#: ../src/spacecmd/softwarechannel.py:2695
 msgid "softwarechannel_removesyncschedule: "
 msgstr "softwarechannel_removesyncschedule： "
 
-#: ../src/spacecmd/softwarechannel.py:2695
+#: ../src/spacecmd/softwarechannel.py:2696
 msgid "Removes the repo sync schedule for a software channel"
-msgstr "去除软件通道的软件源同步日程安排"
+msgstr "去除软件通道的储存库同步日程安排"
 
-#: ../src/spacecmd/softwarechannel.py:2697
+#: ../src/spacecmd/softwarechannel.py:2698
 msgid "usage: softwarechannel_removesyncschedule <CHANNEL>"
 msgstr "用法：softwarechannel_removesyncschedule <通道>"
 
-#: ../src/spacecmd/softwarechannel.py:2722
+#: ../src/spacecmd/softwarechannel.py:2723
 msgid ""
 "softwarechannel_listsyncschedule: List sync schedules for all software "
 "channels"
 msgstr "softwarechannel_listsyncschedule：列出所有软件通道的同步日程安排"
 
-#: ../src/spacecmd/softwarechannel.py:2724
+#: ../src/spacecmd/softwarechannel.py:2725
 msgid "softwarechannel_listsyncschedule : List all channels"
 msgstr "softwarechannel_listsyncschedule：列出所有通道"
 
-#: ../src/spacecmd/softwarechannel.py:2747
+#: ../src/spacecmd/softwarechannel.py:2748
 msgid "key"
 msgstr "密钥"
 
-#: ../src/spacecmd/softwarechannel.py:2747
+#: ../src/spacecmd/softwarechannel.py:2748
 msgid "Channel Name"
 msgstr "通道名称"
 
-#: ../src/spacecmd/softwarechannel.py:2747
+#: ../src/spacecmd/softwarechannel.py:2748
 msgid "Update Schedule"
 msgstr "更新日程安排"
 
-#: ../src/spacecmd/softwarechannel.py:2759
-msgid "softwarechannel_addrepo: Add a repo to a software channel"
-msgstr "softwarechannel_addrepo：将软件源添加到软件通道"
-
 #: ../src/spacecmd/softwarechannel.py:2760
+msgid "softwarechannel_addrepo: Add a repo to a software channel"
+msgstr "softwarechannel_addrepo：将储存库添加到软件通道"
+
+#: ../src/spacecmd/softwarechannel.py:2761
 msgid "usage: softwarechannel_addrepo CHANNEL REPO"
 msgstr "用法：softwarechannel_addrepo CHANNEL REPO"
 
-#: ../src/spacecmd/softwarechannel.py:2795
-msgid "softwarechannel_removerepo: Remove a repo from a software channel"
-msgstr "softwarechannel_removerepo：从软件通道中去除软件源"
-
 #: ../src/spacecmd/softwarechannel.py:2796
+msgid "softwarechannel_removerepo: Remove a repo from a software channel"
+msgstr "softwarechannel_removerepo：从软件通道中去除储存库"
+
+#: ../src/spacecmd/softwarechannel.py:2797
 msgid "usage: softwarechannel_removerepo CHANNEL REPO"
 msgstr "用法：softwarechannel_removerepo CHANNEL REPO"
 
-#: ../src/spacecmd/softwarechannel.py:2838
-msgid "softwarechannel_listrepos: List the repos for a software channel"
-msgstr "softwarechannel_listrepos：列出软件通道的软件源"
-
 #: ../src/spacecmd/softwarechannel.py:2839
+msgid "softwarechannel_listrepos: List the repos for a software channel"
+msgstr "softwarechannel_listrepos：列出软件通道的储存库"
+
+#: ../src/spacecmd/softwarechannel.py:2840
 msgid "usage: softwarechannel_listrepos CHANNEL"
 msgstr "用法：softwarechannel_listrepos CHANNEL"
 
-#: ../src/spacecmd/softwarechannel.py:2862
+#: ../src/spacecmd/softwarechannel.py:2863
 msgid "No repos have been found for this channel."
-msgstr "未找到此通道的软件源。"
+msgstr "未找到此通道的储存库。"
 
-#: ../src/spacecmd/softwarechannel.py:2869
+#: ../src/spacecmd/softwarechannel.py:2870
 msgid "softwarechannel_mirrorpackages: Download packages of a given channel"
 msgstr "softwarechannel_mirrorpackages：下载给定通道的软件包"
 
-#: ../src/spacecmd/softwarechannel.py:2870
+#: ../src/spacecmd/softwarechannel.py:2871
 msgid "usage: softwarechannel_mirrorpackages CHANNEL"
 msgstr "用法：softwarechannel_mirrorpackages CHANNEL"
 
-#: ../src/spacecmd/softwarechannel.py:2872
+#: ../src/spacecmd/softwarechannel.py:2873
 msgid "    -l/--latest : Only mirror latest package version"
 msgstr "    -l/--latest：仅镜像最新软件包版本"
 
-#: ../src/spacecmd/softwarechannel.py:2903
+#: ../src/spacecmd/softwarechannel.py:2904
 msgid "Skipping"
 msgstr "正在跳过"
 
-#: ../src/spacecmd/softwarechannel.py:2905
+#: ../src/spacecmd/softwarechannel.py:2906
 msgid "Fetching package"
 msgstr "正在提取软件包"
 
-#: ../src/spacecmd/softwarechannel.py:2910
+#: ../src/spacecmd/softwarechannel.py:2911
 #, python-format
 msgid "Received package %s from channel %s is broken. Content is too short"
 msgstr "收到的软件包 %s（从通道 %s）已受破坏。内容太短"
 
-#: ../src/spacecmd/softwarechannel.py:2914
+#: ../src/spacecmd/softwarechannel.py:2915
 #, python-format
 msgid "Could not fetch package %s from channel %s"
 msgstr "无法提取软件包 %s（从通道 %s）"
@@ -6509,7 +6526,7 @@ msgstr "只有那里"
 msgid "Newer there"
 msgstr "那里较新"
 
-#: ../src/spacecmd/system.py:76 ../src/spacecmd/system.py:4050
+#: ../src/spacecmd/system.py:76 ../src/spacecmd/system.py:3919
 msgid "Package"
 msgstr "软件包"
 
@@ -6521,7 +6538,7 @@ msgstr "此系统"
 msgid "Other System"
 msgstr "另一个系统"
 
-#: ../src/spacecmd/system.py:79 ../src/spacecmd/system.py:4053
+#: ../src/spacecmd/system.py:79 ../src/spacecmd/system.py:3922
 msgid "Difference"
 msgstr "差异"
 
@@ -6681,7 +6698,7 @@ msgstr "脚本内容"
 
 #: ../src/spacecmd/system.py:538 ../src/spacecmd/system.py:841
 #: ../src/spacecmd/system.py:969 ../src/spacecmd/system.py:1121
-#: ../src/spacecmd/system.py:1131 ../src/spacecmd/system.py:4670
+#: ../src/spacecmd/system.py:1131 ../src/spacecmd/system.py:4539
 #, python-format
 msgid "Failed to schedule %s"
 msgstr "无法安排 %s"
@@ -6691,7 +6708,7 @@ msgstr "无法安排 %s"
 msgid "Scheduled: %i system(s)"
 msgstr "已安排：%i 个系统"
 
-#: ../src/spacecmd/system.py:548 ../src/spacecmd/utils.py:246
+#: ../src/spacecmd/system.py:548 ../src/spacecmd/utils.py:253
 #, python-format
 msgid "Could not remove %s"
 msgstr "无法去除 %s"
@@ -7212,46 +7229,54 @@ msgid "usage: system_rename OLDNAME NEWNAME"
 msgstr "用法：system_rename OLDNAME NEWNAME"
 
 #: ../src/spacecmd/system.py:2061
+msgid "system_refreshpillar: Refresh pillar data of system(s) "
+msgstr "system_refreshpillar：刷新系统的 pillar 数据 "
+
+#: ../src/spacecmd/system.py:2062
+msgid "usage: system_refreshpillar [<SYSTEMS>]"
+msgstr "用法：system_refreshpillar [<系统>]"
+
+#: ../src/spacecmd/system.py:2100
 msgid "system_listcustomvalues: List the custom values for a system"
 msgstr "system_listcustomvalues：列出系统的自定义值"
 
-#: ../src/spacecmd/system.py:2062
+#: ../src/spacecmd/system.py:2101
 msgid "usage: system_listcustomvalues <SYSTEMS>"
 msgstr "用法：system_listcustomvalues <系统>"
 
-#: ../src/spacecmd/system.py:2117
+#: ../src/spacecmd/system.py:2156
 msgid "system_addcustomvalue: Set a custom value for a system"
 msgstr "system_addcustomvalue：设置系统的自定义值"
 
-#: ../src/spacecmd/system.py:2118
+#: ../src/spacecmd/system.py:2157
 msgid "usage: system_addcustomvalue KEY VALUE <SYSTEMS>"
 msgstr "用法：system_addcustomvalue KEY VALUE <系统>"
 
-#: ../src/spacecmd/system.py:2173
+#: ../src/spacecmd/system.py:2212
 msgid "system_updatecustomvalue: Update a custom value for a system"
 msgstr "system_updatecustomvalue：更新系统的自定义值"
 
-#: ../src/spacecmd/system.py:2174
+#: ../src/spacecmd/system.py:2213
 msgid "usage: system_updatecustomvalue KEY VALUE <SYSTEMS>"
 msgstr "用法：system_updatecustomvalue KEY VALUE <系统>"
 
-#: ../src/spacecmd/system.py:2206
+#: ../src/spacecmd/system.py:2245
 msgid "system_removecustomvalues: Remove a custom value for a system"
 msgstr "system_removecustomvalues：去除系统的自定义值"
 
-#: ../src/spacecmd/system.py:2207
+#: ../src/spacecmd/system.py:2246
 msgid "usage: system_removecustomvalues <SYSTEMS> <KEY ...>"
 msgstr "用法：system_removecustomvalues <系统> <密钥 ...>"
 
-#: ../src/spacecmd/system.py:2243
+#: ../src/spacecmd/system.py:2282
 msgid "Delete these values [y/N]:"
 msgstr "删除这些值 [y/N]："
 
-#: ../src/spacecmd/system.py:2261
+#: ../src/spacecmd/system.py:2300
 msgid "system_addnote: Set a note for a system"
 msgstr "system_addnote：设置系统的笔记"
 
-#: ../src/spacecmd/system.py:2262
+#: ../src/spacecmd/system.py:2301
 msgid ""
 "usage: system_addnote <SYSTEM> [options]\n"
 "\n"
@@ -7265,84 +7290,84 @@ msgstr ""
 "  -s 主题\n"
 "  -b 正文"
 
-#: ../src/spacecmd/system.py:2297
+#: ../src/spacecmd/system.py:2336
 msgid "Subject of the Note:"
 msgstr "笔记的主题："
 
-#: ../src/spacecmd/system.py:2299
+#: ../src/spacecmd/system.py:2338
 msgid "Note Body (ctrl-D to finish):"
 msgstr "笔记正文（按 Ctrl-D 可结束提示）："
 
-#: ../src/spacecmd/system.py:2303
+#: ../src/spacecmd/system.py:2342
 msgid "A subject is required"
 msgstr "必须填写主题"
 
-#: ../src/spacecmd/system.py:2307
+#: ../src/spacecmd/system.py:2346
 msgid "A body is required"
 msgstr "必须填写正文"
 
-#: ../src/spacecmd/system.py:2326
+#: ../src/spacecmd/system.py:2365
 msgid "system_deletenotes: Delete notes from a system"
 msgstr "system_deletenotes：删除系统中的笔记"
 
-#: ../src/spacecmd/system.py:2327
+#: ../src/spacecmd/system.py:2366
 msgid "usage: system_deletenotes <SYSTEM> <ID|*>"
 msgstr "用法：system_deletenotes <系统> <ID|*>"
 
-#: ../src/spacecmd/system.py:2359
+#: ../src/spacecmd/system.py:2398
 msgid "No notes to delete"
 msgstr "没有可删除的笔记"
 
-#: ../src/spacecmd/system.py:2374
+#: ../src/spacecmd/system.py:2413
 #, python-format
 msgid "%s is not a valid note ID"
 msgstr "%s 不是有效的备注 ID"
 
-#: ../src/spacecmd/system.py:2386
+#: ../src/spacecmd/system.py:2425
 msgid "system_listnotes: List the available notes for a system"
 msgstr "system_listnotes：列出系统的可用笔记"
 
-#: ../src/spacecmd/system.py:2387
+#: ../src/spacecmd/system.py:2426
 msgid "usage: system_listnotes <SYSTEM>"
 msgstr "用法：system_listnotes <系统>"
 
-#: ../src/spacecmd/system.py:2445
+#: ../src/spacecmd/system.py:2484
 msgid "system_listfqdns: List the associated FQDNs for a system"
 msgstr "system_listfqdns：列出系统的关联 FQDN"
 
-#: ../src/spacecmd/system.py:2446
+#: ../src/spacecmd/system.py:2485
 msgid "usage: system_listfqdns <SYSTEM>"
 msgstr "用法：system_listfqdns <系统>"
 
-#: ../src/spacecmd/system.py:2498
+#: ../src/spacecmd/system.py:2537
 msgid "system_setbasechannel: Set a system's base software channel"
 msgstr "system_setbasechannel：设置系统的基础软件通道"
 
-#: ../src/spacecmd/system.py:2499
+#: ../src/spacecmd/system.py:2538
 msgid "usage: system_setbasechannel <SYSTEMS> CHANNEL"
 msgstr "用法：system_setbasechannel <系统> CHANNEL"
 
-#: ../src/spacecmd/system.py:2548 ../src/spacecmd/system.py:2637
+#: ../src/spacecmd/system.py:2587 ../src/spacecmd/system.py:2676
 #, python-format
 msgid "System:           %s"
 msgstr "系统：%s"
 
-#: ../src/spacecmd/system.py:2549 ../src/spacecmd/system.py:2638
+#: ../src/spacecmd/system.py:2588 ../src/spacecmd/system.py:2677
 #, python-format
 msgid "Old Base Channel: %s"
 msgstr "旧基础通道：%s"
 
-#: ../src/spacecmd/system.py:2550 ../src/spacecmd/system.py:2640
+#: ../src/spacecmd/system.py:2589 ../src/spacecmd/system.py:2679
 #, python-format
 msgid "New Base Channel: %s"
 msgstr "新基础通道：%s"
 
-#: ../src/spacecmd/system.py:2569
+#: ../src/spacecmd/system.py:2608
 msgid ""
 "system_schedulechangechannels: Schedule changing a system's software channels"
 msgstr "system_schedulechangechannels：安排更改系统的软件通道"
 
-#: ../src/spacecmd/system.py:2570
+#: ../src/spacecmd/system.py:2609
 msgid ""
 "usage: system_setbasechannel <SYSTEMS> [options]\n"
 "\n"
@@ -7358,243 +7383,134 @@ msgstr ""
 "  -c CHILD_CHANNEL 子通道标签（允许多次指定）\n"
 "  -s START_TIME 时间默认为现在"
 
-#: ../src/spacecmd/system.py:2639
+#: ../src/spacecmd/system.py:2678
 #, python-format
 msgid "Old Child Channels: %s"
 msgstr "旧子通道：%s"
 
-#: ../src/spacecmd/system.py:2641
+#: ../src/spacecmd/system.py:2680
 #, python-format
 msgid "New Child channels %s"
 msgstr "新子通道%s"
 
-#: ../src/spacecmd/system.py:2656 ../src/spacecmd/system.py:4523
+#: ../src/spacecmd/system.py:2695 ../src/spacecmd/system.py:4392
 #, python-format
 msgid "Scheduled action id: %s"
 msgstr "已安排操作 ID：%s"
 
-#: ../src/spacecmd/system.py:2663
+#: ../src/spacecmd/system.py:2702
 msgid "system_listbasechannel: List the base channel for a system"
 msgstr "system_listbasechannel：列出系统的基础通道"
 
-#: ../src/spacecmd/system.py:2664
+#: ../src/spacecmd/system.py:2703
 msgid "usage: system_listbasechannel <SYSTEMS>"
 msgstr "用法：system_listbasechannel <系统>"
 
-#: ../src/spacecmd/system.py:2718
+#: ../src/spacecmd/system.py:2757
 msgid "system_listchildchannels: List the child channels for a system"
 msgstr "system_listchildchannels：列出系统的子通道"
 
-#: ../src/spacecmd/system.py:2719
+#: ../src/spacecmd/system.py:2758
 msgid "usage: system_listchildchannels <SYSTEMS>"
 msgstr "用法：system_listchildchannels <系统>"
 
-#: ../src/spacecmd/system.py:2773
+#: ../src/spacecmd/system.py:2812
 msgid "system_addchildchannels: Add child channels to a system"
 msgstr "system_addchildchannels：将子通道添加到系统"
 
-#: ../src/spacecmd/system.py:2774
+#: ../src/spacecmd/system.py:2813
 msgid "usage: system_addchildchannels <SYSTEMS> <CHANNEL ...>"
 msgstr "用法：system_addchildchannels <系统> <通道 ...>"
 
-#: ../src/spacecmd/system.py:2799
-#, python-format
-msgid "This method was removed since API version %s"
-msgstr "从 API 版本 %s 开始，已去除此方法"
-
-#: ../src/spacecmd/system.py:2802
-#, python-format
-msgid "This method is deprecated and will be removed in API version %s"
-msgstr "API 版本 %s 中已弃用并将去除此方法"
-
-#: ../src/spacecmd/system.py:2807
-msgid ""
-"system_listcrashedsystems: List all systems that have experienced a crash "
-"and reported by spacewalk-abrt"
-msgstr ""
-"system_listcrashedsystems：列出发生了崩溃并已由 spacewalk-abrt 报告的所有系统"
-
-#: ../src/spacecmd/system.py:2808
-msgid "usage: system_listcrashedsystems"
-msgstr "用法：system_listcrashedsystems"
-
-#: ../src/spacecmd/system.py:2816
-msgid "Count | System ID | Profile Name"
-msgstr "计数 | 系统 ID | 配置文件名称"
-
-#: ../src/spacecmd/system.py:2830
-msgid "system_deletecrashes: Delete crashes reported by spacewalk-abrt."
-msgstr "system_deletecrashes：删除 spacewalk-abrt 报告的崩溃记录。"
-
-#: ../src/spacecmd/system.py:2831
-msgid ""
-"usage: Delete all crashes for all systems    : system_deletecrashes [--"
-"verbose]"
-msgstr "用法：删除所有系统的所有崩溃记录：system_deletecrashes [--verbose]"
-
-#: ../src/spacecmd/system.py:2832
-msgid ""
-"usage: Delete all crashes for a single system: system_deletecrashes -i "
-"sys_id [--verbose]"
-msgstr ""
-"用法：删除单个系统的所有崩溃记录：system_deletecrashes -i sys_id [--verbose]"
-
-#: ../src/spacecmd/system.py:2833
-msgid ""
-"usage: Delete a single crash record          : system_deletecrashes -c "
-"crash_id [--verbose]"
-msgstr "用法：删除一条崩溃记录：system_deletecrashes -c crash_id [--verbose]"
-
-#: ../src/spacecmd/system.py:2853
-#, python-format
-msgid "Deleting crash with id %s."
-msgstr "正在删除 ID 为 %s 的崩溃记录。"
-
-#: ../src/spacecmd/system.py:2860
-#, python-format
-msgid "Deleting all crashes from system with systemid %s [y/N]:"
-msgstr "正在删除系统 ID 为 %s 的系统中的所有崩溃记录 [y/N]："
-
-#. all systems
-#: ../src/spacecmd/system.py:2862
-msgid "Deleting all crashes from all systems [y/N]:"
-msgstr "正在删除所有系统中的所有崩溃记录 [y/N]："
-
-#: ../src/spacecmd/system.py:2874
-#, python-format
-msgid "Deleting crash with id %s from system %s."
-msgstr "正在删除 ID 为 %s 的崩溃记录（在系统 %s 中）。"
-
-#: ../src/spacecmd/system.py:2883
-msgid "system_listcrashesbysystem: List all reported crashes for a system."
-msgstr "system_listcrashesbysystem：列出针对某个系统报告的所有崩溃记录。"
-
-#: ../src/spacecmd/system.py:2884 ../src/spacecmd/system.py:2898
-msgid "usage: system_listcrashesbysystem -i sys_id"
-msgstr "用法：system_listcrashesbysystem -i sys_id"
-
-#: ../src/spacecmd/system.py:2897
-msgid "# System id must be provided."
-msgstr "# 必须提供系统 ID。"
-
-#: ../src/spacecmd/system.py:2903
-msgid "Crash ID | Crash Name"
-msgstr "崩溃记录 ID | 崩溃记录名称"
-
-#: ../src/spacecmd/system.py:2914
-msgid "system_getcrashfiles: Download all files for a crash record."
-msgstr "system_getcrashfiles：下载所有崩溃记录文件。"
-
-#: ../src/spacecmd/system.py:2915
-msgid "usage: system_getcrashfiles -c crash_id [--verbose]"
-msgstr "用法：system_getcrashfiles -c crash_id [--verbose]"
-
-#: ../src/spacecmd/system.py:2916 ../src/spacecmd/system.py:2932
-msgid ""
-"usage: system_getcrashfiles -c crash_id [--dest_folder=/tmp/crash_files] [--"
-"verbose]"
-msgstr ""
-"用法：system_getcrashfiles -c crash_id [--dest_folder=/tmp/crash_files] [--"
-"verbose]"
-
-#: ../src/spacecmd/system.py:2931
-msgid "# Crash id must be provided."
-msgstr "# 必须提供崩溃记录 ID。"
-
-#: ../src/spacecmd/system.py:2958
-#, python-format
-msgid "# All files we downloaded to %s."
-msgstr "# 所有文件已下载到 %s。"
-
-#: ../src/spacecmd/system.py:2967
+#: ../src/spacecmd/system.py:2836
 msgid "system_removechildchannels: Remove child channels from a system"
 msgstr "system_removechildchannels：从系统中去除子通道"
 
-#: ../src/spacecmd/system.py:2968
+#: ../src/spacecmd/system.py:2837
 msgid "usage: system_removechildchannels <SYSTEMS> <CHANNEL ...>"
 msgstr "用法：system_removechildchannels <系统> <通道 ...>"
 
-#: ../src/spacecmd/system.py:2991
+#: ../src/spacecmd/system.py:2860
 msgid "system_details: Show the details of a system profile"
 msgstr "system_details：显示系统配置文件的细节"
 
-#: ../src/spacecmd/system.py:2992
+#: ../src/spacecmd/system.py:2861
 msgid "usage: system_details <SYSTEMS>"
 msgstr "用法：system_details <系统>"
 
-#: ../src/spacecmd/system.py:3045
+#: ../src/spacecmd/system.py:2914
 #, python-format
 msgid "Name:          %s"
 msgstr "名称：%s"
 
-#: ../src/spacecmd/system.py:3046
+#: ../src/spacecmd/system.py:2915
 #, python-format
 msgid "System ID:     %i"
 msgstr "系统 ID：%i"
 
-#: ../src/spacecmd/system.py:3049
+#: ../src/spacecmd/system.py:2918
 #, python-format
 msgid "UUID:          %s"
 msgstr "UUID：%s"
 
-#: ../src/spacecmd/system.py:3051
+#: ../src/spacecmd/system.py:2920
 #, python-format
 msgid "Locked:        %s"
 msgstr "已锁定：%s"
 
-#: ../src/spacecmd/system.py:3052
+#: ../src/spacecmd/system.py:2921
 #, python-format
 msgid "Registered:    %s"
 msgstr "已注册：%s"
 
-#: ../src/spacecmd/system.py:3053
+#: ../src/spacecmd/system.py:2922
 #, python-format
 msgid "Last Checkin:  %s"
 msgstr "上次签入时间：%s"
 
-#: ../src/spacecmd/system.py:3054
+#: ../src/spacecmd/system.py:2923
 #, python-format
 msgid "OSA Status:    %s"
 msgstr "OSA 状态：%s"
 
-#: ../src/spacecmd/system.py:3055
+#: ../src/spacecmd/system.py:2924
 #, python-format
 msgid "Last Boot:     %s"
 msgstr "上次引导时间：%s"
 
-#: ../src/spacecmd/system.py:3057
+#: ../src/spacecmd/system.py:2926
 #, python-format
 msgid "Contact Method:%s"
 msgstr "联系方法：%s"
 
-#: ../src/spacecmd/system.py:3101
+#: ../src/spacecmd/system.py:2970
 #, python-format
 msgid "Hostname:      %s"
 msgstr "主机名：%s"
 
-#: ../src/spacecmd/system.py:3102
+#: ../src/spacecmd/system.py:2971
 #, python-format
 msgid "IP Address:    %s"
 msgstr "IP 地址：%s"
 
-#: ../src/spacecmd/system.py:3103
+#: ../src/spacecmd/system.py:2972
 #, python-format
 msgid "Kernel:        %s"
 msgstr "内核：%s"
 
-#: ../src/spacecmd/system.py:3144
+#: ../src/spacecmd/system.py:3013
 msgid "system_listerrata: List available errata for a system"
 msgstr "system_listerrata：列出系统的可用勘误"
 
-#: ../src/spacecmd/system.py:3145
+#: ../src/spacecmd/system.py:3014
 msgid "usage: system_listerrata <SYSTEMS>"
 msgstr "用法：system_listerrata <系统>"
 
-#: ../src/spacecmd/system.py:3199
+#: ../src/spacecmd/system.py:3068
 msgid "system_applyerrata: Apply errata to a system"
 msgstr "system_applyerrata：将勘误应用到系统"
 
-#: ../src/spacecmd/system.py:3200
+#: ../src/spacecmd/system.py:3069
 msgid ""
 "usage: system_applyerrata [options] <SYSTEMS>\n"
 "[ERRATA|search:XXX ...]\n"
@@ -7608,7 +7524,7 @@ msgstr ""
 "选项：\n"
 "  -s 开始时间"
 
-#: ../src/spacecmd/system.py:3262 ../src/spacecmd/system.py:3285
+#: ../src/spacecmd/system.py:3131 ../src/spacecmd/system.py:3154
 msgid ""
 "This method is deprecated and will be removed in a future API version. "
 "Please use system_listeventhistory instead.\n"
@@ -7616,29 +7532,29 @@ msgstr ""
 "此方法已弃用并会从将来的 API 版本中去除。请改为使用 "
 "system_listeventhistory。\n"
 
-#: ../src/spacecmd/system.py:3265
+#: ../src/spacecmd/system.py:3134
 msgid "system_listevents: List the event history for a system"
 msgstr "system_listevents：列出系统的事件历史记录"
 
-#: ../src/spacecmd/system.py:3266
+#: ../src/spacecmd/system.py:3135
 msgid "usage: system_listevents <SYSTEMS>"
 msgstr "用法：system_listevents <系统>"
 
-#: ../src/spacecmd/system.py:3316
+#: ../src/spacecmd/system.py:3185
 #, python-format
 msgid "Summary:   %s"
 msgstr "摘要：%s"
 
-#: ../src/spacecmd/system.py:3318
+#: ../src/spacecmd/system.py:3187
 #, python-format
 msgid "Details:   %s"
 msgstr "细节：%s"
 
-#: ../src/spacecmd/system.py:3326
+#: ../src/spacecmd/system.py:3195
 msgid "system_listeventhistory: List the event history for a system"
 msgstr "system_listeventhistory：列出系统的事件历史记录"
 
-#: ../src/spacecmd/system.py:3327
+#: ../src/spacecmd/system.py:3196
 msgid ""
 "usage: system_listeventhistory <SYSTEMS> [options]\n"
 "\n"
@@ -7657,178 +7573,178 @@ msgstr ""
 "  -o OFFSET 跳过第一个事件。如果未同时指定 -l，则忽略该选项。[默认值：0]\n"
 "  -l LIMIT 将结果限定为指定数量的事件。[默认值：无限制]"
 
-#: ../src/spacecmd/system.py:3380
+#: ../src/spacecmd/system.py:3249
 msgid "Invalid offset"
 msgstr "偏移无效"
 
-#: ../src/spacecmd/system.py:3387
+#: ../src/spacecmd/system.py:3256
 msgid "Invalid limit"
 msgstr "限制无效"
 
-#: ../src/spacecmd/system.py:3412
+#: ../src/spacecmd/system.py:3281
 #, python-format
 msgid "Id:           %s"
 msgstr "ID：           %s"
 
-#: ../src/spacecmd/system.py:3413
+#: ../src/spacecmd/system.py:3282
 #, python-format
 msgid "History type: %s"
 msgstr "历史记录类型：%s"
 
-#: ../src/spacecmd/system.py:3414
+#: ../src/spacecmd/system.py:3283
 #, python-format
 msgid "Status:       %s"
 msgstr "状态：            %s"
 
-#: ../src/spacecmd/system.py:3415
+#: ../src/spacecmd/system.py:3284
 #, python-format
 msgid "Summary:      %s"
 msgstr "摘要：             %s"
 
-#: ../src/spacecmd/system.py:3416
+#: ../src/spacecmd/system.py:3285
 #, python-format
 msgid "Completed:    %s"
 msgstr "完成时间：       %s"
 
-#: ../src/spacecmd/system.py:3424
+#: ../src/spacecmd/system.py:3293
 msgid "system_eventdetails: Retrieve the details of an event for a system"
 msgstr "system_eventdetails：检索系统事件的细节"
 
-#: ../src/spacecmd/system.py:3425
+#: ../src/spacecmd/system.py:3294
 msgid "usage: system_eventdetails <SYSTEM> <EVENT>"
 msgstr "用法：system_eventdetails <系统> <事件>"
 
-#: ../src/spacecmd/system.py:3464
+#: ../src/spacecmd/system.py:3333
 msgid "No event specified"
 msgstr "未指定事件"
 
-#: ../src/spacecmd/system.py:3470
+#: ../src/spacecmd/system.py:3339
 msgid "Invalid event id"
 msgstr "事件 ID 无效"
 
-#: ../src/spacecmd/system.py:3492
+#: ../src/spacecmd/system.py:3361
 #, python-format
 msgid "No event %s found in the history of system %s"
 msgstr "在系统 %s 的历史记录中找不到事件 %s"
 
-#: ../src/spacecmd/system.py:3495
+#: ../src/spacecmd/system.py:3364
 #, python-format
 msgid "Id:              %s"
 msgstr "ID：               %s"
 
-#: ../src/spacecmd/system.py:3497
+#: ../src/spacecmd/system.py:3366
 #, python-format
 msgid "History type:    %s"
 msgstr "历史记录类型：%s"
 
-#: ../src/spacecmd/system.py:3498
+#: ../src/spacecmd/system.py:3367
 #, python-format
 msgid "Status:          %s"
 msgstr "状态：            %s"
 
-#: ../src/spacecmd/system.py:3499
+#: ../src/spacecmd/system.py:3368
 #, python-format
 msgid "Summary:         %s"
 msgstr "摘要：              %s"
 
-#: ../src/spacecmd/system.py:3501
+#: ../src/spacecmd/system.py:3370
 #, python-format
 msgid "Created:         %s"
 msgstr "创建时间：       %s"
 
-#: ../src/spacecmd/system.py:3502
+#: ../src/spacecmd/system.py:3371
 #, python-format
 msgid "Picked up:       %s"
 msgstr "提取时间：      %s"
 
-#: ../src/spacecmd/system.py:3503
+#: ../src/spacecmd/system.py:3372
 #, python-format
 msgid "Completed:       %s"
 msgstr "完成时间：      %s"
 
-#: ../src/spacecmd/system.py:3507
+#: ../src/spacecmd/system.py:3376
 #, python-format
 msgid "Earliest action: %s"
 msgstr "最早的操作：%s"
 
-#: ../src/spacecmd/system.py:3508
+#: ../src/spacecmd/system.py:3377
 #, python-format
 msgid "Result message:  %s"
 msgstr "结果消息：%s"
 
-#: ../src/spacecmd/system.py:3509
+#: ../src/spacecmd/system.py:3378
 #, python-format
 msgid "Result code:     %s"
 msgstr "结果代码：%s"
 
-#: ../src/spacecmd/system.py:3514
+#: ../src/spacecmd/system.py:3383
 msgid "Additional info:"
 msgstr "其他信息："
 
-#: ../src/spacecmd/system.py:3523
+#: ../src/spacecmd/system.py:3392
 #, python-format
 msgid "    Result:          %s"
 msgstr "    结果：          %s"
 
-#: ../src/spacecmd/system.py:3524
+#: ../src/spacecmd/system.py:3393
 #, python-format
 msgid "    Detail:          %s"
 msgstr "    细节：          %s"
 
-#: ../src/spacecmd/system.py:3532
+#: ../src/spacecmd/system.py:3401
 msgid "system_listentitlements: List the entitlements for a system"
 msgstr "system_listentitlements：列出系统的权利"
 
-#: ../src/spacecmd/system.py:3533
+#: ../src/spacecmd/system.py:3402
 msgid "usage: system_listentitlements <SYSTEMS>"
 msgstr "用法：system_listentitlements <系统>"
 
-#: ../src/spacecmd/system.py:3586
+#: ../src/spacecmd/system.py:3455
 msgid "system_addentitlements: Add entitlements to a system"
 msgstr "system_addentitlements：将权利添加到系统"
 
-#: ../src/spacecmd/system.py:3587
+#: ../src/spacecmd/system.py:3456
 msgid "usage: system_addentitlements <SYSTEMS> ENTITLEMENT"
 msgstr "用法：system_addentitlements <系统> ENTITLEMENT"
 
-#: ../src/spacecmd/system.py:3642
+#: ../src/spacecmd/system.py:3511
 msgid "system_removeentitlement: Remove an entitlement from a system"
 msgstr "system_removeentitlement：从系统中去除权利"
 
-#: ../src/spacecmd/system.py:3643
+#: ../src/spacecmd/system.py:3512
 msgid "usage: system_removeentitlement <SYSTEMS> ENTITLEMENT"
 msgstr "用法：system_removeentitlement <系统> ENTITLEMENT"
 
-#: ../src/spacecmd/system.py:3698
+#: ../src/spacecmd/system.py:3567
 msgid "system_listpackageprofiles: List all package profiles"
 msgstr "system_listpackageprofiles：列出所有软件包配置文件"
 
-#: ../src/spacecmd/system.py:3699
+#: ../src/spacecmd/system.py:3568
 msgid "usage: system_listpackageprofiles"
 msgstr "用法：system_listpackageprofiles"
 
-#: ../src/spacecmd/system.py:3718
+#: ../src/spacecmd/system.py:3587
 msgid "system_deletepackageprofile: Delete a package profile"
 msgstr "system_deletepackageprofile：删除软件包配置文件"
 
-#: ../src/spacecmd/system.py:3719
+#: ../src/spacecmd/system.py:3588
 msgid "usage: system_deletepackageprofile PROFILE"
 msgstr "用法：system_deletepackageprofile PROFILE"
 
-#: ../src/spacecmd/system.py:3743
+#: ../src/spacecmd/system.py:3612
 msgid "Delete this profile [y/N]:"
 msgstr "删除此配置文件 [y/N]："
 
-#: ../src/spacecmd/system.py:3754
+#: ../src/spacecmd/system.py:3623
 #, python-format
 msgid "%s is not a valid profile"
 msgstr "%s 不是有效的配置文件"
 
-#: ../src/spacecmd/system.py:3765
+#: ../src/spacecmd/system.py:3634
 msgid "system_createpackageprofile: Create a package profile"
 msgstr "system_createpackageprofile：创建软件包配置文件"
 
-#: ../src/spacecmd/system.py:3766
+#: ../src/spacecmd/system.py:3635
 msgid ""
 "usage: system_createpackageprofile SYSTEM [options]\n"
 "\n"
@@ -7842,45 +7758,45 @@ msgstr ""
 "  -n 名称\n"
 "  -d 说明"
 
-#: ../src/spacecmd/system.py:3797
+#: ../src/spacecmd/system.py:3666
 msgid "Profile Label:"
 msgstr "配置文件标签："
 
-#: ../src/spacecmd/system.py:3801
+#: ../src/spacecmd/system.py:3670
 msgid "A profile name is required"
 msgstr "必须指定配置文件名称"
 
-#: ../src/spacecmd/system.py:3805
+#: ../src/spacecmd/system.py:3674
 msgid "A profile description is required"
 msgstr "必须指定配置文件说明"
 
-#: ../src/spacecmd/system.py:3813
+#: ../src/spacecmd/system.py:3682
 #, python-format
 msgid "Created package profile '%s'"
 msgstr "已创建软件包配置文件 '%s'"
 
-#: ../src/spacecmd/system.py:3821
+#: ../src/spacecmd/system.py:3690
 msgid ""
 "system_comparepackageprofile: Compare a system against a package profile"
 msgstr "system_comparepackageprofile：将系统与软件包配置文件进行比较"
 
-#: ../src/spacecmd/system.py:3822
+#: ../src/spacecmd/system.py:3691
 msgid "usage: system_comparepackageprofile <SYSTEMS> PROFILE"
 msgstr "用法：system_comparepackageprofile <系统> PROFILE"
 
-#: ../src/spacecmd/system.py:3885
+#: ../src/spacecmd/system.py:3754
 msgid "system_comparepackages: Compare the packages between two systems"
 msgstr "system_comparepackages：比较两个系统的软件包"
 
-#: ../src/spacecmd/system.py:3886
+#: ../src/spacecmd/system.py:3755
 msgid "usage: system_comparepackages SOME_SYSTEM ANOTHER_SYSTEM"
 msgstr "用法：system_comparepackages SOME_SYSTEM ANOTHER_SYSTEM"
 
-#: ../src/spacecmd/system.py:3917
+#: ../src/spacecmd/system.py:3786
 msgid "system_syncpackages: Sync packages between two systems"
 msgstr "system_syncpackages：同步两个系统的软件包"
 
-#: ../src/spacecmd/system.py:3918
+#: ../src/spacecmd/system.py:3787
 msgid ""
 "usage: system_syncpackages SOURCE TARGET [options]\n"
 "\n"
@@ -7892,85 +7808,85 @@ msgstr ""
 "选项：\n"
 "    -s 开始时间"
 
-#: ../src/spacecmd/system.py:3966
+#: ../src/spacecmd/system.py:3835
 msgid "Sync packages [y/N]:"
 msgstr "同步软件包 [y/N]："
 
-#: ../src/spacecmd/system.py:4008
+#: ../src/spacecmd/system.py:3877
 #, python-format
 msgid "Failed to filter package list, package %s"
 msgstr "无法过滤软件包列表，找到的软件包 %s"
 
-#: ../src/spacecmd/system.py:4009
+#: ../src/spacecmd/system.py:3878
 msgid "found with no arch or arch_label"
 msgstr "没有体系结构或体系结构标签"
 
-#: ../src/spacecmd/system.py:4051
+#: ../src/spacecmd/system.py:3920
 msgid "System Version"
 msgstr "系统版本"
 
-#: ../src/spacecmd/system.py:4052
+#: ../src/spacecmd/system.py:3921
 msgid "Channel Version"
 msgstr "通道版本"
 
-#: ../src/spacecmd/system.py:4074
+#: ../src/spacecmd/system.py:3943
 msgid "Channel_newer_than_system"
 msgstr "Channel_newer_than_system"
 
-#: ../src/spacecmd/system.py:4087
+#: ../src/spacecmd/system.py:3956
 msgid "System_newer_than_channel"
 msgstr "System_newer_than_channel"
 
-#: ../src/spacecmd/system.py:4096
+#: ../src/spacecmd/system.py:3965
 msgid "Missing_in_channel"
 msgstr "Missing_in_channel"
 
-#: ../src/spacecmd/system.py:4100
+#: ../src/spacecmd/system.py:3969
 msgid "system_comparewithchannel: Compare the installed packages on a"
 msgstr "system_comparewithchannel：将某个系统上安装的软件包"
 
-#: ../src/spacecmd/system.py:4101
+#: ../src/spacecmd/system.py:3970
 msgid "                           system with those in the channels it is"
 msgstr "                           与它注册到的通道或者（可选）"
 
-#: ../src/spacecmd/system.py:4102
+#: ../src/spacecmd/system.py:3971
 msgid "                           registerd to, or optionally some other"
 msgstr "                           其他某个通道中的软件包进行"
 
-#: ../src/spacecmd/system.py:4103
+#: ../src/spacecmd/system.py:3972
 msgid "                           channel"
 msgstr "                           比较"
 
-#: ../src/spacecmd/system.py:4104
+#: ../src/spacecmd/system.py:3973
 msgid "usage: system_comparewithchannel <SYSTEMS> [options]"
 msgstr "用法：system_comparewithchannel <系统> [选项]"
 
-#: ../src/spacecmd/system.py:4106
+#: ../src/spacecmd/system.py:3975
 msgid "         -c/--channel : Specific channel to compare against,"
 msgstr "         -c/--channel：要比较的特定通道，"
 
-#: ../src/spacecmd/system.py:4107
+#: ../src/spacecmd/system.py:3976
 msgid "                        default is those subscribed to, including"
 msgstr "                        默认为已订阅的通道，包括"
 
-#: ../src/spacecmd/system.py:4108
+#: ../src/spacecmd/system.py:3977
 msgid "                        child channels"
 msgstr "                        子通道"
 
-#: ../src/spacecmd/system.py:4159
+#: ../src/spacecmd/system.py:4028
 msgid "Specified channel does not exist"
 msgstr "指定的通道不存在"
 
-#: ../src/spacecmd/system.py:4170
+#: ../src/spacecmd/system.py:4039
 #, python-format
 msgid "system %s is not subscribed to any channel!"
 msgstr "系统 %s 未订阅任何通道！"
 
-#: ../src/spacecmd/system.py:4172
+#: ../src/spacecmd/system.py:4041
 msgid "Please subscribe to a channel, or specify achannel to compare with"
 msgstr "请订阅一个通道，或指定要比较的通道"
 
-#: ../src/spacecmd/system.py:4206
+#: ../src/spacecmd/system.py:4075
 #, python-format
 msgid ""
 "\n"
@@ -7979,12 +7895,12 @@ msgstr ""
 "\n"
 "系统：%s"
 
-#: ../src/spacecmd/system.py:4232
+#: ../src/spacecmd/system.py:4101
 msgid ""
 "system_schedulehardwarerefresh: Schedule a hardware refresh for a system"
 msgstr "system_schedulehardwarerefresh：为系统安排硬件刷新"
 
-#: ../src/spacecmd/system.py:4233
+#: ../src/spacecmd/system.py:4102
 msgid ""
 "usage: system_schedulehardwarerefresh <SYSTEMS> [options]\n"
 "\n"
@@ -7996,13 +7912,13 @@ msgstr ""
 "选项：\n"
 "  -s 开始时间"
 
-#: ../src/spacecmd/system.py:4295
+#: ../src/spacecmd/system.py:4164
 msgid ""
 "system_schedulepackagerefresh: Schedule a software package refresh for a "
 "system"
 msgstr "system_schedulepackagerefresh：为系统安排软件包刷新"
 
-#: ../src/spacecmd/system.py:4296
+#: ../src/spacecmd/system.py:4165
 msgid ""
 "usage: system_schedulepackagerefresh <SYSTEMS> [options])\n"
 "\n"
@@ -8014,29 +7930,29 @@ msgstr ""
 "选项：\n"
 "  -s 开始时间"
 
-#: ../src/spacecmd/system.py:4357
+#: ../src/spacecmd/system.py:4226
 msgid ""
 "system_show_packageversion: Shows version of installed package on given "
 "system(s)"
 msgstr "system_show_packageversion：显示给定系统上安装的软件包版本"
 
-#: ../src/spacecmd/system.py:4358
+#: ../src/spacecmd/system.py:4227
 msgid "usage: system_show_packageversion <SYSTEM> <PACKAGE>"
 msgstr "用法：system_show_packageversion <系统> <软件包>"
 
-#: ../src/spacecmd/system.py:4390
+#: ../src/spacecmd/system.py:4259
 msgid "Package\tVersion\tRelease\tEpoch\tArch\tSystem"
 msgstr "软件包\t版本\t发行版\t纪元\t体系结构\t系统"
 
-#: ../src/spacecmd/system.py:4410
+#: ../src/spacecmd/system.py:4279
 msgid "system_setcontactmethod: Set the contact method for given system(s)."
 msgstr "system_setcontactmethod：为给定的系统设置联系方法。"
 
-#: ../src/spacecmd/system.py:4412
+#: ../src/spacecmd/system.py:4281
 msgid "usage: system_setcontactmethod <SYSTEMS> <CONTACT_METHOD>"
 msgstr "用法：system_setcontactmethod <系统> <联系方法>"
 
-#: ../src/spacecmd/system.py:4461
+#: ../src/spacecmd/system.py:4330
 msgid ""
 "system_scheduleapplyconfigchannels: Schedule applying the assigned config "
 "channels to the System (Minion only)"
@@ -8044,7 +7960,7 @@ msgstr ""
 "system_scheduleapplyconfigchannels：安排将指派的配置通道应用到系统（仅限受控"
 "端）"
 
-#: ../src/spacecmd/system.py:4463
+#: ../src/spacecmd/system.py:4332
 msgid ""
 "usage: scheduleapplyconfigchannels <SYSTEMS> [options]\n"
 "\n"
@@ -8056,45 +7972,45 @@ msgstr ""
 "    选项：\n"
 "        -s 开始时间"
 
-#: ../src/spacecmd/system.py:4514
+#: ../src/spacecmd/system.py:4383
 msgid "Schedule applying config channels to these systems [y/N]:"
 msgstr "安排将配置通道应用到这些系统 [y/N]："
 
-#: ../src/spacecmd/system.py:4531
+#: ../src/spacecmd/system.py:4400
 msgid ""
 "system_listmigrationtargets: List possible migration targets for given "
 "systems."
 msgstr "system_listmigrationtargets：列出给定系统的可能迁移目标。"
 
-#: ../src/spacecmd/system.py:4532
+#: ../src/spacecmd/system.py:4401
 msgid "usage: system_listmigrationtargets <SYSTEMS>"
 msgstr "用法：system_listmigrationtargets <系统>"
 
-#: ../src/spacecmd/system.py:4558
+#: ../src/spacecmd/system.py:4427
 msgid "WARN: Cannot find system "
 msgstr "警告：找不到系统 "
 
-#: ../src/spacecmd/system.py:4561
+#: ../src/spacecmd/system.py:4430
 msgid "System "
 msgstr "系统 "
 
-#: ../src/spacecmd/system.py:4565
+#: ../src/spacecmd/system.py:4434
 msgid "  No migration targets"
 msgstr "  无迁移目标"
 
-#: ../src/spacecmd/system.py:4568
+#: ../src/spacecmd/system.py:4437
 msgid "  Target #"
 msgstr "  目标编号"
 
-#: ../src/spacecmd/system.py:4569
+#: ../src/spacecmd/system.py:4438
 msgid "    IDs: "
 msgstr "    ID： "
 
-#: ../src/spacecmd/system.py:4570
+#: ../src/spacecmd/system.py:4439
 msgid "    Friendly names: "
 msgstr "    友好名称： "
 
-#: ../src/spacecmd/system.py:4578 ../src/spacecmd/system.py:4594
+#: ../src/spacecmd/system.py:4447 ../src/spacecmd/system.py:4463
 msgid ""
 "This method is deprecated and will be removed in a future API version. "
 "Please use system_scheduleproductmigration instead."
@@ -8102,16 +8018,16 @@ msgstr ""
 "此方法已弃用并会从将来的 API 版本中去除。请改为使用 "
 "system_scheduleproductmigration。"
 
-#: ../src/spacecmd/system.py:4580 ../src/spacecmd/system.py:4596
+#: ../src/spacecmd/system.py:4449 ../src/spacecmd/system.py:4465
 msgid "This method is deprecated and will be removed in a future API version"
 msgstr "此方法已弃用并会从将来的 API 版本中去除"
 
-#: ../src/spacecmd/system.py:4581
+#: ../src/spacecmd/system.py:4450
 msgid ""
 "system_schedulespmigration: Schedule a Service Pack migration for systems."
 msgstr "system_schedulespmigration：为系统安排服务包迁移。"
 
-#: ../src/spacecmd/system.py:4582
+#: ../src/spacecmd/system.py:4451
 msgid ""
 "usage: system_schedulespmigration <SYSTEM> <BASE_CHANNEL_LABEL> "
 "<MIGRATION_TARGET> [options] \n"
@@ -8133,12 +8049,12 @@ msgstr ""
 "        -d 如果您要执行试运行，请传递此标志\n"
 "        -c 子通道（逗号分隔的子通道标签（不带空格））"
 
-#: ../src/spacecmd/system.py:4603
+#: ../src/spacecmd/system.py:4472
 msgid ""
 "system_scheduleproductmigration: Schedule a Product migration for systems."
 msgstr "system_scheduleproductmigration：为系统安排服务产品迁移。"
 
-#: ../src/spacecmd/system.py:4604
+#: ../src/spacecmd/system.py:4473
 msgid ""
 "usage: system_scheduleproductmigration <SYSTEM> <BASE_CHANNEL_LABEL> "
 "<MIGRATION_TARGET> [options] \n"
@@ -8166,33 +8082,33 @@ msgstr ""
 "        -r 如果您要去除没有后继版本的产品，请传递此标志 \n"
 "        -c 子通道（逗号分隔的子通道标签（不含空格））"
 
-#: ../src/spacecmd/system.py:4658
+#: ../src/spacecmd/system.py:4527
 msgid "Cannot find system "
 msgstr "找不到系统 "
 
-#: ../src/spacecmd/system.py:4658
+#: ../src/spacecmd/system.py:4527
 msgid ". Skipping it."
 msgstr "。正在跳过。"
 
-#: ../src/spacecmd/system.py:4661
+#: ../src/spacecmd/system.py:4530
 msgid "Scheduling Product migration for system "
 msgstr "正在为以下系统安排产品迁移 "
 
-#: ../src/spacecmd/system.py:4662
+#: ../src/spacecmd/system.py:4531
 msgid "Migration target "
 msgstr "迁移目标 "
 
-#: ../src/spacecmd/system.py:4668
+#: ../src/spacecmd/system.py:4537
 msgid "Scheduled action ID: "
 msgstr "已安排操作 ID： "
 
-#: ../src/spacecmd/system.py:4678
+#: ../src/spacecmd/system.py:4547
 msgid ""
 "system_bootstrap: Bootstrap a system for management via either Salt or Salt "
 "SSH."
 msgstr "system_bootstrap：引导系统以通过 Salt 或 Salt SSH 进行管理。"
 
-#: ../src/spacecmd/system.py:4679
+#: ../src/spacecmd/system.py:4548
 msgid ""
 "usage: bootstrap [options]\n"
 "\n"
@@ -8224,63 +8140,67 @@ msgstr ""
 "        --saltssh\n"
 "        "
 
-#: ../src/spacecmd/system.py:4713
+#: ../src/spacecmd/system.py:4582
 msgid "Hostname:"
 msgstr "主机名："
 
-#: ../src/spacecmd/system.py:4714
+#: ../src/spacecmd/system.py:4583
 msgid "Port [22]:"
 msgstr "端口 [22]："
 
-#: ../src/spacecmd/system.py:4717
+#: ../src/spacecmd/system.py:4586
 msgid "SSH User [root]:"
 msgstr "SSH 用户 [root]："
 
-#: ../src/spacecmd/system.py:4720
+#: ../src/spacecmd/system.py:4589
 msgid "SSH Password:"
 msgstr "SSH 口令："
 
-#: ../src/spacecmd/system.py:4722
+#: ../src/spacecmd/system.py:4591
 msgid "SSH Private Key File:"
 msgstr "SSH 私用密钥文件："
 
-#: ../src/spacecmd/system.py:4723
+#: ../src/spacecmd/system.py:4592
 msgid "SSH Private Key Password:"
 msgstr "SSH 私用密钥口令："
 
-#: ../src/spacecmd/system.py:4726
+#: ../src/spacecmd/system.py:4595
 msgid "Activation Key:"
 msgstr "激活密钥："
 
-#: ../src/spacecmd/system.py:4729
+#: ../src/spacecmd/system.py:4598
 msgid "Reactivation Key:"
 msgstr "重新激活密钥："
 
-#: ../src/spacecmd/system.py:4730
+#: ../src/spacecmd/system.py:4599
 msgid "Proxy System ID:"
 msgstr "代理系统 ID："
 
-#: ../src/spacecmd/system.py:4732
+#: ../src/spacecmd/system.py:4601
 msgid "Manage with Salt SSH"
 msgstr "使用 Salt SSH 管理"
 
-#: ../src/spacecmd/system.py:4737
+#: ../src/spacecmd/system.py:4607
+msgid "Provided port must be numeric"
+msgstr "提供的端口必须是数字"
+
+#: ../src/spacecmd/system.py:4612
 msgid "Hostname must be provided"
 msgstr "必须提供主机名"
 
-#: ../src/spacecmd/system.py:4740
+#: ../src/spacecmd/system.py:4615
 msgid "Either a SSH Password or a private key must be provided"
 msgstr "必须提供 SSH 口令或私用密钥"
 
-#: ../src/spacecmd/system.py:4748
+#: ../src/spacecmd/system.py:4623
 msgid "Server is not supporting reactivation keys at bootstrap time"
 msgstr "服务器在引导时不支持重新激活密钥"
 
-#: ../src/spacecmd/system.py:4755
+#: ../src/spacecmd/system.py:4630
 msgid "Bootstrapping '{}'. This may take a while."
 msgstr "正在引导 \"{}\"。这可能需要一段时间。"
 
-#: ../src/spacecmd/system.py:4769
+#: ../src/spacecmd/system.py:4644
 msgid ""
 "Initial phase successfully finished. Check event history for actions still "
 "running"
@@ -8518,133 +8438,225 @@ msgstr "用法：user_setpassword USER PASSWORD"
 #. So we catch this error and remove the corrupt partial file
 #. If you don't do this then spacecmd will fail with an unhandled
 #. exception until the partial file is manually removed
-#: ../src/spacecmd/utils.py:135
+#: ../src/spacecmd/utils.py:142
 #, python-format
 msgid "Loading cache file %s failed"
-msgstr "装载缓存文件 %s 失败"
+msgstr "加载缓存文件 %s 失败"
 
-#: ../src/spacecmd/utils.py:136
+#: ../src/spacecmd/utils.py:143
 #, python-format
 msgid "Cache generation was probably interrupted,removing corrupt %s"
 msgstr "缓存生成可能已中断，正在去除损坏的 %s"
 
-#: ../src/spacecmd/utils.py:141
+#: ../src/spacecmd/utils.py:148
 #, python-format
 msgid "Couldn't load cache from %s"
-msgstr "无法从 %s 装载缓存"
+msgstr "无法从 %s 加载缓存"
 
-#: ../src/spacecmd/utils.py:162
+#: ../src/spacecmd/utils.py:169
 #, python-format
 msgid "Couldn't write to %s"
 msgstr "无法写入 %s"
 
-#: ../src/spacecmd/utils.py:207
+#: ../src/spacecmd/utils.py:214
 msgid "Could not open the temporary file"
 msgstr "无法打开临时文件"
 
-#: ../src/spacecmd/utils.py:226
+#: ../src/spacecmd/utils.py:233
 #, python-format
 msgid "Editor \"%s\" exited with code %i"
 msgstr "编辑器 \"%s\" 已退出并返回代码 %i"
 
-#: ../src/spacecmd/utils.py:228
+#: ../src/spacecmd/utils.py:235
 #, python-format
 msgid "General failure running editor: %s"
 msgstr "运行编辑器时发生常规失败：%s"
 
-#: ../src/spacecmd/utils.py:231
+#: ../src/spacecmd/utils.py:238
 msgid "No editors found"
 msgstr "未找到编辑器"
 
-#: ../src/spacecmd/utils.py:370
+#: ../src/spacecmd/utils.py:376
 msgid "Invalid time provided"
 msgstr "提供了无效时间"
 
-#: ../src/spacecmd/utils.py:459
+#: ../src/spacecmd/utils.py:495
 #, python-format
 msgid "%s is an unknown errata type"
 msgstr "%s 是未知勘误类型"
 
-#: ../src/spacecmd/utils.py:467
+#: ../src/spacecmd/utils.py:503
 msgid "Security Errata"
 msgstr "安全勘误"
 
-#: ../src/spacecmd/utils.py:476
+#: ../src/spacecmd/utils.py:512
 msgid "Bug Fix Errata"
 msgstr "Bug 修复勘误"
 
-#: ../src/spacecmd/utils.py:485
+#: ../src/spacecmd/utils.py:521
 msgid "Enhancement Errata"
 msgstr "增强勘误"
 
-#: ../src/spacecmd/utils.py:495
+#: ../src/spacecmd/utils.py:531
 msgid "Current Selections"
 msgstr "当前选择内容"
 
-#: ../src/spacecmd/utils.py:505
+#: ../src/spacecmd/utils.py:541
 msgid "Available Configuration Channels"
 msgstr "可用配置通道"
 
-#: ../src/spacecmd/utils.py:511 ../src/spacecmd/utils.py:531
+#: ../src/spacecmd/utils.py:547 ../src/spacecmd/utils.py:567
 msgid "Channel:"
 msgstr "通道："
 
-#: ../src/spacecmd/utils.py:514 ../src/spacecmd/utils.py:534
+#: ../src/spacecmd/utils.py:550 ../src/spacecmd/utils.py:570
 msgid "Invalid channel"
 msgstr "无效通道"
 
-#: ../src/spacecmd/utils.py:518
+#: ../src/spacecmd/utils.py:554
 msgid "New Rank:"
 msgstr "新排名："
 
-#: ../src/spacecmd/utils.py:525 ../src/spacecmd/utils.py:528
+#: ../src/spacecmd/utils.py:561 ../src/spacecmd/utils.py:564
 msgid "Invalid rank"
 msgstr "无效排名"
 
-#: ../src/spacecmd/utils.py:539
+#: ../src/spacecmd/utils.py:575
 msgid "Clearing current selections"
 msgstr "正在清除当前选择内容"
 
-#: ../src/spacecmd/utils.py:708
+#: ../src/spacecmd/utils.py:756
 msgid "Could not generate json data object!"
 msgstr "无法生成 json 数据对象！"
 
-#: ../src/spacecmd/utils.py:715
+#: ../src/spacecmd/utils.py:763
 #, python-format
 msgid "Could not open file %s for writing: %s"
 msgstr "无法打开要写入的文件 %s：%s"
 
-#: ../src/spacecmd/utils.py:726
+#: ../src/spacecmd/utils.py:774
 #, python-format
 msgid "Could not open file %s for reading: %s"
 msgstr "无法打开要读取的文件 %s：%s"
 
-#: ../src/spacecmd/utils.py:728
+#: ../src/spacecmd/utils.py:776
 #, python-format
 msgid "Could not parse JSON data from %s: %s"
 msgstr "无法分析 %s 中的 JSON 数据：%s"
 
 #. pylint: disable=broad-except
-#: ../src/spacecmd/utils.py:730
+#: ../src/spacecmd/utils.py:778
 #, python-format
 msgid "Error processing file %s: %s"
 msgstr "处理文件 %s 时出错：%s"
 
-#: ../src/spacecmd/utils.py:758
+#: ../src/spacecmd/utils.py:815
 msgid "Skipping usage of common strings: both strings are equal"
 msgstr "正在跳过公用字符串的使用：两个字符串相同"
 
-#: ../src/spacecmd/utils.py:774
+#: ../src/spacecmd/utils.py:831
 msgid "Skipping usage of common strings: number of substrings differ"
 msgstr "正在跳过公用字符串的使用：子字符串数目不同"
 
-#: ../src/spacecmd/utils.py:860
+#: ../src/spacecmd/utils.py:919
 msgid "Parameter {} not a string type, but {}."
 msgstr "参数 {} 不是字符串类型，而是 {}。"
 
 #: ../src/bin/spacecmd:75
 msgid "Unhandled exception occurred while getting FQDN:"
 msgstr "获取 FQDN 时发生未经处理的异常："
+
+#~ msgid "The following kickstart labels are invalid:"
+#~ msgstr "以下 kickstart 标签无效："
+
+#, python-format
+#~ msgid "This method was removed since API version %s"
+#~ msgstr "从 API 版本 %s 开始，已去除此方法"
+
+#, python-format
+#~ msgid "This method is deprecated and will be removed in API version %s"
+#~ msgstr "API 版本 %s 中已弃用并将去除此方法"
+
+#~ msgid ""
+#~ "system_listcrashedsystems: List all systems that have experienced a crash "
+#~ "and reported by spacewalk-abrt"
+#~ msgstr ""
+#~ "system_listcrashedsystems：列出发生了崩溃并已由 spacewalk-abrt 报告的所有"
+#~ "系统"
+
+#~ msgid "usage: system_listcrashedsystems"
+#~ msgstr "用法：system_listcrashedsystems"
+
+#~ msgid "Count | System ID | Profile Name"
+#~ msgstr "计数 | 系统 ID | 配置文件名称"
+
+#~ msgid "system_deletecrashes: Delete crashes reported by spacewalk-abrt."
+#~ msgstr "system_deletecrashes：删除 spacewalk-abrt 报告的崩溃记录。"
+
+#~ msgid ""
+#~ "usage: Delete all crashes for all systems    : system_deletecrashes [--"
+#~ "verbose]"
+#~ msgstr "用法：删除所有系统的所有崩溃记录：system_deletecrashes [--verbose]"
+
+#~ msgid ""
+#~ "usage: Delete all crashes for a single system: system_deletecrashes -i "
+#~ "sys_id [--verbose]"
+#~ msgstr ""
+#~ "用法：删除单个系统的所有崩溃记录：system_deletecrashes -i sys_id [--"
+#~ "verbose]"
+
+#~ msgid ""
+#~ "usage: Delete a single crash record          : system_deletecrashes -c "
+#~ "crash_id [--verbose]"
+#~ msgstr ""
+#~ "用法：删除一条崩溃记录：system_deletecrashes -c crash_id [--verbose]"
+
+#, python-format
+#~ msgid "Deleting crash with id %s."
+#~ msgstr "正在删除 ID 为 %s 的崩溃记录。"
+
+#, python-format
+#~ msgid "Deleting all crashes from system with systemid %s [y/N]:"
+#~ msgstr "正在删除系统 ID 为 %s 的系统中的所有崩溃记录 [y/N]："
+
+#~ msgid "Deleting all crashes from all systems [y/N]:"
+#~ msgstr "正在删除所有系统中的所有崩溃记录 [y/N]："
+
+#, python-format
+#~ msgid "Deleting crash with id %s from system %s."
+#~ msgstr "正在删除 ID 为 %s 的崩溃记录（在系统 %s 中）。"
+
+#~ msgid "system_listcrashesbysystem: List all reported crashes for a system."
+#~ msgstr "system_listcrashesbysystem：列出针对某个系统报告的所有崩溃记录。"
+
+#~ msgid "usage: system_listcrashesbysystem -i sys_id"
+#~ msgstr "用法：system_listcrashesbysystem -i sys_id"
+
+#~ msgid "# System id must be provided."
+#~ msgstr "# 必须提供系统 ID。"
+
+#~ msgid "Crash ID | Crash Name"
+#~ msgstr "崩溃记录 ID | 崩溃记录名称"
+
+#~ msgid "system_getcrashfiles: Download all files for a crash record."
+#~ msgstr "system_getcrashfiles：下载所有崩溃记录文件。"
+
+#~ msgid "usage: system_getcrashfiles -c crash_id [--verbose]"
+#~ msgstr "用法：system_getcrashfiles -c crash_id [--verbose]"
+
+#~ msgid ""
+#~ "usage: system_getcrashfiles -c crash_id [--dest_folder=/tmp/crash_files] "
+#~ "[--verbose]"
+#~ msgstr ""
+#~ "用法：system_getcrashfiles -c crash_id [--dest_folder=/tmp/crash_files] "
+#~ "[--verbose]"
+
+#~ msgid "# Crash id must be provided."
+#~ msgstr "# 必须提供崩溃记录 ID。"
+
+#, python-format
+#~ msgid "# All files we downloaded to %s."
+#~ msgstr "# 所有文件已下载到 %s。"
 
 #~ msgid "Arch:    %s"
 #~ msgstr "体系结构：%s"

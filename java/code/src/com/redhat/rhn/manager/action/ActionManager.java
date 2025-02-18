@@ -38,8 +38,6 @@ import com.redhat.rhn.domain.action.config.ConfigUploadAction;
 import com.redhat.rhn.domain.action.dup.DistUpgradeAction;
 import com.redhat.rhn.domain.action.dup.DistUpgradeActionDetails;
 import com.redhat.rhn.domain.action.errata.ErrataAction;
-import com.redhat.rhn.domain.action.image.DeployImageAction;
-import com.redhat.rhn.domain.action.image.DeployImageActionDetails;
 import com.redhat.rhn.domain.action.kickstart.KickstartAction;
 import com.redhat.rhn.domain.action.kickstart.KickstartActionDetails;
 import com.redhat.rhn.domain.action.kickstart.KickstartGuestAction;
@@ -64,7 +62,6 @@ import com.redhat.rhn.domain.config.ConfigurationFactory;
 import com.redhat.rhn.domain.errata.Errata;
 import com.redhat.rhn.domain.image.ImageProfile;
 import com.redhat.rhn.domain.image.ImageStore;
-import com.redhat.rhn.domain.image.ProxyConfig;
 import com.redhat.rhn.domain.kickstart.KickstartData;
 import com.redhat.rhn.domain.kickstart.KickstartFactory;
 import com.redhat.rhn.domain.org.Org;
@@ -95,6 +92,7 @@ import com.redhat.rhn.manager.errata.ErrataManager;
 import com.redhat.rhn.manager.kickstart.ProvisionVirtualInstanceCommand;
 import com.redhat.rhn.manager.kickstart.cobbler.CobblerVirtualSystemCommand;
 import com.redhat.rhn.manager.kickstart.cobbler.CobblerXMLRPCHelper;
+import com.redhat.rhn.manager.rhnpackage.PackageManager;
 import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.taskomatic.TaskomaticApi;
 import com.redhat.rhn.taskomatic.TaskomaticApiException;
@@ -104,7 +102,6 @@ import com.suse.manager.reactor.messaging.ApplyStatesEventMessage;
 import com.suse.manager.webui.controllers.utils.ContactMethodUtil;
 import com.suse.manager.webui.services.pillar.MinionPillarManager;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -362,7 +359,22 @@ public class ActionManager extends BaseManager {
                                               .filter(sa -> serverIds.isEmpty() || serverIds.contains(sa.getServerId()))
                                               .anyMatch(sa -> !ActionFactory.STATUS_FAILED.equals(sa.getStatus()));
         if (hasValidPrerequisite) {
-            throw new ActionIsChildException();
+            StringBuilder message = new StringBuilder();
+            for (Action a : actions) {
+                Action p = a.getPrerequisite();
+                Long lastId = a.getId();
+                do {
+                    if (p != null) {
+                        lastId = p.getId();
+                    }
+                    else {
+                        break;
+                    }
+                    p = p.getPrerequisite();
+                } while (p != null);
+                message.append(String.format("To cancel the whole chain, please cancel Action %d%n", lastId));
+            }
+            throw new ActionIsChildException(message.toString());
         }
 
         Set<Action> actionsToDelete = concat(
@@ -482,9 +494,7 @@ public class ActionManager extends BaseManager {
      * @param errata The errata pertaining to this action
      */
     public static ErrataAction createErrataAction(Org org, Errata errata) {
-        ErrataAction a = (ErrataAction) createErrataAction((User) null, errata);
-        a.setOrg(org);
-        return a;
+        return createErrataAction(null, org, errata);
     }
 
     /**
@@ -493,13 +503,24 @@ public class ActionManager extends BaseManager {
      * @param user The user scheduling errata
      * @param errata The errata pertaining to this action
      */
-    public static Action createErrataAction(User user, Errata errata) {
-        ErrataAction a = (ErrataAction)ActionFactory
-                .createAction(ActionFactory.TYPE_ERRATA);
+    public static ErrataAction createErrataAction(User user, Errata errata) {
+        return createErrataAction(user, user.getOrg(), errata);
+    }
+
+    /**
+     * Creates an errata action with the specified Org
+     * @return The created action
+     * @param user the user that is scheduling the action
+     * @param org The org that needs the errata.
+     * @param errata The errata pertaining to this action
+     */
+    private static ErrataAction createErrataAction(User user, Org org, Errata errata) {
+        ErrataAction a = (ErrataAction) ActionFactory.createAction(ActionFactory.TYPE_ERRATA);
         if (user != null) {
             a.setSchedulerUser(user);
-            a.setOrg(user.getOrg());
         }
+
+        a.setOrg(org);
         a.addErrata(errata);
 
         Object[] args = new Object[2];
@@ -691,43 +712,6 @@ public class ActionManager extends BaseManager {
 
         List<Server> servers = SystemManager.hydrateServerFromIds(serverIds, user);
         return createConfigActionForServers(user, revisions, servers, type, earliest);
-    }
-
-    /**
-     * Schedule deployment of an image to a vhost.
-     *
-     * @return The created action
-     * @param user The user scheduling image deployment
-     * @param imageUrl The URL of the image to be deployed
-     * @param vcpus number of vcpus
-     * @param memkb memory in Kb
-     * @param bridge device
-     * @param proxy proxy configuration
-     */
-    public static Action createDeployImageAction(User user, String imageUrl,
-            Long vcpus, Long memkb, String bridge, ProxyConfig proxy) {
-        DeployImageAction a = (DeployImageAction) ActionFactory
-                .createAction(ActionFactory.TYPE_DEPLOY_IMAGE);
-        if (user != null) {
-            a.setSchedulerUser(user);
-            a.setOrg(user.getOrg());
-        }
-
-        DeployImageActionDetails details = new DeployImageActionDetails();
-        details.setParentAction(a);
-        details.setVcpus(vcpus);
-        details.setMemKb(memkb);
-        details.setBridgeDevice(bridge);
-        details.setDownloadUrl(imageUrl);
-        if (proxy != null) {
-            details.setProxyServer(proxy.getServer());
-            details.setProxyUser(proxy.getUser());
-            details.setProxyPass(new String(Base64.encodeBase64(
-                    proxy.getPass().getBytes())));
-        }
-        a.setDetails(details);
-        a.setName("Image Deployment: " + imageUrl);
-        return a;
     }
 
     /**
@@ -1019,14 +1003,14 @@ public class ActionManager extends BaseManager {
      * @param aid The action id for the action in question
      * @return Return a list containing the errata for the action.
      */
-    public static DataResult getErrataList(Long aid) {
+    public static DataResult<Row> getErrataList(Long aid) {
         SelectMode m = ModeFactory.getMode("Errata_queries",
                 "errata_associated_with_action");
 
         Map<String, Object> params = new HashMap<>();
         params.put("aid", aid);
 
-        DataResult dr = m.execute(params);
+        DataResult<Row> dr = m.execute(params);
         dr.setTotalSize(dr.size());
         return dr;
     }
@@ -1036,13 +1020,13 @@ public class ActionManager extends BaseManager {
      * @param aid The action id for the action in question
      * @return Return a list containing the errata for the action.
      */
-    public static DataResult getConfigFileUploadList(Long aid) {
+    public static DataResult<Row> getConfigFileUploadList(Long aid) {
         SelectMode m = ModeFactory.getMode("config_queries", "upload_action_status");
 
         Map<String, Object> params = new HashMap<>();
         params.put("aid", aid);
 
-        DataResult dr = m.execute(params);
+        DataResult<Row> dr = m.execute(params);
         dr.setTotalSize(dr.size());
         return dr;
     }
@@ -1052,13 +1036,13 @@ public class ActionManager extends BaseManager {
      * @param aid The action id for the action in question
      * @return Return a list containing the details for the action.
      */
-    public static DataResult getConfigFileDeployList(Long aid) {
+    public static DataResult<Row> getConfigFileDeployList(Long aid) {
         SelectMode m = ModeFactory.getMode("config_queries", "config_action_revisions");
 
         Map<String, Object> params = new HashMap<>();
         params.put("aid", aid);
 
-        DataResult dr = m.execute(params);
+        DataResult<Row> dr = m.execute(params);
         dr.setTotalSize(dr.size());
         return dr;
     }
@@ -1068,13 +1052,13 @@ public class ActionManager extends BaseManager {
      * @param aid The action id for the action in question
      * @return Return a list containing the details for the action.
      */
-    public static DataResult getConfigFileDiffList(Long aid) {
+    public static DataResult<Row> getConfigFileDiffList(Long aid) {
         SelectMode m = ModeFactory.getMode("config_queries", "diff_action_revisions");
 
         Map<String, Object> params = new HashMap<>();
         params.put("aid", aid);
 
-        DataResult dr = m.execute(params);
+        DataResult<Row> dr = m.execute(params);
         dr.setTotalSize(dr.size());
         return dr;
     }
@@ -1179,37 +1163,37 @@ public class ActionManager extends BaseManager {
     /**
      * Schedule a package list refresh without a user.
      *
-     * @param schedulerOrg the organization the server belongs to
+     * @param user the user that scheduled the action
      * @param server the server
      * @return the scheduled PackageRefreshListAction
      * @throws TaskomaticApiException if there was a Taskomatic error
      * (typically: Taskomatic is down)
      */
-    public static PackageAction schedulePackageRefresh(Org schedulerOrg, Server server)
+    public static PackageAction schedulePackageRefresh(Optional<User> user, Server server)
             throws TaskomaticApiException {
         Date earliest = new Date();
-        return schedulePackageRefresh(schedulerOrg, server, earliest);
+        return schedulePackageRefresh(user, server, earliest);
     }
 
     /**
      * Schedule a package list refresh without a user.
      *
-     * @param schedulerOrg the organization the server belongs to
+     * @param user the organization the server belongs to
      * @param server the server
      * @param earliest The earliest time this action should be run.
      * @return the scheduled PackageRefreshListAction
      * @throws TaskomaticApiException if there was a Taskomatic error
      * (typically: Taskomatic is down)
      */
-    public static PackageAction schedulePackageRefresh(Org schedulerOrg, Server server,
+    public static PackageAction schedulePackageRefresh(Optional<User> user, Server server,
             Date earliest) throws TaskomaticApiException {
         checkSaltOrManagementEntitlement(server.getId());
 
         Action action = ActionFactory.createAction(
                 ActionFactory.TYPE_PACKAGES_REFRESH_LIST);
         action.setName(ActionFactory.TYPE_PACKAGES_REFRESH_LIST.getName());
-        action.setOrg(schedulerOrg);
-        action.setSchedulerUser(null);
+        action.setOrg(server.getOrg());
+        action.setSchedulerUser(user.orElse(null));
         action.setEarliestAction(earliest);
 
         ServerAction sa = new ServerAction();
@@ -1700,7 +1684,7 @@ public class ActionManager extends BaseManager {
             kad.setVirtBridge(pcmd.getVirtBridge());
         }
 
-        CobblerVirtualSystemCommand vcmd = new CobblerVirtualSystemCommand(
+        CobblerVirtualSystemCommand vcmd = new CobblerVirtualSystemCommand(pcmd.getUser(),
                 pcmd.getServer(), cProfile.getName(), pcmd.getGuestName(),
                 pcmd.getKsdata());
         kad.setCobblerSystemName(vcmd.getCobblerSystemRecordName());
@@ -1878,6 +1862,8 @@ public class ActionManager extends BaseManager {
         Set<Long> serverIds = new HashSet<>();
         serverIds.add(server.getId());
 
+        packages = removeDuplicatedName(packages);
+
         return schedulePackageAction(scheduler, packages,
                 ActionFactory.TYPE_PACKAGES_UPDATE, earliestAction, serverIds);
     }
@@ -1941,6 +1927,38 @@ public class ActionManager extends BaseManager {
         return action;
     }
 
+
+    private static List<Map<String, Long>> removeDuplicatedName(List<Map<String, Long>> packageMaps) {
+        Map<String, Map<String, Long>> packageMapsWithoutDuplicated = new HashMap<>();
+
+        for (Map<String, Long> map : packageMaps) {
+
+            Map<String, Long> previous = packageMapsWithoutDuplicated.put(
+                    map.get("name_id").toString(), map);
+
+            if (previous != null) {
+                String previousNevra = PackageManager.buildPackageNevra(
+                        previous.get("name_id"),
+                        previous.get("evr_id"),
+                        previous.get("arch_id"));
+
+                String currentNevra = PackageManager.buildPackageNevra(
+                        map.get("name_id"),
+                        map.get("evr_id"),
+                        map.get("arch_id"));
+
+                log.warn("Package {}, will be not be installed cause also {} has been " +
+                        "provided. This is because " +
+                        "salt fails installing to package with the same name. If the " +
+                        "installed package is not the one desired, " +
+                        "you can install it the correct one after."
+                        , previousNevra, currentNevra);
+
+            }
+        }
+        return new ArrayList<>(packageMapsWithoutDuplicated.values());
+
+    }
     /**
      * Adds package details to some Actions
      * @param actions the actions
@@ -1950,10 +1968,36 @@ public class ActionManager extends BaseManager {
     public static void addPackageActionDetails(Collection<Action> actions,
             List<Map<String, Long>> packageMaps) {
         if (packageMaps != null) {
+            List<Map<String, Long>> pkgMaps;
+
+            if (actions.iterator().next().getActionType().equals(ActionFactory.TYPE_PACKAGES_REMOVE)) {
+                // our packages.pkgremove state is handling duplicates
+                pkgMaps = packageMaps;
+            }
+            else {
+                long noarch = PackageFactory.lookupPackageArchByLabel("noarch").getId();
+                long all = PackageFactory.lookupPackageArchByLabel("all-deb").getId();
+                Map<String, Map<String, Long>> uPkgMap = new HashMap<>();
+                // For other salt pkg states (pkg.installed), name + arch must be unique.
+                for (Map<String, Long> p : packageMaps) {
+                    long archId = p.getOrDefault("arch_id", noarch);
+                    String name = String.valueOf(p.get("name_id"));
+                    if (archId == noarch || archId == all) {
+                        if (uPkgMap.keySet().stream().noneMatch(k -> k.startsWith(name + "."))) {
+                            uPkgMap.put(name, p);
+                        }
+                    }
+                    else if (!uPkgMap.containsKey(name)) {
+                        String key = name + "." + p.get("arch_id");
+                        uPkgMap.put(key, p);
+                    }
+                }
+                pkgMaps = new ArrayList<>(uPkgMap.values());
+            }
             List<Map<String, Object>> paramList =
                 actions.stream().flatMap(action -> {
                     String packageParameter = getPackageParameter(action);
-                    return packageMaps.stream().map(packageMap -> {
+                    return pkgMaps.stream().map(packageMap -> {
                         Map<String, Object> params = new HashMap<>();
                         params.put("action_id", action.getId());
                         params.put("name_id", packageMap.get("name_id"));
@@ -1967,8 +2011,8 @@ public class ActionManager extends BaseManager {
 
             ModeFactory.getWriteMode("Action_queries", "schedule_action")
                 .executeUpdates(paramList);
-        }
     }
+        }
 
     /**
      * Returns the pkg_parameter parameter to the schedule_action queries in
@@ -2260,7 +2304,7 @@ public class ActionManager extends BaseManager {
      */
     public static ApplyStatesAction scheduleApplyStates(User scheduler, List<Long> sids, List<String> mods,
             Date earliest, Optional<Boolean> test) {
-        return scheduleApplyStates(scheduler, sids, mods, Optional.empty(), earliest, test);
+        return scheduleApplyStates(scheduler, sids, mods, Optional.empty(), earliest, test, false);
     }
 
     /**
@@ -2276,11 +2320,28 @@ public class ActionManager extends BaseManager {
      * @return the action object
      */
     public static ApplyStatesAction scheduleApplyStates(User scheduler, List<Long> sids, List<String> mods,
-            Optional<Map<String, Object>> pillar, Date earliest, Optional<Boolean> test) {
+        Optional<Map<String, Object>> pillar, Date earliest, Optional<Boolean> test) {
+        return scheduleApplyStates(scheduler, sids, mods, pillar, earliest, test, false);
+    }
+
+    /**
+     * Schedule state application given a list of state modules. Salt will apply the
+     * highstate if an empty list of state modules is given.
+     *
+     * @param scheduler the user who is scheduling
+     * @param sids list of server ids
+     * @param mods list of state modules to be applied
+     * @param pillar optional pillar map
+     * @param earliest action will not be executed before this date
+     * @param test run states in test-only mode
+     * @param recurring whether the state is being applied recurring
+     * @return the action object
+     */
+    public static ApplyStatesAction scheduleApplyStates(User scheduler, List<Long> sids, List<String> mods,
+            Optional<Map<String, Object>> pillar, Date earliest, Optional<Boolean> test, boolean recurring) {
         ApplyStatesAction action = (ApplyStatesAction) ActionFactory
                 .createAction(ActionFactory.TYPE_APPLY_STATES, earliest);
-        String states = mods.isEmpty() ? "highstate" : "states " + mods.toString();
-        action.setName("Apply " + states);
+        action.setName(defineStatesActionName(mods, recurring));
         action.setOrg(scheduler != null ?
                 scheduler.getOrg() : OrgFactory.getSatelliteOrg());
         action.setSchedulerUser(scheduler);
@@ -2294,6 +2355,21 @@ public class ActionManager extends BaseManager {
 
         scheduleForExecution(action, new HashSet<>(sids));
         return action;
+    }
+
+    /**
+     * Define apply states action name.
+     * @param mods - the mods applied
+     * @param recurring - whether the states are being applied recurring
+     * @return - the name of the action
+     */
+    public static String defineStatesActionName(List<String> mods, boolean recurring) {
+        StringBuilder statesDescription = new StringBuilder("Apply ");
+        if (recurring) {
+            statesDescription.append("recurring ");
+        }
+        statesDescription.append(mods.isEmpty() ? "highstate" : "states " + mods);
+        return statesDescription.toString();
     }
 
     /**
@@ -2367,7 +2443,6 @@ public class ActionManager extends BaseManager {
      * @return Returns a list of scheduled action ids
      *
      */
-
     public static List<Long> changeProxy(User loggedInUser, List<Long> sysids, Long proxyId)
         throws TaskomaticApiException {
         List<Long> visible = MinionServerFactory.lookupVisibleToUser(loggedInUser)
@@ -2428,7 +2503,7 @@ public class ActionManager extends BaseManager {
         if (!normalIds.isEmpty()) {
             // action for normal minions - update salt master, the channels will be updated after minion restart
             Map<String, Object> pillar = new HashMap<>();
-            pillar.put("mgr_server", proxy.map(Server::getHostname).orElse(ConfigDefaults.get().getCobblerHost()));
+            pillar.put("mgr_server", proxy.map(Server::getHostname).orElse(ConfigDefaults.get().getJavaHostname()));
 
             Action a = scheduleApplyStates(loggedInUser, normalIds,
                        Collections.singletonList(ApplyStatesEventMessage.SET_PROXY),

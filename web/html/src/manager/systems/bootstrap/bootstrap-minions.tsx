@@ -5,7 +5,7 @@ import SpaRenderer from "core/spa/spa-renderer";
 import { AsyncButton, Button } from "components/buttons";
 import { Dialog } from "components/dialog/Dialog";
 import { ModalLink } from "components/dialog/ModalLink";
-import { Messages, MessageType, Utils as MessagesUtils } from "components/messages";
+import { Messages, MessageType, Utils as MessagesUtils } from "components/messages/messages";
 import { TopPanel } from "components/panels/TopPanel";
 
 import Network from "utils/network";
@@ -47,19 +47,40 @@ class ErrorDetailsDialog extends React.Component<ErrorDetailsDialogProps> {
           {this.props.error.standardOutput && (
             <div className="form-group">
               <label className="control-label">Standard Output:</label>
-              <textarea readOnly disabled className="form-control" value={this.props.error.standardOutput} rows={5} />
+              <textarea
+                readOnly
+                disabled
+                className="form-control"
+                data-testid="stdout"
+                value={this.props.error.standardOutput}
+                rows={5}
+              />
             </div>
           )}
           {this.props.error.standardError && (
             <div className="form-group">
               <label className="control-label">Standard Error:</label>
-              <textarea readOnly disabled className="form-control" value={this.props.error.standardError} rows={5} />
+              <textarea
+                readOnly
+                disabled
+                className="form-control"
+                data-testid="stderr"
+                value={this.props.error.standardError}
+                rows={5}
+              />
             </div>
           )}
           {this.props.error.result && (
             <div className="form-group">
               <label className="control-label">Result:</label>
-              <textarea readOnly disabled className="form-control" value={this.props.error.result} rows={5} />
+              <textarea
+                readOnly
+                disabled
+                className="form-control"
+                data-testid="result"
+                value={this.props.error.result}
+                rows={5}
+              />
             </div>
           )}
         </>
@@ -331,11 +352,16 @@ class BootstrapMinions extends React.Component<Props, State> {
     if (this.state.success) {
       alertMessages = MessagesUtils.success(
         <p>
-          {t("Successfully bootstrapped host! Your system should appear in")}{" "}
-          <a className="js-spa" href="/rhn/manager/systems/list/all">
-            {t("systems")}
-          </a>{" "}
-          {t("shortly")}.
+          {t(
+            "Bootstrap process initiated. Your system should be visible at the following location shortly: <link>systems</link>. If any issues arise, you'll receive an error notification. In case you're working with a transactional system, please perform a system reboot to complete the registration process.",
+            {
+              link: (str) => (
+                <a className="js-spa" href="/rhn/manager/systems/list/all">
+                  {str}
+                </a>
+              ),
+            }
+          )}
         </p>
       );
     } else if (this.state.errors.length > 0) {
@@ -367,7 +393,7 @@ class BootstrapMinions extends React.Component<Props, State> {
     var buttons = [
       <AsyncButton
         id="bootstrap-btn"
-        defaultType="btn-success"
+        defaultType="btn-primary"
         icon="fa-plus"
         text={t("Bootstrap")}
         disabled={this.state.privKeyLoading}
@@ -439,8 +465,8 @@ class BootstrapMinions extends React.Component<Props, State> {
       <TopPanel title={t("Bootstrap Minions")} icon="fa fa-rocket" helpUrl="reference/systems/bootstrapping.html">
         <p>
           {t(
-            "You can add systems to be managed by providing SSH credentials only. {0} will prepare the system remotely and will perform the registration.",
-            productName
+            "You can add systems to be managed by providing SSH credentials only. {productName} will prepare the system remotely and will perform the registration.",
+            { productName }
           )}
         </p>
         <Messages items={alertMessages} />
@@ -490,8 +516,8 @@ class BootstrapMinions extends React.Component<Props, State> {
                 <div className="help-block">
                   <i className="fa fa-exclamation-triangle" />
                   {t(
-                    "The user will have an effect only during the bootstrap process. Further connections will be made by the user specified in rhn.conf. The default user for the key 'ssh_push_sudo_user' is 'root'. This user is set after {0}'s SSH key is deployed during the bootstrap procedure.",
-                    productName
+                    "The user will have an effect only during the bootstrap process. Further connections will be made by the user specified in rhn.conf. The default user for the key 'ssh_push_sudo_user' is 'root'. This user is set after {productName}'s SSH key is deployed during the bootstrap procedure.",
+                    { productName }
                   )}
                 </div>
               )}
@@ -641,7 +667,7 @@ class BootstrapMinions extends React.Component<Props, State> {
             </div>
           </div>
           <div className="form-group">
-            <div className="col-md-offset-3 col-md-6">{buttons}</div>
+            <div className="col-md-offset-3 offset-md-3 col-md-6">{buttons}</div>
           </div>
         </div>
       </TopPanel>

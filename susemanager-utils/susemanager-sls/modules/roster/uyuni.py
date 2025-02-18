@@ -1,8 +1,11 @@
 """
 Read in the roster from Uyuni DB
 """
+
 from collections import namedtuple
 import hashlib
+
+# pylint: disable-next=unused-import
 import io
 import logging
 
@@ -28,13 +31,13 @@ log = logging.getLogger(__name__)
 
 Proxy = namedtuple("Proxy", ["hostname", "port"])
 
-COBBLER_HOST = "localhost"
+JAVA_HOSTNAME = "localhost"
 PROXY_SSH_PUSH_USER = "mgrsshtunnel"
 PROXY_SSH_PUSH_KEY = (
     "/var/lib/spacewalk/" + PROXY_SSH_PUSH_USER + "/.ssh/id_susemanager_ssh_push"
 )
 SALT_SSH_CONNECT_TIMEOUT = 180
-SSH_KEY_DIR = "/srv/susemanager/salt/salt_ssh"
+SSH_KEY_DIR = "/var/lib/salt/.ssh"
 SSH_KEY_PATH = SSH_KEY_DIR + "/mgr_ssh_id"
 SSH_PRE_FLIGHT_SCRIPT = None
 SSH_PUSH_PORT = 22
@@ -44,10 +47,12 @@ SSH_USE_SALT_THIN = False
 SSL_PORT = 443
 
 
+# pylint: disable-next=invalid-name
 def __virtual__():
     if not HAS_PSYCOPG2:
         return (False, "psycopg2 is not available")
 
+    # pylint: disable-next=undefined-variable
     if __opts__.get("postgres") is None or __opts__.get("uyuni_roster") is None:
         return (False, "Uyuni is not installed or configured")
 
@@ -76,27 +81,32 @@ class UyuniRoster:
         self.ssh_connect_timeout = uyuni_roster_config.get(
             "ssh_connect_timeout", SALT_SSH_CONNECT_TIMEOUT
         )
-        self.cobbler_host = uyuni_roster_config.get("host", COBBLER_HOST)
+        self.java_hostname = uyuni_roster_config.get("host", JAVA_HOSTNAME)
 
         if "port" in db_config:
+            # pylint: disable-next=consider-using-f-string
             self.db_connect_str = "dbname='{db}' user='{user}' host='{host}' port='{port}' password='{pass}'".format(
                 **db_config
             )
         else:
             self.db_connect_str = (
+                # pylint: disable-next=consider-using-f-string
                 "dbname='{db}' user='{user}' host='{host}' password='{pass}'".format(
                     **db_config
                 )
             )
 
-        log.trace("db_connect string: %s", self.db_connect_str)
+        log.trace("db_connect dbname: %s", db_config["db"])
+        log.trace("db_connect   user: %s", db_config["user"])
+        log.trace("db_connect   host: %s", db_config["host"])
         log.debug("ssh_pre_flight_script: %s", self.ssh_pre_flight_script)
         log.debug("ssh_push_port_https: %d", self.ssh_push_port_https)
         log.debug("ssh_push_sudo_user: %s", self.ssh_push_sudo_user)
         log.debug("ssh_use_salt_thin: %s", self.ssh_use_salt_thin)
         log.debug("salt_ssh_connect_timeout: %d", self.ssh_connect_timeout)
-        log.debug("cobbler.host: %s", self.cobbler_host)
+        log.debug("java.hostname: %s", self.java_hostname)
 
+        # pylint: disable-next=undefined-variable
         self.cache = salt.cache.Cache(__opts__)
         cache_data = self.cache.fetch("roster/uyuni", "minions")
         if "minions" in cache_data and self.config_hash != cache_data.get(
@@ -116,7 +126,9 @@ class UyuniRoster:
             )
             log.trace("_init_db: done")
         except psycopg2.OperationalError as err:
+            # pylint: disable-next=logging-not-lazy
             log.warning(
+                # pylint: disable-next=consider-using-f-string
                 "Unable to connect to the Uyuni DB: \n%sWill try to reconnect later."
                 % (err)
             )
@@ -130,6 +142,7 @@ class UyuniRoster:
             log.trace("_execute_query: ret %s", cur)
             return cur
         except psycopg2.OperationalError as err:
+            # pylint: disable-next=logging-not-lazy,consider-using-f-string
             log.warning("Error during SQL prepare: %s" % (err))
             log.warning("Trying to reinit DB connection...")
             self._init_db()
@@ -154,16 +167,17 @@ class UyuniRoster:
         i = 0
         for proxy in proxies:
             proxy_command.append(
+                # pylint: disable-next=consider-using-f-string
                 "/usr/bin/ssh -p {ssh_port} -i {ssh_key_path} -o StrictHostKeyChecking=no "
                 "-o User={ssh_push_user} {in_out_forward} {proxy_host}".format(
                     ssh_port=proxy.port or 22,
                     ssh_key_path=SSH_KEY_PATH if i == 0 else PROXY_SSH_PUSH_KEY,
                     ssh_push_user=PROXY_SSH_PUSH_USER,
-                    in_out_forward="-W {host}:{port}".format(
-                        host=minion_id, port=ssh_push_port
-                    )
-                    if not tunnel and i == len(proxies) - 1
-                    else "",
+                    in_out_forward=(
+                        f"-W {minion_id}:{ssh_push_port}"
+                        if not tunnel and i == len(proxies) - 1
+                        else ""
+                    ),
                     proxy_host=proxy.hostname,
                 )
             )
@@ -177,10 +191,12 @@ class UyuniRoster:
                     pushKey=PROXY_SSH_PUSH_KEY,
                     user=user,
                     pushPort=self.ssh_push_port_https,
-                    proxy=proxies[len(proxies) - 1].hostname,
+                    proxy="localhost",
                     sslPort=SSL_PORT,
                     minion=minion_id,
+                    # pylint: disable-next=consider-using-f-string
                     ownKey="{}{}".format(
+                        # pylint: disable-next=consider-using-f-string
                         "/root" if user == "root" else "/home/{}".format(user),
                         "/.ssh/mgr_own_id",
                     ),
@@ -188,8 +204,10 @@ class UyuniRoster:
                 )
             )
 
+        # pylint: disable-next=consider-using-f-string
         return ["ProxyCommand='{}'".format(" ".join(proxy_command))]
 
+    # pylint: disable-next=dangerous-default-value
     def _get_ssh_minion(
         self, minion_id=None, proxies=[], tunnel=False, ssh_push_port=SSH_PUSH_PORT
     ):
@@ -206,7 +224,7 @@ class UyuniRoster:
                 {
                     "ssh_pre_flight": self.ssh_pre_flight_script,
                     "ssh_pre_flight_args": [
-                        proxies[-1].hostname if proxies else self.cobbler_host,
+                        proxies[-1].hostname if proxies else self.java_hostname,
                         self.ssh_push_port_https if tunnel else SSL_PORT,
                         1 if self.ssh_use_salt_thin else 0,
                     ],
@@ -227,8 +245,9 @@ class UyuniRoster:
         elif tunnel:
             minion.update(
                 {
+                    # pylint: disable-next=consider-using-f-string
                     "remote_port_forwards": "%d:%s:%d"
-                    % (self.ssh_push_port_https, self.cobbler_host, SSL_PORT)
+                    % (self.ssh_push_port_https, "localhost", SSL_PORT)
                 }
             )
 
@@ -339,16 +358,23 @@ class UyuniRoster:
         return ret
 
 
+# pylint: disable-next=unused-argument
 def targets(tgt, tgt_type="glob", **kwargs):
     """
     Return the targets from the Uyuni DB
     """
 
+    # pylint: disable-next=undefined-variable
     uyuni_roster = __context__.get("roster.uyuni")
     if uyuni_roster is None:
         uyuni_roster = UyuniRoster(
-            __opts__.get("postgres"), __opts__.get("uyuni_roster")
+            # pylint: disable-next=undefined-variable
+            __opts__.get("postgres"),
+            # pylint: disable-next=undefined-variable
+            __opts__.get("uyuni_roster"),
         )
+        # pylint: disable-next=undefined-variable
         __context__["roster.uyuni"] = uyuni_roster
 
+    # pylint: disable-next=undefined-variable
     return __utils__["roster_matcher.targets"](uyuni_roster.targets(), tgt, tgt_type)

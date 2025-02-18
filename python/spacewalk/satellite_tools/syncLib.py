@@ -1,3 +1,4 @@
+#  pylint: disable=missing-module-docstring,invalid-name
 #
 # Copyright (c) 2008--2017 Red Hat, Inc.
 #
@@ -29,9 +30,9 @@ except ImportError:
 # rhn imports:
 from uyuni.common.usix import raise_with_tb
 from uyuni.common import rhnLib
-from spacewalk.common.rhnConfig import CFG
 from spacewalk.common.rhnLog import log_time, log_clean
-from uyuni.common.fileutils import createPath, setPermsPath
+from spacewalk.common.fileutils import chown_chmod_path, create_path
+from spacewalk.common.rhnConfig import cfg_component
 
 from . import messages
 
@@ -51,16 +52,17 @@ def dumpEMAIL_LOG():
 
 
 class RhnSyncException(Exception):
-
     """General exception handler for all sync activity."""
+
     pass
 
 
 class ReprocessingNeeded(Exception):
-
     """Exception raised when a contition has been hit that would require a new
     run of the sync process"""
+
     pass
+
 
 # logging functions:
 # log levels rule of thumb:
@@ -91,14 +93,18 @@ def _prepLogMsg(msg, cleanYN=0, notimeYN=0, shortYN=0):
     if not cleanYN:
         if shortYN:
             if notimeYN:
-                msg = '%s %s' % (' ' * len(_timeString2()), msg)
+                # pylint: disable-next=consider-using-f-string
+                msg = "%s %s" % (" " * len(_timeString2()), msg)
             else:
-                msg = '%s %s' % (_timeString2(), msg)
+                # pylint: disable-next=consider-using-f-string
+                msg = "%s %s" % (_timeString2(), msg)
         else:
             if notimeYN:
-                msg = '%s %s' % (' ' * len(_timeString1()), msg)
+                # pylint: disable-next=consider-using-f-string
+                msg = "%s %s" % (" " * len(_timeString1()), msg)
             else:
-                msg = '%s %s' % (_timeString1(), msg)
+                # pylint: disable-next=consider-using-f-string
+                msg = "%s %s" % (_timeString1(), msg)
     return msg
 
 
@@ -111,11 +117,13 @@ def log2disk(level, msg, cleanYN=0, notimeYN=0):
     for m in msg:
         try:
             log_clean(level=level, msg=_prepLogMsg(m, cleanYN, notimeYN))
+        # pylint: disable-next=try-except-raise
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:  # pylint: disable=E0012, W0703
             e = sys.exc_info()[1]
-            sys.stderr.write('ERROR: upon attempt to write to log file: %s' % e)
+            # pylint: disable-next=consider-using-f-string
+            sys.stderr.write("ERROR: upon attempt to write to log file: %s" % e)
 
 
 def log2stream(level, msg, cleanYN, notimeYN, stream):
@@ -124,15 +132,16 @@ def log2stream(level, msg, cleanYN, notimeYN, stream):
     """
     if not isinstance(msg, type([])):
         msg = [msg]
-    if CFG.DEBUG >= level:
-        for m in msg:
-            stream.write(_prepLogMsg(m, cleanYN, notimeYN, shortYN=1) + '\n')
-        stream.flush()
+    with cfg_component(component=None) as CFG:
+        if CFG.DEBUG >= level:
+            for m in msg:
+                stream.write(_prepLogMsg(m, cleanYN, notimeYN, shortYN=1) + "\n")
+            stream.flush()
 
 
 def log2email(level, msg, cleanYN=0, notimeYN=0):
-    """ Log to the email log.
-        Arguments: see def _prepLogMsg(...) above.
+    """Log to the email log.
+    Arguments: see def _prepLogMsg(...) above.
     """
     if EMAIL_LOG is not None:
         log2stream(level, msg, cleanYN, notimeYN, EMAIL_LOG)
@@ -187,21 +196,21 @@ class FileCreationError(Exception):
 
 
 class FileManip:
-
     "Generic file manipulation class"
 
     def __init__(self, relative_path, timestamp, file_size):
         self.relative_path = relative_path
         self.timestamp = rhnLib.timestamp(timestamp)
         self.file_size = file_size
-        self.full_path = os.path.join(CFG.MOUNT_POINT, self.relative_path)
-        self.buffer_size = CFG.BUFFER_SIZE
+        with cfg_component(component=None) as CFG:
+            self.full_path = os.path.join(CFG.MOUNT_POINT, self.relative_path)
+            self.buffer_size = CFG.BUFFER_SIZE
 
     def write_file(self, stream_in):
         """Writes the contents of stream_in to the filesystem
         Returns the file size(success) or raises FileCreationError"""
         dirname = os.path.dirname(self.full_path)
-        createPath(dirname)
+        create_path(dirname)
         stat = os.statvfs(dirname)
 
         f_bsize = stat[0]  # file system block size
@@ -218,22 +227,25 @@ class FileManip:
             # pkilambi: As the metadata download does'nt check for unfetched rpms
             # abort the sync when it runs out of disc space
             sys.exit(-1)
-            #raise FileCreationError(msg)
+            # raise FileCreationError(msg)
         if freespace < 5000 * 1024:  # arbitrary
             msg = messages.not_enough_diskspace % (freespace / 1024)
             log(-1, msg, stream=sys.stderr)
             # pkilambi: As the metadata download does'nt check for unfetched rpms
             # abort the sync when it runs out of disc space
             sys.exit(-1)
-            #raise FileCreationError(msg)
+            # raise FileCreationError(msg)
 
-        fout = open(self.full_path, 'wb')
+        fout = open(self.full_path, "wb")
         # setting file permissions; NOTE: rhnpush uses apache to write to disk,
         # hence the 6 setting.
-        if rhnLib.isSUSE():
-            setPermsPath(self.full_path, user='wwwrun', group='www', chmod=int('0644', 8))
-        else:
-            setPermsPath(self.full_path, user='apache', group='apache', chmod=int('0644', 8))
+        with cfg_component(component=None) as CFG:
+            chown_chmod_path(
+                self.full_path,
+                user=CFG.httpd_user,
+                group=CFG.httpd_group,
+                chmod=int("0644", 8),
+            )
         size = 0
         try:
             while 1:
@@ -245,6 +257,7 @@ class FileManip:
                 size = size + buf_len
         except IOError:
             e = sys.exc_info()[1]
+            # pylint: disable-next=consider-using-f-string
             msg = "IOError: %s" % e
             log(-1, msg, stream=sys.stderr)
             # Try not to leave garbage around
@@ -258,8 +271,12 @@ class FileManip:
 
         if self.file_size is not None and self.file_size != l_file_size:
             # Something bad happened
+            # pylint: disable-next=consider-using-f-string
             msg = "Error: file %s has wrong size. Expected %s bytes, got %s bytes" % (
-                self.full_path, self.file_size, l_file_size)
+                self.full_path,
+                self.file_size,
+                l_file_size,
+            )
             log(-1, msg, stream=sys.stderr)
             # Try not to leave garbage around
             try:
@@ -273,7 +290,6 @@ class FileManip:
 
 
 class RpmManip(FileManip):
-
     """General [S]RPM manipulation class.
 
     o Check checksums for mismatches
@@ -282,10 +298,15 @@ class RpmManip(FileManip):
     """
 
     def __init__(self, pdict, path):
-        FileManip.__init__(self, relative_path=path,
-                           timestamp=pdict['last_modified'], file_size=pdict['package_size'])
+        FileManip.__init__(
+            self,
+            relative_path=path,
+            timestamp=pdict["last_modified"],
+            file_size=pdict["package_size"],
+        )
         self.pdict = pdict
 
     def nvrea(self):
-        return tuple([self.pdict[x] for x in
-                      ['name', 'version', 'release', 'epoch', 'arch']])
+        return tuple(
+            [self.pdict[x] for x in ["name", "version", "release", "epoch", "arch"]]
+        )

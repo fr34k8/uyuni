@@ -303,6 +303,13 @@ SELECT id, channel_label, client, reason, force, bypass_filters, next_action
     </query>
 </write-mode>
 
+
+<write-mode name="taskomatic_token_cleanup">
+    <query>
+        DELETE FROM susechannelaccesstoken where expiration &lt; now() OR (valid = 'N' and minion_id is null)
+    </query>
+</write-mode>
+
 <mode name="taskomatic_task_status">
    <query params="">
    SELECT t.name, r.id, r.start_time, r.status
@@ -674,25 +681,6 @@ where snc.errata_id = :errata_id
     </query>
 </mode>
 
-<mode name="ssh_push_find_traditional_candidates" class="com.redhat.rhn.taskomatic.task.checkin.SystemSummary">
-  <query>
-SELECT DISTINCT s.id, s.name, scm.label as contact_method_label, max(a.earliest_action) as earliest_action
-  FROM rhnServer s
-  JOIN rhnServerAction sa ON sa.server_id = s.id
-  JOIN rhnAction a ON sa.action_id = a.id
-  JOIN suseServerContactMethod scm ON s.contact_method_id = scm.id
- WHERE sa.status = 0
-   AND (scm.label = 'ssh-push' OR scm.label = 'ssh-push-tunnel')
-   AND a.earliest_action &lt;= current_timestamp
-   AND sa.server_id = s.id
-   AND NOT EXISTS (
-      SELECT 1 FROM suseMinionInfo smi WHERE smi.server_id = s.id
-      )
- GROUP BY s.id, s.name, scm.label
- ORDER BY earliest_action ASC
-  </query>
-</mode>
-
 <mode name="ssh_push_find_rebooting_minions" class="com.redhat.rhn.taskomatic.task.checkin.SystemSummary">
   <query>
 SELECT DISTINCT s.id, s.name, scm.label as contact_method_label, smi.minion_id
@@ -701,7 +689,7 @@ SELECT DISTINCT s.id, s.name, scm.label as contact_method_label, smi.minion_id
   JOIN rhnAction a ON sa.action_id = a.id
   JOIN suseServerContactMethod scm ON s.contact_method_id = scm.id
   JOIN rhnActionType at on a.action_type = at.id
-  LEFT OUTER JOIN suseMinionInfo smi ON smi.server_id = s.id
+  JOIN suseMinionInfo smi ON smi.server_id = s.id
  WHERE sa.status = 1
    AND at.label = 'reboot.reboot'
    AND (scm.label = 'ssh-push' OR scm.label = 'ssh-push-tunnel')
@@ -709,7 +697,7 @@ SELECT DISTINCT s.id, s.name, scm.label as contact_method_label, smi.minion_id
   </query>
 </mode>
 
-<mode name="ssh_push_find_queued_minion_actions_with_prereq" class="com.redhat.rhn.taskomatic.task.sshpush.SSHPushAction">
+<mode name="ssh_push_find_queued_minion_actions_with_prereq" class="com.redhat.rhn.taskomatic.task.sshservice.SSHPushAction">
   <query>
 SELECT at.label AS action_type, sa.status AS action_status, a.id AS action_id, s.id AS system_id, s.name AS system_name, smi.minion_id AS minion_id
   FROM rhnServer s
@@ -735,7 +723,7 @@ SELECT s.id,
   FROM rhnServer s
   JOIN rhnServerInfo si ON si.server_id = s.id
   JOIN suseServerContactMethod scm ON s.contact_method_id = scm.id
-  LEFT OUTER JOIN suseMinionInfo smi ON smi.server_id = s.id
+  JOIN suseMinionInfo smi ON smi.server_id = s.id
  WHERE (scm.label = 'ssh-push' OR scm.label = 'ssh-push-tunnel')
    AND si.checkin &lt; current_timestamp - numtodsinterval(:checkin_threshold, 'second')
 ORDER BY si.checkin
@@ -822,6 +810,17 @@ select sa.action_id, sa.server_id
         ) h
         WHERE h.cnt > 1 and h.virtual_system_id is not null
     )
+  </query>
+</write-mode>
+
+<write-mode name="taskomatic_change_org_for_orphan_vendor_packages">
+  <query params="org_id">
+    UPDATE rhnPackage
+       SET org_id = :org_id
+     WHERE id IN (SELECT p.id
+                    FROM rhnPackage p
+               LEFT JOIN rhnChannelPackage cp ON p.id = cp.package_id
+                   WHERE p.org_id IS NULL and cp.channel_id IS NULL)
   </query>
 </write-mode>
 

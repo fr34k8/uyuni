@@ -44,7 +44,7 @@ public class SSHMinionBootstrapperTest extends AbstractMinionBootstrapperTestBas
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        bootstrapper = new SSHMinionBootstrapper(saltServiceMock, saltServiceMock);
+        bootstrapper = new SSHMinionBootstrapper(saltServiceMock, saltServiceMock, paygManager, attestationManager);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class SSHMinionBootstrapperTest extends AbstractMinionBootstrapperTestBas
 
     private SSHMinionBootstrapper mockRegistrationBootstrapper(
             Optional<String> activationKeyLabel) {
-        return new SSHMinionBootstrapper(saltServiceMock, saltServiceMock) {
+        return new SSHMinionBootstrapper(saltServiceMock, saltServiceMock, paygManager, attestationManager) {
             @Override
             protected RegisterMinionEventMessageAction getRegisterAction() {
                 RegisterMinionEventMessageAction action =
@@ -112,11 +112,11 @@ public class SSHMinionBootstrapperTest extends AbstractMinionBootstrapperTestBas
         .filter(ak -> k.getKey().equals(ak.getKey()))
         .findFirst()
         .ifPresent(ak -> pillarData.put("activation_key", ak.getKey())));
-        pillarData.put("mgr_server", ConfigDefaults.get().getCobblerHost());
+        pillarData.put("mgr_server", ConfigDefaults.get().getJavaHostname());
         if (contactMethod.equals("ssh-push-tunnel")) {
             pillarData.put("mgr_server_https_port", Config.get().getInt("ssh_push_port_https"));
         }
-        pillarData.put("mgr_origin_server", ConfigDefaults.get().getCobblerHost());
+        pillarData.put("mgr_origin_server", ConfigDefaults.get().getJavaHostname());
         pillarData.put("minion_id", "myhost");
         pillarData.put("contact_method", contactMethod);
         pillarData.put("mgr_sudo_user", "root");

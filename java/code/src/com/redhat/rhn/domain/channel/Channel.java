@@ -20,13 +20,13 @@ import com.redhat.rhn.domain.errata.Errata;
 import com.redhat.rhn.domain.org.Org;
 import com.redhat.rhn.domain.product.SUSEProductChannel;
 import com.redhat.rhn.domain.rhnpackage.Package;
+import com.redhat.rhn.domain.rhnpackage.PackageFactory;
 import com.redhat.rhn.domain.server.Server;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.channel.ChannelManager;
 import com.redhat.rhn.manager.system.IncompatibleArchException;
 import com.redhat.rhn.manager.system.SystemManager;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -35,10 +35,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -65,7 +65,7 @@ public class Channel extends BaseDomainHelper implements Comparable<Channel> {
 
     private String description;
     private Date endOfLife;
-    private boolean GPGCheck = true;
+    private boolean GPGCheck;
     private String GPGKeyUrl;
     private String GPGKeyId;
     private String GPGKeyFp;
@@ -74,29 +74,49 @@ public class Channel extends BaseDomainHelper implements Comparable<Channel> {
     private Date lastModified;
     private Date lastSynced;
     private String name;
-    private String access = PRIVATE;
+    private String access;
     private Org org;
     private Channel parentChannel;
     private ChannelProduct product;
     private ProductName productName;
     private Comps comps;
-    private Set<Modules> modules;
+    private Modules modules;
     private MediaProducts mediaProducts;
     private String summary;
-    private Set<Errata> erratas = new HashSet<>();
-    private Set<Package> packages = new HashSet<>();
-    private Set<ContentSource> sources = new HashSet<>();
-    private Set<ChannelFamily> channelFamilies = new HashSet<>();
-    private Set<DistChannelMap> distChannelMaps = new HashSet<>();
-    private Set<Org> trustedOrgs = new HashSet<>();
+    private Set<Errata> erratas;
+    private Set<Package> packages;
+    private Set<ContentSource> sources;
+    private Set<ChannelFamily> channelFamilies;
+    private Set<DistChannelMap> distChannelMaps;
+    private Set<Org> trustedOrgs;
     private String maintainerName;
     private String maintainerEmail;
     private String maintainerPhone;
     private String supportPolicy;
     private String updateTag;
-    private boolean installerUpdates = false;
-    private Set<ClonedChannel> clonedChannels = new HashSet<>();
-    private Set<SUSEProductChannel> suseProductChannels = new HashSet<>();
+    private boolean installerUpdates;
+    private Set<ClonedChannel> clonedChannels;
+    private Set<SUSEProductChannel> suseProductChannels;
+    private ChannelSyncFlag channelSyncFlag;
+
+    /**
+     * Channel Object Constructor
+     */
+    public Channel() {
+        suseProductChannels = new HashSet<>();
+        clonedChannels = new HashSet<>();
+        installerUpdates = false;
+        trustedOrgs = new HashSet<>();
+        distChannelMaps = new HashSet<>();
+        channelFamilies = new HashSet<>();
+        sources = new HashSet<>();
+        packages = new HashSet<>();
+        erratas = new HashSet<>();
+        access = PRIVATE;
+        GPGCheck = true;
+        channelSyncFlag = new ChannelSyncFlag();
+        channelSyncFlag.setChannel(this);
+    }
 
     /**
      * @param orgIn what org you want to know if it is globally subscribable in
@@ -223,29 +243,8 @@ public class Channel extends BaseDomainHelper implements Comparable<Channel> {
     /**
      * @param modulesIn The Modules to set.
      */
-    public void setModules(Set<Modules> modulesIn) {
+    public void setModules(Modules modulesIn) {
         this.modules = modulesIn;
-    }
-
-    /**
-     * Add a module metadata file to the channel
-     * @param modulesIn the module metadata entity to add
-     */
-    public void addModules(Modules modulesIn) {
-        if (this.modules == null) {
-            this.modules = new HashSet<>();
-        }
-        modulesIn.setChannel(this);
-        this.modules.add(modulesIn);
-    }
-
-    /**
-     * Remove an existing module metadata file from the channel
-     * @param modulesIn the module metadata entity to remove
-     */
-    public void removeModules(Modules modulesIn) {
-        this.modules.remove(modulesIn);
-        modulesIn.setChannel(null);
     }
 
     /**
@@ -258,27 +257,14 @@ public class Channel extends BaseDomainHelper implements Comparable<Channel> {
     }
 
     /**
-     * Gets the synced module metadata files belonging to the channel
-     * <p>
-     * See {@link Channel#getLatestModules()} to get the latest metadata file currently in use.
-     *
      * @return Returns the Modules.
      */
-    public Set<Modules> getModules() {
+    public Modules getModules() {
         return modules;
     }
 
-    /**
-     * Gets the latest module metadata file in use
-     *
-     * @return the module metadata (modules.yaml) file
-     */
-    public Modules getLatestModules() {
-        return modules.stream().max(Comparator.comparing(Modules::getLastModified)).orElse(null);
-    }
-
     public boolean isModular() {
-        return CollectionUtils.isNotEmpty(modules);
+        return modules != null;
     }
 
     /**
@@ -683,14 +669,12 @@ public class Channel extends BaseDomainHelper implements Comparable<Channel> {
      */
     @Override
     public boolean equals(final Object other) {
-        if (other instanceof SelectableChannel) {
-            return this.equals(((SelectableChannel)other).getChannel());
+        if (other instanceof SelectableChannel castOther) {
+            return this.equals(castOther.getChannel());
         }
-        if (!(other instanceof Channel)) {
+        if (!(other instanceof Channel castOther)) {
             return false;
         }
-        Channel castOther = (Channel) other;
-
         return new EqualsBuilder().append(getId(), castOther.getId()).isEquals();
     }
 
@@ -1003,7 +987,7 @@ public class Channel extends BaseDomainHelper implements Comparable<Channel> {
      * @return stream of channels
      */
     public Stream<Channel> originChain() {
-        return Stream.iterate(this, c -> c != null, c -> c.isCloned() ? c.getOriginal() : null);
+        return Stream.iterate(this, Objects::nonNull, c -> c.asCloned().map(ClonedChannel::getOriginal).orElse(null));
     }
 
     /**
@@ -1032,7 +1016,7 @@ public class Channel extends BaseDomainHelper implements Comparable<Channel> {
             return Optional.empty();
         }
         else {
-            // We take the first item since there can be more then one entry.
+            // We take the first item since there can be more than one entry.
             // All entries should point to the same "product" with only arch differences.
             // The only exception to this is sles11 sp1/2 and caasp 1/2 but they are out of maintenance
             // and we decided to ignore this inconsistency until the great rewrite.
@@ -1048,14 +1032,14 @@ public class Channel extends BaseDomainHelper implements Comparable<Channel> {
      * @return whether the channel is a RPM chanel or not
      */
     public boolean isTypeRpm() {
-        return "rpm".equalsIgnoreCase(getArchTypeLabel());
+        return PackageFactory.ARCH_TYPE_RPM.equalsIgnoreCase(getArchTypeLabel());
     }
 
     /**
      * @return whether the channel is a DEB chanel or not
      */
     public boolean isTypeDeb() {
-        return "deb".equalsIgnoreCase(getArchTypeLabel());
+        return PackageFactory.ARCH_TYPE_DEB.equalsIgnoreCase(getArchTypeLabel());
     }
 
     /**
@@ -1065,6 +1049,21 @@ public class Channel extends BaseDomainHelper implements Comparable<Channel> {
      */
     public Optional<ClonedChannel> asCloned() {
         return Optional.empty();
+    }
+
+    public void setChannelSyncFlag(ChannelSyncFlag csf) {
+        this.channelSyncFlag = csf;
+    }
+
+    /**
+     * @return the channels sync flag settings
+     */
+    public ChannelSyncFlag getChannelSyncFlag() {
+        if (channelSyncFlag == null) {
+            channelSyncFlag = new ChannelSyncFlag();
+            channelSyncFlag.setChannel(this);
+        }
+        return this.channelSyncFlag;
     }
 }
 

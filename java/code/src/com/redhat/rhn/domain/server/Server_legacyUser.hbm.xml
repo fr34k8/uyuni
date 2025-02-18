@@ -15,6 +15,7 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         <property name="digitalServerId" column="digital_server_id" type="string"
             length="1024"/>
         <property name="os" column="os" type="string" length="64"/>
+        <property name="cpe" column="cpe" type="string" length="64"/>
         <property name="release" column="release" type="string" length="64"/>
         <property name="name" column="name" type="string" length="128"/>
         <property name="description" column="description" type="string"
@@ -98,6 +99,11 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
             <one-to-many class="com.redhat.rhn.domain.server.ClientCapability"/>
         </set>
 
+        <set name="sapWorkloads" lazy="true" inverse="true" table="suseServerSAPWorkload" cascade="all-delete-orphan">
+            <key column="server_id"/>
+            <one-to-many class="com.redhat.rhn.domain.server.SAPWorkload"/>
+        </set>
+
         <many-to-one name="org" class="com.redhat.rhn.domain.org.Org"
             column="org_id" lazy="proxy"/>
 
@@ -159,6 +165,13 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         <one-to-one name="location" class="com.redhat.rhn.domain.server.Location"
             property-ref="server" cascade="all" lazy="proxy" />
 
+        <one-to-one name="cocoAttestationConfig" class="com.suse.manager.model.attestation.ServerCoCoAttestationConfig"
+                    property-ref="server" cascade="all" lazy="proxy"/>
+        <set name="cocoAttestationReports" inverse="true" cascade="all">
+            <key column="server_id"/>
+            <one-to-many class="com.suse.manager.model.attestation.ServerCoCoAttestationReport"/>
+        </set>
+
         <one-to-one name="virtualInstance"
                     class="com.redhat.rhn.domain.server.VirtualInstance"
                     property-ref="guestSystem"
@@ -180,18 +193,18 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
             <many-to-many column="suse_installed_product_id" class="com.redhat.rhn.domain.server.InstalledProduct"/>
         </set>
 
+        <set name="appStreams" table="suseServerAppstream" inverse="true" cascade="all-delete-orphan">
+            <key column="server_id"/>
+            <one-to-many class="com.redhat.rhn.domain.server.ServerAppStream"/>
+        </set>
+
         <joined-subclass name="com.redhat.rhn.domain.server.MinionServer"
                          table="suseMinionInfo">
             <key column="server_id"/>
             <property name="minionId" column="minion_id" />
-            <!--
-            We typically look at the packages installed on a system to identify whether a reboot is necessary.
-            This property initially only works for transactional systems, but the idea is that gradually the
-            other types of systems also provide this information directly to be stored here so we no longer rely
-            on package related inference to determine whether a reboot is necessary. Even because this
-            information does not always depend only on the packages.
-            -->
-            <property name="rebootNeeded" column="reboot_needed" type="yes_no" />
+            <property name="uname" column="uname" type="string" />
+            <property name="containerRuntime" column="container_runtime" type="string" />
+            <property name="rebootRequiredAfter" column="reboot_required_after" type="timestamp" />
             <property name="osFamily" column="os_family"  type="string" length="32" />
             <property name="kernelLiveVersion" column="kernel_live_version"  type="string" length="255" />
             <property name="sshPushPort" column="ssh_push_port" access="field"/>
@@ -274,81 +287,6 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         ]]>
     </query>
 
-    <query name="Server.listProxySystemsHierarchy">
-        <![CDATA[ select
-                new com.redhat.rhn.manager.visualization.json.System(
-                    s.id,
-                    CASE
-                      WHEN (pi is not null and sp is null)
-                    THEN 'root'
-                    ELSE cast(sp.id.proxyServer.id as string)
-                    END AS parentId,
-                    s.name,
-                    s.contactMethod.label,
-                    c.name,
-                    g.groupType.label,
-                    s.serverInfo.checkin,
-                    CASE
-                      WHEN (pi is not null)
-                    THEN 'proxy'
-                    ELSE 'system'
-                    END AS type
-                )
-                from Server s
-                    left join s.serverPaths sp
-                    left join s.proxyInfo pi
-                    left join s.channels c
-                    left join s.groups g
-                where c.parentChannel is NULL and
-                    g.groupType.isBaseChar = 'Y' and
-                    s.org = :org and
-                    ((pi is not null and sp is null) or sp.position = 0)]]>
-    </query>
-
-    <query name="Server.listSystems">
-        <![CDATA[ select
-                new com.redhat.rhn.manager.visualization.json.System(s.id, s.name, s.contactMethod.label, c.name, g.groupType.label, s.serverInfo.checkin)
-                from Server s
-                    left join s.channels c
-                    left join s.groups g
-                where c.parentChannel is NULL and
-                    g.groupType.isBaseChar = 'Y' and
-                    s.org = :org]]>
-    </query>
-
-    <query name="Server.systemIdManagedGroupName">
-        <![CDATA[ select
-                s.id, g.name
-                from Server s
-                    left join s.groups g
-                where s.org = :org and
-                    g.org = :org and
-                    (g.groupType is null)]]>
-    </query>
-
-    <query name="Server.listHostSystems">
-        <![CDATA[ select
-                new com.redhat.rhn.manager.visualization.json.System(s.id, s.name, s.contactMethod.label, c.name, g.groupType.label, s.serverInfo.checkin)
-                from Server s
-                    left join s.channels c
-                    left join s.groups g
-                where c.parentChannel is NULL and
-                    g.groupType.isBaseChar = 'Y' and
-                    s.org = :org and
-                    exists (select 1 from VirtualInstance vi where vi.hostSystem = s)
-    ]]>
-    </query>
-
-    <query name="Server.serverInstalledProductNames">
-        <![CDATA[ select
-                s.id, ip.name
-                from Server s
-                    left join s.installedProducts ip
-                where
-                    s.org = :org
-    ]]>
-    </query>
-
     <query name="Server.findNonZypperTradClientsIds">
         <![CDATA[SELECT s.id
                  FROM Server s
@@ -401,21 +339,6 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         ]]>
     </sql-query>
 
-    <query name="Server.listGuestSystems">
-        <![CDATA[ select
-                new com.redhat.rhn.manager.visualization.json.System(s.id, vi.hostSystem.id, s.name, s.contactMethod.label, c.name, g.groupType.label, s.serverInfo.checkin)
-                from Server s, VirtualInstance vi
-                    left join s.channels c
-                    left join s.groups g
-                where c.parentChannel is NULL and
-                    g.groupType.isBaseChar = 'Y' and
-                    s.org = :org and
-                    vi.guestSystem = s and
-                    vi.hostSystem is not null and
-                    vi.uuid is not null
-    ]]>
-    </query>
-
     <query name="MinionServer.listSSHMinionsIdsAndContactMethods">
         <![CDATA[ select s.minionId, m.label
            from com.redhat.rhn.domain.server.MinionServer as s
@@ -443,6 +366,12 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
                  WHERE EXISTS (SELECT 1
                                FROM rhnUserServerPerms USP
                                WHERE USP.user_id = :user_id AND USP.server_id = s.id)
+        ]]>
+    </sql-query>
+    
+    <sql-query name="Server.listAllServersOsAndRelease">
+        <![CDATA[
+            SELECT DISTINCT s.os, s.release FROM rhnServer s
         ]]>
     </sql-query>
 
@@ -515,7 +444,7 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
             CASE
               WHEN (SELECT COUNT(*) FROM rhnErrataPackage k WHERE e.id = k.errata_id AND k.package_id IN
                 (SELECT id FROM rhnPackage p WHERE p.name_id IN
-                  (SELECT id FROM rhnPackageName pn WHERE pn.name = 'salt'))) > 0
+                  (SELECT id FROM rhnPackageName pn WHERE pn.name = 'salt' OR pn.name = 'venv-salt-minion'))) > 0
             THEN 1
             ELSE 0
             END AS includeSalt
@@ -528,64 +457,39 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         ]]>
     </sql-query>
 
-    <!--Lists all patch counts per server, grouped by advisory type-->
-    <sql-query name="Server.listPatchCountsForAllServers">
-        <return-scalar column="serverId" type="long"/>
-        <return-scalar column="advisoryType" type="string"/>
-        <return-scalar column="patchCount" type="integer"/>
-        <![CDATA[select s.id as serverId, e.advisory_type as advisoryType, count(e.id) as patchCount
-                 FROM
-                      rhnServerNeededErrataCache cache,
-                      rhnServer s,
-                      rhnErrata e
-                 WHERE
-                       s.org_id = :orgId AND
-                       cache.server_id = s.id AND
-                       cache.errata_id = e.id
-                 GROUP BY
-                       s.id, e.advisory_type
-        ]]>
-    </sql-query>
-
     <sql-query name="Server.listNewestPkgsForServerErrata">
         <return-scalar column="serverId" type="long"/>
         <return-scalar column="packageName" type="string"/>
         <return-scalar column="packageArch" type="string"/>
         <return-scalar column="packageVersion" type="string"/>
-        <![CDATA[select X.server_id as serverId, X.name as packageName, X.package_arch as packageArch,
-            case when (X.evr).epoch is null
-                then (X.evr).version || '-' || (X.evr).release
-                else (X.evr).epoch || ':' || (X.evr).version || '-' || (X.evr).release
-            end  as packageVersion
-            FROM ( select distinct sc.server_id, pn.name, max(pevr.evr) evr, pa.label as package_arch
-                 FROM rhnErrata e,
-                      rhnServerChannel sc,
-                      rhnChannelErrata ce,
-                      rhnErrataPackage ep,
-                      rhnServerPackage sp,
-                      rhnPackage p,
-                      rhnPackageArch pa,
-                      rhnPackageEVR pevr,
-                      rhnPackageEVR spevr,
-                      rhnPackageName pn,
-                      rhnChannelPackage pc
-                 WHERE e.id in (:errataIds) AND
-                      sc.server_id in (:serverIds) AND
-                      e.id = ce.errata_id AND
-                      sc.channel_id = ce.channel_id AND
-                      e.id = ep.errata_id AND
-                      ep.package_id = p.id AND
-                      p.name_id = sp.name_id AND
-                      p.evr_id = pevr.id AND
-                      sp.evr_id = spevr.id AND
-                      (pevr.evr).type = (spevr.evr).type AND
-                      pevr.evr > spevr.evr AND
-                      p.package_arch_id = sp.package_arch_id AND
-                      p.package_arch_id = pa.id AND
-                      p.name_id = pn.id AND
-                      pc.package_id = p.id AND
-                      pc.channel_id = sc.channel_id
-                 GROUP BY sc.server_id, pn.name, pa.label) X]]>
+        <![CDATA[
+            WITH NewPackageForServerErrata as (
+                 SELECT DISTINCT sc.server_id, pn.name, max(pevr.evr) evr, pa.label as package_arch
+                   FROM rhnErrata e
+                            INNER JOIN rhnErrataPackage ep ON e.id = ep.errata_id
+                            INNER JOIN rhnPackage p ON ep.package_id = p.id
+                            INNER JOIN rhnPackageEVR pevr ON p.evr_id = pevr.id
+                            INNER JOIN rhnPackageName pn ON p.name_id = pn.id
+                            INNER JOIN rhnPackageArch pa ON p.package_arch_id = pa.id
+
+                            INNER JOIN rhnChannelErrata ce ON e.id = ce.errata_id
+                            INNER JOIN rhnServerChannel sc ON (sc.channel_id = ce.channel_id AND sc.server_id in (:serverIds))
+                            INNER JOIN rhnChannelPackage pc ON (pc.channel_id = sc.channel_id AND pc.package_id = p.id)
+
+                            INNER JOIN rhnServerPackage sp ON (sp.server_id = sc.server_id AND p.name_id = sp.name_id AND p.package_arch_id = sp.package_arch_id)
+                            INNER JOIN rhnPackageEVR spevr ON (sp.evr_id = spevr.id AND (pevr.evr).type = (spevr.evr).type AND pevr.evr > spevr.evr)
+                          WHERE e.id in (:errataIds)
+                       GROUP BY sc.server_id, pn.name, pa.label
+            )
+            SELECT pse.server_id AS serverId
+                        , pse.name AS packageName
+                        , pse.package_arch AS packageArch
+                        , CASE WHEN (pse.evr).epoch IS NULL
+                            THEN (pse.evr).version || '-' || (pse.evr).release
+                            ELSE (pse.evr).epoch || ':' || (pse.evr).version || '-' || (pse.evr).release
+                        END AS packageVersion
+              FROM NewPackageForServerErrata pse
+        ]]>
     </sql-query>
 
     <sql-query name="Server.findServerInSSMByChannel">
@@ -617,6 +521,13 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
                       WHERE sa.server.id IN (:systemIds)
                         AND sa.parentAction.actionType.label = 'reboot.reboot'
                         AND status in ( 0, 1 )]]>
+    </query>
+
+    <query name="Server.listAllServerIds">
+        <![CDATA[SELECT s.id
+                   FROM com.redhat.rhn.domain.server.Server AS s
+               ORDER BY s.id
+        ]]>
     </query>
 
 </hibernate-mapping>

@@ -206,70 +206,70 @@
         </context-group>
       </trans-unit>
       <trans-unit id="yes" xml:space="preserve">
-          <source>Yes</source>
+        <source>Yes</source>
         <target>Áno</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit id="no" xml:space="preserve">
-          <source>No</source>
+        <source>No</source>
         <target>Nie</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit id="Enabled" xml:space="preserve">
-          <source>Enabled</source>
+        <source>Enabled</source>
         <target>Povolené</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit id="Disabled" xml:space="preserve">
-          <source>Disabled</source>
+        <source>Disabled</source>
         <target>Zakázané</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit id="Tip" xml:space="preserve">
-          <source>Tip</source>
+        <source>Tip</source>
         <target>Tip</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit id="Note" xml:space="preserve">
-          <source>Note</source>
+        <source>Note</source>
         <target>Poznámka</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit id="Warning" xml:space="preserve">
-          <source>Warning</source>
+        <source>Warning</source>
         <target>Varovanie</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit id="Custom" xml:space="preserve">
-          <source>Custom</source>
+        <source>Custom</source>
         <target>Vlastné</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit id="Examples" xml:space="preserve">
-          <source>Examples</source>
+        <source>Examples</source>
         <target>Príklady</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
         </context-group>
       </trans-unit>
       <trans-unit id="none specified" xml:space="preserve">
-          <source>none specified</source>
+        <source>none specified</source>
         <target>neuvedené</target>
         <context-group name="ctx">
           <context context-type="sourcefile">General Stuff</context>
@@ -1550,13 +1550,6 @@
           <context context-type="paramnotes">Passwords must be no shorter than 5 characters.</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="error.invalidpasswordcharacters" xml:space="preserve">
-        <source>Password contains tab or newline characters.</source>
-        <target>Heslo obsahuje znaky tabulátora alebo nového riadku.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/users/CreateUser</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="error.maxpassword" xml:space="preserve">
         <source>Passwords cannot be more than {0} characters.</source>
         <target>Heslá nemôžu mať viac ako {0} znakov.</target>
@@ -1803,14 +1796,14 @@
         </context-group>
       </trans-unit>
       <trans-unit id="first" xml:space="preserve">
-          <source>First Scan Id</source>
+        <source>First Scan Id</source>
         <target>Id prvého skenovania</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/audit/scap/Diff.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="second" xml:space="preserve">
-          <source>Second Scan Id</source>
+        <source>Second Scan Id</source>
         <target>Id druhého skenovania</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/audit/scap/Diff.do</context>
@@ -2255,7 +2248,7 @@ channel is available to your @@PRODUCT_NAME@@. If it is not, please contact your
 and try again.
 &lt;/li&gt;
 &lt;li&gt;
-Make sure the spacewalk-koan package corresponding to this kickstart are
+Make sure the required packages corresponding to this kickstart are
 available in the kickstart's base channel's tools channel. If not, you
 will need to make them available for this kickstart profile to function properly.
 &lt;/li&gt;
@@ -2281,9 +2274,9 @@ administrátora @@PRODUCT_NAME@@ a požiadajte o mgr-inter-sync pre kanál
 nástrojov klienta a skúste to znova.
 &lt;/li&gt;
 &lt;li&gt;
-Uistite sa, že balík spacewalk-koan zodpovedajúci tomuto kickstart je k dispozícii
-v kanáli nástrojov základného kanála kickstart. Ak nie je, budete musieť ho sprístupniť,
-aby tento profil kickstart správne fungoval.
+Uistite sa, že požadované balíky zodpovedajúce tomuto kickstart sú k dispozícii
+v kanáli nástrojov základného kanála kickstart. Ak nie je, budete ich musieť 
+sprístupniť, aby tento profil kickstart správne fungoval.
 &lt;/li&gt;
 &lt;li&gt;
 Sú vyššie uvedené balíky k dispozícii v tomto základnom kanáli kickstart? Ak nie, budete ich musieť
@@ -4138,14 +4131,14 @@ používateľa predtým, ako sa pokúsite deaktivovať jeho účet.</target>
         </context-group>
       </trans-unit>
       <trans-unit id="daterangepicker.error.invalid" xml:space="preserve">
-          <source>The date "{0}" is not valid and has been reset to its default. Check to make sure selected month has that many days.</source>
+        <source>The date "{0}" is not valid and has been reset to its default. Check to make sure selected month has that many days.</source>
         <target>Dátum "{0}" nie je platný a bol nastavený na jeho predvolené hodnoty. Skontrolujte, či má vybraný mesiac toľko dní.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">com.redhat.rhn.frontend.action.common.DateRangePicker</context>
         </context-group>
       </trans-unit>
       <trans-unit id="daterangepicker.error.start.before.end" xml:space="preserve">
-          <source>The start date "{0}" must be before the end date "{1}"</source>
+        <source>The start date "{0}" must be before the end date "{1}"</source>
         <target>Dátum začiatku "{0}" musí byť pred dátumom konca "{1}"</target>
         <context-group name="ctx">
           <context context-type="sourcefile">com.redhat.rhn.frontend.action.common.DateRangePicker</context>
@@ -5997,8 +5990,8 @@ používateľa predtým, ako sa pokúsite deaktivovať jeho účet.</target>
         </context-group>
       </trans-unit>
       <trans-unit id="message.firstusercreated" xml:space="preserve">
-        <source>You have just created your first @@PRODUCT_NAME@@ user. To finalize your installation please use the &lt;a href="/rhn/admin/setup/ProxySettings.do"&gt;Setup Wizard&lt;/a&gt;.</source>
-        <target>Práve ste vytvorili svojho prvého používateľa @@PRODUCT_NAME@@. Na dokončenie svojej inštalácie, prosím, použite &lt;a href="/rhn/admin/setup/ProxySettings.do"&gt;Sprievodcu inštaláciou&lt;/a&gt;.</target>
+        <source>You have just created your first @@PRODUCT_NAME@@ user. To finalize your installation please use the &lt;a href="/rhn/manager/admin/setup/proxy"&gt;Setup Wizard&lt;/a&gt;.</source>
+        <target state="needs-adaptation">Práve ste vytvorili svojho prvého používateľa @@PRODUCT_NAME@@. Na dokončenie svojej inštalácie, prosím, použite &lt;a href="/rhn/admin/setup/ProxySettings.do"&gt;Sprievodcu inštaláciou&lt;/a&gt;.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Navigation Menu</context>
         </context-group>
@@ -6082,8 +6075,8 @@ používateľa predtým, ako sa pokúsite deaktivovať jeho účet.</target>
         </context-group>
       </trans-unit>
       <trans-unit id="bootstrap.config.success" xml:space="preserve">
-        <source>Bootstrap script successfully generated.  You can access it &lt;a href="{0}/pub/bootstrap/"&gt;{0}/pub/bootstrap/&lt;/a&gt;</source>
-        <target>Zavádzací skript bol úspešne vygenerovaný.  Môžete k nemu pristúpiť &lt;a href="{0}/pub/bootstrap/"&gt;{0}/pub/bootstrap/&lt;/a&gt;</target>
+        <source>Bootstrap script successfully generated.  You can access it &lt;a href="{0}/pub/bootstrap/" target="_blank"&gt;{0}/pub/bootstrap/&lt;/a&gt;</source>
+        <target state="translated">Zavádzací skript bol úspešne vygenerovaný.  Môžete k nemu pristúpiť &lt;a href="{0}/pub/bootstrap/" target="_blank"&gt;{0}/pub/bootstrap/&lt;/a&gt;</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/admin/config/CertificateConfig.do</context>
         </context-group>
@@ -6543,27 +6536,6 @@ Vezmite, prosím, na vedomie, že neaktívne systémy nemôžu prijímať žiadn
           <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="kickstart.schedule.nopackage" xml:space="preserve">
-        <source>Could not find the needed @@PRODUCT_NAME@@ provisioning packages given this system's current base channel and desired target channel: {0}</source>
-        <target>Nepodarilo sa nájsť potrebné balíky poskytujúce @@PRODUCT_NAME@@ dané aktuálnym základným kanálom tohto systému a požadovaným cieľovým kanálom: {0}</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="kickstart.schedule.cantsubscribe" xml:space="preserve">
-        <source>You have no remaining subscriptions to the @@PRODUCT_NAME@@ provisioning channel for &lt;strong&gt;{0}&lt;/strong&gt;'s current base channel.</source>
-        <target>Nemáte žiadne zostávajúce predplatné ku kanálu poskytujúcemu @@PRODUCT_NAME@@ pre aktuálny základný kanál &lt;strong&gt;{0}&lt;/strong&gt;.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="kickstart.schedule.cantsubscribe.channel" xml:space="preserve">
-        <source>You have no remaining subscriptions to the channel {0} for &lt;strong&gt;{1}&lt;/strong&gt;'s current base channel.</source>
-        <target>Nemáte žiadne zostávajúce predplatné ku kanálu {0} pre aktuálny základný kanál &lt;strong&gt;{1}&lt;/strong&gt;.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="kickstart.schedule.noup2date" xml:space="preserve">
         <source>An autoinstallation was not scheduled for &lt;strong&gt;&lt;a href="/rhn/systems/details/Overview.do?sid={0}"&gt;{1}&lt;/a&gt;&lt;/strong&gt; because the package profile did not contain the 'up2date' package. An update of that system's package profile may be required.</source>
         <target>Automatická inštalácia nebola naplánovaná pre &lt;strong&gt;&lt;a href="/rhn/systems/details/Overview.do?sid={0}"&gt;{1}&lt;/a&gt;&lt;/strong&gt;, pretože profil balíkov neobsahoval balík 'up2date'. Môže byť potrebná aktualizácia profilu balíkov tohto systému.</target>
@@ -6642,8 +6614,8 @@ Vezmite, prosím, na vedomie, že neaktívne systémy nemôžu prijímať žiadn
         </context-group>
       </trans-unit>
       <trans-unit id="kickstart.tree.invalidlabel" xml:space="preserve">
-        <source>The label is not formatted properly.  The label should contain only letters, numbers, hyphens, periods, and underscores.  It must also be at least 4 characters long</source>
-        <target>Označenie nie je správne formátované.  Označenie by malo obsahovať len písmená, číslice, pomlčky, bodky a podčiarkovníky.  Musí byť tiež dlhé aspoň 4 znaky</target>
+        <source>The label is not formatted properly. The label should contain only letters, numbers, hyphens, and underscores. It must also be at least 4 characters long</source>
+        <target state="translated">Označenie nie je správne formátované. Označenie by malo obsahovať len písmená, číslice, pomlčky, bodky a podčiarkovníky. Musí byť tiež dlhé aspoň 4 znaky</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/kickstart/TreeEdit.do</context>
         </context-group>
@@ -6741,98 +6713,98 @@ Vezmite, prosím, na vedomie, že neaktívne systémy nemôžu prijímať žiadn
       </trans-unit>
       <!-- Activation Keys -->
       <trans-unit id="activation-key.java.invalid_chars" xml:space="preserve">
-          <source>Activation key label &lt;strong&gt;{0}&lt;/strong&gt; has one or more of the following invalid characters &lt;strong&gt;{1}&lt;/strong&gt;. Please remove these characters from the label.</source>
+        <source>Activation key label &lt;strong&gt;{0}&lt;/strong&gt; has one or more of the following invalid characters &lt;strong&gt;{1}&lt;/strong&gt;. Please remove these characters from the label.</source>
         <target>Označenie aktivačného kľúča &lt;strong&gt;{0}&lt;/strong&gt; obsahuje jeden alebo viacero z nasledujúcich neplatných znakov &lt;strong&gt;{1}&lt;/strong&gt;. Prosím, odstráňte tieto znaky z označenia.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="activation-key.java.exists" xml:space="preserve">
-          <source>An activation key with label '{0}' is already taken. Please choose a different label.</source>
+        <source>An activation key with label '{0}' is already taken. Please choose a different label.</source>
         <target>Aktivačný kľúč s označením '{0}' je už obsadený. Prosím, zvoľte si iné označenie.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="activation-key.java.created" xml:space="preserve">
-          <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been created.</source>
+        <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been created.</source>
         <target>Aktivačný kľúč &lt;strong&gt;{0}&lt;/strong&gt; bol vytvorený.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="activation-key.java.deleted" xml:space="preserve">
-          <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been deleted.</source>
+        <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been deleted.</source>
         <target>Aktivačný kľúč &lt;strong&gt;{0}&lt;/strong&gt; bol vymazaný.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="activation-key.java.cloned" xml:space="preserve">
-          <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been cloned.</source>
+        <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been cloned.</source>
         <target>Aktivačný kľúč &lt;strong&gt;{0}&lt;/strong&gt; bol klonovaný.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="activation-key.java.modified" xml:space="preserve">
-          <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been modified.</source>
+        <source>Activation key &lt;strong&gt;{0}&lt;/strong&gt; has been modified.</source>
         <target>Aktivačný kľúč &lt;strong&gt;{0}&lt;/strong&gt; bol zmenený.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="activation-key.java.org_prefixed" xml:space="preserve">
-          <source>The name of the key &lt;strong&gt;{0}&lt;/strong&gt; has been modified to &lt;strong&gt;{1}&lt;/strong&gt;.</source>
+        <source>The name of the key &lt;strong&gt;{0}&lt;/strong&gt; has been modified to &lt;strong&gt;{1}&lt;/strong&gt;.</source>
         <target>Názov kľúča &lt;strong&gt;{0}&lt;/strong&gt; bol zmenený na &lt;strong&gt;{1}&lt;/strong&gt;.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="activation-key.java.allowed-values" xml:space="preserve">
-          <source>The activation key cannot be saved: the key can contains only numbers [0-9], letters [a-z A-Z], '-', '_' and '.'</source>
+        <source>The activation key cannot be saved: the key can contains only numbers [0-9], letters [a-z A-Z], '-', '_' and '.'</source>
         <target>Aktivačný kľúč nie je možné uložiť: kľúč môže obsahovať iba čísla [0-9], písmená [a-z A-Z], '-', '_' a '.'</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="system.sdc.missing.config_deploy1" xml:space="preserve">
-          <source>This system does not yet have configuration deployment capability. Configuration deployment requires that particular software is installed and enabled on your system.</source>
+        <source>This system does not yet have configuration deployment capability. Configuration deployment requires that particular software is installed and enabled on your system.</source>
         <target>Tento systém zatiaľ nemá možnosť nasadenia konfigurácie. Nasadenie konfigurácie vyžaduje, že na vašom systéme je nainštalovaný a povolený určitý softvér.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="system.sdc.missing.config_deploy2" xml:space="preserve">
-          <source>You may ensure that configuration deployment capability will be enabled on this system by selecting this system in the  &lt;a href={0}&gt;{1}&lt;/a&gt; screen and then clicking "{2}"</source>
+        <source>You may ensure that configuration deployment capability will be enabled on this system by selecting this system in the  &lt;a href={0}&gt;{1}&lt;/a&gt; screen and then clicking "{2}"</source>
         <target>Môžete zaistiť, že možnosť nasadenia konfigurácie bude v tomto systéme povolená, výberom tohto systému na obrazovke  &lt;a href={0}&gt;{1}&lt;/a&gt; a potom kliknutím na "{2}"</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="system.sdc.addtossm" xml:space="preserve">
-          <source>System added to the System Set Manager.</source>
+        <source>System added to the System Set Manager.</source>
         <target>Systém pridaný do Správcu sád systémov.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="system.sdc.removefromssm" xml:space="preserve">
-          <source>System removed from the System Set Manager.</source>
+        <source>System removed from the System Set Manager.</source>
         <target>Systém odstránený zo Správcu sád systémov.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="usageLimit" xml:space="preserve">
-          <source>Usage Limit</source>
+        <source>Usage Limit</source>
         <target>Obmedzenie používania</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
       </trans-unit>
       <trans-unit id="key" xml:space="preserve">
-          <source>Key</source>
+        <source>Key</source>
         <target>Kľúč</target>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
@@ -7350,504 +7322,504 @@ Vezmite, prosím, na vedomie, že neaktívne systémy nemôžu prijímať žiadn
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.deploy.noaction" xml:space="preserve">
-          <source>No deploy action completed.</source>
+        <source>No deploy action completed.</source>
         <target>Žiadna akcia nasadenia nebola dokončená.</target>
         <context-group name="sdc_action_deploy_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.deploy.failure" xml:space="preserve">
-          <source>All file and/or directory ({0}) deployments failed. [&lt;a href="{1}"&gt;View Details&lt;/a&gt;]</source>
+        <source>All file and/or directory ({0}) deployments failed. [&lt;a href="{1}"&gt;View Details&lt;/a&gt;]</source>
         <target>Všetky nasadenia súborov a/alebo adresárov ({0}) zlyhali. [&lt;a href="{1}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_deploy_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.deploy.success" xml:space="preserve">
-          <source>All files and/or directories ({0}) were successfully deployed. [&lt;a href="{1}"&gt;View Details&lt;/a&gt;]</source>
+        <source>All files and/or directories ({0}) were successfully deployed. [&lt;a href="{1}"&gt;View Details&lt;/a&gt;]</source>
         <target>Všetky súbory a/alebo adresáre ({0}) boli úspešne nasadené. [&lt;a href="{1}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_deploy_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.noaction" xml:space="preserve">
-          <source>No system comparisons completed.</source>
+        <source>No system comparisons completed.</source>
         <target>Žiadne porovnania systémov neboli dokončené.</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_0_dirs_0_symlinks_0" xml:space="preserve">
-          <source>No files, directories or symlinks were selected for comparison. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>No files, directories or symlinks were selected for comparison. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>Žiadne súbory, adresáre ani symbolické odkazy neboli vybrané na porovnanie. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_0_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{4} of 1 symlink on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{4} of 1 symlink on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{4} z 1 symbolického odkazu v systéme bol úspešne porovnaný so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_0_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{4} z {5} symbolických odkazov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_0_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{2} of 1 directory on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of 1 directory on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{2} z 1 adresára v systéme bol úspešne porovnaný so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_0_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{2} z 1 adresára a {4} z 1 symbolického odkazu v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_0_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{2} z 1 adresára a {4} z {5} symbolických odkazov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_0_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{2} z {3} adresárov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_0_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{2} z {3} adresárov a {4} z 1 symbolického odkazu v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_0_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{2} z {3} adresárov a {4} z {5} symbolických odkazov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_1_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} of 1 file on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file on the system was successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru v systéme bol úspešne porovnaný so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_1_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{0} of 1 file and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru a {4} z 1 symbolického odkazu v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_1_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{0} of 1 file and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru a {4} z {5} symbolických odkazov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_1_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{0} of 1 file and {2} of 1 directory on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of 1 directory on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru a {2} z 1 adresára v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_1_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{0} of 1 file and {2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru, {2} z 1 adresára a {4} z 1 symbolického odkazu v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_1_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{0} of 1 file and {2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru, {2} z 1 adresára a {4} z {5} symbolických odkazov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_1_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{0} of 1 file and {2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru a {2} z {3} adresárov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_1_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{0} of 1 file and {2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru, {2} z {3} adresárov a {4} z 1 symbolického odkazu v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_1_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{0} of 1 file and {2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of 1 file and {2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru, {2} z {3} adresárov a {4} z {5} symbolických odkazov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_2_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} of {1} files on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z {1} súborov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_2_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{0} of {1} files and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z {1} súborov a {4} z 1 symbolického odkazu v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_2_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{0} of {1} files and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z {1} súborov a {4} z {5} symbolických odkazov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_2_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{0} of {1} files and {2} of 1 directory on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of 1 directory on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z {1} súborov a {2} z 1 adresára v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_2_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{0} of {1} files and {2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of 1 directory and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z {1} súborov, {2} z 1 adresára a {4} z 1 symbolického odkazu v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_2_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{0} of {1} files and {2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of 1 directory and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z {1} súborov, {2} z 1 adresára a {4} z {5} symbolických odkazov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_2_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{0} of {1} files and {2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of {3} directories on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z {1} súborov a {2} z {3} adresárov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_2_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{0} of {1} files and {2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of {3} directories and {4} of 1 symlink on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z 1 súboru, {2} z {3} adresárov a {4} z 1 symbolického odkazu v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.diff.files_2_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{0} of {1} files and {2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
+        <source>{0} of {1} files and {2} of {3} directories and {4} of {5} symlinks on the system were successfully compared with @@PRODUCT_NAME@@-Managed files. [&lt;a href="{6}"&gt;View Details&lt;/a&gt;]</source>
         <target>{0} z {1} súborov, {2} z {3} adresárov a {4} z {5} symbolických odkazov v systéme boli úspešne porovnané so súbormi spravovanými @@PRODUCT_NAME@@. [&lt;a href="{6}"&gt;Zobraziť podrobnosti&lt;/a&gt;]</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.differing.files_0" xml:space="preserve">
-          <source>No existing files in the existing system differed from the @@PRODUCT_NAME@@-Managed files.</source>
+        <source>No existing files in the existing system differed from the @@PRODUCT_NAME@@-Managed files.</source>
         <target>Žiadne existujúce súbory v existujúcom systéme sa nelíšili od súborov spravovaných @@PRODUCT_NAME@@.</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.differing.files_1" xml:space="preserve">
-          <source>1 of 1 file on the system differed from the @@PRODUCT_NAME@@-Managed files</source>
+        <source>1 of 1 file on the system differed from the @@PRODUCT_NAME@@-Managed files</source>
         <target>1 z 1 súboru v systéme sa líšil od súborov spravovaných @@PRODUCT_NAME@@</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.differing.files_2" xml:space="preserve">
-          <source>{0} of {1} files on the system differed from the @@PRODUCT_NAME@@-Managed files.</source>
+        <source>{0} of {1} files on the system differed from the @@PRODUCT_NAME@@-Managed files.</source>
         <target>{0} z {1} súborov v systéme sa líšilo od súborov spravovaných @@PRODUCT_NAME@@.</target>
         <context-group name="sdc_action_diff_counts">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.time.message" xml:space="preserve">
-          <source>{0} by {1}</source>
+        <source>{0} by {1}</source>
         <target>{0} o {1}</target>
         <context-group name="sdc_actions_time_messages">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="sdc.config.time.message_url" xml:space="preserve">
-          <source>{0} by &lt;a href="{1}"&gt;{2}&lt;/a&gt;</source>
+        <source>{0} by &lt;a href="{1}"&gt;{2}&lt;/a&gt;</source>
         <target>{0} o &lt;a href="{1}"&gt;{2}&lt;/a&gt;</target>
         <context-group name="sdc_actions_time_messages">
           <context context-type="sourcefile">/rhn/systems/details/configuration/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_0_symlinks_0_url" xml:space="preserve">
-          <source>No files, directories or symlinks. &lt;a href="{0}"&gt; Add&lt;/a&gt;</source>
+        <source>No files, directories or symlinks. &lt;a href="{0}"&gt; Add&lt;/a&gt;</source>
         <target>Žiadne súbory, adresáre ani symbolické odkazy. &lt;a href="{0}"&gt; Pridať&lt;/a&gt;</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_0_symlinks_0" xml:space="preserve">
-          <source>No files, directories or symlinks.</source>
+        <source>No files, directories or symlinks.</source>
         <target>Žiadne súbory, adresáre ani symbolické odkazy.</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{3} symlink</source>
+        <source>{3} symlink</source>
         <target>{3} symbolický odkaz</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{3} symlinks</source>
+        <source>{3} symlinks</source>
         <target>{3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{2} directory</source>
+        <source>{2} directory</source>
         <target>{2} adresár</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{2} directory and {3} symlink</source>
+        <source>{2} directory and {3} symlink</source>
         <target>{2} adresár a {3} symbolický odkaz</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{2} directory and {3} symlinks</source>
+        <source>{2} directory and {3} symlinks</source>
         <target>{2} adresár a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{2} directories</source>
+        <source>{2} directories</source>
         <target>{2} adresáre</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{2} directories and {3} symlink</source>
+        <source>{2} directories and {3} symlink</source>
         <target>{2} adresáre a {3} symbolický odkaz</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_0_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{2} directories and {3} symlinks</source>
+        <source>{2} directories and {3} symlinks</source>
         <target>{2} adresáre a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{1} file</source>
+        <source>{1} file</source>
         <target>{1} súbor</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{1} file and {3} symlink</source>
+        <source>{1} file and {3} symlink</source>
         <target>{1} súbor a {3} symbolický odkaz</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{1} file and {3} symlinks</source>
+        <source>{1} file and {3} symlinks</source>
         <target>{1} súbor a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{1} file and {2} directory</source>
+        <source>{1} file and {2} directory</source>
         <target>{1} súbor a {2} adresár</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{1} file, {2} directory and {3} symlink</source>
+        <source>{1} file, {2} directory and {3} symlink</source>
         <target>{1} súbor, {2} adresár a {3} symbolický odkaz</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{1} file, {2} directory and {3} symlinks</source>
+        <source>{1} file, {2} directory and {3} symlinks</source>
         <target>{1} súbor, {2} adresár a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{1} file and {2} directories</source>
+        <source>{1} file and {2} directories</source>
         <target>{1} súbor a {2} adresáre</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{1} file, {2} directories and {3} symlink</source>
+        <source>{1} file, {2} directories and {3} symlink</source>
         <target>{1} súbor, {2} adresáre a {3} symbolický odkaz</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_1_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{1} file, {2} directories and {3} symlinks</source>
+        <source>{1} file, {2} directories and {3} symlinks</source>
         <target>{1} súbor, {2} adresáre a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{1} files</source>
+        <source>{1} files</source>
         <target>{1} súbory</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_0_symlinks_1" xml:space="preserve">
-          <source>{1} files and {3} symlink</source>
+        <source>{1} files and {3} symlink</source>
         <target>{1} súbory a {3} symbolický odkaz</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_0_symlinks_2" xml:space="preserve">
-          <source>{1} files and {3} symlinks</source>
+        <source>{1} files and {3} symlinks</source>
         <target>{1} súbory a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_1_symlinks_0" xml:space="preserve">
-          <source>{1} files and {2} directory</source>
+        <source>{1} files and {2} directory</source>
         <target>{1} súbory a {2} adresár</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_1_symlinks_1" xml:space="preserve">
-          <source>{1} files, {2} directory and {3} symlink</source>
+        <source>{1} files, {2} directory and {3} symlink</source>
         <target>{1} súbory, {2} adresár a {3} symbolický odkaz</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_1_symlinks_2" xml:space="preserve">
-          <source>{1} files, {2} directory and {3} symlinks</source>
+        <source>{1} files, {2} directory and {3} symlinks</source>
         <target>{1} súbory, {2} adresár a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_2_symlinks_0" xml:space="preserve">
-          <source>{1} files and {2} directories</source>
+        <source>{1} files and {2} directories</source>
         <target>{1} súbory a {2} adresáre</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_2_symlinks_1" xml:space="preserve">
-          <source>{1} files, {2} directories and {3} symlink</source>
+        <source>{1} files, {2} directories and {3} symlink</source>
         <target>{1} súbory, {2} adresáre a {3} symbolický odkaz</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_0_files_2_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{1} files, {2} directories and {3} symlinks</source>
+        <source>{1} files, {2} directories and {3} symlinks</source>
         <target>{1} súbory, {2} adresáre a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_2_files_1_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{0} states, {1} file, {2} directories and {3} symlinks</source>
+        <source>{0} states, {1} file, {2} directories and {3} symlinks</source>
         <target>{0} stavy, {1} súbor, {2} adresáre a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_2_files_2_dirs_2_symlinks_2" xml:space="preserve">
-          <source>{0} states, {1} files, {2} directories and {3} symlinks</source>
+        <source>{0} states, {1} files, {2} directories and {3} symlinks</source>
         <target>{0} stavy, {1} súbory, {2} adresáre a {3} symbolické odkazy</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_1_files_0_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} state</source>
+        <source>{0} state</source>
         <target>{0} stav</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_1_files_1_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} state and {1} file</source>
+        <source>{0} state and {1} file</source>
         <target>{0} stav a {1} súbor</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.sls_1_files_2_dirs_0_symlinks_0" xml:space="preserve">
-          <source>{0} state and {1} files</source>
+        <source>{0} state and {1} files</source>
         <target>{0} stav a {1} súbory</target>
         <context-group name="config_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeFileCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.channels_0" xml:space="preserve">
-          <source>No configuration channels</source>
+        <source>No configuration channels</source>
         <target>Žiadne konfiguračné kanály</target>
         <context-group name="config_channel_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeChannelCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.channels_1" xml:space="preserve">
-          <source>1 configuration channel</source>
+        <source>1 configuration channel</source>
         <target>1 konfiguračný kanál</target>
         <context-group name="config_channel_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeChannelCountsMessage</context>
         </context-group>
       </trans-unit>
       <trans-unit id="config.channels_2" xml:space="preserve">
-          <source>{0} configuration channels</source>
+        <source>{0} configuration channels</source>
         <target>{0} konfiguračné kanály</target>
         <context-group name="config_channel_counts">
           <context context-type="sourcefile">Every Caller of ConfigActionHelper.makeChannelCountsMessage</context>
@@ -8660,37 +8632,9 @@ Vezmite, prosím, na vedomie, že neaktívne systémy nemôžu prijímať žiadn
           <context context-type="paramnotes">A file named "/etc/passwd" already exists in this channel.</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="system.entitle.notoolschannel" xml:space="preserve">
-        <source>Could not automatically subscribe the system to the @@PRODUCT_NAME@@ Tools Channel. This channel contains packages required for virtualization.  This is most likely caused by a lack of channel entitlements.</source>
-        <target state="translated">Nepodarilo sa automaticky prihlásiť systém na kanál nástrojov @@PRODUCT_NAME@@. Tento kanál obsahuje balíky potrebné pre virtualizáciu.  Je to pravdepodobne spôsobené nedostatkom oprávnení na kanál.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="system.entitle.multiplechannelswithpackage" xml:space="preserve">
         <source>Found multiple child channels with package: {0}. Please manually subscribe this system to the appropriate child channel.</source>
         <target>Nájdených viac kanálov potomkov s balíkom: {0}. Prosím, prihláste tento systém do príslušného kanála potomka ručne.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.multiplechannelswithpackagepleaseinstall" xml:space="preserve">
-        <source>Found multiple child channels with package: {0}. Please manually subscribe this system to the appropriate child channel, and schedule this package for installation.</source>
-        <target>Nájdené viaceré kanály potomkov s balíkom: {0}. Prosím, prihláste tento systém ručne do príslušného kanála potomka a naplánujte inštaláciu tohto balíka.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.novirtchannel" xml:space="preserve">
-        <source>Could not automatically subscribe the system to the RHEL Virtualization Channel.  This channel contains packages required for virtualization.  This is most likely caused by a lack of channel entitlements.</source>
-        <target>Nepodarilo sa automaticky prihlásiť systém na Virtualizačný kanál RHEL. Tento kanál obsahuje balíky potrebné pre virtualizáciu.  Je to pravdepodobne spôsobené nedostatkom oprávnení na kanál.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.novirtpackage" xml:space="preserve">
-        <source>Could not find a channel with the {0} package. This package is required to manage virtual guests with @@PRODUCT_NAME@@.</source>
-        <target>Nepodarilo sa nájsť kanál s balíkom {0}. Tento balík je potrebný na správu virtuálnych hostí s @@PRODUCT_NAME@@.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
@@ -8700,13 +8644,6 @@ Vezmite, prosím, na vedomie, že neaktívne systémy nemôžu prijímať žiadn
         <target>Systém už má typ systému {0}.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.virtualization.help" xml:space="preserve">
-        <source>NOTE: To enable and use virtualization capabilities within @@PRODUCT_NAME@@ for this system, install the mgr-virtualization-host package from the associated Tools child channel. Review the documentation for any other considerations and requirements for enabling Virtualization of a Host system.</source>
-        <target state="translated">POZNÁMKA: Ak chcete povoliť a používať možnosti virtualizácie v @@PRODUCT_NAME@@ pre tento systém, nainštalujte balík mgr-virtualization-host z pridruženého nástrojového kanála potomka. Preštudujte si dokumentáciu, aby ste zistili všetky ďalšie aspekty a požiadavky na povolenie virtualizácie hostiteľského systému.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/virtualization/VirtualGuestsList.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="system.migrate.user_no_perms" xml:space="preserve">
@@ -10020,8 +9957,8 @@ inštalovateľný strom nebude možné použiť na automatickú inštaláciu.</t
         <target state="translated">Nájdené prihlasovacie meno(á) odoslané na {0}. Ak ju nedostanete, uistite sa, že máte zaregistrovaný účet s prihlasovacím menom a uvedeným emailom.</target>
       </trans-unit>
       <trans-unit id="config.multiple.channels" xml:space="preserve">
-        <source>A selected system has multiple child channels available that contain the mgr-cfg package. You must manually subscribe to the child channel you want and then try this action again.</source>
-        <target state="translated">Vybraný systém má k dispozícii viacero kanálov potomkov, ktoré obsahujú balík mgr-cfg. Musíte sa ručne prihlásiť k požadovanému kanálu potomka a potom skúsiť túto akciu znova.</target>
+        <source>A selected system has multiple child channels available that contain the venv-salt-minion package. You must manually subscribe to the child channel you want and then try this action again.</source>
+        <target state="translated">Vybraný systém má k dispozícii viacero kanálov potomkov, ktoré obsahujú balík venv-salt-minion. Musíte sa ručne prihlásiť k požadovanému kanálu potomka a potom skúsiť túto akciu znova.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/configuration/system/TargetSystemsSubmit.do</context>
         </context-group>
@@ -10311,10 +10248,6 @@ Prípadne si budete chcieť stiahnuť &lt;strong&gt; Inkrementálne obsahové IS
         <source>Synchronizes @@PRODUCT_NAME@@ repositories</source>
         <target state="translated">Synchronizuje repozitáre @@PRODUCT_NAME@@</target>
       </trans-unit>
-      <trans-unit id="bunch.jsp.description.ssh-push-bunch" xml:space="preserve">
-        <source>Manages clients via SSH Server Push</source>
-        <target>Spravuje klientov cez postúpenie servera SSH</target>
-      </trans-unit>
       <trans-unit id="bunch.jsp.description.cve-server-channels-bunch" xml:space="preserve">
         <source>Generates data required for performing CVE audit queries</source>
         <target>Generuje údaje potrebné na vykonávanie dopytov auditov CVE</target>
@@ -10433,10 +10366,6 @@ Prípadne si budete chcieť stiahnuť &lt;strong&gt; Inkrementálne obsahové IS
         <source>Foreign</source>
         <target>Cudzie</target>
       </trans-unit>
-      <trans-unit id="visualization.nav.title" xml:space="preserve">
-        <source>Visualization</source>
-        <target>Vizualizácia</target>
-      </trans-unit>
       <trans-unit id="ssm.overview.misc.entitlements" xml:space="preserve">
         <source>&lt;a href="/rhn/systems/ssm/misc/Index.do#entitle"&gt;Add or Remove&lt;/a&gt; Add-On System Types</source>
         <target>&lt;a href="/rhn/systems/ssm/misc/Index.do#entitle"&gt;Pridať alebo odstrániť&lt;/a&gt; typy prídavných systémov</target>
@@ -10464,21 +10393,7 @@ Prípadne si budete chcieť stiahnuť &lt;strong&gt; Inkrementálne obsahové IS
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="system.entitle.added.container_build_host.nodoc" xml:space="preserve">
-        <source>&lt;strong&gt;Container Build Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
-        <target>Bol použitý typ &lt;strong&gt;Hostiteľ zostavený kontajnermi&lt;/strong&gt;.&lt;br/&gt;&lt;strong&gt;Poznámka:&lt;/strong&gt; Táto akcia &lt;em&gt;nebude&lt;/em&gt; mať vplyv na aplikáciu stavu. Ak chcete použiť stav, použite &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;stránku stavov&lt;/a&gt;, alebo spustite &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; z príkazového riadku.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="system.entitle.added.osimage_build_host" xml:space="preserve">
-        <source>&lt;strong&gt;OS Image Build Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
-        <target>Bol použitý typ &lt;strong&gt;Hostiteľ zostavenia ISO obrazu&lt;/strong&gt;.&lt;br/&gt;&lt;strong&gt;Poznámka:&lt;/strong&gt; Táto akcia &lt;em&gt;nebude&lt;/em&gt; mať vplyv na aplikáciu stavu. Ak chcete použiť stav, použite &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;sstránku stavov&lt;/a&gt;, alebo spustite &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; z príkazového riadku.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.added.osimage_build_host.nodoc" xml:space="preserve">
         <source>&lt;strong&gt;OS Image Build Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
         <target>Bol použitý typ &lt;strong&gt;Hostiteľ zostavenia ISO obrazu&lt;/strong&gt;.&lt;br/&gt;&lt;strong&gt;Poznámka:&lt;/strong&gt; Táto akcia &lt;em&gt;nebude&lt;/em&gt; mať vplyv na aplikáciu stavu. Ak chcete použiť stav, použite &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;sstránku stavov&lt;/a&gt;, alebo spustite &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; z príkazového riadku.</target>
         <context-group name="ctx">
@@ -10492,23 +10407,9 @@ Prípadne si budete chcieť stiahnuť &lt;strong&gt; Inkrementálne obsahové IS
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="system.entitle.added.virtualization_host.nodoc" xml:space="preserve">
-        <source>Since you added a Virtualization system type to the system we also performed some extra steps to ensure your system will be able to manage virtual guests better.</source>
-        <target>Keďže ste do systému pridali typ virtualizačného systému, vykonali sme tiež niekoľko ďalších krokov, aby sme zabezpečili, že váš systém bude schopný lepšie spravovať virtuálnych hostí.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="system.entitle.added.monitoring_entitled" xml:space="preserve">
-        <source>&lt;strong&gt;Monitoring&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Since you added the Monitoring system type we automatically assigned the Prometheus Exporters formula to the system. Please apply the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt; in order to install and enable the Prometheus metrics exporters.</source>
-        <target state="translated">Bol použitý typ &lt;strong&gt;Monitorovania&lt;/strong&gt;.&lt;br/&gt;&lt;strong&gt;Poznámka:&lt;/strong&gt; Keďže ste pridali typ systému monitorovania, automaticky sme systému priradili vzorec exportérov Prometheus. Prosím, použite &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt;, aby ste mohli nainštalovať a povoliť exportéry metrík Prometheus.</target>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.added.monitoring_entitled.nodoc" xml:space="preserve">
-        <source>&lt;strong&gt;Monitoring&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Since you added the Monitoring system type we automatically assigned the Prometheus Exporters formula to the system. Please apply the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt; in order to install and enable the Prometheus metrics exporters.</source>
-        <target state="translated">Bol použitý typ &lt;strong&gt;Monitorovania&lt;/strong&gt;.&lt;br/&gt;&lt;strong&gt;Poznámka:&lt;/strong&gt; Keďže ste pridali typ systému monitorovania, automaticky sme systému priradili vzorec exportérov Prometheus. Prosím, použite &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt;, aby ste mohli nainštalovať a povoliť exportéry metrík Prometheus.</target>
+        <source>&lt;strong&gt;Monitor this Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Since you added the Monitoring system type we automatically assigned the Prometheus Exporters formula to the system. Please apply the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt; in order to install and enable the Prometheus metrics exporters.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Please make sure to open the &lt;a href="/docs/{1}/installation-and-upgrade/ports.html#_external_client_ports" target="_blank"&gt;required network ports&lt;/a&gt; for all installed exporters.</source>
+        <target state="translated">Bol použitý typ &lt;strong&gt;Monitorovania tohto hostiteľa&lt;/strong&gt;.&lt;br/&gt;&lt;strong&gt;Poznámka:&lt;/strong&gt; Keďže ste pridali typ systému monitorovania, automaticky sme systému priradili vzorec exportérov Prometheus. Prosím, použite &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt;, aby ste mohli nainštalovať a povoliť exportéry metrík Prometheus. &lt;br/&gt;&lt;strong&gt;Poznámka:&lt;/strong&gt; Prosím, uistite sa, že ste otvorili &lt;a href="/docs/{1}/installation-and-upgrade/ports.html#_external_client_ports" target="_blank"&gt;požadované sieťové porty&lt;/a&gt; pre všetky nainštalované exportéry.</target>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
@@ -10613,18 +10514,6 @@ Prípadne si budete chcieť stiahnuť &lt;strong&gt; Inkrementálne obsahové IS
       <trans-unit id="Sync Schedule" xml:space="preserve">
         <source>Sync Schedule</source>
         <target>Sync plán</target>
-      </trans-unit>
-      <trans-unit id="Virtualization Hierarchy" xml:space="preserve">
-        <source>Virtualization Hierarchy</source>
-        <target>Hierarchia virtualizácie</target>
-      </trans-unit>
-      <trans-unit id="Proxy Hierarchy" xml:space="preserve">
-        <source>Proxy Hierarchy</source>
-        <target>Hierarchia proxy</target>
-      </trans-unit>
-      <trans-unit id="Systems Grouping" xml:space="preserve">
-        <source>Systems Grouping</source>
-        <target>Zoskupovanie systémov</target>
       </trans-unit>
       <trans-unit id="Salt Entitled Servers" xml:space="preserve">
         <source>Salt</source>
@@ -10916,13 +10805,6 @@ Prípadne si budete chcieť stiahnuť &lt;strong&gt; Inkrementálne obsahové IS
         </context-group>
         <target state="translated">Bol použitý typ &lt;strong&gt;Riadiaci uzol Ansible&lt;/strong&gt;.&lt;br/&gt;&lt;strong&gt;Poznámka:&lt;/strong&gt; Táto akcia &lt;em&gt;nebude&lt;/em&gt; mať vplyv na aplikáciu stavu. Ak chcete použiť stav, použite &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;stránku stavov&lt;/a&gt;, alebo spustite &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; z príkazového riadku.</target>
       </trans-unit>
-      <trans-unit id="system.entitle.added.ansible_control_node.nodoc" xml:space="preserve">
-        <source>&lt;strong&gt;Ansible Control Node&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-        <target state="translated">Bol použitý typ &lt;strong&gt;Riadiaci uzol Ansible&lt;/strong&gt;.&lt;br/&gt;&lt;strong&gt;Poznámka:&lt;/strong&gt; Táto akcia &lt;em&gt;nebude&lt;/em&gt; mať vplyv na aplikáciu stavu. Ak chcete použiť stav, použite &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;stránku stavov&lt;/a&gt;, alebo spustite &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; z príkazového riadku.</target>
-      </trans-unit>
       <trans-unit id="ansible.invalid_path" xml:space="preserve">
         <source>Invalid path (must be a valid absolute path)</source>
         <context-group name="ctx">
@@ -11079,28 +10961,28 @@ Prípadne si budete chcieť stiahnuť &lt;strong&gt; Inkrementálne obsahové IS
         <target state="translated">Heslo súkromného kľúča SSH bašty nesmie presiahnuť 32 znakov.</target>
       </trans-unit>
       <trans-unit id="payg.ssh_data_created" xml:space="preserve">
-        <source>Pay-as-you-go {0} created successfully</source>
-        <target state="translated">Úspešne vytvorená priebežná platba {0}</target>
+        <source>PAYG {0} created successfully</source>
+        <target state="translated">Úspešne vytvorené PAYG {0}</target>
       </trans-unit>
       <trans-unit id="payg.host_exists" xml:space="preserve">
-        <source>Pay-as-you-go host already exists</source>
-        <target state="translated">Priebežne platený hostiteľ už existuje</target>
+        <source>PAYG host already exists</source>
+        <target state="translated">Hostiteľ PAYG už existuje</target>
       </trans-unit>
       <trans-unit id="payg.ssh_data_deleted" xml:space="preserve">
-        <source>Pay-as-you-go {0} deleted successfully</source>
-        <target state="translated">Úspešne vymazaná priebežná platba {0}</target>
+        <source>PAYG {0} deleted successfully</source>
+        <target state="translated">Úspešne vymazané PAYG {0}</target>
       </trans-unit>
       <trans-unit id="notification.paygauthenticationupdatefailed" xml:space="preserve">
         <source>Error when updating authentication data from: &lt;a href="/rhn/manager/admin/setup/payg/{0}"&gt;{1}&lt;/a&gt;</source>
         <target state="translated">Chyba pri aktualizácii overovacích údajov z: &lt;a href="/rhn/manager/admin/setup/payg/{0}"&gt;{1}&lt;/a&gt;</target>
       </trans-unit>
       <trans-unit id="task.status.update-payg-auth" xml:space="preserve">
-        <source>Pay-as-you-go authentication update</source>
-        <target state="translated">Aktualizácia overenia priebežnej platby</target>
+        <source>PAYG authentication update</source>
+        <target state="translated">Aktualizácia overenia PAYG</target>
       </trans-unit>
       <trans-unit id="task.status.update-payg-hosts" xml:space="preserve">
-        <source>Pay-as-you-go update RMT hosts</source>
-        <target state="translated">RMT hostitelia aktualizácií priebežných platieb</target>
+        <source>PAYG update RMT hosts</source>
+        <target state="translated">RMT hostitelia aktualizácií PAYG</target>
       </trans-unit>
       <trans-unit id="setup.product.error.dataneedsrefresh" xml:space="preserve">
         <source>Product data needs refresh.</source>
@@ -11255,14 +11137,14 @@ Prípadne si budete chcieť stiahnuť &lt;strong&gt; Inkrementálne obsahové IS
       </trans-unit>
       <trans-unit id="api.package.ptfpackage" xml:space="preserve">
         <source>Packages part of a Program Temporary Fix (PTF): {0}</source>
-        <target state="needs-adaptation">Balíky sú súčasťou Product Temporary Fixes (PTF): {0}</target>
+        <target state="translated">Balíky sú súčasťou Program Temporary Fix (PTF): {0}</target>
       </trans-unit>
       <trans-unit id="api.package.ptfmaster" xml:space="preserve">
         <source>Program Temporary Fixes (PTFs) packages: {0}</source>
-        <target state="needs-adaptation">Balíky Product Temporary Fixes (PTF): {0}</target>
+        <target state="translated">Balíky Program Temporary Fixes (PTFs): {0}</target>
       </trans-unit>
       <trans-unit id="activation-key.java.nochannel" xml:space="preserve">
-          <source>No Base Channel selected.</source>
+        <source>No Base Channel selected.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">Activation Key Pages</context>
         </context-group>
@@ -11282,19 +11164,440 @@ Prípadne si budete chcieť stiahnuť &lt;strong&gt; Inkrementálne obsahové IS
         </context-group>
         <target state="translated">Modularita je zakázaná. Do cieľových repozitárov nebudú zahrnuté žiadne moduly.</target>
       </trans-unit>
-    <trans-unit id="PTF" xml:space="preserve">
+      <trans-unit id="PTF" xml:space="preserve">
         <source>PTFs</source>
         <context-group name="ctx">
           <context context-type="sourcefile">Program Temporary Fixes (PTFs) Navigation Tabs</context>
         </context-group>
-      <target state="new"/>
-  </trans-unit>
+        <target state="translated">PTFs</target>
+      </trans-unit>
       <trans-unit id="contentmanagement.non_environment_channels_found" xml:space="preserve">
         <source>Cannot remove. There are custom channels that are not part of the channels built by the environment. Please remove these channels first: {0}</source>
-      <target state="new"/>
-  </trans-unit>
+        <target state="translated">Nemožno odstrániť. Existujú vlastné kanály, ktoré nie sú súčasťou kanálov vytvorených prostredím. Najskôr, prosím, odstráňte tieto kanály: {0}</target>
+      </trans-unit>
       <trans-unit id="contentmanagement.used_in_autoinstallation_profile" xml:space="preserve">
         <source>The target is being used in an autoinstallation profile. Cannot remove.</source>
+        <target state="translated">Cieľ sa používa v profile automatickej inštalácie. Nemožno odstrániť.</target>
+      </trans-unit>
+      <trans-unit id="task.action.rejection.reason" xml:space="preserve">
+        <source>This action was not executed because its earliest execution date was too old. When more than {0} hours pass between the scheduling and the picking up, the action is discarded because it is considered no longer relevant.
+          Please reschedule this action if you really want it to be executed.</source>
+        <target state="translated">Táto akcia nebola vykonaná, pretože jej najskorší dátum vykonania bol príliš starý. Ak medzi naplánovaním a prevzatím uplynie viac ako {0} hodín, akcia sa vyradí, pretože sa už nepovažuje za relevantnú.
+          Ak naozaj chcete, aby sa táto akcia vykonala, prosím, presuňte ju na iný termín.</target>
+      </trans-unit>
+      <trans-unit id="recurring_action.empty_action_type" xml:space="preserve">
+        <source>Recurring Action type must be provided</source>
+        <target state="translated">Musí byť uvedený typ opakujúcej sa akcie</target>
+      </trans-unit>
+      <trans-unit id="recurring_action.empty_states_config" xml:space="preserve">
+        <source>States configuration must be provided</source>
+        <target state="translated">Musí byť poskytnutá konfigurácia stavov</target>
+      </trans-unit>
+      <trans-unit id="recurring_action.invalid_action_type" xml:space="preserve">
+        <source>Recurring action has invalid type.</source>
+        <target state="translated">Opakujúca sa akcia má neplatný typ.</target>
+      </trans-unit>
+      <trans-unit id="internal_state.certs" xml:space="preserve">
+        <source>Install the server's SSL certificate and trust it on the target system</source>
+        <target state="translated">Inštalovať certifikát SSL servera a dôverovať mu v cieľovom systéme</target>
+      </trans-unit>
+      <trans-unit id="internal_state.channels" xml:space="preserve">
+        <source>Make sure that channel subscriptions are in sync with the server side configuration</source>
+        <target state="translated">Uistite sa, že predplatné kanálov sú synchronizované s konfiguráciou na strane servera</target>
+      </trans-unit>
+      <trans-unit id="internal_state.hardware_profileupdate" xml:space="preserve">
+        <source>Update information about installed hardware</source>
+        <target state="translated">Aktualizovať informácie o nainštalovanom hardvéri</target>
+      </trans-unit>
+      <trans-unit id="internal_state.packages" xml:space="preserve">
+        <source>Apply package states as configured for the target system</source>
+        <target state="translated">Použiť stavy balíkov nakonfigurované pre cieľový systém</target>
+      </trans-unit>
+      <trans-unit id="internal_state.packages_profileupdate" xml:space="preserve">
+        <source>Update information about installed software (packages and products)</source>
+        <target state="translated">Aktualizovať informácie o nainštalovanom softvéri (balíky a produkty)</target>
+      </trans-unit>
+      <trans-unit id="internal_state.uptodate" xml:space="preserve">
+        <source>Update the system</source>
+        <target state="translated">Aktualizovať systém</target>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncbeacons" xml:space="preserve">
+        <source>Sync Salt beacons to the target system</source>
+        <target state="translated">Synchronizácia položiek Salt beacons s cieľovým systémom</target>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncall" xml:space="preserve">
+        <source>Sync all Salt artifacts (modules, states, grains and beacons) to the target system</source>
+        <target state="translated">Synchronizácia všetkých artefaktov Salt (modulov, stavov, grains a beacons) s cieľovým systémom</target>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncgrains" xml:space="preserve">
+        <source>Sync Salt grains to the target system</source>
+        <target state="translated">Synchronizácia položiek Salt grains s cieľovým systémom</target>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncmodules" xml:space="preserve">
+        <source>Sync Salt modules to the target system</source>
+        <target state="translated">Synchronizácia modulov Salt s cieľovým systémom</target>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncstates" xml:space="preserve">
+        <source>Sync Salt states to the target system</source>
+        <target state="translated">Synchronizácia stavov Salt s cieľovým systémom</target>
+      </trans-unit>
+      <trans-unit id="edit.channel.forbiddenclonechannelpayg" xml:space="preserve">
+        <source>Cloning of channels under different product channels on PAYG instances is forbidden</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/channels/manage/Edit</context>
+        </context-group>
+        <target state="translated">Klonovanie kanálov v rámci rôznych kanálov produktov v inštanciách PAYG je zakázané</target>
+      </trans-unit>
+      <trans-unit id="spmigration.message.payg.error" xml:space="preserve">
+        <source>PAYG ALERT: Cross product migration attempt detected. Please note, migration from openSUSE to SLES or similar is not permitted under your current PAYG plan. Operation has been aborted.</source>
+        <target state="translated">VÝSTRAHA PAYG: Zistený pokus o migráciu medzi produktmi. Vezmite, prosím, na vedomie, že migrácia z openSUSE na SLES alebo podobný systém nie je v rámci vášho súčasného plánu PAYG povolená. Operácia bola prerušená.</target>
+      </trans-unit>
+      <trans-unit id="notification.channelsyncforbidden" xml:space="preserve">
+        <source>Syncing channels forbidden</source>
+        <target state="translated">Synchronizácia kanálov je zakázaná</target>
+      </trans-unit>
+      <trans-unit id="notification.channelsyncfailed.notcompliant" xml:space="preserve">
+        <source>Synchronization of repositories is forbidden as @@PRODUCT_NAME@@ PAYG is unable to send accounting data to the cloud provider.
+For a detailed analysis, please refer to the log files.</source>
+        <target state="translated">Synchronizácia repozitárov je zakázaná, pretože PAYG @@PRODUCT_NAME@@ nedokáže posielať účtovné údaje poskytovateľovi cloudu.
+Ak chcete získať podrobnú analýzu, pozrite si súbory záznamov.</target>
+      </trans-unit>
+      <trans-unit id="task.action.rejection.notcompliant" xml:space="preserve">
+        <source>
+The action you attempted could not be executed because the @@PRODUCT_NAME@@ PAYG system is unable to send accounting data to the cloud provider.
+For a detailed analysis, please refer to the log files.
+	</source>
+        <target state="translated">
+Akciu, o ktorú ste sa pokúsili, nebolo možné vykonať, pretože systém PAYG @@PRODUCT_NAME@@ nedokáže posielať účtovné údaje poskytovateľovi cloudu.
+Ak chcete získať podrobnú analýzu, pozrite si súbory záznamov.
+	</target>
+      </trans-unit>
+      <trans-unit id="bootstrap.minion.error.conflicting.minionid" xml:space="preserve">
+        <source>Systems with conflicting minion ID and machine ID were found ({0}, {1}). Onboarding aborted. Please remove conflicting systems first ({2}, {3})</source>
+        <target state="translated">Boli nájdené systémy s konfliktným ID minion a ID stroja ({0}, {1}). Začlenenie sa bolo prerušené. Prosím, najskôr odstráňte konfliktné systémy ({2}, {3})</target>
+      </trans-unit>
+      <trans-unit id="bootstrap.minion.error.payg.dcregistered" xml:space="preserve">
+        <source>Registration of '{0}' on SUSE Manager Server rejected. \nTo manage Datacenter clients you have to configure SCC Credentials at Admin =&gt; Setup Wizard =&gt; Organization Credentials.</source>
+        <target state="translated">Registrácia '{0}' na serveri SUSE Manager zamietnutá. \nAk chcete spravovať klientov dátového centra, musíte nakonfigurovať prihlasovacie údaje SCC v Admin =&gt; Sprievodca nastavením =&gt; prihlasovacie údaje organizácie.</target>
+      </trans-unit>
+      <trans-unit id="bootstrap.minion.error.payg.byosregistered" xml:space="preserve">
+        <source>Registration of '{0}' on SUSE Manager Server rejected. \nTo manage BYOS (Bring-your-own-Subscription) clients you have to configure SCC Credentials at Admin =&gt; Setup Wizard =&gt; Organization Credentials. \n\nIf the instance being onboarded is PAYG, ensure the `python-instance-billing-flavor-check` package is installed and try again.</source>
+        <target state="translated">Registrácia '{0}' na serveri SUSE Manager zamietnutá. \nAk chcete spravovať klientov BYOS (Bring-your-own-Subscription), musíte nakonfigurovať prihlasovacie údaje SCC v Admin =&gt; Sprievodca nastavením =&gt; prihlasovacie údaje organizácie. \n\nAk je začleňovaná inštancia PAYG, uistite sa, že je nainštalovaný balík `python-instance-billing-flavor-check`, a skúste to znova.</target>
+      </trans-unit>
+      <trans-unit id="notification.updateavailable.summary" xml:space="preserve">
+        <source>Updates are available.</source>
+        <target state="translated">K dispozícii sú aktualizácie.</target>
+      </trans-unit>
+      <trans-unit id="notification.updateavailable.detail" xml:space="preserve">
+        <source>A new update for @@PRODUCT_NAME@@ is now available. For further details, please refer to the &lt;a href="{0}"&gt;release notes&lt;a&gt;.</source>
+        <target state="translated">Teraz je k dispozícii nová aktualizácia pre @@PRODUCT_NAME@@. Ďalšie podrobnosti nájdete v &lt;a href="{0}"&gt;poznámkach k vydaniu&lt;a&gt;.</target>
+      </trans-unit>
+      <trans-unit id="message.payg.errorbyosnoscc" xml:space="preserve">
+        <source>
+          @@PRODUCT_NAME@@ is not able to manage this instance since it is Bring-your-own-subscription and no SCC credentials are set.
+          To amend this situation, please add SCC credentials &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;here&lt;/a&gt;.
+        </source>
+        <target state="translated">
+          @@PRODUCT_NAME@@ nie je schopný spravovať túto inštanciu, pretože je to Bring-your-own-subscription a nie sú nastavené žiadne prihlasovacie údaje SCC.
+          Ak chcete túto situáciu napraviť, pridajte prihlasovacie údaje SCC &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;sem&lt;/a&gt;.
+        </target>
+      </trans-unit>
+      <trans-unit id="message.payg.errornotcompliant" xml:space="preserve">
+        <source>
+          This @@PRODUCT_NAME@@ PAYG is not compliant and some of its functions will be disabled. Please contact your administrator to
+          amend the situation before continuing using the product.
+        </source>
+        <target state="translated">
+          Toto @@PRODUCT_NAME@@ PAYG nie je vyhovujúce a niektoré jeho funkcie budú vypnuté. Pred ďalším používaním produktu sa, prosím,
+          obráťte na svojho administrátora, aby situáciu napravil.
+        </target>
+      </trans-unit>
+      <trans-unit id="message.payg.errorbyosnosccssm" xml:space="preserve">
+        <source>
+@@PRODUCT_NAME@@ is not able to manage these instances since there are one or more Bring-your-own-subscription and no SCC credentials are set.
+To amend this situation, please add SCC credentials &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;here&lt;/a&gt; or select in SSM just Pay-as-you-go-instances.
+        </source>
+        <target state="translated">
+@@PRODUCT_NAME@@ nemôže spravovať tieto inštancie, pretože existuje jedno alebo viac predplatných Bring-your-own-subscription a nie sú nastavené žiadne prihlasovacie údaje SCC.
+Ak chcete túto situáciu napraviť, pridajte prihlasovacie údaje SCC &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;sem&lt;/a&gt; alebo vyberte v SSM len inštancie Pay-as-you-go-instance.
+        </target>
+      </trans-unit>
+      <trans-unit id="bunch.jsp.description.ssh-service-bunch" xml:space="preserve">
+        <source>Manages checkins and action chain resumes for SSH Push Clients</source>
+        <target state="translated">Spravuje prihlásenia a obnovenia reťazca akcií pre klientov SSH Push</target>
+      </trans-unit>
+      <trans-unit id="notification.paygnotcompliantwarning.summary" xml:space="preserve">
+        <source>@@PRODUCT_NAME@@ PAYG instance is not compliant.</source>
+        <target state="translated">Inštancia @@PRODUCT_NAME@@ PAYG nie je vyhovujúca.</target>
+      </trans-unit>
+      <trans-unit id="notification.paygnotcompliantwarning.detail" xml:space="preserve">
+        <source>This @@PRODUCT_NAME@@ PAYG instance is not compliant. Some @@PRODUCT_NAME@@ functions will be disabled. Please check with your system administrator.</source>
+        <target state="translated">Táto inštancia @@PRODUCT_NAME@@ PAYG nie je vyhovujúca. Niektoré funkcie @@PRODUCT_NAME@@ budú vypnuté. Prosím, obráťte sa na svojho systémového administrátora.</target>
+      </trans-unit>
+      <trans-unit id="task.action.rejection.notcompliantPaygByos" xml:space="preserve">
+        <source>
+          The action you attempted could not be executed because @@PRODUCT_NAME@@ is PAYG, there are BYOS servers in the current action and currently no SCC credentials are set.
+          To amend this situation, please set SCC credentials for this @@PRODUCT_NAME@@ instance and try again. You can also execute the action only on Pay-as-you-go instances.
+          Bring-your-own-subscription servers detected: {0}.
+        </source>
+        <target state="translated">
+          Akciu, o ktorú ste sa pokúsili, nebolo možné vykonať, pretože @@PRODUCT_NAME@@ je PAYG, v aktuálnej akcii sú servery BYOS a v súčasnosti nie sú nastavené žiadne prihlasovacie údaje SCC.
+          Ak chcete túto situáciu napraviť, nastavte prihlasovacie údaje SCC pre túto inštanciu @@PRODUCT_NAME@@ a skúste to znova. Akciu môžete vykonať aj len na inštanciách Pay-as-you-go.
+          Zistené servery Bring-your-own-subscription: {0}.
+        </target>
+      </trans-unit>
+      <trans-unit id="task.action.rejection.notcompliantPaygByosActionChain" xml:space="preserve">
+        <source>
+          The action chain you attempted could not be executed because @@PRODUCT_NAME@@ is PAYG, there are BYOS servers in the current action chain and currently no SCC credentials are set.
+          To amend this situation, please set SCC credentials for this @@PRODUCT_NAME@@ instance and try again. You can also execute the action chain only on Pay-as-you-go instances.
+          Bring-your-own-subscription servers detected: {0}.
+        </source>
+        <target state="translated">
+          Reťazec akcií, o ktorý ste sa pokúsili, nebolo možné vykonať, pretože @@PRODUCT_NAME@@ je PAYG, v aktuálnom reťazci akcii sú servery BYOS a v súčasnosti nie sú nastavené žiadne prihlasovacie údaje SCC.
+          Ak chcete túto situáciu napraviť, nastavte prihlasovacie údaje SCC pre túto inštanciu @@PRODUCT_NAME@@ a skúste to znova. Reťazec akcií môžete vykonať aj len na inštanciách Pay-as-you-go.
+          Zistené servery Bring-your-own-subscription: {0}.
+        </target>
+      </trans-unit>
+      <trans-unit id="recurring_action.not_in_maint_mode" xml:space="preserve">
+        <source>One or more selected systems don't have a maintenance window assigned at the current time. Please limit your selection to systems that are in maintenance mode.</source>
+        <target state="translated">Jeden alebo viac vybraných systémov nemá v aktuálnom čase pridelené okno údržby. Obmedzte výber na systémy, ktoré sú v režime údržby.</target>
+      </trans-unit>
+      <trans-unit id="internal_state.update-salt" xml:space="preserve">
+        <source>Perform a standalone Salt update</source>
+        <target state="translated">Vykonanie samostatnej aktualizácie Salt</target>
+      </trans-unit>
+      <trans-unit id="riscv64-deb" xml:space="preserve">
+        <source>RISCV64 Debian</source>
+        <target>RISCV64 Debian</target>
+        <target state="new"/>
+      </trans-unit>
+      <trans-unit id="ARM64 Debian" xml:space="preserve">
+        <source>ARM64 Debian</source>
+        <target>ARM64 Debian</target>
+        <target state="new"/>
+      </trans-unit>
+      <trans-unit id="armel-deb" xml:space="preserve">
+        <source>ARMEL Debian</source>
+        <target>ARMEL Debian</target>
+        <target state="new"/>
+      </trans-unit>
+      <trans-unit id="s390x-deb" xml:space="preserve">
+        <source>PPC64EL Debian</source>
+        <target>PPC64EL Debian</target>
+        <target state="new"/>
+      </trans-unit>
+      <trans-unit id="message.savereposyncflags" xml:space="preserve">
+        <source>Saved repository settings for {0}.</source>
+        <target state="translated">Uložené nastavenia repozitára pre {0}.</target>
+      </trans-unit>
+      <trans-unit id="coco.attestation" xml:space="preserve">
+        <source>Confidential Computing Attestation</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/schedule/ActionDetails.do</context>
+        </context-group>
+        <target state="translated">Atestácia dôveryhodného používania počítača</target>
+      </trans-unit>
+      <trans-unit id="appstreams.configure" xml:space="preserve">
+        <source>Configure AppStreams</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/schedule/ActionDetails.do</context>
+        </context-group>
+        <target state="translated">Konfigurácia AppStreams</target>
+      </trans-unit>
+      <trans-unit id="api.channel.modulespresent" xml:space="preserve">
+        <source>Operation not allowed for systems that have modular channels assigned. Please consider setting 'allowModules=true'.</source>
+        <target state="translated">Operácia nie je povolená pre systémy, ktoré majú priradené modulárne kanály. Prosím, zvážte nastavenie 'allowModules=true'.</target>
+      </trans-unit>
+      <trans-unit id="confidentialcomputing.nav.title" xml:space="preserve">
+        <source>Confidential Computing</source>
+        <target state="translated">Dôveryhodné používanie počítača</target>
+      </trans-unit>
+      <trans-unit id="coco.environment.none.description" xml:space="preserve">
+        <source>None</source>
+        <target state="translated">Žiadne</target>
+      </trans-unit>
+      <trans-unit id="coco.environment.none.label" xml:space="preserve">
+        <source>None</source>
+        <target state="translated">Žiadne</target>
+      </trans-unit>
+      <trans-unit id="coco.environment.kvm_amd_epyc_milan.description" xml:space="preserve">
+        <source>KVM on AMD Epyc Processor, second generation (milan)</source>
+        <target state="translated">KVM na procesore AMD Epyc, druhá generácia (milan)</target>
+      </trans-unit>
+      <trans-unit id="coco.environment.kvm_amd_epyc_milan.label" xml:space="preserve">
+        <source>KVM on AMD Epyc - Milan</source>
+        <target state="translated">KVM na AMD Epyc - Milan</target>
+      </trans-unit>
+      <trans-unit id="coco.environment.kvm_amd_epyc_genoa.description" xml:space="preserve">
+        <source>KVM on AMD Epyc Processor, third generation (genoa)</source>
+        <target state="translated">KVM na procesore AMD Epyc, tretia generácia (genoa)</target>
+      </trans-unit>
+      <trans-unit id="coco.environment.kvm_amd_epyc_genoa.label" xml:space="preserve">
+        <source>KVM on AMD Epyc - Genoa</source>
+        <target state="translated">KVM na AMD Epyc - Genoa</target>
+      </trans-unit>
+      <trans-unit id="coco.resultType.none.description" xml:space="preserve">
+        <source>Result Type not found</source>
+        <target state="translated">Typ výsledku nebol nájdený</target>
+      </trans-unit>
+      <trans-unit id="coco.resultType.sev_snp.description" xml:space="preserve">
+        <source>AMD Secure Encrypted Virtualization-Secure Nested Paging (SEV-SNP)</source>
+        <target state="translated">AMD Secure Encrypted Virtualization-Secure Nested Paging (SEV-SNP)</target>
+      </trans-unit>
+      <trans-unit id="coco.resultType.sev_snp.label" xml:space="preserve">
+        <source>AMD SEV-SNP</source>
+        <target state="translated">AMD SEV-SNP</target>
+      </trans-unit>
+      <trans-unit id="coco.resultType.secure_boot.description" xml:space="preserve">
+        <source>Secure Boot enabled</source>
+        <target state="translated">Secure Boot povolený</target>
+      </trans-unit>
+      <trans-unit id="coco.resultType.secure_boot.label" xml:space="preserve">
+        <source>Secure Boot</source>
+        <target state="translated">Secure Boot</target>
+      </trans-unit>
+      <trans-unit id="coco.status.pending.description" xml:space="preserve">
+        <source>Pending</source>
+        <target state="translated">Čakajúce</target>
+      </trans-unit>
+      <trans-unit id="coco.status.succeeded.description" xml:space="preserve">
+        <source>Succeeded</source>
+        <target state="translated">Úspešné</target>
+      </trans-unit>
+      <trans-unit id="coco.status.failed.description" xml:space="preserve">
+        <source>Failed</source>
+        <target state="translated">Neúspešné</target>
+      </trans-unit>
+      <trans-unit id="system.audit.coco.unsupported" xml:space="preserve">
+        <source>This system does not have any Confidential Computing capability.</source>
+        <target state="translated">Tento systém nie je vybavený funkciou dôveryhodného používania počítača.</target>
+      </trans-unit>
+      <trans-unit id="system.audit.coco.configUpdated" xml:space="preserve">
+        <source>The Confidential Computing configuration has been updated successfully.</source>
+        <target state="translated">Konfigurácia dôveryhodného používania počítača bola úspešne aktualizovaná.</target>
+      </trans-unit>
+      <trans-unit id="system.audit.coco.configNotUpdated" xml:space="preserve">
+        <source>An error occurred while updating the Confidential Computing configuration. Please check the server logs for detailed information.</source>
+        <target state="translated">Pri aktualizácii konfigurácie dôveryhodného používania počítača došlo k chybe. Podrobné informácie nájdete v záznamoch servera.</target>
+      </trans-unit>
+      <trans-unit id="internal_state.reboot" xml:space="preserve">
+        <source>Perform a reboot</source>
+        <target state="translated">Vykonať reštart</target>
+      </trans-unit>
+      <trans-unit id="internal_state.rebootifneeded" xml:space="preserve">
+        <source>Perform a reboot, only if required</source>
+        <target state="translated">Vykonať reštart, len ak je to potrebné</target>
+      </trans-unit>
+      <trans-unit id="task.status.oval-data-sync" xml:space="preserve">
+        <source>Sync OVAL Data</source>
+        <target state="translated">Synchronizácia dát OVAL</target>
+      </trans-unit>
+      <trans-unit id="bunch.jsp.description.oval-data-sync-bunch" xml:space="preserve">
+        <source>Generate OVAL data required to increase the accuracy of CVE audit queries</source>
+        <target state="translated">Generovanie dát OVAL potrebných na zvýšenie presnosti dopytov auditu CVE</target>
+      </trans-unit>
+      <trans-unit id="scc-data-forwarding.enabled" xml:space="preserve">
+        <source>SCC Data Forwarding enabled successfully.</source>
+        <target state="translated">SCC Data Forwarding úspešne povolené.</target>
+      </trans-unit>
+      <trans-unit id="scc-data-forwarding.not-changed" xml:space="preserve">
+        <source>SCC Data Forwarding is already enabled.</source>
+        <target state="translated">SCC Data Forwarding je už povolené.</target>
+      </trans-unit>
+      <trans-unit id="notification.sccoptoutwarning.summary" xml:space="preserve">
+        <source>Data is not being synchronized with SCC</source>
+        <target state="translated">Dáta sa nesynchronizujú s SCC</target>
+      </trans-unit>
+      <trans-unit id="notification.sccoptoutwarning.detail" xml:space="preserve">
+        <source>
+          &lt;p&gt;Disabling data synchronizing with SCC will lead to reduced visibility of your managed clients between RMT, SMT, @@PRODUCT_NAME@@ and SCC-directly registered clients.
+          By synchronizing data, you ensure a uniform view of all registered clients. &lt;a href="/rhn/manager/admin/enable-scc-data-forwarding"&gt;Click here to enable data forwarding&lt;/a&gt;.&lt;/p&gt;
+          &lt;a href="https://suselinux.fra1.qualtrics.com/jfe/form/SV_0ooNnrY0rYuQScS" target="_blank"&gt;Help us improve our services by sharing your reason for opting out&lt;/a&gt;
+        </source>
+        <target state="translated">
+          &lt;p&gt;Zakázanie synchronizácie dát s SCC povedie k zníženiu viditeľnosti vašich spravovaných klientov medzi RMT, SMT, @@PRODUCT_NAME@@ a klientmi registrovanými priamo v SCC.
+          Synchronizáciou dát zabezpečíte jednotné zobrazenie všetkých registrovaných klientov. &lt;a href="/rhn/manager/admin/enable-scc-data-forwarding"&gt;Kliknutím sem povolíte presmerovanie dát&lt;/a&gt;.&lt;/p&gt;
+          &lt;a href="https://suselinux.fra1.qualtrics.com/jfe/form/SV_0ooNnrY0rYuQScS" target="_blank"&gt;Pomôžte nám zlepšiť naše služby tým, že nám oznámite svoj dôvod odstúpenie.&lt;/a&gt;
+        </target>
+      </trans-unit>
+    <trans-unit id="Password Policy" xml:space="preserve">
+        <source>Password Policy</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">Navigation Menu</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.field_equal_or_less_than_zero" xml:space="preserve">
+        <source>Field {0} can't be equal or less than zero.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Field Field Name can't be equal or less than zero.</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.illegal_min_max_fields" xml:space="preserve">
+        <source>Field {0} can't be can't be greater or equal than field {1}.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Field One can't be can't be greater or equal than Field Two.</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.illegal_max_occurrences" xml:space="preserve">
+        <source>Password maximum allowed character occurrences can't be less or equal than 0.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Passwords maximum allowed character occurrences can't be less or equal than 0.</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.spacesinpassword" xml:space="preserve">
+        <source>Password contains tab or newline characters.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.consecutivecharactersinpassword" xml:space="preserve">
+        <source>Password contains consecutive characters.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.nodigitspassword" xml:space="preserve">
+        <source>Passwords must contain at least one digit.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.nouppercasepassword" xml:space="preserve">
+        <source>Passwords must contain at least one upper case character.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.nolowercasepassword" xml:space="preserve">
+        <source>Passwords must contain at least one lower case character.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.nospecialcharacterspassword" xml:space="preserve">
+        <source>Passwords must contain at least one special character, allowed special characters are: {0}.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      <target state="new"/>
+  </trans-unit>
+      <trans-unit id="error.occurrencecharacterspassword" xml:space="preserve">
+        <source>Password characters occurrences exceeded maximum allowed {0}.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
       <target state="new"/>
   </trans-unit>
       </body>

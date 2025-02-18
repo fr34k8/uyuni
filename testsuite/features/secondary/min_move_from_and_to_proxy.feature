@@ -1,12 +1,12 @@
-# Copyright (c) 2021-2022 SUSE LLC
+# Copyright (c) 2021-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
 
 @sle_minion
 @proxy
 Feature: Move a minion from a proxy to direct connection
 
-  Scenario: Log in as admin user
-    Given I am authorized for the "Admin" section
+  Scenario: Log in as org admin user
+    Given I am authorized
 
   Scenario: Delete minion system profile before bootstrap
     Given I am on the Systems overview page of this "sle_minion"
@@ -14,6 +14,7 @@ Feature: Move a minion from a proxy to direct connection
     Then I should see a "Confirm System Profile Deletion" text
     When I click on "Delete Profile"
     And I wait until I see "has been deleted" text
+    And I wait until Salt client is inactive on "sle_minion"
     Then "sle_minion" should not be registered
 
   Scenario: Bootstrap a minion
@@ -26,7 +27,7 @@ Feature: Move a minion from a proxy to direct connection
     And I select "1-SUSE-KEY-x86_64" from "activationKeys"
     And I select the hostname of "proxy" from "proxies" if present
     And I click on "Bootstrap"
-    And I wait until I see "Successfully bootstrapped host!" text
+    And I wait until I see "Bootstrap process initiated." text
     And I wait until onboarding is completed for "sle_minion"
 
   Scenario: Check the new bootstrapped minion in System Overview page
@@ -56,8 +57,8 @@ Feature: Move a minion from a proxy to direct connection
     And I wait until I see "scheduled" text
     And I follow "Events"
     And I follow "History"
-    And I wait until I see the event "Apply states [bootstrap.set_proxy] scheduled by admin" completed during last minute, refreshing the page
-    And I wait until I see the event "Apply states [channels] scheduled by admin" completed during last minute, refreshing the page
+    And I wait until I see the event "Apply states [bootstrap.set_proxy] scheduled" completed during last minute, refreshing the page
+    And I wait until I see the event "Apply states [channels] scheduled" completed during last minute, refreshing the page
 
   Scenario: Check direct connection
     Given I am on the Systems overview page of this "sle_minion"
@@ -82,8 +83,8 @@ Feature: Move a minion from a proxy to direct connection
     Given I am on the Systems overview page of this "sle_minion"
     And I follow "Events"
     And I follow "History"
-    And I wait until I see the event "Apply states [bootstrap.set_proxy] scheduled by admin" completed during last minute, refreshing the page
-    And I wait until I see the event "Apply states [channels] scheduled by admin" completed during last minute, refreshing the page
+    And I wait until I see the event "Apply states [bootstrap.set_proxy] scheduled" completed during last minute, refreshing the page
+    And I wait until I see the event "Apply states [channels] scheduled" completed during last minute, refreshing the page
 
   Scenario: Check registration on proxy of minion
     Given I am on the Systems overview page of this "proxy"

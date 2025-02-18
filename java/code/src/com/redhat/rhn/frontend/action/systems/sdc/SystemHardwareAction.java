@@ -101,8 +101,7 @@ public class SystemHardwareAction extends RhnAction {
                     createMessage(request, "message.refeshScheduled", messageParams);
                 }
                 catch (TaskomaticApiException e) {
-                    log.error("Could not unschedule action:");
-                    log.error(e);
+                    log.error("Could not unschedule action:", e);
                     createErrorMessage(request, "taskscheduler.down", StringUtils.EMPTY);
                 }
 
@@ -148,7 +147,8 @@ public class SystemHardwareAction extends RhnAction {
             request.setAttribute("cpu_arch", server.getServerArch().getName());
             request.setAttribute("cpu_cache", cpu.getCache());
             request.setAttribute("cpu_sockets", cpu.getNrsocket());
-            request.setAttribute("cpu_cores", cpu.getNrCPU());
+            request.setAttribute("cpu_cores", cpu.getNrCore());
+            request.setAttribute("cpu_threads", cpu.getNrThread());
         }
 
 

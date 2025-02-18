@@ -47,11 +47,13 @@ export function Dialog(props: DialogProps) {
               <button
                 type="button"
                 className="close"
-                data-dismiss="modal"
+                data-bs-dismiss="modal"
                 aria-label="Close"
                 onClick={() => props.onClose?.()}
               >
-                <span aria-hidden="true">&times;</span>
+                <span aria-hidden="true">
+                  <i className="fa fa-close"></i>
+                </span>
               </button>
             )}
             {props.title ? <h4 className="modal-title">{props.title}</h4> : null}

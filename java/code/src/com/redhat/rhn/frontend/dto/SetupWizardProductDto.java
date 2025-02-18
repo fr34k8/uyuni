@@ -29,7 +29,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -70,9 +69,6 @@ public class SetupWizardProductDto implements Selectable,
 
         // Error message key
         private String messageKey;
-
-        // Store additional debug information here
-        private String details;
 
         // This is for showing synchronization progress
         private int syncProgress;
@@ -132,22 +128,6 @@ public class SetupWizardProductDto implements Selectable,
          */
         public void setMessageKey(String messageKeyIn) {
             this.messageKey = messageKeyIn;
-        }
-
-        /**
-         * Get additional debug information (if available).
-         * @return the details
-         */
-        public String getDetails() {
-            return details;
-        }
-
-        /**
-         * Set any additional debug information.
-         * @param detailsIn the details to set
-         */
-        public void setDetails(String detailsIn) {
-            this.details = detailsIn;
         }
 
         /**
@@ -360,7 +340,7 @@ public class SetupWizardProductDto implements Selectable,
                 getOptionalChannels().stream()
                 )
                 .filter(Channel::isInstallerUpdates)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -404,10 +384,9 @@ public class SetupWizardProductDto implements Selectable,
      */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof SetupWizardProductDto)) {
+        if (!(other instanceof SetupWizardProductDto otherProduct)) {
             return false;
         }
-        SetupWizardProductDto otherProduct = (SetupWizardProductDto) other;
         return new EqualsBuilder()
             .append(getIdent(), otherProduct.getIdent())
             .isEquals();

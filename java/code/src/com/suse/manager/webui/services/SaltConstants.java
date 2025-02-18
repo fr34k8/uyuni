@@ -33,11 +33,7 @@ public class SaltConstants {
 
     public static final String SALT_SSH_DIR_PATH = "/var/lib/salt/.ssh";
 
-    public static final String PILLAR_DATA_FILE_PREFIX = "pillar";
-
     public static final String PILLAR_IMAGE_DATA_FILE_PREFIX = "image";
-
-    public static final String PILLAR_DATA_FILE_EXT = "yml";
 
     public static final String PILLAR_IMAGE_DATA_FILE_EXT = "sls";
 
@@ -45,7 +41,11 @@ public class SaltConstants {
 
     public static final String SALT_SERVER_STATE_FILE_PREFIX = "custom_";
 
+    public static final String SALT_RECURRING_STATE_FILE_PREFIX = "recurring_";
+
     public static final String SALT_CONFIG_STATES_DIR = "custom";
+
+    public static final String SALT_RECURRING_STATES_DIR = "recurring";
 
     public static final String ORG_STATES_DIRECTORY_PREFIX = "manager_org_";
 

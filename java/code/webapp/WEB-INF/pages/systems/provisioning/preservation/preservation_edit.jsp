@@ -23,8 +23,8 @@
             <html:hidden property="file_list_id" value="${fileList.id}"/>
 
             <div class="form-group">
-                <div class="col-lg-offset-3 col-lg-6">
-                    <html:submit styleClass="btn btn-success">
+                <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
+                    <html:submit styleClass="btn btn-primary">
                         <bean:message key="preservationlist.jsp.updatelist"/>
                     </html:submit>
                 </div>

@@ -16,7 +16,6 @@ package com.redhat.rhn.domain.formula;
 
 import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
-import com.redhat.rhn.common.util.FileUtils;
 import com.redhat.rhn.common.validator.ValidatorError;
 import com.redhat.rhn.common.validator.ValidatorException;
 import com.redhat.rhn.domain.dto.EndpointInfo;
@@ -33,33 +32,25 @@ import com.redhat.rhn.manager.system.entitling.SystemEntitlementManager;
 
 import com.suse.manager.saltboot.SaltbootException;
 import com.suse.manager.saltboot.SaltbootUtils;
-import com.suse.manager.webui.controllers.ECMAScriptDateAdapter;
 import com.suse.utils.Maps;
 import com.suse.utils.Opt;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-
 import org.apache.commons.collections.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -83,37 +74,17 @@ public class FormulaFactory {
     // Logger for this class
     private static final Logger LOG = LogManager.getLogger(FormulaFactory.class);
 
-    private static String dataDir = "/srv/susemanager/formula_data/";
     private static String metadataDirManager = "/usr/share/susemanager/formulas/metadata/";
     private static final String METADATA_DIR_STANDALONE_SALT = "/usr/share/salt-formulas/metadata/";
     private static final String METADATA_DIR_CUSTOM = "/srv/formula_metadata/";
-    private static final String PILLAR_DIR = "pillar/";
-    private static final String GROUP_PILLAR_DIR = "group_pillar/";
-    private static final String GROUP_DATA_FILE  = "group_formulas.json";
-    private static final String SERVER_DATA_FILE = "minion_formulas.json";
-    private static final String ORDER_FILE = "formula_order.json";
     private static final String LAYOUT_FILE = "form.yml";
     private static final String METADATA_FILE = "metadata.yml";
     private static final String PILLAR_EXAMPLE_FILE = "pillar.example";
-    private static final String PILLAR_FILE_EXTENSION = "json";
     private static final String ORDER_PILLAR_CATEGORY = "formula_order";
-
-    private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Date.class, new ECMAScriptDateAdapter())
-            .serializeNulls()
-            .create();
 
     private static SystemEntitlementManager systemEntitlementManager = GlobalInstanceHolder.SYSTEM_ENTITLEMENT_MANAGER;
 
     private FormulaFactory() { }
-
-    /**
-     * Setter for data directory, used for testing.
-     * @param dataDirPath base path to where store files
-     */
-    public static void setDataDir(String dataDirPath) {
-        FormulaFactory.dataDir = dataDirPath.endsWith(File.separator) ? dataDirPath : dataDirPath + File.separator;
-    }
 
     /**
      * Setter for metadata directory, used for testing.
@@ -125,46 +96,6 @@ public class FormulaFactory {
     }
 
     /**
-     * Getter for directory path of group pillar
-     * @return group pillar directory
-     */
-    public static String getGroupPillarDir() {
-        return dataDir + GROUP_PILLAR_DIR;
-    }
-
-    /**
-     * Getter for directory path of system pillar
-     * @return system pillar directory
-     */
-    public static String getPillarDir() {
-        return dataDir + PILLAR_DIR;
-    }
-
-    /**
-     * Getter for path of group data file
-     * @return group data file
-     */
-    public static String getGroupDataFile() {
-        return dataDir + GROUP_DATA_FILE;
-    }
-
-    /**
-     * Getter for path of server data file
-     * @return server data file
-     */
-    public static String getServerDataFile() {
-        return dataDir + SERVER_DATA_FILE;
-    }
-
-    /**
-     * Getter for path of order data file
-     * @return order data file
-     */
-    public static String getOrderDataFile() {
-        return dataDir + ORDER_FILE;
-    }
-
-    /**
      * Return a warning message in case some folder doesn't exist or have wrong access level.
      * @return a warning message if cannot access one folder. NULL if all folder are ok.
      */
@@ -172,7 +103,7 @@ public class FormulaFactory {
         String message = "";
         boolean error = false;
         if (!new File(METADATA_DIR_STANDALONE_SALT).canRead()) {
-            message += (error ? " and '" : " '") + METADATA_DIR_STANDALONE_SALT + "'";
+            message += " '" + METADATA_DIR_STANDALONE_SALT + "'";
             error = true;
         }
         if (!new File(metadataDirManager).canRead()) {
@@ -201,10 +132,8 @@ public class FormulaFactory {
         List<String> formulasList = new LinkedList<>();
 
         for (File f : files) {
-            if (f.isDirectory() && new File(f, LAYOUT_FILE).isFile()) {
-                if (!formulasList.contains(f.getName())) {
-                    formulasList.add(f.getName());
-                }
+            if (f.isDirectory() && new File(f, LAYOUT_FILE).isFile() && !formulasList.contains(f.getName())) {
+                formulasList.add(f.getName());
             }
         }
         return FormulaFactory.orderFormulas(formulasList);
@@ -242,9 +171,6 @@ public class FormulaFactory {
      * @param formulaName the name of the formula
      */
     public static void saveGroupFormulaData(Map<String, Object> formData, ServerGroup group, String formulaName) {
-        // Ensure the formulas are converted to pillar in database
-        convertGroupFormulasFromFiles(group);
-
         group.getPillarByCategory(PREFIX + formulaName).orElseGet(() -> {
             Pillar pillar = new Pillar(PREFIX + formulaName, Collections.emptyMap(), group);
             group.getPillars().add(pillar);
@@ -252,98 +178,60 @@ public class FormulaFactory {
         }).setPillar(formData);
 
         if (PROMETHEUS_EXPORTERS.equals(formulaName)) {
-            Set<MinionServer> minions = getGroupMinions(group);
-            minions.forEach(minion -> {
-                if (!hasMonitoringDataEnabled(formData)) {
-                    if (!serverHasMonitoringFormulaEnabled(minion)) {
-                        systemEntitlementManager.removeServerEntitlement(minion, EntitlementManager.MONITORING);
-                    }
-                }
-                else {
-                    systemEntitlementManager.grantMonitoringEntitlement(minion);
-                }
-            });
+            saveGroupForPrometheusExporters(formData, group);
         }
-
         // Handle Saltboot group - create Cobbler profile
-        if (SALTBOOT_GROUP.equals(formulaName)) {
-            Map<String, Object> saltboot = (Map<String, Object>) formData.get("saltboot");
-            String kernelOptions = "MINION_ID_PREFIX=" + group.getName();
-            kernelOptions += " MASTER=" + saltboot.get("download_server");
-            if ((Boolean)saltboot.get("disable_id_prefix")) {
-                kernelOptions += " DISABLE_ID_PREFIX=1";
-            }
-            if ((Boolean)saltboot.get("disable_unique_suffix")) {
-                kernelOptions += " DISABLE_UNIQUE_SUFFIX=1";
-            }
-            if (saltboot.get("minion_id_naming") == "FQDN") {
-                kernelOptions += " USE_FQDN_MINION_ID=1";
-            }
-            else if (saltboot.get("minion_id_naming") == "HWType") {
-                kernelOptions += " DISABLE_HOSTNAME_ID=1";
-            }
-            if (!((String)saltboot.get("default_kernel_parameters")).isEmpty()) {
-                kernelOptions += " " + saltboot.get("default_kernel_parameters");
-            }
-            String bootImage = (String)saltboot.get("default_boot_image");
-            String bootImageVersion = (String)saltboot.get("default_boot_image_version");
-
-            try {
-                SaltbootUtils.createSaltbootProfile(group.getName(), kernelOptions, group.getOrg(),
-                        bootImage, bootImageVersion);
-            }
-            catch (SaltbootException e) {
-                throw new ValidatorException(e.getMessage());
-            }
-
+        else if (SALTBOOT_GROUP.equals(formulaName)) {
+            saveGroupForSaltBoot(formData, group);
         }
     }
 
-    /**
-     * Convert legacy server formulas to DB
-     *
-     * @param server the server
-     */
-    public static void convertServerFormulasFromFiles(MinionServer server) {
-        Map<String, List<String>> serverFormulas = readFormulaFile(getServerDataFile());
-        List<String> legacyFormulas = new LinkedList<>(serverFormulas.getOrDefault(server.getMinionId(),
-                new LinkedList<>()));
-
-        if (!legacyFormulas.isEmpty()) {
-            legacyFormulas.forEach(formula -> {
-                Optional<Map<String, Object>> data = getFormulaValuesByNameAndMinion(formula, server);
-                // If data are empty -> load from files. If anything is already in database, ignore files
-                if (data.isEmpty()) {
-                    File dataFile = new File(getPillarDir() + server.getMinionId() + "_" + formula + "." +
-                            PILLAR_FILE_EXTENSION);
-                    try {
-                        data = Optional.ofNullable(GSON.fromJson(new BufferedReader(new FileReader(dataFile)),
-                                                new TypeToken<Map<String, Object>>() { }.getType()));
-                    }
-                    catch (FileNotFoundException e) {
-                        // This happens if the formula has default value
-                        data = Optional.of(new HashMap<>());
-                    }
-                    data.map(FormulaFactory::convertIntegers).ifPresent(d -> {
-                        Pillar pillar = new Pillar(PREFIX + formula, d, server);
-                        server.getPillars().add(pillar);
-                    });
-                }
-                else {
-                    LOG.warn("Minion \"{}\" pillar \"{}\" already in database, not migrating pillar file",
-                            server.getMinionId(), formula);
-                }
-                FileUtils.deleteFile(new File(getPillarDir() +
-                        server.getMinionId() + "_" + formula + "." + PILLAR_FILE_EXTENSION).toPath());
-            });
-
-            // Remove the entry from the data file
-            try {
-                removeEntryFromFormulaFile(server.getMinionId(), getServerDataFile());
-            }
-            catch (IOException ignored) {
-            }
+    private static void saveGroupForSaltBoot(Map<String, Object> formData, ServerGroup group) {
+        Map<String, Object> saltboot = (Map<String, Object>) formData.get("saltboot");
+        String kernelOptions = "MINION_ID_PREFIX=" + group.getName();
+        kernelOptions += " MASTER=" + saltboot.get("download_server");
+        if (Boolean.TRUE.equals(saltboot.get("disable_id_prefix"))) {
+            kernelOptions += " DISABLE_ID_PREFIX=1";
         }
+        if (Boolean.TRUE.equals(saltboot.get("disable_unique_suffix"))) {
+            kernelOptions += " DISABLE_UNIQUE_SUFFIX=1";
+        }
+        if ("FQDN".equals(saltboot.get("minion_id_naming"))) {
+            kernelOptions += " USE_FQDN_MINION_ID=1";
+        }
+        else if ("HWType".equals(saltboot.get("minion_id_naming"))) {
+            kernelOptions += " DISABLE_HOSTNAME_ID=1";
+        }
+        else if ("MAC".equals(saltboot.get("minion_id_naming"))) {
+            kernelOptions += " USE_MAC_MINION_ID=1";
+        }
+        if (StringUtils.isNotEmpty((String) saltboot.get("default_kernel_parameters"))) {
+            kernelOptions += " " + saltboot.get("default_kernel_parameters");
+        }
+        String bootImage = (String)saltboot.get("default_boot_image");
+        String bootImageVersion = (String)saltboot.get("default_boot_image_version");
+
+        try {
+            SaltbootUtils.createSaltbootProfile(group.getName(), kernelOptions, group.getOrg(),
+                    bootImage, bootImageVersion);
+        }
+        catch (SaltbootException e) {
+            throw new ValidatorException(e.getMessage());
+        }
+    }
+
+    private static void saveGroupForPrometheusExporters(Map<String, Object> formData, ServerGroup group) {
+        Set<MinionServer> minions = getGroupMinions(group);
+        minions.forEach(minion -> {
+            if (!hasMonitoringDataEnabled(formData)) {
+                if (!serverHasMonitoringFormulaEnabled(minion)) {
+                    systemEntitlementManager.removeServerEntitlement(minion, EntitlementManager.MONITORING);
+                }
+            }
+            else {
+                systemEntitlementManager.grantMonitoringEntitlement(minion);
+            }
+        });
     }
 
     /**
@@ -353,9 +241,6 @@ public class FormulaFactory {
      * @param formulaName the name of the formula
      */
     public static void saveServerFormulaData(Map<String, Object> formData, MinionServer minion, String formulaName) {
-        // Ensure all the minion formulas are converted to pillar in DB
-        convertServerFormulasFromFiles(minion);
-
         minion.getPillarByCategory(PREFIX + formulaName).orElseGet(() -> {
             Pillar pillar = new Pillar(PREFIX + formulaName, Collections.emptyMap(), minion);
             minion.getPillars().add(pillar);
@@ -393,21 +278,8 @@ public class FormulaFactory {
         List<String> formulas = group.getPillars().stream()
                 .filter(pillar -> pillar.getCategory().startsWith(PREFIX))
                 .map(pillar -> pillar.getCategory().substring(PREFIX.length()))
-                .collect(Collectors.toList());
+                .toList();
 
-        // Still try the legacy way since the formula data may not be converted yet
-        File groupDataFile = new File(getGroupDataFile());
-        if (formulas.isEmpty() && groupDataFile.exists()) {
-            try {
-                Map<String, List<String>> serverFormulas =
-                        GSON.fromJson(new BufferedReader(new FileReader(groupDataFile)),
-                                Map.class);
-                return orderFormulas(serverFormulas.getOrDefault(group.getId().toString(),
-                        Collections.emptyList()));
-            }
-            catch (FileNotFoundException e) {
-            }
-        }
         return orderFormulas(formulas);
     }
 
@@ -420,21 +292,8 @@ public class FormulaFactory {
         List<String> formulas = orderFormulas(minion.getPillars().stream()
                 .filter(pillar -> pillar.getCategory().startsWith(PREFIX))
                 .map(pillar -> pillar.getCategory().substring(PREFIX.length()))
-                .collect(Collectors.toList()));
+                .toList());
 
-        // Still try the legacy way since the formula data may not be converted yet
-        File serverDataFile = new File(getServerDataFile());
-        if (formulas.isEmpty() && serverDataFile.exists()) {
-            try {
-                Map<String, List<String>> serverFormulas =
-                        GSON.fromJson(new BufferedReader(new FileReader(serverDataFile)),
-                                Map.class);
-                return orderFormulas(serverFormulas.getOrDefault(minion.getMinionId(),
-                        Collections.emptyList()));
-            }
-            catch (FileNotFoundException e) {
-            }
-        }
         return orderFormulas(formulas);
     }
 
@@ -477,7 +336,7 @@ public class FormulaFactory {
         File layoutFileManager = new File(metadataDirManager + layoutFilePath);
         File layoutFileCustom = new File(METADATA_DIR_CUSTOM + layoutFilePath);
 
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         try {
             if (layoutFileStandalone.exists()) {
                 return Optional.of((Map<String, Object>) yaml.load(new FileInputStream(layoutFileStandalone)));
@@ -535,51 +394,7 @@ public class FormulaFactory {
     public static Optional<Map<String, Object>> getGroupFormulaValuesByNameAndGroup(
             String name, ServerGroup group) {
         Optional<Map<String, Object>> data = group.getPillarByCategory(PREFIX + name).map(Pillar::getPillar);
-
-        // Load data from the legacy file if not converted yet
-        if (data.isEmpty()) {
-            File dataFile = new File(getGroupPillarDir() +
-                    group.getId() + "_" + name + "." + PILLAR_FILE_EXTENSION);
-            try {
-                data = Optional.ofNullable(GSON.fromJson(new BufferedReader(new FileReader(dataFile)),
-                                new TypeToken<Map<String, Object>>() { }.getType()));
-            }
-            catch (FileNotFoundException e) {
-                data = Optional.of(new HashMap<>());
-            }
-        }
         return data.map(FormulaFactory::convertIntegers);
-    }
-
-    /**
-     * Convert the legacy formulas of a group.
-     *
-     * @param group the group
-     */
-    public static void convertGroupFormulasFromFiles(ServerGroup group) {
-        Map<String, List<String>> groupFormulas = readFormulaFile(getGroupDataFile());
-        List<String> legacyFormulas = new LinkedList<>(groupFormulas.getOrDefault(group.getId().toString(),
-                new LinkedList<>()));
-
-        if (!legacyFormulas.isEmpty()) {
-            legacyFormulas.forEach(formula -> {
-                Optional<Map<String, Object>> data = getGroupFormulaValuesByNameAndGroup(formula, group);
-                data.ifPresent(formData -> group.getPillarByCategory(PREFIX + formula).orElseGet(() -> {
-                    Pillar pillar = new Pillar(PREFIX + formula, Collections.emptyMap(), group);
-                    group.getPillars().add(pillar);
-                    return pillar;
-                }).setPillar(formData));
-                FileUtils.deleteFile(new File(getGroupPillarDir() +
-                        group.getId() + "_" + formula + "." + PILLAR_FILE_EXTENSION).toPath());
-            });
-
-            // Remove the entry from the data file
-            try {
-                removeEntryFromFormulaFile(group.getId().toString(), getGroupDataFile());
-            }
-            catch (IOException ignored) {
-            }
-        }
     }
 
     /**
@@ -593,9 +408,6 @@ public class FormulaFactory {
             throws ValidatorException {
         validateFormulaPresence(selectedFormulas);
         saveFormulaOrder();
-
-        // Ensure the formulas are converted to pillar in database
-        convertGroupFormulasFromFiles(group);
 
         // Remove formula data for unselected formulas
         List<String> deletedFormulas = getFormulasByGroup(group);
@@ -651,17 +463,16 @@ public class FormulaFactory {
      * @return the converted map
      */
     public static Map<String, Object> convertIntegers(Map<String, Object> map) {
-        for (String key : map.keySet()) {
-            Object value = map.get(key);
-            if (value instanceof Double) {
-                if (((Double)value) % 1 == 0) {
-                    map.put(key, ((Double)value).intValue());
+        map.forEach((key, value) -> {
+            if (value instanceof Double dbl) {
+                if (dbl % 1 == 0) {
+                    map.put(key, ((Double) value).intValue());
                 }
             }
             else if (value instanceof Map) {
                 convertIntegers((Map<String, Object>) value);
             }
-        }
+        });
         return map;
     }
 
@@ -698,19 +509,6 @@ public class FormulaFactory {
         }
     }
 
-    private static Map<String, List<String>> readFormulaFile(String path) {
-        File dataFile = new File(path);
-        Map<String, List<String>> formulas = new HashMap<>();
-        try {
-            formulas = Optional
-                    .ofNullable(GSON.fromJson(new BufferedReader(new FileReader(dataFile)), Map.class))
-                    .orElse(new HashMap<>());
-        }
-        catch (FileNotFoundException e) {
-        }
-        return formulas;
-    }
-
     /**
      * Save the selected formulas for a server.
      * This also deletes all saved values of that formula.
@@ -722,9 +520,6 @@ public class FormulaFactory {
             throws ValidatorException {
         validateFormulaPresence(selectedFormulas);
         saveFormulaOrder();
-
-        // Ensure all the minion formulas are converted to pillar in DB
-        convertServerFormulasFromFiles(minion);
 
         // Remove formula data for unselected formulas
         List<String> deletedFormulas = getFormulasByMinion(minion);
@@ -758,35 +553,6 @@ public class FormulaFactory {
             systemEntitlementManager.removeServerEntitlement(minion, EntitlementManager.MONITORING);
         }
         ServerFactory.save(minion);
-    }
-
-    /**
-     * Ensure the minion id is removed from the legacy formula file.
-     *
-     * @param id the minion or group id to look for
-     * @param filePath the path of the formula file
-     * @throws IOException if the data file failed to be written
-     */
-    public static void removeEntryFromFormulaFile(String id, String filePath) throws IOException {
-        File dataFile = new File(filePath);
-
-        if (dataFile.exists()) {
-            Map<String, List<String>> serverFormulas = Optional
-                    .ofNullable(GSON.fromJson(new BufferedReader(new FileReader(dataFile)), Map.class))
-                    .orElse(new HashMap<>());
-
-            if (serverFormulas.containsKey(id)) {
-                serverFormulas.remove(id);
-                if (serverFormulas.isEmpty() && dataFile.exists()) {
-                    dataFile.delete();
-                }
-                else {
-                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(dataFile))) {
-                        writer.write(GSON.toJson(serverFormulas));
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -840,10 +606,7 @@ public class FormulaFactory {
                 .filter(pillar -> pillar.getCategory().equals(ORDER_PILLAR_CATEGORY))
                 .findFirst()
                 .orElseGet(() -> Pillar.createGlobalPillar(ORDER_PILLAR_CATEGORY, Collections.emptyMap()));
-        orderPillar.setPillar(Collections.singletonMap("formula_order", orderedList));
-
-        // Ensure the legacy order file is removed
-        FileUtils.deleteFile(new File(getOrderDataFile()).toPath());
+        orderPillar.setPillar(Collections.singletonMap(ORDER_PILLAR_CATEGORY, orderedList));
     }
 
     /**
@@ -858,7 +621,7 @@ public class FormulaFactory {
         File metadataFileManager = new File(metadataDirManager + metadataFilePath);
         File metadataFileCustom = new File(METADATA_DIR_CUSTOM + metadataFilePath);
 
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         try {
             if (metadataFileStandalone.isFile()) {
                 return (Map<String, Object>) yaml.load(new FileInputStream(metadataFileStandalone));
@@ -873,7 +636,16 @@ public class FormulaFactory {
                 return Collections.emptyMap();
             }
         }
+        catch (YAMLException e) {
+            LOG.error("Unable to parse metadata file: {} ", name, e);
+            return Collections.emptyMap();
+        }
         catch (IOException e) {
+            LOG.error("IO Error at metadata file: {}", name, e);
+            return Collections.emptyMap();
+        }
+        catch (Exception e) {
+            LOG.error("Error in metadata file: {}", name, e);
             return Collections.emptyMap();
         }
     }
@@ -902,7 +674,7 @@ public class FormulaFactory {
         File pillarExampleFileManager = new File(metadataDirManager + pillarExamplePath);
         File pillarExampleFileCustom = new File(METADATA_DIR_CUSTOM + pillarExamplePath);
 
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         try {
             if (pillarExampleFileStandalone.isFile()) {
                 return (Map<String, Object>) yaml.load(new FileInputStream(pillarExampleFileStandalone));
@@ -945,8 +717,7 @@ public class FormulaFactory {
      */
     public static boolean isMemberOfGroupHavingMonitoring(Server server) {
         return server.getManagedGroups().stream()
-                .map(FormulaFactory::hasMonitoringDataEnabled)
-                .anyMatch(Boolean::booleanValue);
+                .anyMatch(FormulaFactory::hasMonitoringDataEnabled);
     }
 
     /**
@@ -976,18 +747,13 @@ public class FormulaFactory {
 
     /**
      * Find endpoint information from given formula data
-     * @param formulaName name of the formula to examine
      * @param formulaData formula data to extract information from
      * @return list of endpoint information objects
      */
-    public static List<EndpointInfo> getEndpointsFromFormulaData(String formulaName, FormulaData formulaData) {
-        return getExportersEndpoints(formulaData);
-    }
-
-    private static List<EndpointInfo> getExportersEndpoints(FormulaData formulaData) {
+    public static List<EndpointInfo> getEndpointsFromFormulaData(FormulaData formulaData) {
         Map<String, Object> formulaValues = formulaData.getFormulaValues();
         if (formulaValues.containsKey("exporters")) {
-            Boolean proxyEnabled = Maps.getValueByPath(formulaValues, "proxy_enabled")
+            boolean proxyEnabled = Maps.getValueByPath(formulaValues, "proxy_enabled")
                     .filter(Boolean.class::isInstance)
                     .map(Boolean.class::cast)
                     .orElse(false);
@@ -996,7 +762,7 @@ public class FormulaFactory {
                     .map(Number.class::cast)
                     .map(Number::intValue) : Optional.empty();
             String proxyPath = proxyEnabled ? "/proxy" : null;
-            Boolean tlsEnabled = Maps.getValueByPath(formulaValues, "tls:enabled")
+            boolean tlsEnabled = Maps.getValueByPath(formulaValues, "tls:enabled")
                     .filter(Boolean.class::isInstance)
                     .map(Boolean.class::cast)
                     .orElse(false);
@@ -1022,7 +788,7 @@ public class FormulaFactory {
                             proxyEnabled ? exporterConfig.getProxyModuleOrFallback() : null,
                             proxyPath,
                             tlsEnabled))
-                    .collect(Collectors.toList());
+                    .toList();
         }
         else {
             return new ArrayList<>();

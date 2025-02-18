@@ -664,6 +664,12 @@
           <context context-type="sourcefile">Navigation Menu</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="Password Policy" xml:space="preserve">
+        <source>Password Policy</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">Navigation Menu</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="name" xml:space="preserve">
         <source>name</source>
         <context-group name="ctx">
@@ -1348,23 +1354,80 @@
           <context context-type="sourcefile">/rhn/users/CreateUser</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="error.field_equal_or_less_than_zero" xml:space="preserve">
+        <source>Field {0} can't be equal or less than zero.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Field Field Name can't be equal or less than zero.</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="error.illegal_min_max_fields" xml:space="preserve">
+        <source>Field {0} can't be can't be greater or equal than field {1}.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Field One can't be can't be greater or equal than Field Two.</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="error.illegal_max_occurrences" xml:space="preserve">
+        <source>Password maximum allowed character occurrences can't be less or equal than 0.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Passwords maximum allowed character occurrences can't be less or equal than 0.</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="error.minpassword" xml:space="preserve">
         <source>Passwords must be at least {0} characters.</source>
         <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/users/CreateUser</context>
-          <context context-type="paramnotes">Passwords must be no shorter than 5 characters.</context>
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+          <context context-type="paramnotes">Passwords must be no shorter than 8 characters.</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="error.invalidpasswordcharacters" xml:space="preserve">
+      <trans-unit id="error.spacesinpassword" xml:space="preserve">
         <source>Password contains tab or newline characters.</source>
         <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/users/CreateUser</context>
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
         </context-group>
       </trans-unit>
       <trans-unit id="error.maxpassword" xml:space="preserve">
         <source>Passwords cannot be more than {0} characters.</source>
         <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/users/CreateUser</context>
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="error.consecutivecharactersinpassword" xml:space="preserve">
+        <source>Password contains consecutive characters.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="error.nodigitspassword" xml:space="preserve">
+        <source>Passwords must contain at least one digit.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="error.nouppercasepassword" xml:space="preserve">
+        <source>Passwords must contain at least one upper case character.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="error.nolowercasepassword" xml:space="preserve">
+        <source>Passwords must contain at least one lower case character.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="error.nospecialcharacterspassword" xml:space="preserve">
+        <source>Passwords must contain at least one special character, allowed special characters are: {0}.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="error.occurrencecharacterspassword" xml:space="preserve">
+        <source>Password characters occurrences exceeded maximum allowed {0}.</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/common/UserPasswordUtils</context>
         </context-group>
       </trans-unit>
       <trans-unit id="error.password_mismatch" xml:space="preserve">
@@ -1850,8 +1913,20 @@
           <context context-type="sourcefile">/rhn/schedule/ActionDetails.do</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="coco.attestation" xml:space="preserve">
+        <source>Confidential Computing Attestation</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/schedule/ActionDetails.do</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="reboot.reboot" xml:space="preserve">
         <source>System reboot</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/rhn/schedule/ActionDetails.do</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="appstreams.configure" xml:space="preserve">
+        <source>Configure AppStreams</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/schedule/ActionDetails.do</context>
         </context-group>
@@ -1970,7 +2045,7 @@ channel is available to your @@PRODUCT_NAME@@. If it is not, please contact your
 and try again.
 &lt;/li&gt;
 &lt;li&gt;
-Make sure the spacewalk-koan package corresponding to this kickstart are
+Make sure the required packages corresponding to this kickstart are
 available in the kickstart's base channel's tools channel. If not, you
 will need to make them available for this kickstart profile to function properly.
 &lt;/li&gt;
@@ -5153,7 +5228,7 @@ user before attempting to deactivate their account.</source>
         </context-group>
       </trans-unit>
       <trans-unit id="message.firstusercreated" xml:space="preserve">
-        <source>You have just created your first @@PRODUCT_NAME@@ user. To finalize your installation please use the &lt;a href="/rhn/admin/setup/ProxySettings.do"&gt;Setup Wizard&lt;/a&gt;.</source>
+        <source>You have just created your first @@PRODUCT_NAME@@ user. To finalize your installation please use the &lt;a href="/rhn/manager/admin/setup/proxy"&gt;Setup Wizard&lt;/a&gt;.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">Navigation Menu</context>
         </context-group>
@@ -5226,7 +5301,7 @@ user before attempting to deactivate their account.</source>
         </context-group>
       </trans-unit>
       <trans-unit id="bootstrap.config.success" xml:space="preserve">
-        <source>Bootstrap script successfully generated.  You can access it &lt;a href="{0}/pub/bootstrap/"&gt;{0}/pub/bootstrap/&lt;/a&gt;</source>
+        <source>Bootstrap script successfully generated.  You can access it &lt;a href="{0}/pub/bootstrap/" target="_blank"&gt;{0}/pub/bootstrap/&lt;/a&gt;</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/admin/config/CertificateConfig.do</context>
         </context-group>
@@ -5625,24 +5700,6 @@ Follow this url to see the full list of inactive systems:
           <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="kickstart.schedule.nopackage" xml:space="preserve">
-        <source>Could not find the needed @@PRODUCT_NAME@@ provisioning packages given this system's current base channel and desired target channel: {0}</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="kickstart.schedule.cantsubscribe" xml:space="preserve">
-        <source>You have no remaining subscriptions to the @@PRODUCT_NAME@@ provisioning channel for &lt;strong&gt;{0}&lt;/strong&gt;'s current base channel.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="kickstart.schedule.cantsubscribe.channel" xml:space="preserve">
-        <source>You have no remaining subscriptions to the channel {0} for &lt;strong&gt;{1}&lt;/strong&gt;'s current base channel.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/kickstart/ScheduleKickstart.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="kickstart.schedule.noup2date" xml:space="preserve">
         <source>An autoinstallation was not scheduled for &lt;strong&gt;&lt;a href="/rhn/systems/details/Overview.do?sid={0}"&gt;{1}&lt;/a&gt;&lt;/strong&gt; because the package profile did not contain the 'up2date' package. An update of that system's package profile may be required.</source>
         <context-group name="ctx">
@@ -5710,7 +5767,7 @@ Follow this url to see the full list of inactive systems:
         </context-group>
       </trans-unit>
       <trans-unit id="kickstart.tree.invalidlabel" xml:space="preserve">
-        <source>The label is not formatted properly.  The label should contain only letters, numbers, hyphens, periods, and underscores.  It must also be at least 4 characters long</source>
+        <source>The label is not formatted properly. The label should contain only letters, numbers, hyphens, and underscores. It must also be at least 4 characters long</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/kickstart/TreeEdit.do</context>
         </context-group>
@@ -7472,32 +7529,8 @@ Follow this url to see the full list of inactive systems:
           <context context-type="paramnotes">A file named "/etc/passwd" already exists in this channel.</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="system.entitle.notoolschannel" xml:space="preserve">
-        <source>Could not automatically subscribe the system to the @@PRODUCT_NAME@@ Tools Channel. This channel contains packages required for virtualization.  This is most likely caused by a lack of channel entitlements.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="system.entitle.multiplechannelswithpackage" xml:space="preserve">
         <source>Found multiple child channels with package: {0}. Please manually subscribe this system to the appropriate child channel.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.multiplechannelswithpackagepleaseinstall" xml:space="preserve">
-        <source>Found multiple child channels with package: {0}. Please manually subscribe this system to the appropriate child channel, and schedule this package for installation.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.novirtchannel" xml:space="preserve">
-        <source>Could not automatically subscribe the system to the RHEL Virtualization Channel.  This channel contains packages required for virtualization.  This is most likely caused by a lack of channel entitlements.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.novirtpackage" xml:space="preserve">
-        <source>Could not find a channel with the {0} package. This package is required to manage virtual guests with @@PRODUCT_NAME@@.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
@@ -7506,12 +7539,6 @@ Follow this url to see the full list of inactive systems:
         <source>The system already has the {0} system type.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.virtualization.help" xml:space="preserve">
-        <source>NOTE: To enable and use virtualization capabilities within @@PRODUCT_NAME@@ for this system, install the mgr-virtualization-host package from the associated Tools child channel. Review the documentation for any other considerations and requirements for enabling Virtualization of a Host system.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/virtualization/VirtualGuestsList.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="system.migrate.user_no_perms" xml:space="preserve">
@@ -7687,6 +7714,9 @@ Follow this url to see the full list of inactive systems:
       </trans-unit>
       <trans-unit id="api.channel.invalidchannelaccess" xml:space="preserve">
         <source>The channel access ({0}) is not allowed for this operation.</source>
+      </trans-unit>
+      <trans-unit id="api.channel.modulespresent" xml:space="preserve">
+        <source>Operation not allowed for systems that have modular channels assigned. Please consider setting 'allowModules=true'.</source>
       </trans-unit>
       <trans-unit id="Certificate Administrators" xml:space="preserve">
         <source>Certificate Administrators</source>
@@ -8047,6 +8077,10 @@ Follow this url to see the full list of inactive systems:
         <source>Sparc Debian</source>
         <target>Sparc Debian</target>
       </trans-unit>
+      <trans-unit id="riscv64-deb" xml:space="preserve">
+        <source>RISCV64 Debian</source>
+        <target>RISCV64 Debian</target>
+      </trans-unit>
       <trans-unit id="Alpha" xml:space="preserve">
         <source>Alpha</source>
         <target>Alpha</target>
@@ -8103,6 +8137,14 @@ Follow this url to see the full list of inactive systems:
         <source>arm Debian</source>
         <target>arm Debian</target>
       </trans-unit>
+      <trans-unit id="ARM64 Debian" xml:space="preserve">
+        <source>ARM64 Debian</source>
+        <target>ARM64 Debian</target>
+      </trans-unit>
+      <trans-unit id="armel-deb" xml:space="preserve">
+        <source>ARMEL Debian</source>
+        <target>ARMEL Debian</target>
+      </trans-unit>
       <trans-unit id="mips Debian" xml:space="preserve">
         <source>mips Debian</source>
         <target>mips Debian</target>
@@ -8114,6 +8156,10 @@ Follow this url to see the full list of inactive systems:
       <trans-unit id="PPC64LE" xml:space="preserve">
         <source>PPC64LE</source>
         <target>PPC64LE</target>
+      </trans-unit>
+      <trans-unit id="s390x-deb" xml:space="preserve">
+        <source>PPC64EL Debian</source>
+        <target>PPC64EL Debian</target>
       </trans-unit>
       <trans-unit id="probeparam.passnomatch" xml:space="preserve">
         <source>The Password and Password Confirm did not match.</source>
@@ -8309,6 +8355,12 @@ Follow this url to see the full list of inactive systems:
           <context context-type="sourcefile">/channels/manage/Edit</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="edit.channel.forbiddenclonechannelpayg" xml:space="preserve">
+        <source>Cloning of channels under different product channels on PAYG instances is forbidden</source>
+        <context-group name="ctx">
+          <context context-type="sourcefile">/channels/manage/Edit</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="message.configuration.channel.deleted" xml:space="preserve">
         <source>Channel &lt;strong&gt;'{0}'&lt;/strong&gt; has been deleted.</source>
       </trans-unit>
@@ -8357,6 +8409,9 @@ Follow this url to see the full list of inactive systems:
       <trans-unit id="message.syncscheduled" xml:space="preserve">
         <source>Repository sync scheduled for {0}.</source>
       </trans-unit>
+      <trans-unit id="message.savereposyncflags" xml:space="preserve">
+        <source>Saved repository settings for {0}.</source>
+      </trans-unit>
       <trans-unit id="message.syncinprogress" xml:space="preserve">
         <source>Repository sync is running.</source>
       </trans-unit>
@@ -8380,6 +8435,24 @@ Follow this url to see the full list of inactive systems:
       </trans-unit>
       <trans-unit id="message.scheduledisabled" xml:space="preserve">
         <source>Please set frequency for the new schedule.</source>
+      </trans-unit>
+      <trans-unit id="message.payg.errorbyosnoscc" xml:space="preserve">
+        <source>
+          @@PRODUCT_NAME@@ is not able to manage this instance since it is Bring-your-own-subscription and no SCC credentials are set.
+          To amend this situation, please add SCC credentials &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;here&lt;/a&gt;.
+        </source>
+      </trans-unit>
+      <trans-unit id="message.payg.errornotcompliant" xml:space="preserve">
+        <source>
+          This @@PRODUCT_NAME@@ PAYG is not compliant and some of its functions will be disabled. Please contact your administrator to
+          amend the situation before continuing using the product.
+        </source>
+      </trans-unit>
+      <trans-unit id="message.payg.errorbyosnosccssm" xml:space="preserve">
+        <source>
+@@PRODUCT_NAME@@ is not able to manage these instances since there are one or more Bring-your-own-subscription and no SCC credentials are set.
+To amend this situation, please add SCC credentials &lt;a href="/rhn/admin/setup/MirrorCredentials.do"&gt;here&lt;/a&gt; or select in SSM just Pay-as-you-go-instances.
+        </source>
       </trans-unit>
       <trans-unit id="kickstart.cobbler.profile.notenoughmemory" xml:space="preserve">
         <source>Red Hat Enterprise Linux 7 and higher guests require at least 1024 MB of memory.</source>
@@ -8572,7 +8645,7 @@ tree will not be usable for autoinstalling.</source>
         <source>Found login(s) sent to {0}. If you don't receive it, please make sure you have a registered account with the email provided.</source>
       </trans-unit>
       <trans-unit id="config.multiple.channels" xml:space="preserve">
-        <source>A selected system has multiple child channels available that contain the mgr-cfg package. You must manually subscribe to the child channel you want and then try this action again.</source>
+        <source>A selected system has multiple child channels available that contain the venv-salt-minion package. You must manually subscribe to the child channel you want and then try this action again.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/configuration/system/TargetSystemsSubmit.do</context>
         </context-group>
@@ -8766,6 +8839,9 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
       <trans-unit id="spmigration.message.scheduled.dry-run" xml:space="preserve">
         <source>This system is scheduled for a dry run of the migration to &lt;strong&gt;{2}&lt;/strong&gt;. Once the action completed successfully you can schedule the full migration &lt;a href="/rhn/systems/details/history/Event.do?sid={0}&amp;aid={1}"&gt;here&lt;/a&gt;</source>
       </trans-unit>
+      <trans-unit id="spmigration.message.payg.error" xml:space="preserve">
+        <source>PAYG ALERT: Cross product migration attempt detected. Please note, migration from openSUSE to SLES or similar is not permitted under your current PAYG plan. Operation has been aborted.</source>
+      </trans-unit>
       <trans-unit id="task.status.mgr-register" xml:space="preserve">
         <source>Run mgr-register</source>
       </trans-unit>
@@ -8777,6 +8853,9 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
       </trans-unit>
       <trans-unit id="task.status.cve-server-channels" xml:space="preserve">
         <source>CVE Server Channels</source>
+      </trans-unit>
+      <trans-unit id="task.status.oval-data-sync" xml:space="preserve">
+        <source>Sync OVAL Data</source>
       </trans-unit>
       <trans-unit id="task.status.mgr-sync-refresh" xml:space="preserve">
         <source>Refresh mgr-sync data</source>
@@ -8803,10 +8882,10 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         <source>Cleanup channel tokens</source>
       </trans-unit>
       <trans-unit id="task.status.update-payg-auth" xml:space="preserve">
-        <source>Pay-as-you-go authentication update</source>
+        <source>PAYG authentication update</source>
       </trans-unit>
       <trans-unit id="task.status.update-payg-hosts" xml:space="preserve">
-        <source>Pay-as-you-go update RMT hosts</source>
+        <source>PAYG update RMT hosts</source>
       </trans-unit>
       <trans-unit id="bunch.jsp.description.mgr-register-bunch" xml:space="preserve">
         <source>Registers @@PRODUCT_NAME@@ clients</source>
@@ -8814,11 +8893,14 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
       <trans-unit id="bunch.jsp.description.repo-sync-bunch" xml:space="preserve">
         <source>Synchronizes @@PRODUCT_NAME@@ repositories</source>
       </trans-unit>
-      <trans-unit id="bunch.jsp.description.ssh-push-bunch" xml:space="preserve">
-        <source>Manages clients via SSH Server Push</source>
+      <trans-unit id="bunch.jsp.description.ssh-service-bunch" xml:space="preserve">
+        <source>Manages checkins and action chain resumes for SSH Push Clients</source>
       </trans-unit>
       <trans-unit id="bunch.jsp.description.cve-server-channels-bunch" xml:space="preserve">
         <source>Generates data required for performing CVE audit queries</source>
+      </trans-unit>
+      <trans-unit id="bunch.jsp.description.oval-data-sync-bunch" xml:space="preserve">
+        <source>Generate OVAL data required to increase the accuracy of CVE audit queries</source>
       </trans-unit>
       <trans-unit id="bunch.jsp.description.mgr-sync-refresh-bunch" xml:space="preserve">
         <source>Refreshes data about channels, products and subscriptions</source>
@@ -9016,13 +9098,13 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         <source>Bastion SSH Private Key Passphrase must not exceed 32 characters.</source>
       </trans-unit>
       <trans-unit id="payg.ssh_data_created" xml:space="preserve">
-        <source>Pay-as-you-go {0} created successfully</source>
+        <source>PAYG {0} created successfully</source>
       </trans-unit>
       <trans-unit id="payg.host_exists" xml:space="preserve">
-        <source>Pay-as-you-go host already exists</source>
+        <source>PAYG host already exists</source>
       </trans-unit>
       <trans-unit id="payg.ssh_data_deleted" xml:space="preserve">
-        <source>Pay-as-you-go {0} deleted successfully</source>
+        <source>PAYG {0} deleted successfully</source>
       </trans-unit>
       <trans-unit id="cveaudit.nav.title" xml:space="preserve">
         <source>CVE Audit</source>
@@ -9048,14 +9130,14 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
       <trans-unit id="mirror-credentials.jsp.verify" xml:space="preserve">
         <source>verify credentials</source>
       </trans-unit>
+      <trans-unit id="confidentialcomputing.nav.title" xml:space="preserve">
+        <source>Confidential Computing</source>
+      </trans-unit>
       <trans-unit id="subscriptionmatching.nav.title" xml:space="preserve">
         <source>Subscription Matching</source>
       </trans-unit>
       <trans-unit id="foreign_entitled" xml:space="preserve">
         <source>Foreign</source>
-      </trans-unit>
-      <trans-unit id="visualization.nav.title" xml:space="preserve">
-        <source>Visualization</source>
       </trans-unit>
       <trans-unit id="ssm.overview.misc.entitlements" xml:space="preserve">
         <source>&lt;a href="/rhn/systems/ssm/misc/Index.do#entitle"&gt;Add or Remove&lt;/a&gt; Add-On System Types</source>
@@ -9078,19 +9160,7 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="system.entitle.added.container_build_host.nodoc" xml:space="preserve">
-        <source>&lt;strong&gt;Container Build Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="system.entitle.added.osimage_build_host" xml:space="preserve">
-        <source>&lt;strong&gt;OS Image Build Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.added.osimage_build_host.nodoc" xml:space="preserve">
         <source>&lt;strong&gt;OS Image Build Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
@@ -9102,31 +9172,13 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
       </trans-unit>
-      <trans-unit id="system.entitle.added.virtualization_host.nodoc" xml:space="preserve">
-        <source>Since you added a Virtualization system type to the system we also performed some extra steps to ensure your system will be able to manage virtual guests better.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
       <trans-unit id="system.entitle.added.monitoring_entitled" xml:space="preserve">
-        <source>&lt;strong&gt;Monitoring&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Since you added the Monitoring system type we automatically assigned the Prometheus Exporters formula to the system. Please apply the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt; in order to install and enable the Prometheus metrics exporters.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.added.monitoring_entitled.nodoc" xml:space="preserve">
-        <source>&lt;strong&gt;Monitoring&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Since you added the Monitoring system type we automatically assigned the Prometheus Exporters formula to the system. Please apply the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt; in order to install and enable the Prometheus metrics exporters.</source>
+        <source>&lt;strong&gt;Monitor this Host&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Since you added the Monitoring system type we automatically assigned the Prometheus Exporters formula to the system. Please apply the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;Highstate&lt;/a&gt; in order to install and enable the Prometheus metrics exporters.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; Please make sure to open the &lt;a href="/docs/{1}/installation-and-upgrade/ports.html#_external_client_ports" target="_blank">required network ports&lt;/a&gt; for all installed exporters.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
         </context-group>
       </trans-unit>
       <trans-unit id="system.entitle.added.ansible_control_node" xml:space="preserve">
-        <source>&lt;strong&gt;Ansible Control Node&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
-        <context-group name="ctx">
-          <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
-        </context-group>
-      </trans-unit>
-      <trans-unit id="system.entitle.added.ansible_control_node.nodoc" xml:space="preserve">
         <source>&lt;strong&gt;Ansible Control Node&lt;/strong&gt; type has been applied.&lt;br/&gt;&lt;strong&gt;Note:&lt;/strong&gt; This action will &lt;em&gt;not&lt;/em&gt; result in state application. To apply the state, either use the &lt;a href="/rhn/manager/systems/details/highstate?sid={0}"&gt;states page&lt;/a&gt; or run &lt;code class="text-info"&gt;state.highstate&lt;/code&gt; from the command line.</source>
         <context-group name="ctx">
           <context context-type="sourcefile">/rhn/systems/details/Overview.do</context>
@@ -9255,15 +9307,6 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
       <trans-unit id="Sync Schedule" xml:space="preserve">
         <source>Sync Schedule</source>
       </trans-unit>
-      <trans-unit id="Virtualization Hierarchy" xml:space="preserve">
-        <source>Virtualization Hierarchy</source>
-      </trans-unit>
-      <trans-unit id="Proxy Hierarchy" xml:space="preserve">
-        <source>Proxy Hierarchy</source>
-      </trans-unit>
-      <trans-unit id="Systems Grouping" xml:space="preserve">
-        <source>Systems Grouping</source>
-      </trans-unit>
       <trans-unit id="Salt Entitled Servers" xml:space="preserve">
         <source>Salt</source>
         <context-group name="ctx">
@@ -9321,6 +9364,12 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
       <trans-unit id="recurring_action.empty_name" xml:space="preserve">
         <source>Recurring Action name must be provided</source>
       </trans-unit>
+      <trans-unit id="recurring_action.empty_action_type" xml:space="preserve">
+        <source>Recurring Action type must be provided</source>
+      </trans-unit>
+      <trans-unit id="recurring_action.empty_states_config" xml:space="preserve">
+        <source>States configuration must be provided</source>
+      </trans-unit>
       <trans-unit id="recurring_action.action_name_exists" xml:space="preserve">
         <source>Recurring Action with given name already exists</source>
       </trans-unit>
@@ -9330,8 +9379,63 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
       <trans-unit id="recurring_action.invalid_cron" xml:space="preserve">
         <source>Invalid Quartz expression provided.</source>
       </trans-unit>
+      <trans-unit id="recurring_action.invalid_action_type" xml:space="preserve">
+        <source>Recurring action has invalid type.</source>
+      </trans-unit>
+      <trans-unit id="recurring_action.not_in_maint_mode" xml:space="preserve">
+        <source>One or more selected systems don't have a maintenance window assigned at the current time. Please limit your selection to systems that are in maintenance mode.</source>
+      </trans-unit>
+      <trans-unit id="internal_state.certs" xml:space="preserve">
+        <source>Install the server's SSL certificate and trust it on the target system</source>
+      </trans-unit>
+      <trans-unit id="internal_state.channels" xml:space="preserve">
+        <source>Make sure that channel subscriptions are in sync with the server side configuration</source>
+      </trans-unit>
+      <trans-unit id="internal_state.hardware_profileupdate" xml:space="preserve">
+        <source>Update information about installed hardware</source>
+      </trans-unit>
+      <trans-unit id="internal_state.packages" xml:space="preserve">
+        <source>Apply package states as configured for the target system</source>
+      </trans-unit>
+      <trans-unit id="internal_state.packages_profileupdate" xml:space="preserve">
+        <source>Update information about installed software (packages and products)</source>
+      </trans-unit>
+      <trans-unit id="internal_state.uptodate" xml:space="preserve">
+        <source>Update the system</source>
+      </trans-unit>
+      <trans-unit id="internal_state.update-salt" xml:space="preserve">
+        <source>Perform a standalone Salt update</source>
+      </trans-unit>
+      <trans-unit id="internal_state.reboot" xml:space="preserve">
+        <source>Perform a reboot</source>
+      </trans-unit>
+      <trans-unit id="internal_state.rebootifneeded" xml:space="preserve">
+        <source>Perform a reboot, only if required</source>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncbeacons" xml:space="preserve">
+        <source>Sync Salt beacons to the target system</source>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncall" xml:space="preserve">
+        <source>Sync all Salt artifacts (modules, states, grains and beacons) to the target system</source>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncgrains" xml:space="preserve">
+        <source>Sync Salt grains to the target system</source>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncmodules" xml:space="preserve">
+        <source>Sync Salt modules to the target system</source>
+      </trans-unit>
+      <trans-unit id="internal_state.util_syncstates" xml:space="preserve">
+        <source>Sync Salt states to the target system</source>
+      </trans-unit>
       <trans-unit id="notification.channelsyncfailed" xml:space="preserve">
         <source>Error syncing the channel: &lt;a href="/rhn/channels/ChannelDetail.do?cid={0}"&gt;{1}&lt;/a&gt;</source>
+      </trans-unit>
+      <trans-unit id="notification.channelsyncforbidden" xml:space="preserve">
+        <source>Syncing channels forbidden</source>
+      </trans-unit>
+      <trans-unit id="notification.channelsyncfailed.notcompliant" xml:space="preserve">
+        <source>Synchronization of repositories is forbidden as @@PRODUCT_NAME@@ PAYG is unable to send accounting data to the cloud provider.
+For a detailed analysis, please refer to the log files.</source>
       </trans-unit>
       <trans-unit id="notification.channelsyncfinished" xml:space="preserve">
         <source>Channel &lt;a href="/rhn/channels/ChannelDetail.do?cid={0}"&gt;{1}&lt;/a&gt; sync completed</source>
@@ -9444,6 +9548,18 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
       <trans-unit id="notification.subscriptionwarning.detail">
         <source>You have subscriptions that are expiring soon or already expired. Please check the &lt;a href="/rhn/manager/subscription-matching"&gt;Subscription Matching&lt;/a&gt; page.</source>
       </trans-unit>
+      <trans-unit id="notification.paygnotcompliantwarning.summary">
+        <source>@@PRODUCT_NAME@@ PAYG instance is not compliant.</source>
+      </trans-unit>
+      <trans-unit id="notification.paygnotcompliantwarning.detail">
+        <source>This @@PRODUCT_NAME@@ PAYG instance is not compliant. Some @@PRODUCT_NAME@@ functions will be disabled. Please check with your system administrator.</source>
+      </trans-unit>
+      <trans-unit id="notification.updateavailable.summary">
+        <source>Updates are available.</source>
+      </trans-unit>
+      <trans-unit id="notification.updateavailable.detail">
+        <source>A new update for @@PRODUCT_NAME@@ is now available. For further details, please refer to the &lt;a href="{0}"&gt;release notes&lt;a&gt;.</source>
+      </trans-unit>
       <trans-unit id="notification.endoflife.expired.summary">
         <source>@@PRODUCT_NAME@@ {0} has reached end of life</source>
       </trans-unit>
@@ -9458,9 +9574,105 @@ Alternatively, you will want to download &lt;strong&gt;Incremental Channel Conte
         <source>&lt;p&gt;@@PRODUCT_NAME@@ {0} is approaching the end of its lifecycle. Please consider upgrading this server instance before general support ends on &lt;strong&gt;{1}&lt;/strong&gt;.&lt;/p&gt;
           &lt;p&gt;For Additional information on how to upgrade @@PRODUCT_NAME@@, please review the section &lt;em&gt;Upgrade&lt;/em&gt; of the &lt;em&gt;Installation/Upgrade Guide&lt;/em&gt; in the official documentation.&lt;/p&gt;</source>
       </trans-unit>
+      <trans-unit id="scc-data-forwarding.enabled">
+        <source>SCC Data Forwarding enabled successfully.</source>
+      </trans-unit>
+      <trans-unit id="scc-data-forwarding.not-changed">
+        <source>SCC Data Forwarding is already enabled.</source>
+      </trans-unit>
+      <trans-unit id="notification.sccoptoutwarning.summary">
+        <source>Data is not being synchronized with SCC</source>
+      </trans-unit>
+      <trans-unit id="notification.sccoptoutwarning.detail" xml:space="preserve">
+        <source>
+          &lt;p&gt;Disabling data synchronizing with SCC will lead to reduced visibility of your managed clients between RMT, SMT, @@PRODUCT_NAME@@ and SCC-directly registered clients.
+          By synchronizing data, you ensure a uniform view of all registered clients. &lt;a href="/rhn/manager/admin/enable-scc-data-forwarding"&gt;Click here to enable data forwarding&lt;/a&gt;.&lt;/p&gt;
+          &lt;a href="https://suselinux.fra1.qualtrics.com/jfe/form/SV_0ooNnrY0rYuQScS" target="_blank"&gt;Help us improve our services by sharing your reason for opting out&lt;/a&gt;
+        </source>
+      </trans-unit>
       <trans-unit id="task.action.rejection.reason">
         <source>This action was not executed because its earliest execution date was too old. When more than {0} hours pass between the scheduling and the picking up, the action is discarded because it is considered no longer relevant.
           Please reschedule this action if you really want it to be executed.</source>
+      </trans-unit>
+      <trans-unit id="task.action.rejection.notcompliant">
+        <source>
+The action you attempted could not be executed because the @@PRODUCT_NAME@@ PAYG system is unable to send accounting data to the cloud provider.
+For a detailed analysis, please refer to the log files.
+	</source>
+      </trans-unit>
+      <trans-unit id="task.action.rejection.notcompliantPaygByos">
+        <source>
+          The action you attempted could not be executed because @@PRODUCT_NAME@@ is PAYG, there are BYOS servers in the current action and currently no SCC credentials are set.
+          To amend this situation, please set SCC credentials for this @@PRODUCT_NAME@@ instance and try again. You can also execute the action only on Pay-as-you-go instances.
+          Bring-your-own-subscription servers detected: {0}.
+        </source>
+      </trans-unit>
+      <trans-unit id="task.action.rejection.notcompliantPaygByosActionChain">
+        <source>
+          The action chain you attempted could not be executed because @@PRODUCT_NAME@@ is PAYG, there are BYOS servers in the current action chain and currently no SCC credentials are set.
+          To amend this situation, please set SCC credentials for this @@PRODUCT_NAME@@ instance and try again. You can also execute the action chain only on Pay-as-you-go instances.
+          Bring-your-own-subscription servers detected: {0}.
+        </source>
+      </trans-unit>
+      <trans-unit id="bootstrap.minion.error.conflicting.minionid">
+        <source>Systems with conflicting minion ID and machine ID were found ({0}, {1}). Onboarding aborted. Please remove conflicting systems first ({2}, {3})</source>
+      </trans-unit>
+      <trans-unit id="bootstrap.minion.error.payg.dcregistered">
+        <source>Registration of '{0}' on SUSE Manager Server rejected. \nTo manage Datacenter clients you have to configure SCC Credentials at Admin => Setup Wizard => Organization Credentials.</source>
+      </trans-unit>
+      <trans-unit id="bootstrap.minion.error.payg.byosregistered">
+        <source>Registration of '{0}' on SUSE Manager Server rejected. \nTo manage BYOS (Bring-your-own-Subscription) clients you have to configure SCC Credentials at Admin => Setup Wizard => Organization Credentials. \n\nIf the instance being onboarded is PAYG, ensure the `python-instance-billing-flavor-check` package is installed and try again.</source>
+      </trans-unit>
+      <trans-unit id="coco.environment.none.description">
+        <source>None</source>
+      </trans-unit>
+      <trans-unit id="coco.environment.none.label">
+        <source>None</source>
+      </trans-unit>
+      <trans-unit id="coco.environment.kvm_amd_epyc_milan.description">
+        <source>KVM on AMD Epyc Processor, second generation (milan)</source>
+      </trans-unit>
+      <trans-unit id="coco.environment.kvm_amd_epyc_milan.label">
+        <source>KVM on AMD Epyc - Milan</source>
+      </trans-unit>
+      <trans-unit id="coco.environment.kvm_amd_epyc_genoa.description">
+        <source>KVM on AMD Epyc Processor, third generation (genoa)</source>
+      </trans-unit>
+      <trans-unit id="coco.environment.kvm_amd_epyc_genoa.label">
+        <source>KVM on AMD Epyc - Genoa</source>
+      </trans-unit>
+      <trans-unit id="coco.resultType.none.description">
+        <source>Result Type not found</source>
+      </trans-unit>
+      <trans-unit id="coco.resultType.sev_snp.description">
+        <source>AMD Secure Encrypted Virtualization-Secure Nested Paging (SEV-SNP)</source>
+      </trans-unit>
+      <trans-unit id="coco.resultType.sev_snp.label">
+        <source>AMD SEV-SNP</source>
+      </trans-unit>
+      <trans-unit id="coco.resultType.secure_boot.description">
+        <source>Secure Boot enabled</source>
+      </trans-unit>
+      <trans-unit id="coco.resultType.secure_boot.label">
+        <source>Secure Boot</source>
+      </trans-unit>
+      <trans-unit id="coco.status.pending.description">
+        <source>Pending</source>
+      </trans-unit>
+      <trans-unit id="coco.status.succeeded.description">
+        <source>Succeeded</source>
+      </trans-unit>
+      <trans-unit id="coco.status.failed.description">
+        <source>Failed</source>
+      </trans-unit>
+      <trans-unit id="system.audit.coco.unsupported">
+        <source>This system does not have any Confidential Computing capability.</source>
+      </trans-unit>
+      <trans-unit id="system.audit.coco.configUpdated">
+        <source>The Confidential Computing configuration has been updated successfully.</source>
+      </trans-unit>
+      <trans-unit id="system.audit.coco.configNotUpdated">
+        <source>An error occurred while updating the Confidential Computing configuration. Please check the server logs for detailed information.</source>
       </trans-unit>
     </body>
   </file>

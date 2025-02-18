@@ -1,9 +1,3 @@
-{% if repos_disabled is not defined or repos_disabled.get('skip', false) == false %}
-# disable all spacewalk:* repos
-{% set repos_disabled = {'match_str': 'spacewalk:', 'matching': true} %}
-{%- include 'channels/disablelocalrepos.sls' %}
-{% endif %}
-
 include:
   - util.syncstates
 
@@ -32,22 +26,11 @@ remove_traditional_stack_all:
       - mgr-osad
       - spacewalksd
       - mgr-daemon
-      - rhnlib
       - rhnmd
 {%- if grains['os_family'] == 'Suse' %}
       - zypp-plugin-spacewalk
-{%- elif grains['os_family'] == 'RedHat' %}
-      - yum-rhn-plugin
-      - rhnsd
-      - rhn-check
-      - rhn-setup
-      - rhn-client-tools
 {%- elif grains['os_family'] == 'Debian' %}
       - apt-transport-spacewalk
-{%- endif %}
-{%- if repos_disabled.count > 0 %}
-    - require:
-      - mgrcompat: disable_repo*
 {%- endif %}
 
 remove_traditional_stack:
@@ -58,10 +41,6 @@ remove_traditional_stack:
       - mgr-cfg
 {%- if grains['os_family'] == 'Suse' %}
       - suseRegisterInfo
-{%- endif %}
-{%- if repos_disabled.count > 0 %}
-    - require:
-      - mgrcompat: disable_repo*
 {%- endif %}
     - unless: rpm -q spacewalk-proxy-common || rpm -q spacewalk-common
 
@@ -77,7 +56,7 @@ remove_spacewalk_sources:
 
 # Remove suseRegisterInfo in a separate yum transaction to avoid being called by
 # the yum plugin.
-{%- if grains['os_family'] == 'RedHat' %}
+{%- if grains['os_family'] == 'RedHat' or grains['os_family'] == 'openEuler' %}
 remove_suse_register_info_rh:
   pkg.removed:
     - name: suseRegisterInfo

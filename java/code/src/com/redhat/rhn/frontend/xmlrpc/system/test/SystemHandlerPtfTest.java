@@ -16,9 +16,9 @@
 package com.redhat.rhn.frontend.xmlrpc.system.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.redhat.rhn.domain.action.Action;
 import com.redhat.rhn.domain.action.ActionFactory;
@@ -46,13 +46,14 @@ import com.redhat.rhn.manager.system.entitling.SystemUnentitler;
 import com.redhat.rhn.taskomatic.TaskomaticApi;
 import com.redhat.rhn.testing.PackageTestUtils;
 
-import com.suse.manager.virtualization.VirtManagerSalt;
+import com.suse.cloud.CloudPaygManager;
+import com.suse.cloud.test.TestCloudPaygManagerBuilder;
+import com.suse.manager.attestation.AttestationManager;
 import com.suse.manager.webui.controllers.bootstrap.RegularMinionBootstrapper;
 import com.suse.manager.webui.controllers.bootstrap.SSHMinionBootstrapper;
 import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.test.TestSaltApi;
 import com.suse.manager.webui.services.test.TestSystemQuery;
 
@@ -104,28 +105,33 @@ public class SystemHandlerPtfTest extends BaseHandlerTestCase {
         TaskomaticApi taskomaticApi = new TaskomaticApi();
         SystemQuery systemQuery = new TestSystemQuery();
         SaltApi saltApi = new TestSaltApi();
+        CloudPaygManager paygMgr = new TestCloudPaygManagerBuilder().build();
+        AttestationManager attMgr = new AttestationManager();
 
-        RegularMinionBootstrapper regularBootstrapper = new RegularMinionBootstrapper(systemQuery, saltApi);
-        SSHMinionBootstrapper sshBootstrapper = new SSHMinionBootstrapper(systemQuery, saltApi);
+        RegularMinionBootstrapper regularBootstrapper =
+                new RegularMinionBootstrapper(systemQuery, saltApi, paygMgr, attMgr);
+        SSHMinionBootstrapper sshBootstrapper = new SSHMinionBootstrapper(systemQuery, saltApi, paygMgr, attMgr);
         XmlRpcSystemHelper xmlRpcHelper = new XmlRpcSystemHelper(regularBootstrapper, sshBootstrapper);
 
         ServerGroupManager groupManager = new ServerGroupManager(saltApi);
-        VirtManager virtManager = new VirtManagerSalt(saltApi);
         MonitoringManager monitoringManager = new FormulaMonitoringManager(saltApi);
 
-        SystemUnentitler unentitler = new SystemUnentitler(virtManager, monitoringManager, groupManager);
-        SystemEntitler entitler = new SystemEntitler(saltApi, virtManager, monitoringManager, groupManager);
+        SystemUnentitler unentitler = new SystemUnentitler(monitoringManager, groupManager);
+        SystemEntitler entitler = new SystemEntitler(saltApi, monitoringManager, groupManager);
 
         SystemEntitlementManager entitlementManager = new SystemEntitlementManager(unentitler, entitler);
         SystemManager systemManager = new SystemManager(ServerFactory.SINGLETON, ServerGroupFactory.SINGLETON, saltApi);
 
-        handler = new SystemHandler(taskomaticApi, xmlRpcHelper, entitlementManager, systemManager, groupManager);
+        handler = new SystemHandler(taskomaticApi, xmlRpcHelper, entitlementManager, systemManager, groupManager,
+            new TestCloudPaygManagerBuilder().build(), new AttestationManager());
 
         standard = PackageTest.createTestPackage(admin.getOrg());
         standardUpdated = PackageTestUtils.newVersionOfPackage(standard, null, "2.0.0", null, admin.getOrg());
         standardUpdatedPtf = PackageTestUtils.createPtfPackage(standardUpdated, "123456", "1", admin.getOrg());
+        standardUpdatedPtf.setIsPartOfPtfPackage(true);
         ptfMaster = PackageTestUtils.createPtfMaster("123456", "1", admin.getOrg());
         ptfMasterUpdated = PackageTestUtils.newVersionOfPackage(ptfMaster, null, "2", null, admin.getOrg());
+        ptfMasterUpdated.setIsPtfPackage(true);
         ptfPackage = PackageTestUtils.createPtfPackage("123456", "1", admin.getOrg());
         ptfPackageUpdated = PackageTestUtils.createPtfPackage("123456", "2", admin.getOrg());
 
@@ -227,7 +233,7 @@ public class SystemHandlerPtfTest extends BaseHandlerTestCase {
 
         Action action = ActionFactory.lookupByUserAndId(admin, scheduledActions[0]);
         assertNotNull(action);
-        assertTrue(action instanceof PackageAction);
+        assertInstanceOf(PackageAction.class, action);
     }
 
     @Test

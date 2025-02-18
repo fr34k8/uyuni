@@ -22,7 +22,9 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -97,16 +99,13 @@ import com.redhat.rhn.manager.system.test.SystemManagerTest;
 import com.redhat.rhn.taskomatic.TaskomaticApi;
 import com.redhat.rhn.taskomatic.TaskomaticApiException;
 import com.redhat.rhn.testing.JMockBaseTestCaseWithUser;
-import com.redhat.rhn.testing.RhnBaseTestCase;
 import com.redhat.rhn.testing.ServerTestUtils;
 import com.redhat.rhn.testing.TestUtils;
 import com.redhat.rhn.testing.UserTestUtils;
 
-import com.suse.manager.virtualization.VirtManagerSalt;
 import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.test.TestSaltApi;
 import com.suse.manager.webui.services.test.TestSystemQuery;
 import com.suse.salt.netapi.calls.modules.Schedule;
@@ -151,11 +150,10 @@ public class ActionManagerTest extends JMockBaseTestCaseWithUser {
     private final SystemQuery systemQuery = new TestSystemQuery();
     private final SaltApi saltApi = new TestSaltApi();
     private final ServerGroupManager serverGroupManager = new ServerGroupManager(saltApi);
-    private final VirtManager virtManager = new VirtManagerSalt(saltApi);
     private final MonitoringManager monitoringManager = new FormulaMonitoringManager(saltApi);
     private final SystemEntitlementManager systemEntitlementManager = new SystemEntitlementManager(
-            new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-            new SystemEntitler(saltApi, virtManager, monitoringManager, serverGroupManager)
+            new SystemUnentitler(monitoringManager, serverGroupManager),
+            new SystemEntitler(saltApi, monitoringManager, serverGroupManager)
     );
     private final SystemManager systemManager =
             new SystemManager(ServerFactory.SINGLETON, new ServerGroupFactory(), saltApi);
@@ -495,7 +493,7 @@ public class ActionManagerTest extends JMockBaseTestCaseWithUser {
 
         List<ServerAction> sa = parent.getServerActions().stream()
                 .filter(s -> s.getServer().asMinionServer().isPresent())
-                .collect(Collectors.toList());
+                .toList();
         Map<String, Result<Schedule.Result>> result = new HashMap<>();
         result.put(sa.get(0).getServer().asMinionServer().get().getMinionId(),
                 new Result<>(Xor.right(new Schedule.Result(null, true))));
@@ -564,8 +562,8 @@ public class ActionManagerTest extends JMockBaseTestCaseWithUser {
                 .map(ServerAction::getServer)
                 .collect(Collectors.toList());
 
-        Server ignoreFirst = servers.remove(0);
-        Collection<Long> activeServers = servers.stream().map(Server::getId).collect(Collectors.toList());
+        servers.remove(0);
+        Collection<Long> activeServers = servers.stream().map(Server::getId).toList();
 
         Map<Action, Set<Server>> actionMap = actionList.stream()
                 .map(a -> new ImmutablePair<>(
@@ -692,7 +690,7 @@ public class ActionManagerTest extends JMockBaseTestCaseWithUser {
         KickstartSession ksSession = KickstartSessionTest.createKickstartSession(server,
                 ksData, user, parentAction);
         TestUtils.saveAndFlush(ksSession);
-        ksSession = RhnBaseTestCase.reload(ksSession);
+        ksSession = reload(ksSession);
 
         List actionList = createActionList(user, new Action [] {parentAction});
 
@@ -813,12 +811,17 @@ public class ActionManagerTest extends JMockBaseTestCaseWithUser {
     @Test
     public void testCreateErrataAction() throws Exception {
         Errata errata = ErrataFactoryTest.createTestErrata(user.getOrg().getId());
+
         Action a = ActionManager.createErrataAction(user.getOrg(), errata);
         assertNotNull(a);
-        assertNotNull(a.getOrg());
+        assertNull(a.getSchedulerUser());
+        assertEquals(user.getOrg(), a.getOrg());
+        assertEquals(a.getActionType(), ActionFactory.TYPE_ERRATA);
+
         a = ActionManager.createErrataAction(user, errata);
         assertNotNull(a);
-        assertNotNull(a.getOrg());
+        assertEquals(user, a.getSchedulerUser());
+        assertEquals(user.getOrg(), a.getOrg());
         assertEquals(a.getActionType(), ActionFactory.TYPE_ERRATA);
     }
 
@@ -1021,10 +1024,8 @@ public class ActionManagerTest extends JMockBaseTestCaseWithUser {
         List<PackageMetadata> pkgs = ProfileManager.comparePackageLists(new DataResult<>(profileList),
                 new DataResult<>(systemList), "foo");
 
-        Action action = ActionManager.schedulePackageRunTransaction(user, srvr, pkgs,
-                new Date());
-        assertTrue(action instanceof PackageAction);
-        PackageAction pa = (PackageAction) action;
+        PackageAction pa = ActionManager.schedulePackageRunTransaction(user, srvr, pkgs, new Date());
+        assertInstanceOf(PackageAction.class, pa);
 
         Map<String, Object> params = new HashMap<>();
         params.put("action_id", pa.getId());
@@ -1058,7 +1059,7 @@ public class ActionManagerTest extends JMockBaseTestCaseWithUser {
 
         Action action = actions.stream().findFirst().get();
 
-        assertTrue(action instanceof SubscribeChannelsAction);
+        assertInstanceOf(SubscribeChannelsAction.class, action);
         SubscribeChannelsAction sca = (SubscribeChannelsAction)action;
 
         HibernateFactory.getSession().flush();
@@ -1070,12 +1071,12 @@ public class ActionManagerTest extends JMockBaseTestCaseWithUser {
         assertEquals(2, dr.size());
 
         Action action2 = ActionFactory.lookupById(action.getId());
-        assertTrue(action2 instanceof SubscribeChannelsAction);
+        assertInstanceOf(SubscribeChannelsAction.class, action2);
         SubscribeChannelsAction sca2 = (SubscribeChannelsAction)action2;
         assertEquals(base.getId(), sca2.getDetails().getBaseChannel().getId());
         assertEquals(2, sca2.getDetails().getChannels().size());
-        sca2.getDetails().getChannels().stream().anyMatch(c -> c.getId().equals(ch1.getId()));
-        sca2.getDetails().getChannels().stream().anyMatch(c -> c.getId().equals(ch2.getId()));
+        assertTrue(sca2.getDetails().getChannels().stream().anyMatch(c -> c.getId().equals(ch1.getId())));
+        assertTrue(sca2.getDetails().getChannels().stream().anyMatch(c -> c.getId().equals(ch2.getId())));
         // tokens are generated right when executing the action
         assertEquals(0, sca2.getDetails().getAccessTokens().size());
         assertEquals(1, action2.getServerActions().size());
@@ -1103,6 +1104,21 @@ public class ActionManagerTest extends JMockBaseTestCaseWithUser {
         assertNotNull(action);
         assertEquals("Build an Image Profile", action.getActionType().getName());
     }
+
+    @Test
+    public void testDefineApplyStatesActionName() {
+        List<String> states = List.of("util.syncgrains", "hardware.profileupdate", "util.syncmodules");
+        String highstateNonRecurring = ActionManager.defineStatesActionName(Collections.emptyList(), false);
+        String highstateRecurring = ActionManager.defineStatesActionName(Collections.emptyList(), true);
+        String statesNonRecurring = ActionManager.defineStatesActionName(states, false);
+        String statesRecurring = ActionManager.defineStatesActionName(states, true);
+        assertEquals("Apply highstate", highstateNonRecurring);
+        assertEquals("Apply recurring highstate", highstateRecurring);
+        assertEquals("Apply recurring states [util.syncgrains, hardware.profileupdate, util.syncmodules]",
+                statesRecurring);
+        assertEquals("Apply states [util.syncgrains, hardware.profileupdate, util.syncmodules]", statesNonRecurring);
+    }
+
 
     public static void assertNotEmpty(Collection coll) {
         assertNotNull(coll);

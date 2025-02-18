@@ -22,6 +22,7 @@ After:
 - [ ] **DONE**
 
 ## Test coverage
+ℹ️ If a major new functionality is added, it is **strongly recommended** that tests for the new functionality are added to the Cucumber test suite
 - No tests: **add explanation**
 - No tests: already covered
 - Unit tests were added
@@ -31,8 +32,8 @@ After:
 
 ## Links
 
-Fixes #
-Tracks # **add downstream PR, if any**
+Issue(s): #
+Port(s): # **add downstream PR(s), if any**
 
 - [ ] **DONE**
 
@@ -46,7 +47,6 @@ If you don't need a changelog check, please mark this checkbox:
 
 If you uncheck the checkbox after the PR is created, you will need to re-run `changelog_test` (see below)
 
-
 ## Re-run a test
 
 If you need to re-run a test, please mark the related checkbox, it will be unchecked automatically once it has re-run:
@@ -58,3 +58,7 @@ If you need to re-run a test, please mark the related checkbox, it will be unche
 - [ ] Re-run test "susemanager_unittests"
 - [ ] Re-run test "javascript_lint"
 - [ ] Re-run test "spacecmd_unittests"
+
+# Before you merge
+
+Check [How to branch and merge properly](https://github.com/uyuni-project/uyuni/wiki/How-to-branch-and-merge-properly)!

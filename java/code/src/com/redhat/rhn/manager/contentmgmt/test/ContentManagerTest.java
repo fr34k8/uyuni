@@ -28,6 +28,7 @@ import static java.util.Optional.of;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +38,7 @@ import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.common.security.PermissionException;
 import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.channel.ChannelFactory;
+import com.redhat.rhn.domain.channel.ClonedChannel;
 import com.redhat.rhn.domain.channel.Modules;
 import com.redhat.rhn.domain.channel.test.ChannelFactoryTest;
 import com.redhat.rhn.domain.contentmgmt.ContentEnvironment;
@@ -76,7 +78,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -325,7 +326,7 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
                 createEnvironment(cp.getLabel(), of(fst.getLabel()), "mid", "middle env", "desc", false, user);
         assertEquals(1, mid.getTargets().size());
         Channel newChannel = mid.getTargets().get(0).asSoftwareTarget().get().getChannel();
-        assertEquals(channel, newChannel.getOriginal());
+        assertEquals(channel, newChannel.asCloned().map(ClonedChannel::getOriginal).get());
         assertTrue(newChannel.getLabel().startsWith("cplabel-mid-"));
         assertEquals(fst.getVersion(), mid.getVersion());
     }
@@ -622,7 +623,7 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
         List<ContentFilter> filters = ContentManager.listFilters(user);
         assertEquals(1, filters.size());
         ContentFilter fromDb = filters.get(0);
-        assertTrue(fromDb instanceof PackageFilter);
+        assertInstanceOf(PackageFilter.class, fromDb);
         assertEquals(filter, fromDb);
         assertEquals(Rule.DENY, fromDb.getRule());
         assertEquals(criteria, fromDb.getCriteria());
@@ -804,7 +805,7 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
         assertEquals(Status.GENERATING_REPODATA, target.getStatus());
         assertEquals("cplabel-fst-" + channel.getLabel(), tgtChannel.getLabel());
         assertTrue(channel.getClonedChannels().contains(tgtChannel));
-        assertEquals(channel, tgtChannel.getOriginal());
+        assertEquals(channel, tgtChannel.asCloned().map(ClonedChannel::getOriginal).get());
         assertEquals(channel.getPackages(), tgtChannel.getPackages());
         assertEquals(channel.getErratas(), tgtChannel.getErratas());
         assertEquals(Long.valueOf(1), env.getVersion());
@@ -991,8 +992,7 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
         // Assert that the target channel is also modular
         Channel targetChannel = env.getTargets().get(0).asSoftwareTarget().get().getChannel();
         assertTrue(targetChannel.isModular());
-        assertEquals(channel.getLatestModules().getRelativeFilename(),
-                targetChannel.getLatestModules().getRelativeFilename());
+        assertEquals(channel.getModules().getRelativeFilename(), targetChannel.getModules().getRelativeFilename());
         assertEquals(channel.getPackageCount(), targetChannel.getPackageCount());
     }
 
@@ -1218,7 +1218,7 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
             fail("An exception must be thrown.");
         }
         catch (RuntimeException e) {
-            assertTrue(e.getCause() instanceof DependencyResolutionException);
+            assertInstanceOf(DependencyResolutionException.class, e.getCause());
         }
     }
 
@@ -1545,7 +1545,7 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
 
         devChan = ChannelFactory.lookupById(devChan.getId());
         testChan = ChannelFactory.lookupById(testChan.getId());
-        assertEquals(srcChan, devChan.getOriginal());
+        assertEquals(srcChan, devChan.asCloned().map(ClonedChannel::getOriginal).get());
         assertFalse(testChan.isCloned());
 
         // let's promote the project and check that the procedure fixed the channel in the test environment as well
@@ -1555,13 +1555,15 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
 
         devChan = ChannelFactory.lookupById(devChan.getId());
         testChan = ChannelFactory.lookupById(testChan.getId());
-        assertEquals(srcChan, devChan.getOriginal());
-        assertEquals(devChan, testChan.getOriginal());
+        assertEquals(srcChan, devChan.asCloned().map(ClonedChannel::getOriginal).get());
+        assertEquals(devChan, testChan.asCloned().map(ClonedChannel::getOriginal).get());
     }
 
     // extract original channels from given channels
     private Set<Channel> getOriginalChannels(Collection<Channel> channels) {
-        return channels.stream().map(Channel::getOriginal).collect(toSet());
+        return channels.stream()
+                .map(c -> c.asCloned().orElseThrow())
+                .map(ClonedChannel::getOriginal).collect(toSet());
     }
 
     // get channels of given environment
@@ -1734,8 +1736,10 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
 
         // we already have a modular target cloned from the past
         var alreadyExistingTgt = createChannelInEnvironment(env, of(channel.getLabel()));
-        Modules modules = new Modules("srcfilename", new Date());
-        alreadyExistingTgt.addModules(modules);
+        Modules modules = new Modules();
+        modules.setRelativeFilename("srcfilename");
+        modules.setChannel(alreadyExistingTgt);
+        alreadyExistingTgt.setModules(modules);
         env.addTarget(new SoftwareEnvironmentTarget(env, alreadyExistingTgt));
 
         contentManager.buildProject("cplabel", empty(), false, user);
@@ -1764,8 +1768,10 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
         contentManager.attachSource("cplabel", SW_CHANNEL, channel.getLabel(), empty(), user);
 
         var alreadyExistingTgt = createChannelInEnvironment(env, of(channel.getLabel()));
-        Modules modules = new Modules("srcfilename", new Date());
-        alreadyExistingTgt.addModules(modules);
+        Modules modules = new Modules();
+        modules.setRelativeFilename("srcfilename");
+        modules.setChannel(alreadyExistingTgt);
+        alreadyExistingTgt.setModules(modules);
         env.addTarget(new SoftwareEnvironmentTarget(env, alreadyExistingTgt));
 
         // both source and current target have modular metadata...
@@ -1792,15 +1798,18 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
         assertFalse(env.getTargets().get(0).asSoftwareTarget().get().getChannel().isModular());
 
         // verify that a modular source results in a modular target
-        Modules modules = new Modules("srcfilename", new Date());
-        channel.addModules(modules);
+        Modules modules = new Modules();
+        modules.setRelativeFilename("srcfilename");
+        modules.setChannel(channel);
+        channel.setModules(modules);
         contentManager.buildProject("cplabel", empty(), false, user);
         var tgtChannel = env.getTargets().get(0).asSoftwareTarget().get().getChannel();
         assertTrue(tgtChannel.isModular());
-        assertEquals("srcfilename",  tgtChannel.getLatestModules().getRelativeFilename());
+        assertEquals("srcfilename",  tgtChannel.getModules().getRelativeFilename());
 
         // verify that a non-modular source strips the modular data
-        channel.getModules().clear();
+        HibernateFactory.getSession().delete(channel.getModules());
+        channel.setModules(null);
         contentManager.buildProject("cplabel", empty(), false, user);
         assertFalse(env.getTargets().get(0).asSoftwareTarget().get().getChannel().isModular());
     }
@@ -1825,11 +1834,11 @@ public class ContentManagerTest extends JMockBaseTestCaseWithUser {
         contentManager.buildProject("cplabel", empty(), false, user);
         contentManager.promoteProject("cplabel", "fst", false, user);
 
-        String relativeFilename = channel.getLatestModules().getRelativeFilename();
+        String relativeFilename = channel.getModules().getRelativeFilename();
         Channel fstTgt = fst.getTargets().get(0).asSoftwareTarget().get().getChannel();
         Channel sndTgt = snd.getTargets().get(0).asSoftwareTarget().get().getChannel();
-        assertEquals(relativeFilename, fstTgt.getLatestModules().getRelativeFilename());
-        assertEquals(relativeFilename, sndTgt.getLatestModules().getRelativeFilename());
+        assertEquals(relativeFilename, fstTgt.getModules().getRelativeFilename());
+        assertEquals(relativeFilename, sndTgt.getModules().getRelativeFilename());
     }
 
     private void assertBuildFails(String projectLabel) {

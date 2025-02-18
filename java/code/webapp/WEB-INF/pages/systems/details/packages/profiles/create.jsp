@@ -29,10 +29,10 @@
             </div>
           
             <div class="form-group">
-                <div class="col-md-offset-3 col-md-6">
+                <div class="col-md-offset-3 offset-md-3 col-md-6">
                     <html:hidden property="sid" value="${param.sid}" />
                     <html:hidden property="submitted" value="true" />
-                    <html:submit styleClass="btn btn-success">
+                    <html:submit styleClass="btn btn-primary">
                         <bean:message key="create.jsp.createprofile"/>
                     </html:submit>
                 </div>

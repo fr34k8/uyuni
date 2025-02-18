@@ -28,7 +28,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="col-md-offset-3 col-md-6">
+                    <div class="col-md-offset-3 offset-md-3 col-md-6">
                         <div class="checkbox">
                             <label>
                                 <html:checkbox property="use_utc"/>
@@ -38,8 +38,8 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="col-md-offset-3 col-md-6">
-                        <html:submit styleClass="btn btn-success">
+                    <div class="col-md-offset-3 offset-md-3 col-md-6">
+                        <html:submit styleClass="btn btn-primary">
                             <bean:message key="kickstart.locale.jsp.updatekickstart"/>
                         </html:submit>
                     </div>

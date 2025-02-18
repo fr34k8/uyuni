@@ -1,5 +1,108 @@
-- Add make as a BuildRequire for those operating systems that do
-  not have it installed by default
+-------------------------------------------------------------------
+Mon Oct 14 15:45:19 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Fix parsing Authority Key Identifier when keyid is not
+    prefixed (bsc#1229079)
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Thu Aug 01 09:43:48 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.7-0
+  * Support multiple certificates for root-ca-file and
+    server-cert-file
+
+-------------------------------------------------------------------
+Wed Jun 26 15:02:21 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6-0
+  * Remove PKI of Salt Minion only in case of changing the Master
+    with the bootstrap script
+
+-------------------------------------------------------------------
+Mon Jun 10 16:47:59 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.5-0
+  * Move server-only functions out of uyuni.common (bsc#1222325)
+  * Calculate bootstrap repo path for SL Micro 6.0
+
+-------------------------------------------------------------------
+Fri May 03 14:56:39 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.4-0
+  * Fix SUSE Liberty Linux bootstrapping when Zypper is installed
+    (bsc#1222347)
+  * Apply reboot method changes for transactional systems in the
+    bootstrap script
+
+-------------------------------------------------------------------
+Tue Feb 13 17:26:32 CET 2024 - marina.latini@suse.com
+
+- version 5.0.3-1
+  * Skip deploying the CA into the salt dir on proxies (bsc#1219850)
+  * Deploy the CA certificate also into the salt filesystem (bsc#1219577)
+
+-------------------------------------------------------------------
+Mon Jan 29 11:47:08 CET 2024 - rosuna@suse.com
+
+- version 5.0.2-1
+  * Apply Black and Pylint to enforce Python style
+
+-------------------------------------------------------------------
+Tue Jan 16 08:19:04 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Bump version to 5.0.0
+
+-------------------------------------------------------------------
+Fri Dec 15 17:07:23 CET 2023 - rosuna@suse.com
+
+- version 4.4.9-1
+  * Include reboot info beacon in the bootstrap script for transactional
+    systems (bsc#1217588)
+  * Enable openSUSE Tumbleweed and openSUSE MicroOS
+  * Move all file managed by RPM from /srv to /usr/share/susemanager
+  * Drop spacewalk-ssh-push-init and spacewalk-push-register
+  * Change certificate defaults using RSA 4096 Bit and sha384 hash algorithm
+  * Change wrong name in unexisting variable ORG_CERT_FILE to CERT_FILE
+    for rhn_bootstrap_strings.py
+  * Revert hardcoded folder and renamed variable for clarity
+
+-------------------------------------------------------------------
+Wed Nov 01 20:43:30 CET 2023 - marina.latini@suse.com
+
+- version 4.4.8-1
+  * Handle server keys in PKCS8 format in mgr-ssl-cert-setup (bsc#1218615)
+
+-------------------------------------------------------------------
+Mon Sep 18 14:28:41 CEST 2023 - rosuna@suse.com
+
+- version 4.4.7-1
+  * mgr-ssl-cert-setup: store CA certificate in database (bsc#1212856)
+  * support EC Cryptography with mgr-ssl-cert-setup
+  * Revert openssl3 compatibility because it breaks cert validation
+  * Remove server keys to allow reregistering to different master
+  * mgr-bootstrap read the hostname from rhn.conf if possible
+  * Remove client_config_update.py
+  * Add openssl3 compatibility.
+  * Read CA password from a file
+  * Also ship SUSE specific files on Enterprise Linux.
+  * Use the CA cert in the pki config to generate build host rpm
+  * Add shadow as dependency of osimage certificate package
+    (bsc#1210834 bsc#1204089)
+
+-------------------------------------------------------------------
+Wed Apr 19 12:52:17 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.6-1
+  * remove unused dependencies
+
+-------------------------------------------------------------------
+Tue Feb 21 14:03:19 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.5-1
+  * Ensure installation of make for building
 
 -------------------------------------------------------------------
 Mon Jan 23 08:27:21 CET 2023 - jgonzalez@suse.com

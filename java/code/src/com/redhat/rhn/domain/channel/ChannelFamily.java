@@ -29,8 +29,6 @@ import java.util.Set;
  */
 public class ChannelFamily extends BaseDomainHelper {
 
-    public static final String TOOLS_CHANNEL_FAMILY_LABEL = "SLE-M-T";
-
     private Long id;
     private String name;
     private String label;
@@ -41,6 +39,20 @@ public class ChannelFamily extends BaseDomainHelper {
             new HashSet<>();
 
     private PublicChannelFamily publicChannelFamily;
+
+    /**
+     * Default constructor.
+     */
+    public ChannelFamily() {
+    }
+
+    /**
+     * Constructor that create the family with the specified label. Meant for unit testing only.
+     * @param labelIn the label
+     */
+    public ChannelFamily(String labelIn) {
+        this.label = labelIn;
+    }
 
     /**
      * @return Returns the channels.
@@ -119,15 +131,13 @@ public class ChannelFamily extends BaseDomainHelper {
      */
     @Override
     public boolean equals(final Object other) {
-        if (!(other instanceof ChannelFamily)) {
+        if (!(other instanceof ChannelFamily castOther)) {
             return false;
         }
-        ChannelFamily castOther = (ChannelFamily) other;
-
-        return new EqualsBuilder().append(id, castOther.id)
-                                  .append(label, castOther.label)
-                                  .append(name, castOther.name)
-                                  .append(org, castOther.org)
+        return new EqualsBuilder().append(id, castOther.getId())
+                                  .append(label, castOther.getLabel())
+                                  .append(name, castOther.getName())
+                                  .append(org, castOther.getOrg())
                                   .isEquals();
     }
 

@@ -15,6 +15,7 @@
 package com.suse.manager.webui.controllers;
 
 import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
+import static com.suse.manager.webui.utils.SparkApplicationHelper.result;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withCsrfToken;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withImageAdmin;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUser;
@@ -22,8 +23,8 @@ import static com.suse.manager.webui.utils.SparkApplicationHelper.withUserPrefer
 import static spark.Spark.get;
 import static spark.Spark.post;
 
-import com.redhat.rhn.domain.credentials.Credentials;
 import com.redhat.rhn.domain.credentials.CredentialsFactory;
+import com.redhat.rhn.domain.credentials.RegistryCredentials;
 import com.redhat.rhn.domain.image.ImageStore;
 import com.redhat.rhn.domain.image.ImageStoreFactory;
 import com.redhat.rhn.domain.image.ImageStoreType;
@@ -40,18 +41,17 @@ import com.suse.utils.Json;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import spark.ModelAndView;
 import spark.Request;
@@ -176,11 +176,11 @@ public class ImageStoreController {
 
         List<ImageStore> stores = ImageStoreFactory.lookupByIdsAndOrg(ids, user.getOrg());
         if (stores.size() < ids.size()) {
-            return json(res, ResultJson.error("not_found"));
+            return result(res, ResultJson.error("not_found"), new TypeToken<>() { });
         }
 
         stores.forEach(ImageStoreFactory::delete);
-        return json(res, ResultJson.success(stores.size()));
+        return result(res, ResultJson.success(stores.size()), new TypeToken<>() { });
     }
 
     /**
@@ -210,9 +210,8 @@ public class ImageStoreController {
             json.addProperty("uri", s.getUri());
             json.addProperty("storeType", s.getStoreType().getLabel());
 
-            if (s.getCreds() != null && s.getCreds().getType().getLabel().equals(
-                    Credentials.TYPE_REGISTRY)) {
-                Credentials dc = s.getCreds();
+            if (s.getCreds() != null && s.getCreds().isTypeOf(RegistryCredentials.class)) {
+                RegistryCredentials dc = s.getCreds();
                 json.addProperty("username", dc.getUsername());
                 json.addProperty("password", dc.getPassword());
                 json.addProperty("useCredentials", true);
@@ -221,8 +220,8 @@ public class ImageStoreController {
                 json.addProperty("useCredentials", false);
             }
 
-            return json(res, ResultJson.success(json));
-        }).orElseGet(() -> json(res, ResultJson.error("not_found")));
+            return result(res, ResultJson.success(json), new TypeToken<>() { });
+        }).orElseGet(() -> result(res, ResultJson.error("not_found"), new TypeToken<>() { }));
     }
 
     /**
@@ -251,9 +250,8 @@ public class ImageStoreController {
             json.addProperty("uri", uriPrefix + s.getUri());
             json.addProperty("storeType", s.getStoreType().getLabel());
 
-            if (s.getCreds() != null && s.getCreds().getType().getLabel().equals(
-                    Credentials.TYPE_REGISTRY)) {
-                Credentials dc = s.getCreds();
+            if (s.getCreds() != null && s.getCreds().isTypeOf(RegistryCredentials.class)) {
+                RegistryCredentials dc = s.getCreds();
                 json.addProperty("username", dc.getUsername());
                 json.addProperty("password", dc.getPassword());
                 json.addProperty("useCredentials", true);
@@ -262,8 +260,8 @@ public class ImageStoreController {
                 json.addProperty("useCredentials", false);
             }
 
-            return json(res, ResultJson.success(json));
-        }).orElseGet(() -> json(res, ResultJson.error("not_found")));
+            return result(res, ResultJson.success(json), new TypeToken<>() { });
+        }).orElseGet(() -> result(res, ResultJson.error("not_found"), new TypeToken<>() { }));
     }
 
     /**
@@ -283,7 +281,7 @@ public class ImageStoreController {
             uriPrefix = OSImageStoreUtils.getOSImageStoreURI();
         }
 
-        return json(res, getJsonList(imageStores, uriPrefix));
+        return json(res, getJsonList(imageStores, uriPrefix), new TypeToken<>() { });
     }
 
     /**
@@ -299,9 +297,9 @@ public class ImageStoreController {
         List<ImageStore> imageStores = ImageStoreFactory.listImageStores(user.getOrg())
                 .stream()
                 .filter(s -> s.getStoreType().equals(ImageStoreFactory.TYPE_REGISTRY))
-                .collect(Collectors.toList());
+                .toList();
 
-        return json(res, getJsonList(imageStores));
+        return json(res, getJsonList(imageStores), new TypeToken<>() { });
     }
 
     /**
@@ -342,7 +340,7 @@ public class ImageStoreController {
             return ResultJson.success();
         }).orElseGet(() -> ResultJson.error("not_found"));
 
-        return json(res, result);
+        return result(res, result, new TypeToken<>() { });
     }
 
     /**
@@ -384,7 +382,7 @@ public class ImageStoreController {
 
         ImageStoreFactory.save(imageStore);
 
-        return json(res, ResultJson.success());
+        return result(res, ResultJson.success(), new TypeToken<>() { });
     }
 
     /**
@@ -411,16 +409,21 @@ public class ImageStoreController {
             json.addProperty("uri", uriPrefix + imageStore.getUri());
             json.addProperty("type", imageStore.getStoreType().getLabel());
             return json;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private static void setStoreCredentials(ImageStore store, ImageStoreCreateRequest request) {
         if (request.isUseCredentials()) {
-            Credentials dc = store.getCreds() != null ?
-                    store.getCreds() : CredentialsFactory.createRegistryCredentials();
-            dc.setUsername(request.getUsername());
-            dc.setPassword(request.getPassword());
-            dc.setModified(new Date());
+            String username = request.getUsername();
+            String password = request.getPassword();
+
+            RegistryCredentials dc = Optional.ofNullable(store.getCreds())
+                .map(existingCreds -> {
+                    existingCreds.setUsername(username);
+                    existingCreds.setPassword(password);
+                    return existingCreds;
+                })
+                .orElseGet(() -> CredentialsFactory.createRegistryCredentials(username, password));
 
             store.setCreds(dc);
         }

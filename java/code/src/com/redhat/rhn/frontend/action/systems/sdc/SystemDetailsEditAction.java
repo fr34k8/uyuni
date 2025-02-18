@@ -15,7 +15,6 @@
 package com.redhat.rhn.frontend.action.systems.sdc;
 
 import com.redhat.rhn.GlobalInstanceHolder;
-import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.common.validator.ValidatorError;
 import com.redhat.rhn.common.validator.ValidatorResult;
@@ -194,8 +193,8 @@ public class SystemDetailsEditAction extends RhnAction {
 
             // Set the contact method
             Long contactId = (Long) daForm.get(CONTACT_METHOD);
-            if (contactId != null && (contactId != s.getContactMethod().getId()) &&
-                    !s.asMinionServer().isPresent()) {
+            if (contactId != null && !contactId.equals(s.getContactMethod().getId()) &&
+                    s.asMinionServer().isEmpty()) {
                 s.setContactMethod(ServerFactory.findContactMethodById(contactId));
             }
 
@@ -295,16 +294,10 @@ public class SystemDetailsEditAction extends RhnAction {
                     }
 
                     log.debug("adding entitlement success msg");
-                    if (ConfigDefaults.get().isDocAvailable()) {
-                        createSuccessMessage(request,
-                                "system.entitle.added." + e.getLabel(),
-                                s.getId().toString());
-                    }
-                    else {
-                        createSuccessMessage(request,
-                                "system.entitle.added." + e.getLabel() + ".nodoc",
-                                s.getId().toString());
-                    }
+                    createMessage(request,
+                            "system.entitle.added." + e.getLabel(),
+                            s.getId().toString(),
+                            GlobalInstanceHolder.USER_PREFERENCE_UTILS.getDocsLocale(user));
                 }
             }
             else if ((daForm.get(e.getLabel()) == null ||

@@ -1,22 +1,794 @@
-- Do not execute immediately Package Refresh action for the SSH minion (bsc#1208325)
-- Add support to add optional channels via webUI
-- Add the create/update methods for kickstart to accepts kernel and kernel post options (jsc#suma-251)
-- fix NumberFormatException when syncing ubuntu errata (bsc#1207883)
-- Fix duplicate keys in suseImageFile and other tables (bsc#1207799)
-- Fix CLM environments UI for environment labels containing dots (bsc#1207838)
-- Change Rocky Linux Advisory page URL
-- Mark as failed actions that cannot be scheduled because earliest
-  date is too old
-- Update earliest date when rescheduling failed actions (bsc#1206562)
-- Improve automatic dependency selection for vendor clones
-- Fix taskomatic logging (bsc#1207867)
-- Added APIs to allow frontend to install and remove ptf
-- Do not specify a cobbler version, as that is now centralized at the
-  patterns
-- Fix not being able to delete CLM environment if there are custom child
-  channels that where not built by the environment (bsc#1206932)
-- Makes systems column sortable on relevant patch page, to list by most affected systems
-- Detect openSUSE Leap Micro and openSUSE microOS as transactional systems
+-------------------------------------------------------------------
+Wed Jan 29 15:40:55 CET 2025 - marina.latini@suse.com
+
+- version 5.1.8-0
+  * Don't require taskomatic during the setup
+
+-------------------------------------------------------------------
+Fri Jan 24 14:20:49 CET 2025 - marina.latini@suse.com
+
+- version 5.1.7-0
+  * Filter away Debian12 boostrap extra log messages (bsc#1216553)
+  * Fixes bug when accessing menu Systems | System Set Manager |
+    Misc | Reboot with no system selected (bsc#1222820)
+  * Fixed migration options after migrating a minion to
+    Liberty Linux 9 (bsc#1233258)
+  * Fixes: updated packages list when a SUSE Linux Micro gets
+    updated (bsc#1227118)
+  * Fix formatting in 'contentmanagement' API docs (bsc#1225287)
+  * Ensure channel lists are reliably sorted by name (bsc#1233724)
+  * Fix internal server error in 'listSystemsByPatchStatus' API
+    endpoint (bsc#1235908)
+  * More robust parsing of max memory configuration (bsc#1229000)
+  * Remove virtualization features
+  * Show an error notification only when we invalidate the
+    Pay-As-You-Go credentials (bsc#1228956)
+  * Fix Monitoring detection on Oracle Linux (bsc#1234033)
+  * Handle new kind of auth tokens
+  * Support new official SUSE update hosts
+  * Add notification for users with disabled SCC data forwarding
+    (jsc#SUMA-431)
+  * Rename SUSEProductSCCRepository to the more meaningful
+    name ChannelTemplate
+  * Various improvements for ContentSyncManager in regard of
+    hibernate schema and performance
+  * Make the list for package actions unique so it can be passed
+    to salt (bsc#1232042)
+  * Modify systems refresh Pillar API to allow refresh pillar data
+    of all systems
+  * Implement SUSE Linux Enterprise Server to
+    SUSE Linux Enterprise Server for SAP migration
+  * Add recommended extensions always to migration targets
+
+-------------------------------------------------------------------
+Mon Jan 13 10:09:34 CET 2025 - marina.latini@suse.com
+
+- version 5.1.6-0
+  * Update obs mvn netty and jctools dependencies
+
+-------------------------------------------------------------------
+Fri Dec 13 15:02:20 CET 2024 - rosuna@suse.com
+
+- version 5.1.5-0
+  * Do not set gpgkeyurl with default values (bsc#1234251)
+
+-------------------------------------------------------------------
+Thu Dec 12 16:06:49 CET 2024 - rosuna@suse.com
+
+- version 5.1.4-0
+  * Use dots instead of underscores in apidoc (bsc#1233761)
+  * Layout improvements for the login page and error page
+
+-------------------------------------------------------------------
+Thu Dec 12 10:11:40 CET 2024 - rosuna@suse.com
+
+- version 5.1.3-0
+  * Prevent class cast exceptions when getting cobbler profiles
+    (bsc#1227759)
+  * Fix parsing UpdateAvailable notifications (bsc#1228261)
+  * Ensure icon fonts are loaded correctly on buttons (bsc#1231378)
+  * Ignore missing or unreadable paths when parsing the configuration
+  * Show Confidential Compute Attestation tab also for Salt SSH managed
+    clients
+  * Introduce API endpoint to get the product name
+  * Do not iterate over all actions when only reboot actions are handled
+  * Use external hostname in title of traceback emails
+  * Allow group assignment for foreign servers (bsc#1222447)
+  * saltboot: add MAC based terminal naming (jsc#SUMA-314)
+  * Chained proxy configuration creates refactoring
+  * Allow the listing of already included patches when importing them
+    into a custom channel (bsc#1228856)
+  * Update numerous page layouts
+  * Remove concurrent dependency
+  * Remove stringtree-json dependency in favor of gson
+  * Ensure the reporting db uses a lowercase username (bsc#1220494)
+  * Fix NPE if child channel has no parent (bsc#1231053)
+  * Create a fresh SSL context with re-read CA certificates from the
+    trust store for new HTTPS connections
+  * Adapt changing software channels to first perform the changes in
+    the database and to apply the channel state later. This allows
+    better handling of offline minions (bsc#1216683)
+  * Prepare package for SUSE Multi-Linux Manager 5.1
+  * Add proxy option to provisionSystem API (bsc#1232125)
+  * Fix enabled flag for users listed via API (bsc#1233431)
+  * Adapt SUMA/Uyuni new version update checker for containers
+  * Prevent return duplicated packages on XML-RPC API endpoint
+    `listLatestUpgradablePackages` (bsc#1231430)
+  * Search input placeholder text change on the Upgrade package page
+  * Enhance buttons readability and consistency across the product
+  * Update UI tip pointing to new kickstarts template directory
+    (bsc#1221219)
+  * Re-wording 'Monitoring' to 'Monitor this host' on the UI
+    systems properties page (bsc#1212161)
+  * Only show versions for 'kernel-default' in CLM Live Patching
+    template (bsc#1233400)
+  * Fix All Managed packages list (bsc#1233450)
+  * Fix missing FROM-clause entry for table 'pn' in managed software
+    list (bsc#1233450)
+  * Update login page layout
+  * Reduce bundle size for the web UI
+  * Remove DWR from the package dependency since it's no longer used
+  * Set Signed-by for Debian repositories also for unsigned repos to
+    prevent warning messages (bsc#1234251)
+  * Support removing all channels with scheduleChangeChannels()
+  * Support finding compatible child channels when changing the
+    base channels with scheduleChangeChannels()
+  * Check consistence of base and child channels (bsc#1232713)
+  * Fix appstream list of packages in stream (bsc#1231459)
+
+-------------------------------------------------------------------
+Mon Nov 18 18:32:19 CET 2024 - marina.latini@suse.com
+
+- version 5.1.2-0
+  * Limit frontend-log message size (bsc#1231900)
+
+-------------------------------------------------------------------
+Mon Oct 14 15:47:47 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Enable the synchronization of OVAL data
+  * Enable the configuration of OVAL data sources
+  * Add support for OVAL based CVE auditing to SLE & Leap Micro
+  * Fixed stretched button issue in Audit Search and Subscription Matching
+    pages
+  * Fix date input in 'errata.setDetails' endpoint in the HTTP API
+  * Fix layout mismatch in patches management
+  * Fix column alignment on repository and system pages
+  * Integrate UI debugging stories
+  * Require correct scap packages for Ubuntu and Debian (bsc#1227746)
+  * Add detection of Ubuntu 24.04
+  * Remove session timeout from webapp, in order to use the persisting
+    one in /etc/tomcat/web.xml
+  * Allow changing base channel to SUSE Liberty Linux LTSS when the
+    system is on SUSE Liberty Linux (bsc#1228326)
+  * Implement product migration from RHEL and Clones to SUSE Liberty
+    Linux
+  * Remove system also from Proxy SSH known_hosts (bsc#1228345)
+  * Remove restrictions for Debian repositories in public cloud
+  * Fix NullPointerException when generating subscription matcher
+    input (bsc#1228638)
+  * Open bootstrap script directory URL in a new page (bsc#1225603)
+  * Delay package list refresh when Salt was updated (bsc#1217978)
+  * Add SLE-Micro 5 to the list of systems which support monitoring
+    (bsc#1227334)
+  * Add all SLE-Micro systems to the list of systems which get PTF
+    repositories
+  * Use custom select instead of errata view for better performance
+    (bsc#1225619)
+  * Fix the date format output when using the HTTP API to use ISO8601
+    format (bsc#1227543)
+  * Bump version to 5.1.0
+  * Change localhost PAYG header to match SUSE Manager product
+  * ErrataManager.truncateErrata now tries to clean orphan erratas
+    at the end (erratas with no channel)
+  * Improve score comparison in system search to fix ISE (bsc#1228412)
+
+-------------------------------------------------------------------
+Wed Jul 31 17:12:14 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.12-0
+  * Update setup wizard UI
+  * Report a server/report id mismatch when calling
+    getCoCoAttestationResultDetails
+  * Prevent the API for confidential computing to work on systems
+    without OS support
+  * Ensure getCoCoAttestationConfig works when a configuration is
+    not present
+  * Prevent error while serializing an attestation report without
+    an attested date
+  * Add missing support for field attest on boot in the
+    getCoCoAttestationConfig and setCoCoAttestationConfig API
+  * Require byte-buddy and byte-buddy-dep using maven dependencies
+  * Fix NullPointerException when context has no timezone set
+  * Enhance optional type adapter to parse legacy JSON data from DB
+  * Update last sync refresh timestamp only when at least one time
+    products were synced before
+  * Prevent error when listing history events without completion time
+    (bsc#1146701)
+  * Autoinstallation: prevent "duplicate IP address" issues cause by
+    container networks (bsc#1226461)
+  * Check the correct Salt package before product migration
+    (bsc#1224209)
+  * Remove reboot from uptodate state, introduce reboot and
+    rebootifneeded states
+  * Add API calls getNotifications, makeNotificationRead,
+    makeAllNotificationsRead, deleteNotification to
+    UserNotificationHandler
+  * Configure AppStreams via Activation Keys
+  * Fix package profile update on CentOS 7 when yum-utils is not
+    installed (bsc#1227133)
+  * Fix layout of advanced package search page
+  * Fix table filters for description, first character dropdown
+    and toggle button.
+  * Add info URL for Cobbler to clean the system profile
+    (bsc#1219645)
+  * Fix the URL to download the autoinstallation file (bsc#1226313)
+  * Fix input alignment and style issues on schedule creation page
+  * Add entry to apidoc faqs about methods listed more than ones
+    (bsc#1217248)
+  * Remove unused MinionActionChainCleanup job
+  * Allow free products and SUSE Manager Proxy being managed by
+    SUSE Manager Server PAYG
+  * Fix a race condition during PAYG setup by re-detecting compliance
+    when the instance report BYOS but payg_compliance.json is
+    available
+  * Show SUSE Manager Proxy for different architectures when using
+    SUSE Manager Server PAYG
+  * Do not explicitly trigger Cobbler sync when adding a system via
+    SUMA API (bsc#1219450)
+  * Improve SQL queries and performance to check for PTF packages
+    (bsc#1225619)
+  * Fix false positive SSH key generation error (bsc#1226491)
+  * Change syncAll call at start-up to be asynchronous (bsc#1224004)
+  * Fix transactional update check for SL Micro (bsc#1227406)
+  * Fix Appstream queries to avoid duplicates in packages lists
+
+-------------------------------------------------------------------
+Wed Jul 03 14:12:00 CEST 2024 - rosuna@suse.com
+
+- version 5.0.11-0
+  * Remove usage of deprecated constructor (bsc#1227306)
+
+-------------------------------------------------------------------
+Tue Jun 18 18:12:15 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.10-0
+  * Refresh systems list when create proxy configuration
+
+-------------------------------------------------------------------
+Mon Jun 17 14:55:58 CEST 2024 - rosuna@suse.com
+
+- version 5.0.9-0
+  * Fix system_upgradable_package_list query to not return duplicate
+    package names (bsc#1226037)
+
+-------------------------------------------------------------------
+Mon Jun 10 17:03:13 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.8-0
+  * Fix API doc for 'channel.appstreams.listModuleStreams'
+  * Improve handling of virtual-host-gather host identifier from a
+    VMWare virtualization host (bsc#1218724)
+  * Set product tree tag from Beta to SUMA5.0
+  * Adjust minimal DB schema version requirements
+  * Allow running Hardware refresh for BYOS Clients on a SUMA PAYG
+    Server to allow re-detection of the instance flavor (bsc#1225940)
+  * Fix PAYG client detection during Hardware refresh (bsc#1225940)
+  * Remove the allow-config-actions and allow-remote-commands
+    options from the bootstrap script
+  * Remove rhnreg_ks script
+  * Fix missing icons in pagination buttons
+  * Fix modal layout inconsistencies
+  * Fix status icon of the systems overview list (bsc#1224012)
+  * Revert kickstart render URL back to Cobbler host (bsc#1225494)
+  * Fix hairpin problem in SSH push with tunnel preventing
+    bootstrapping (bsc#1226098, bsc#1223970)
+  * Remove initiate action and Cobbler system profile when
+    cancelling autoinstallion (bsc#1220259)
+  * Fixed incorrect capitalization for delete organization link
+    in the Recurring Actions tab
+  * Print detailed error messages on AppStreams action failure
+  * Remove obsolete proxy installation messages (bsc#1224778)
+  * Parse hasMeteringAccess from compliance input file
+  * Fix PAYG data timestamp parsing
+  * Use server FQDN instead of client used connection FQDN for
+    distro creation when using API
+  * Increase reboot info beacon interval
+  * Fix Null Pointer Exception when action completion time is
+    not set
+  * Add FQDNs from proxy configuration to existing system
+    (bsc#1222336)
+  * Parse the PAYG data collected by the external timer service
+  * Use Java hostname instead of Cobbler hostname in
+    autoinstallation snippets and URLs (bsc#1224441)
+  * Replace symlink to Kernel and initrd in Salt filesystem with
+    regular files (bsc#1220221)
+
+-------------------------------------------------------------------
+Fri May 03 14:34:58 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.7-0
+  * Proxy container: use SSL cert CNAMEs as FQDNs (bsc#1222336)
+  * Migrate user account pages to Bootstrap 5
+  * Added column to store the process output of the attestation
+  * Added support for Confidential Computing in the System Set
+    Manager
+  * Removed JCommon dependency
+  * Enhance Confidential Computing attestation API
+  * Bump API version from 26 to 27
+  * Remove deprecated 'recurringaction' API namespace
+  * Added serializer for rebootSuggested and restartSuggested
+  * Prevent NPE when processing reboot needed beacon event
+    (bsc#1216063)
+  * Do not accept periods as valid characters in distribution
+    label (bsc#1219317)
+  * Remove rhnreg_ks script
+  * Native support for AppStream repositories
+  * Fix out of bounds error getting /ks/dist/ URL with no path
+  * Fix FQDN in URLs for system provisioning
+  * Migrate my preferences page to Bootstrap 5
+  * Migrate notification messages page to Bootstrap 5
+  * Added support for Confidential Computing UI in Audit
+  * Added support for Confidential Computing UI in System details
+  * Schedule an attestation on reboot if the client is configured
+    to do so
+  * Create data for Confidential Computing attestation in the
+    report database
+  * Remove the Visualization feature
+  * Fix chained container proxies configuration
+  * User with API read-only are only allowed to make GET requests
+
+-------------------------------------------------------------------
+Thu Apr 04 18:23:52 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6-0
+  * Implement persistent channel sync settings
+  * Add save button
+  * Show / set values via WebUI
+  * Pass values along to reposync call
+  * Fix removal of old IPv6 addresses (bsc#1214340)
+  * Update landing page layouts
+  * Fixes issue where Salt can't access autoinstallation files (bsc#1220221)
+  * When an action is unscheduled which belong to an action chain
+    unschedule the action chain as well (bsc#1221784)
+  * Implement OVAL-based CVE auditing
+  * Define additional CVE patch statuses
+  * Merge minion with foreign system for container Proxy
+  * Update WebUI build pipeline
+  * Fix system.provisionSystem when called via HTTP API (bsc#1219875)
+  * Fix memory size extraction in virtual instances (bsc#1219634)
+  * Support containerized peripheral server
+  * Ignore retry suffix when getting recurring action id from schedule name
+  * Layout improvements for the header and menu
+  * Implement confidential compute attestation java backend
+  * Reschedule failed SSH actions caused by a connection error due
+    to a scheduled reboot
+  * Replace Uyuni configuration formula with an API call
+  * Use execution module call to detect client instance flavor
+    (PAYG/BYOS) in public cloud (bsc#1218805)
+  * Sort CLM project filters by filter name
+  * Replace java 11 with java 17
+  * Fix virtual systems filters (bsc#1208572)
+  * Commit Salt event removal in case of process failure (bsc#1218931)
+  * Fix login for read-only users when using http API (bsc#1221111)
+  * Remove use of rhn_register in Kickstart
+  * Scope off all Bootstrap 3 styles
+  * Use java.hostname variable for setting mgr_server and mgr_orig_server
+  * Fix matching epoch while creating Ubuntu erratas
+  * Disable bare-metal system discovery feature
+  * Fix a typo in 'Deploy Files' page
+  * Add timeout for smtp server connection (bsc#1218931)
+  * Don't automatically add child channels outside of selected base channel (bsc#1220101)
+  * Migrate WebUI landing page to Bootstrap 5
+  * Remove package sync not available message in Software > Packages > Profile
+    since it is no longer available for supported clients (bsc#1221279)
+  * Drop system password as identifier on SCC system registration (bsc#1219634, bsc#1221182)
+  * Fix listProxies API call (bsc#1219233)
+
+-------------------------------------------------------------------
+Fri Feb 16 10:09:04 CET 2024 - rosuna@suse.com
+
+- version 5.0.5-1
+  * Generate server SSH key also when bootstrapping regular Minions (bsc#1219449)
+  * Fix handling of proxy SSH public keys
+  * Fix issue with Salt SSH keys for Salt SSH Minions CVE-2023-32189 (bsc#1170848)
+
+-------------------------------------------------------------------
+Tue Feb 13 17:11:44 CET 2024 - marina.latini@suse.com
+
+- version 5.0.4-1
+  * Require latest 5.0 database schema version
+  * Update license to include the year 2024
+  * Add org/createFirst to unauthenticated HTTP API paths
+
+-------------------------------------------------------------------
+Mon Jan 29 11:58:20 CET 2024 - rosuna@suse.com
+
+- version 5.0.3-1
+  * Update help text for the custom repo filter field (bsc#1217874)
+  * Reduce UI inconsistencies between the SUSE Manager and Uyuni themes
+  * Fix issue with disabling token check not working (bsc#1218669)
+  * Fix issue when checking for credential duplication (bsc#1218957)
+  * Handle not existing known_host file in permission check
+  * Change org for orphan vendor packages that an admin can delete (bsc#1216781)
+  * To prepare for the next SUSE Manager version, set product_tree tag to
+    Beta and change the config value to SUMA5.0
+  * Add one-shot action execution to recurring custom state create/edit
+  * Drop obsolete redirect mechanism (RedirectServlet)
+  * Include reboot required indication for non-Suse distros
+  * New API endpoint for getRelevantErrata, taking multiple servers as argument
+
+-------------------------------------------------------------------
+Thu Jan 18 11:06:32 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.2-1
+  * update checkstyle to version 10.12.7
+
+-------------------------------------------------------------------
+Tue Jan 16 08:31:04 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Update allowed postgres version
+  * Remove SUSE Manager proxy 4.2 product channel for PAYG instance (bsc#1215412)
+  * Add config option to disable remote commands from web UI (bsc#1217869)
+  * provide total number of CPUs for SLE Micro systems to subscription matcher
+    when it is not used as hypervisor to match vCore subscriptions correctly
+    (bsc#1218074)
+  * fix XSS in taskomatic XML RPC handler (bsc#1210911)
+  * Drop handling of legacy pillar and formula files
+  * Update shared page layouts
+  * Refactor Credentials to a proper class hierarchy
+  * Add user information to system organization transfer message (bsc#1216753)
+  * Fix issue of non-installed package listed as errata package
+    update candidates (bsc#1212904)
+  * Fix the use of page size preference in systems and packages lists (bsc#1217209)
+  * fix apidoc link from #top to $call.name (bsc#1213507)
+  * fix exception when removing a debian package (bsc#1216781)
+  * expose the monitoring data for the salt queue handling the salt results
+  * Add no-strict checkbox to channel sync page allowing to disable strict mode for package synchronisation
+  * Avoid blocking Taskomatic thread when waiting for queued action (bsc#1211560)
+  * Do not require entitlement for PAYG SLES for SAP (bsc#1217069)
+  * Use the base product file to show the correct SUSE Manager
+    product in the subscription matching results page
+  * Do not require entitlements if Uyuni or SUSE Manager is PAYG
+  * Exclude Uyuni and SUSE Manager if it's PAYG from subscription
+    matching
+  * improve logging for Product Migration (bsc#1218490)
+
+-------------------------------------------------------------------
+Fri Dec 15 17:10:30 CET 2023 - rosuna@suse.com
+
+- version 4.4.22-1
+  * Fix unit test about duplicated packages
+  * Prevent installation of packages with same name 
+    in a single action (bsc#1214791)
+  * When canceling an action which has prerequisites, return hints to
+    get the first action id which can be canceled (bsc#1216988)
+  * Add only 1 IP for Cloud RMT Host in /etc/hosts
+  * Try to download compressed ubuntu usn database
+  * Add notification in daily email as well as in SUMA home page when
+    SUMA Pay-as-you-go is not compliant
+  * Address high rating sonar issues
+  * Refactor SCC registration flow
+  * Fix modify kickstart profile when using "Always newest tree"
+    option (bsc#1215813)
+  * Configure reboot method for SUSE Linux Enterprise Micro when
+    applying bootstrap state (bsc#1213981)
+  * Fix filter ID comparison when attaching filters to a CLM project
+    (bsc#1215949)
+  * Fix validation of lists with empty defaults in formulas
+    (bsc#1216555)
+  * Safeguard request URLs against tempering (bsc#1216754)
+  * Do not store reposync stdout in taskomatic logs
+  * Remove Select2
+  * Enable detection for Amazon Linux 2023
+  * Enforce snakeyaml version requirement (bsc#1215166)
+  * Improve the performances of paginated queries when syncing the 
+    reporting database (bsc#1211912, bsc#1213079)
+  * Move all file managed by RPM from /srv to /usr/share/susemanager
+  * Sanitize token before logging it CVE-2023-22644 (bsc#1210930)
+  * Use 600 permissions for logfiles CVE-2023-22644 (bsc#1210928)
+  * Log potential sensitive information only in debug mode
+    CVE-2023-22644 (bsc#1210928)
+  * Fix SUSE Linux Enterprise Micro Pay-as-you-go detection
+  * Rename SSHPush Task into SSHService Task
+  * Fix url pointing to SCC (bsc#1216690)
+  * Prevent download when a Pay-as-you-go Server is not compliant
+  * Include "uuid" as system search xmlrpc results (bsc#1216380)
+  * Prevent losing Remote Command action result if returned JSON
+    cannot be parsed
+  * Add management restrictions to SUSE Manager Pay-as-you-go when
+    dealing with Bring-your-own-subscription instances when no SCC
+    credentials are set.
+  * Fix conversion to string if branchid is numeric in PXEEvent
+  * Prevent NullPointerException in updateSystemInfo (bsc#1217224)
+  * Address high rating sonar issues
+  * Address sonar reliability bug at scc system registration system
+    data acquisitor
+  * Enhance hardware data sent to SCC by memory
+  * Enforce minimum build version for apache-commons-io to ensure
+    successful build of FileUtils.java
+  * Adapte Enterprise Linux for /usr/share/susemanager structure
+  * Fix NullPointerException when creating PXE config for an unmanaged
+    profile (bsc#1217223)
+  * Add option to filter packages by build time in CLM (jsc#SUMA-282)
+  * Fix createSystemRecord XML-RPC API call so that the Cobbler UID
+    is persistent (bsc#1207532)
+
+-------------------------------------------------------------------
+Wed Nov 01 20:23:38 CET 2023 - marina.latini@suse.com
+
+- version 4.4.21-1
+  * Avoid SUSE Customer Center credentials check if
+    `server.susemanager.fromdir` is set (bsc#1211270)
+  * Include reboot_suggested and restart_suggested booleans in
+    errata.getDetails API response
+  * Add a config to specify the number of minutes to wait before
+    performing a system reboot
+  * Sync GPG properties on each build in CLM (bsc#1213689)
+  * Change list endpoints in saltkey namespace to accept GET
+    requests instead of POST (bsc#1214463)
+  * Respect user email preferences when sending 'user creation'
+    emails (bsc#1214553)
+  * Fix the use of page size preference in systems and packages lists
+  * Improved logging to better capture third-party library issues
+  * Fix server error when visiting the notifications page
+  * Fix token issue with cloned deb channels (bsc#1214982)
+  * Fixed detection in case RHEL-based products (bsc#1214280)
+  * Do not call SCC when updating the repositories authentication
+    for Pay-as-you-go (bsc#1215857)
+  * Restart the bunch from where it was interrupted when rescheduling
+  * Moved the Ubuntu errata processing in its own separate Taskomatic
+    task (bsc#1211145)
+  * Stop the Taskomatic bunch execution if it was not possible to
+    execute one of the tasks
+  * Combine the Pay-as-you-go credentials and the repository paths
+    when they collide (bsc#1215413)
+  * Improved detection of the best authentication for accessing a
+    repository in case of Pay-as-you-go credentials (bsc#1215362)
+  * Do not warn about missing Client Tools Channel subscription in
+    a Pay-as-you-go environment
+  * Add detection of Debian 12
+  * Update Tomcat jars to version greater than 9.0.75
+  * Implement different way to copy data for SystemPackageUpdate
+    report database table (bsc#1211912)
+  * Fix notification messages email content (bsc#1216041)
+  * Look for the Pay-as-you-go CA certificate location in different
+    order to find and import the correct one (bsc#1214759)
+  * Add salt-api socket timeout to abort stuck taskomatic
+    jobs (bsc#1211649)
+  * Wait for lock to execute SUSE Customer Center sync
+    task (bsc#1216030)
+  * Fix system.provisionSystem xmlrpc endpoint to calculate host
+    properly (bsc#1215209)
+  * Add Pay-as-you-go info to UI and rest API
+  * Fix bug about listing Ansible inventories (bsc#1213132)
+  * Fix issue where bad SUSE Customer Center credentials prevented
+    other credentials to refresh (bsc#1211355)
+  * Handle spaces in /ks/dist/ file names (bsc#1213680)
+  * Fix token validation for shared (public) child channels (bsc#1216128)
+  * Update SUSE Customer Center REST call to register systems in bulk
+  * Fix FQDN machine name mapping on proxy configuration
+  * Token cleanup process removing invalid tokens using sql query (bsc#1213376)
+  * Fix failed actions rescheduling (bsc#1214121)
+  * Fix unscheduling actions when the trigger name changed after
+    retry (bsc#1214121)
+  * Consider server ID when removing invalid erratas from
+    rhnSet (bsc#1204235, bsc#1207012, bsc#1211560)
+  * Improve Taskomatic by removing invalid triggers before starting
+    and enhancing logs
+  * Revert action executor fix that was intended to prevent blocking
+    of Taskomatic threads (bsc#1214121)
+  * Disallow Google GSON 2.10 or higher due to removed methods.
+  * Tito requires to list the source as %{name}-%{version}.tar.gz
+
+-------------------------------------------------------------------
+Wed Sep 27 17:44:34 CEST 2023 - rosuna@suse.com
+
+- version 4.4.20-1
+  * Fix RHUI support for RHEL 7 clients (bsc#1215756)
+
+-------------------------------------------------------------------
+Mon Sep 18 14:30:24 CEST 2023 - rosuna@suse.com
+
+- version 4.4.19-1
+  * Add environment build/promote date to CLM API output (jsc#SUMA-280)
+  * Call mgr-libmod with its absolute path
+  * Introduced new API to update the products page metadata
+  * Extracted additional authentication information needed for PAYG
+  * Fixed handling of null credentials in RMT credentials check
+  * Integrate instance-flavor-check to detect if the instance is PAYG
+  * Added rule to count only servers with SUSE Manager Tools as managed clients
+  * create flag to disable update status (bsc#1212730)
+  * fix syntax error in sql query for source package search
+  * catch exceptions and log a message when mailer setup failed (bsc#1213009)
+  * fix logging of libraries using apache-commons-logging
+  * invalidate PAYG client credentials after repeated connection failure (bsc#1213445)
+  * Restrict product migrations for PAYG
+  * Add warning message in login UI for PAYG with SCC credentials and no forward registration.
+  * Restrict cloning channels under different product channels for PAYG
+  * Avoid sending data to SCC about PAYG instances
+  * Optimize org channel accessibility query (bsc#1211874)
+  * Fix processing of pkg.purged results (bsc#1213288)
+  * Fix NPE in auth endpoint when an empty body is provided
+  * Fix action executor to prevent blocking Taskomatic for actions that are already finished (bsc#1214121)
+  * Filter out modules properly with 'none' matcher (bsc#1212770)
+  * Fix the URL for inactive systems page
+  * Read null values from Virtual Host Gatherer data
+  * Fix the CSV download issue for packages, patches and system groups
+  * Added taskomatic job to compute and store billing dimensions for PAYG
+  * Disable Secure XSLT processing due to Xalan bug
+  * parse virtual-host-gatherer null value
+  * show reasons for state apply errors in UI
+  * Detect a Cloud PAYG instance and connect it to the RMT infrastructure
+  * Access SUSE Manager Proxy repositories from cloud rmt infrastructure
+  * restrict registration on pure PAYG Server
+  * Optimize memory usage in UbuntuErrataManager
+  * Consider venv-salt-minion package update as salt update
+    to prevent backtraces on upgrading salt with itself (bsc#1211884)
+  * Fix system tab not visible in Ansible / Inventories tab (bsc#1211897)
+  * Extend success message after adding monitoring property (bsc#1212168)
+  * Show recurring states names in events history (bsc#1211929)
+  * Don't force ssl verification on reportdb using localhost
+  * Do not ignore scheduling errors in Taskomatic
+  * check csp billing adapter status
+  * fix X-Instance-Identifier header when doing a product refresh at Cloud RMT Server (bsc#1214889)
+  * improve error message when instance-flavor-check tool is not installed
+  * add compliance checks when running as PAYG
+  * drop mgr-cfg from java code
+  * fix auto product refresh in case of SUSE Manager PAYG Server
+  * add RHUI support to Pay-as-you-go connection feature
+  * Add saltboot redeploy and repartition based on pillars
+    (jsc#SUMA-158)
+  * Add system pillar API access {get|set}Pillar
+  * Fix recurring state execution not using the correct order (bsc#1215027)
+  * Change default scheduler from (none) to (system)
+  * Set user for package list refresh action if possible
+  * Fix debian Packages file generation (bsc#1213716)
+  * Fix Most Critical Systems list (bsc#1214316)
+  * Ignore mandatory channels results that don't match list of channels (bsc#1204270)
+  * Remove all systems tasks for all organizations after updating 
+    systems
+  * Shows a notification when an update for Uyuni is available
+  * Fix PAYG credentials extraction for SLES 12 clients (bsc#1215352)
+  * show error message in action result even on parser error
+  * cache debian package metadata snippets in DB
+  * Fixed a bug that caused the tab Autoinstallation to hide when clicking on Power
+    Management Management/Operations on SSM -> Provisioning
+  * catch yaml exceptions and report which metadata file is wrong (bsc#1208720)
+  * Improve handling of websocket exceptions
+  * Release DB connection in RHN Message Dispatcher thread
+  * Update version of tomcat build dependencies
+  * Disable jinja processing for the roster file (bsc#1211650)
+  * Make sure that all hibernate connections are closed (bsc#1208687)
+  * Add option to disable SSL
+  * Removed the expensive 'diff' column (bsc#1208427)
+  * replace kickstart profile advanced option "md5_crypt_rootpw"
+    with "sha256_crypt_rootpw" to use sha256 crypt when password
+    is provided in plain text
+  * remove old hashing and crypting algorithms like MD5 and SHA1
+    and replace them with new SHA256 based algorithms
+  * regenerate random passwords with new cipher algorithm
+  * Do not use regex in PackageFilter
+  * Fix misleading error message regarding SCC credentials removal (bsc#1207941)
+  * Reimplement queries for system metrics
+  * Enforce minimum version of 1.11 for byte-buddy.
+  * Updated EL9 jaxb-api symlinks to Uyuni provided package.
+  * Fix issue with `aclChannelTypeCapable` that prevented errata view in
+    deb arch
+  * Update system overview in case of manual system reboot
+  * Add uyuni_systems_scrape_duration_seconds metric
+  * OES credentials do not allow access to SCC. Skip them when an
+    SCCClientException is thrown and move forward (bsc#1212550)
+  * show virtualization host info in systems overview page
+  * Refresh pillars after setting custom values via SSM (bsc#1210659)
+  * Report SSM power management errors in 'rhn_web_ui' (bsc#1210406)
+  * Allow processing big state results (bsc#1210957)
+  * Fix server error in HTTP API authentication (bsc#1210394)
+  * set swap memory value if available
+  * set primary FQDN to hostname if none is set (bsc#1209156)
+  * Do not throw on missing saltboot group
+  * fix ISE when neither SCC credentials nor a local mirror is configured
+  * only set self_update URL if functionality is not disabled in
+    distro or profile
+  * execute highstate on registration with a user if available
+  * Ensure installation of 'xalan-j2' for building.
+  * Simplify Java package dependencies.
+  * Safe XSLT processing in SCAP transformations
+  * Fix Internal Server Error when downloading static assets (bsc#1207691)
+  * Recurring custom states
+  * Update Cobbler profile when a new image is deployed
+  * Add mapping of image URLs for containerized proxy
+  * Fix image size entries in xml-rpc
+  * kernel options: only add quotes if there is a space in the value (bsc#1209926)
+  * fix displaying system channels when no base product is installed
+    (bsc#1206423)
+  * fix NPE in cobbler system sync when server has no creator set
+  * remove channels from client after transfer to a different
+    organization (bsc#1209220)
+  * Fix RHEL9 / SLL9 product discovery (bsc#1209993)
+
+-------------------------------------------------------------------
+Thu Jun 22 18:59:40 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.18-1
+  * Fix session information leak CVE-2023-22644 (bsc#1210107)
+  * Fix credentials and other secrets disclosure when debug log is enabled
+    CVE-2023-22644 (bsc#1210154)
+  * Remove web session swap secrets output in logs CVE-2023-22644 (bsc#1210086)
+  * Do not output cobbler xmlrpc token in debug logs CVE-2023-22644 (bsc#1210162)
+  * Do not output URL parameters for tiny urls CVE-2023-22644 (bsc#1210101)
+  * Do not log SSL certificate / key file content CVE-2023-22644 (bsc#1210094)
+  * Update tomcat jars to version 9.0.75
+  * Update jetty-util to version 9.4.51
+
+-------------------------------------------------------------------
+Wed Apr 19 12:47:06 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.17-1
+  * Fix possible "NullPointerException" when clicking on
+    the "Create PXE installation configuration" button from Provising page
+  * Fix possible "NullPointerException" issues when running cobbler-sync-bunch
+  * Do not trigger extra cobbler sync when changing kickstart data (bsc#1208536)
+  * set jasper development mode to false (bsc#1206191)
+  * fixed select all for ptf packages list (bsc#1209143)
+  * added SLES 12 support for ptf removal
+  * fixed issue with checking ptf repositories on cloned channels
+  * remove spacewalk-koan and mgr-virtualization usage
+  * disable gpgckeck when building docker containers as we
+    work with trusted content and the repos are served via SSL
+  * Fix deleting custom info pillar (bsc#1209253)
+  * Update report outdated system query to de-duplicate errata id's
+  * change jar versions in ivy configuration file
+  * Refactor Software / Manage / Packages to use SQL paging (bsc#1206725)
+  * support multiple gpgkey urls for a channel (bsc#1208540)
+  * Refactor Java notification synchronize to avoid dead locks (bsc#1209369)
+  * Filter CLM modular packages using release strings (bsc#1207814)
+  * Fix systems subscribed to channel CSV download (bsc#1201063)
+  * Save scheduler user when creating Patch actions manually (bsc#1208321)
+  * Fix cobbler system entries for retail terminals (bsc#1208661)
+  * Add missing text for user preferenaces page
+  * Hide install option for RHEL9+ kickstarts
+  * Make API method systemgroup.listSystemsMinimal read-only (bsc#1208550)
+  * Allow single-value lists in query strings in HTTP API (bsc#1207297)
+  * Do not include channels from different orgs when listing mandatory channels (bsc#1204270)
+
+-------------------------------------------------------------------
+Thu Apr 13 15:22:40 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.16-1
+  * Add more restricted arguments to prevent HTTP API logging
+    sensitive data
+    (CVE-2023-22644, bsc#1209434, bsc#1209386, bsc#1209395)
+
+-------------------------------------------------------------------
+Tue Mar 21 15:23:53 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.15-1
+  * Prevent HTTP API restricted args from being logged (bsc#1208119)
+
+-------------------------------------------------------------------
+Wed Mar 15 15:58:47 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.14-1
+  * Fix rendering of notifications list with subscription warnings (bsc#1209259)
+
+-------------------------------------------------------------------
+Tue Feb 28 11:55:21 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.13-1
+  * Rollback changes to reduce taskomatic memory consumption while processing
+    Ubuntu Erratas
+
+-------------------------------------------------------------------
+Tue Feb 21 14:12:10 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.12-1
+  * send subscription warning notifications only on monday
+  * set uptime at package profile update
+  * Install the reboot info beacon using a conf file instead of using pillars
+  * Handle taskomatic failures during action creation
+  * Reduce taskomatic memory consumption while processing Ubuntu Erratas
+  * send virtualization information to SCC
+  * Do not execute immediately Package Refresh action for the SSH minion (bsc#1208325)
+  * Add support to add optional channels via webUI
+  * Add the create/update methods for kickstart to accepts kernel and kernel post options (jsc#suma-251)
+  * fix NumberFormatException when syncing ubuntu errata (bsc#1207883)
+  * Fix duplicate keys in suseImageFile and other tables (bsc#1207799)
+  * Fix CLM environments UI for environment labels containing dots (bsc#1207838)
+  * Change Rocky Linux Advisory page URL
+  * Mark as failed actions that cannot be scheduled because earliest
+    date is too old
+  * Update earliest date when rescheduling failed actions (bsc#1206562)
+  * Improve automatic dependency selection for vendor clones
+  * Fix taskomatic logging (bsc#1207867)
+  * Added APIs to allow frontend to install and remove ptf
+  * Do not specify a cobbler version, as that is now centralized at the
+    patterns
+  * Fix not being able to delete CLM environment if there are custom child
+    channels that where not built by the environment (bsc#1206932)
+  * Makes systems column sortable on relevant patch page, to list by most affected systems
+  * Detect openSUSE Leap Micro and openSUSE microOS as transactional systems
 
 -------------------------------------------------------------------
 Fri Jan 27 17:10:35 CET 2023 - jgonzalez@suse.com

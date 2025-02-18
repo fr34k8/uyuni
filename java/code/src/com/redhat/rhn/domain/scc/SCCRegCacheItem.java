@@ -17,7 +17,7 @@ package com.redhat.rhn.domain.scc;
 import static java.util.Optional.ofNullable;
 
 import com.redhat.rhn.domain.BaseDomainHelper;
-import com.redhat.rhn.domain.credentials.Credentials;
+import com.redhat.rhn.domain.credentials.SCCCredentials;
 import com.redhat.rhn.domain.server.Server;
 import com.redhat.rhn.manager.content.ContentSyncManager;
 
@@ -25,6 +25,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.hibernate.annotations.Type;
 
 import java.security.SecureRandom;
 import java.util.Date;
@@ -52,7 +53,8 @@ import javax.persistence.Transient;
 @Table(name = "suseSCCRegCache")
 @NamedQueries
 ({
-    @NamedQuery(name = "SCCRegCache.serversRequireRegistration",
+        @NamedQuery(
+                name = "SCCRegCache.serversRequireRegistration",
                 query = "SELECT rci " +
                         "FROM com.redhat.rhn.domain.scc.SCCRegCacheItem as rci " +
                         "JOIN rci.server as s " +
@@ -60,27 +62,42 @@ import javax.persistence.Transient;
                         "AND (rci.registrationErrorTime IS NULL " +
                         "     OR rci.registrationErrorTime < :retryTime) " +
                         "ORDER BY s.id ASC"),
-    @NamedQuery(
-            name = "SCCRegCache.newServersRequireRegistration",
-            query = "SELECT s " +
-                    "FROM com.redhat.rhn.domain.server.Server as s " +
-                    "WHERE s.id not in (" +
-                    "    SELECT rci.server.id " +
-                    "    FROM com.redhat.rhn.domain.scc.SCCRegCacheItem as rci " +
-                    "    WHERE rci.server.id IS NOT NULL) " +
-                    "ORDER BY s.id ASC"),
-    @NamedQuery(name = "SCCRegCache.listDeRegisterItems",
+        @NamedQuery(
+                name = "SCCRegCache.newServersRequireRegistration",
+                query = "SELECT s " +
+                        "FROM com.redhat.rhn.domain.server.Server as s " +
+                        "WHERE s.id not in (" +
+                        "    SELECT rci.server.id " +
+                        "    FROM com.redhat.rhn.domain.scc.SCCRegCacheItem as rci " +
+                        "    WHERE rci.server.id IS NOT NULL) " +
+                        "ORDER BY s.id ASC"),
+        @NamedQuery(
+                name = "SCCRegCache.listDeRegisterItems",
                 query = "SELECT rci " +
                         "FROM com.redhat.rhn.domain.scc.SCCRegCacheItem as rci " +
                         "WHERE rci.server is NULL " +
                         "AND (rci.registrationErrorTime IS NULL " +
                         "     OR rci.registrationErrorTime < :retryTime) " +
                         "ORDER BY rci.sccId ASC"),
-    @NamedQuery(name = "SCCRegCache.listRegItemsByCredentials",
+        @NamedQuery(
+                name = "SCCRegCache.listRegItemsByCredentials",
                 query = "SELECT rci " +
                         "FROM com.redhat.rhn.domain.scc.SCCRegCacheItem as rci " +
                         "WHERE rci.credentials = :creds " +
                         "ORDER BY rci.sccId ASC"),
+        @NamedQuery(
+                name = "SCCRegCache.hypervisorInfo",
+                query = "SELECT new com.suse.scc.model.SCCVirtualizationHostJson(rci.sccLogin, s) " +
+                        "FROM SCCRegCacheItem rci " +
+                        "JOIN rci.server s " +
+                        "WHERE rci.sccRegistrationRequired = 'Y' " +
+                        "AND (rci.registrationErrorTime IS NULL " +
+                        "     OR rci.registrationErrorTime < :retryTime) " +
+                        "AND EXISTS (SELECT distinct 1 " +
+                        "              FROM VirtualInstance vi" +
+                        "             WHERE vi.hostSystem = s" +
+                        "               AND vi.uuid IS NOT NULL" +
+                        "               AND vi.guestSystem IS NOT NULL)"),
 })
 public class SCCRegCacheItem extends BaseDomainHelper {
 
@@ -90,7 +107,7 @@ public class SCCRegCacheItem extends BaseDomainHelper {
     private Server server;
     private String sccLogin;
     private String sccPasswd;
-    private Credentials credentials;
+    private SCCCredentials credentials;
     private Date registrationErrorTime;
 
     /**
@@ -145,7 +162,7 @@ public class SCCRegCacheItem extends BaseDomainHelper {
      */
     @ManyToOne
     @JoinColumn(name = "creds_id")
-    protected Credentials getCredentials() {
+    protected SCCCredentials getCredentials() {
         return credentials;
     }
 
@@ -154,7 +171,7 @@ public class SCCRegCacheItem extends BaseDomainHelper {
      * @return the mirror credentials
      */
     @Transient
-    public Optional<Credentials> getOptCredentials() {
+    public Optional<SCCCredentials> getOptCredentials() {
         return ofNullable(credentials);
     }
 
@@ -162,7 +179,7 @@ public class SCCRegCacheItem extends BaseDomainHelper {
      * @return true when updating the registration at SCC is required, otherwise false
      */
     @Column(name = "scc_reg_required")
-    @org.hibernate.annotations.Type(type = "yes_no")
+    @Type(type = "yes_no")
     public boolean isSccRegistrationRequired() {
         return sccRegistrationRequired;
     }
@@ -261,7 +278,7 @@ public class SCCRegCacheItem extends BaseDomainHelper {
      * Set the mirror credentials this repo can be retrieved with.
      * @param credentialsIn the credentials to set
      */
-    public void setCredentials(Credentials credentialsIn) {
+    public void setCredentials(SCCCredentials credentialsIn) {
         credentials = credentialsIn;
     }
 
@@ -298,10 +315,9 @@ public class SCCRegCacheItem extends BaseDomainHelper {
      */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof SCCRegCacheItem)) {
+        if (!(other instanceof SCCRegCacheItem otherSCCRegCache)) {
             return false;
         }
-        SCCRegCacheItem otherSCCRegCache = (SCCRegCacheItem) other;
         return new EqualsBuilder()
                 .append(getServer(), otherSCCRegCache.getServer())
                 .append(getSccId(), otherSCCRegCache.getSccId())

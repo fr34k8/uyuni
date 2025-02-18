@@ -1,3 +1,4 @@
+#  pylint: disable=missing-module-docstring,invalid-name
 #
 # Copyright (c) 2008--2016 Red Hat, Inc.
 # Copyright (c) 2022 SUSE, LLC
@@ -20,13 +21,13 @@ import os
 import smtplib
 
 from rhn.connections import idn_puny_to_unicode
-from uyuni.common.context_managers import cfg_component
-from spacewalk.common.rhnConfig import PRODUCT_NAME
+from spacewalk.common.rhnConfig import PRODUCT_NAME, cfg_component
 from typing import NamedTuple, Union
 
-with cfg_component(None) as CFG:
+with cfg_component(component=None) as CFG:
     PRODUCT_NAME = CFG.PRODUCT_NAME
     FALLBACK_TRACEBACK_MAIL = CFG.TRACEBACK_MAIL
+
 
 class HeadersRecipients(NamedTuple):
     headers: dict

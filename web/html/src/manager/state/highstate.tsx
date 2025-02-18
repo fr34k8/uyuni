@@ -6,8 +6,8 @@ import { ActionSchedule } from "components/action-schedule";
 import { LinkButton } from "components/buttons";
 import { AsyncButton } from "components/buttons";
 import { ActionChainLink, ActionLink } from "components/links";
-import { Messages } from "components/messages";
-import { Utils as MessagesUtils } from "components/messages";
+import { Messages } from "components/messages/messages";
+import { Utils as MessagesUtils } from "components/messages/messages";
 import { InnerPanel } from "components/panels/InnerPanel";
 import { Toggler } from "components/toggler";
 
@@ -61,14 +61,16 @@ class Highstate extends React.Component<HighstateProps, HighstateState> {
         const msg = MessagesUtils.info(
           this.state.actionChain ? (
             <span>
-              {t(
-                "Action has been successfully added to the action chain '{0}'.",
-                <ActionChainLink id={data}>{this.state.actionChain.text}</ActionChainLink>
-              )}
+              {t('Action has been successfully added to the action chain <link>"{name}"</link>.', {
+                name: this.state.actionChain.text,
+                link: (str) => <ActionChainLink id={data}>{str}</ActionChainLink>,
+              })}
             </span>
           ) : (
             <span>
-              {t("Applying the highstate has been {0}.", <ActionLink id={data}>{t("scheduled")}</ActionLink>)}
+              {t("Applying the highstate has been <link>scheduled</link>.", {
+                link: (str) => <ActionLink id={data}>{str}</ActionLink>,
+              })}
             </span>
           )
         );
@@ -123,7 +125,7 @@ class Highstate extends React.Component<HighstateProps, HighstateState> {
         />
         <AsyncButton
           action={this.applyHighstate}
-          defaultType="btn-success"
+          defaultType="btn-default"
           text={t("Apply Highstate")}
           disabled={window.minions?.length === 0}
         />
@@ -131,9 +133,9 @@ class Highstate extends React.Component<HighstateProps, HighstateState> {
     ];
 
     const loc = window.location;
-    const createLink = loc.pathname.replace("/highstate", "/recurring-states") + loc.search + "#/create";
+    const createLink = loc.pathname.replace("/highstate", "/recurring-actions") + loc.search + "#/create";
     const buttonsLeft = [
-      <LinkButton icon="fa-plus" href={createLink} className="btn-default" text={t("Create Recurring")} />,
+      <LinkButton icon="fa-plus" href={createLink} className="btn-primary" text={t("Create Recurring")} />,
     ];
     const showHighstate = [
       <InnerPanel

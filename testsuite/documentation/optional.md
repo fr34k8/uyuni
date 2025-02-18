@@ -81,7 +81,7 @@ and then run the test suite.
 Inside of the test suite, the scenarios that are tagged with
 
 ```
-@buildhost
+@build_host
 ```
 
 are executed only if the Docker and Kiwi build host is available.
@@ -145,7 +145,7 @@ If you want a Debian-like minion, make this variable point to the machine
 that will be the Debian-like minion:
 
 ```bash
-export DEBLIKE_MINION=ubuntu2204.example.com
+export DEBLIKE_MINION=ubuntu2404.example.com
 ```
 
 and then run the test suite.
@@ -237,53 +237,15 @@ and then run the test suite.
 This variable needs to be set even if you don't use external profiles (to the normal
 place `https://github.com/uyuni-project/uyuni/tree/master/testsuite/features/profiles`).
 
-## Testing virtualization features
-
-Using a virtualization host with the test suite is not mandatory.
-
-If you do not want a virtualization host minion, do not define `VIRTHOST_KVM_URL` environment 
-variable before you run the test suite. That's all.
-
-If you want virtualization minions, make these variables point to the machines that
-will be the virtualization KVM host minions and define the `VIRTHOST_KVM_PASSWORD` variable:
-
-```bash
-export VIRTHOST_KVM_URL=myvirthost.example.com
-export VIRTHOST_KVM_PASSWORD=therootpwd
-```
-
-Make sure the image to use for the test virtual machines is located in
-`/var/testsuite-data/` on the virtual hosts.
-
-In order for the virtual hosts to be able to report to the test server,
-use a bridge virtual network for the test machines.
-
-The `leap-disk-image-template.qcow2` virtual disk image should
-have avahi daemon installed and running at first boot, and should be capable to be booted
-as a KVM guest. The disk images used by sumaform are good candidates
-for this.
-
-Note that the virtualization host needs to be a physical machine that needs
-to be accessible via SSH without a passphrase from the machine running the test suite. It
-also requires the `qemu-img`, `virt-install` and `virt-customize` tools to be installed and
-the controller SSH public key needs to be added to the `authorized_keys` file.
-
-Inside of the test suite, the scenarios that are tagged with:
-
-```
-@virtualization_kvm
-```
-
-are executed only if the corresponding virtualization host minion is available.
-
 ## Testing Uyuni for Retail
 
 Testing Uyuni for Retail is optional. To test it, you need:
 
 * a private network
 * a PXE boot minion.
+* a DHCP and DNS server
 
-The PXE boot minion will reside in the private network only.
+The PXE boot minion and the DHCP and DNS server will reside in the private network only.
 The proxy will route between the private network and the outer world.
 
 ### Private network
@@ -325,13 +287,13 @@ the desired image you want it reformatted with:
 
 ```bash
 export PXEBOOT_MAC=52:54:00:01:02:03
-export PXEBOOT_IMAGE=sles12sp3
+export PXEBOOT_IMAGE=sles12sp5
 ```
 
 and then run the test suite.
 
 `52:54:00:` is the prefix assigned to qemu.
-Currently supported images are `sles12sp3` and `sles15sp1`.
+Currently supported images are `sles12sp5` and `sles15sp4`.
 
 Inside of the test suite, the scenarios that are tagged with
 

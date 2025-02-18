@@ -80,11 +80,11 @@
                 </div>
             </div>
             <div class="form-group">
-                <div class="col-md-offset-3 col-md-9">
+                <div class="col-md-offset-3 offset-md-3 col-md-9">
                     <rhn:submitted />
-                    <input type="submit" class="btn btn-success" name="dispatch"
+                    <input type="submit" class="btn btn-default" name="dispatch"
                         value='<bean:message key="pkg.lock.requestlock"/>' /> <input
-                        type="submit" class="btn btn-success" name="dispatch"
+                        type="submit" class="btn btn-default" name="dispatch"
                         value='<bean:message key="pkg.lock.requestunlock"/>' />
                 </div>
             </div>

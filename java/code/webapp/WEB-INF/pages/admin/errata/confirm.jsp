@@ -22,13 +22,13 @@
             <rhn:list pageList="${requestScope.pageList}" noDataText="nosystems.message">
                 <div class="spacewalk-section-toolbar">
                     <div class="action-button-wrapper">
-                          <html:submit styleClass="btn btn-success" property="dispatch">
+                          <html:submit styleClass="btn btn-primary" property="dispatch">
                             <bean:message key="confirm.jsp.confirm" />
                         </html:submit>
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="col-md-offset-3 col-md-6">
+                    <div class="col-md-offset-3 offset-md-3 col-md-6">
                         <span class="help-block">
                             <bean:message key="applyerrata.disclaimer" />
                         </span>

@@ -1,10 +1,15 @@
 # Copyright (c) 2022 SUSE LLC
 # Licensed under the terms of the MIT license.
+
+# This is a known bug: https://bugzilla.suse.com/show_bug.cgi?id=1209231
+# Until is fixed, let's skip it in the container, as it will confuse
+# users.
+@skip_if_github_validation
 @scope_visualization
 @sle_minion
-Feature: Correct timezone display 
+Feature: Correct timezone display
 #  1) create a user and assign him a timezone different than the server's timezone
-#  2) test that the popups in some scheduling actions appear in user's prefered timezone 
+#  2) test that the popups in some scheduling actions appear in user's prefered timezone
 #  3) some scheduler tests based on previous bugs are unavoidable
 
   Scenario: Log in as admin user
@@ -19,7 +24,7 @@ Feature: Correct timezone display
     And I select "Mr." from "prefix"
     And I enter "Test" as "firstNames"
     And I enter "User" as "lastName"
-    And I enter "galaxy-noise@suse.de" as "email"
+    And I enter "galaxy-noise@localhost" as "email"
     And I select "(GMT+0800) Malaysia" from "timezone"
     And I click on "Create Login"
 
@@ -55,7 +60,7 @@ Feature: Correct timezone display
     Then I should see a "MYT" text
     # WORKAROUND for bsc #1195191, the below line is commented out but if the bug is fixed we should enable it.
     # And I should not see a "PM" text
-    
+
   Scenario: Login as the new Malaysian user if the previous scenario failed
     Given I am authorized as "MalaysianUser" with password "MalaysianUser"
     Then I should see a "MalaysianUser" link
@@ -71,13 +76,14 @@ Feature: Correct timezone display
     And I enter "00:00" as "date_timepicker_widget_input"
     And I click on "Schedule"
     Then I should see a "00:00:00 MYT" text
-    
+
   Scenario: Login as the new Malaysian user if the previous scenario failed
     Given I am authorized as "MalaysianUser" with password "MalaysianUser"
     Then I should see a "MalaysianUser" link
 
-  Scenario: Cleanup: Log in as admin user again
+  Scenario: Cleanup: Log in as admin user again and remove scheduled actions
     Given I am authorized for the "Admin" section
+    And I cancel all scheduled actions
 
   Scenario: Cleanup: Remove role
     When I follow the left menu "Users > User List > Active"

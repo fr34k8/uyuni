@@ -1,4 +1,66 @@
 -------------------------------------------------------------------
+Fri Jan 24 13:32:21 CET 2025 - marina.latini@suse.com
+
+- version 5.1.2-0
+  * Remove conflict with proxy installer since it is now
+    container-only
+
+-------------------------------------------------------------------
+Mon Oct 14 15:39:39 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Tue Aug 20 11:50:03 CEST 2024 - rosuna@suse.com
+
+- version 5.0.4-0
+  * Add the old TLS code for very old traditional clients still on
+    python 2.7 (bsc#1228198)
+
+-------------------------------------------------------------------
+Thu Jun 13 10:57:19 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.3-1
+  * Align changelog entries
+
+-------------------------------------------------------------------
+Mon Jan 29 11:43:30 CET 2024 - rosuna@suse.com
+
+- version 5.0.2-1
+  * Apply Black and Pylint to enforce Python style
+
+-------------------------------------------------------------------
+Tue Jan 16 08:20:29 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Specify a packager for Debian like distros
+
+-------------------------------------------------------------------
+Fri Dec 15 16:54:45 CET 2023 - rosuna@suse.com
+
+- version 4.4.6-1
+  * Remove unused makefiles
+
+-------------------------------------------------------------------
+Wed Nov 01 20:56:07 CET 2023 - marina.latini@suse.com
+
+- version 4.4.5-1
+  *  Use bundle CA certificate in rhnpush (bsc#1222731)
+
+-------------------------------------------------------------------
+Mon Sep 18 14:13:24 CEST 2023 - rosuna@suse.com
+
+- version 4.4.4-1
+  * Only use TLSv1+ for SSL connections
+
+-------------------------------------------------------------------
+Tue Feb 21 14:04:09 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.3-1
+  * Ensure installation of make for building
+
+-------------------------------------------------------------------
 Fri Nov 18 15:05:05 CET 2022 - jgonzalez@suse.com
 
 - version 4.4.2-1

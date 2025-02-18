@@ -3,11 +3,11 @@ import { useContext, useEffect, useState } from "react";
 
 import { AsyncButton } from "components/buttons";
 import { ModalButton } from "components/dialog/ModalButton";
-import { Check } from "components/input/Check";
-import { Form, FormContext } from "components/input/Form";
-import { Select } from "components/input/Select";
-import { Utils as MessagesUtils } from "components/messages";
-import { MessageType } from "components/messages";
+import { Select } from "components/input";
+import { Check } from "components/input/check/Check";
+import { Form, FormContext } from "components/input/form/Form";
+import { Utils as MessagesUtils } from "components/messages/messages";
+import { MessageType } from "components/messages/messages";
 
 import Network from "utils/network";
 
@@ -75,7 +75,7 @@ export function SchedulePickerForm(props: SchedulePickerFormProps) {
       <Form model={model} onChange={onChange} onValidate={setValid}>
         <SchedulePicker schedules={props.schedules} />
         <div className="form-group">
-          <div className="col-md-offset-3 col-md-6">
+          <div className="col-md-offset-3 offset-md-3 col-md-6">
             {model.scheduleId === "0" ? (
               <AsyncButton
                 id="submit-btn"
@@ -92,7 +92,7 @@ export function SchedulePickerForm(props: SchedulePickerFormProps) {
                 target="cancel-confirm"
                 text={t("Assign All")}
                 icon={t("fa-edit")}
-                className="btn-success pull-right"
+                className="btn-primary"
                 disabled={!isValid}
               />
             ) : (
@@ -101,8 +101,7 @@ export function SchedulePickerForm(props: SchedulePickerFormProps) {
                 text={t("Assign All")}
                 icon={t("fa-edit")}
                 action={onSubmit}
-                defaultType="btn-success"
-                className="pull-right"
+                defaultType="btn-primary"
                 disabled={!isValid}
               />
             )}
@@ -134,7 +133,11 @@ export function SchedulePicker(props: { schedules: ScheduleType[] }) {
         options={options.concat(props.schedules.map((s) => ({ value: s.id, label: s.name })))}
       />
       {context.model.scheduleId !== "0" && (
-        <Check name="cancelActions" label={t("Cancel affected actions")} divClass="col-md-6 col-md-offset-3" />
+        <Check
+          name="cancelActions"
+          label={t("Cancel affected actions")}
+          divClass="col-md-6 col-md-offset-3 offset-md-3"
+        />
       )}
     </>
   );

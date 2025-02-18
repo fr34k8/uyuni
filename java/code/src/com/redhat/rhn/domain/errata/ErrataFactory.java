@@ -50,6 +50,7 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
+import org.hibernate.type.StandardBasicTypes;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,7 +63,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.stream.Collectors;
 
 /**
  * ErrataFactory - the singleton class used to fetch and store
@@ -105,7 +105,7 @@ public class ErrataFactory extends HibernateFactory {
         DataResult<ErrataPackageFile> dr = executeSelectMode(
                 "ErrataCache_queries",
                 "package_associated_to_errata_and_channel", params);
-        return dr.stream().map(file -> file.getPackageId()).collect(Collectors.toList());
+        return dr.stream().map(file -> file.getPackageId()).toList();
     }
 
 
@@ -360,7 +360,7 @@ public class ErrataFactory extends HibernateFactory {
     /**
      * Creates a new Errata file with given ErrataFileType, checksum, and name
      * @param ft ErrataFileType for the new ErrataFile
-     * @param cs MD5 Checksum for the new Errata File
+     * @param cs Checksum for the new Errata File
      * @param name name for the file
      * @return new Errata File
      */
@@ -371,7 +371,7 @@ public class ErrataFactory extends HibernateFactory {
     /**
      * Creates a new Errata file with given ErrataFileType, checksum, and name
      * @param ft ErrataFileType for the new ErrataFile
-     * @param cs MD5 Checksum for the new Errata File
+     * @param cs Checksum for the new Errata File
      * @param name name for the file
      * @param packages Packages associated with this errata file.
      * @return new Errata File
@@ -382,7 +382,7 @@ public class ErrataFactory extends HibernateFactory {
                                               Set<Package> packages) {
         ErrataFile file = new ErrataFile();
         file.setFileType(ft);
-        file.setChecksum(ChecksumFactory.safeCreate(cs, "md5"));
+        file.setChecksum(ChecksumFactory.safeCreate(cs, ChecksumFactory.guessChecksumTypeByLength(cs)));
         file.setFileName(name);
         file.setPackages(packages);
         return file;
@@ -397,7 +397,8 @@ public class ErrataFactory extends HibernateFactory {
         ErrataFileType retval;
         try {
             retval = (ErrataFileType) getSession().getNamedQuery("ErrataFileType.findByLabel")
-                    .setString("label", label).setCacheable(true).uniqueResult();
+                    .setParameter("label", label, StandardBasicTypes.STRING)
+                    .setCacheable(true).uniqueResult();
         }
         catch (HibernateException e) {
             throw new HibernateRuntimeException(e.getMessage(), e);
@@ -414,9 +415,9 @@ public class ErrataFactory extends HibernateFactory {
     public static List<ErrataFile> lookupErrataFilesByErrataAndFileType(Long errataId, String fileType) {
         List<ErrataFile> retval;
         try {
-            Query<ErrataFile> q = getSession().getNamedQuery("ErrataFile.listByErrataAndFileType");
-            q.setLong("errata_id", errataId);
-            q.setString("file_type", fileType.toUpperCase());
+            Query<ErrataFile> q = getSession().getNamedQuery("ErrataFile.listByErrataAndFileType")
+            .setParameter("errata_id", errataId, StandardBasicTypes.LONG)
+            .setParameter("file_type", fileType.toUpperCase(), StandardBasicTypes.STRING);
             retval =  q.list();
         }
         catch (HibernateException e) {
@@ -447,7 +448,7 @@ public class ErrataFactory extends HibernateFactory {
         List<Errata> retval;
         try {
             retval = getSession().getNamedQuery("Errata.findByAdvisoryType")
-                    .setString("type", advisoryType)
+                    .setParameter("type", advisoryType, StandardBasicTypes.STRING)
                     //Retrieve from cache if there
                     .setCacheable(true).list();
         }
@@ -467,7 +468,8 @@ public class ErrataFactory extends HibernateFactory {
         Errata retval;
         try {
             retval = (Errata) getSession().getNamedQuery("Errata.findById")
-                    .setLong("id", id).uniqueResult();
+                    .setParameter("id", id, StandardBasicTypes.LONG)
+                    .uniqueResult();
         }
         catch (HibernateException he) {
             log.error("Error loading ActionArchTypes from DB", he);
@@ -486,7 +488,7 @@ public class ErrataFactory extends HibernateFactory {
     public static List<Errata> lookupVendorAndUserErrataByAdvisoryAndOrg(String advisory, Org org) {
         Session session = HibernateFactory.getSession();
         return session.getNamedQuery("Errata.findVendorAnUserErrataByAdvisoryNameAndOrg")
-                .setParameter("advisory", advisory)
+                .setParameter("advisory", advisory, StandardBasicTypes.STRING)
                 .setParameter("org", org)
                 .getResultList();
     }
@@ -500,7 +502,7 @@ public class ErrataFactory extends HibernateFactory {
     public static Errata lookupByAdvisoryAndOrg(String advisory, Org org) {
         return (Errata) HibernateFactory.getSession()
                 .getNamedQuery("Errata.findByAdvisoryNameAndOrg")
-                .setParameter("advisory", advisory)
+                .setParameter("advisory", advisory, StandardBasicTypes.STRING)
                 .setParameter("org", org)
                 .uniqueResult();
     }
@@ -516,7 +518,7 @@ public class ErrataFactory extends HibernateFactory {
         List<Errata> retval;
         try {
             retval = getSession().getNamedQuery("Errata.findByAdvisory")
-                    .setParameter("advisory", advisoryId)
+                    .setParameter("advisory", advisoryId, StandardBasicTypes.STRING)
                     .setParameter("org", org)
                     .getResultList();
         }
@@ -539,7 +541,7 @@ public class ErrataFactory extends HibernateFactory {
         Session session = HibernateFactory.getSession();
         return result.stream()
                 .map(row -> session.load(Errata.class, (Long) row.get("id")))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -713,8 +715,8 @@ public class ErrataFactory extends HibernateFactory {
                 getNamedQuery("Errata.lookupByChannelBetweenDates")
                 .setParameter("org", org)
                 .setParameter("channel", channel)
-                .setParameter("start_date", startDate)
-                .setParameter("end_date", endDate)
+                .setParameter("start_date", startDate, StandardBasicTypes.STRING)
+                .setParameter("end_date", endDate, StandardBasicTypes.STRING)
                 .list();
     }
 
@@ -732,8 +734,9 @@ public class ErrataFactory extends HibernateFactory {
     public static Optional<ErrataFile> lookupErrataFile(Long errataId, String filename) {
         Session session = HibernateFactory.getSession();
         return session.getNamedQuery("ErrataFile.lookupByErrataAndPackage")
-                .setParameter("errata_id", errataId)
-                .setParameter("filename", filename).uniqueResultOptional();
+                .setParameter("errata_id", errataId, StandardBasicTypes.LONG)
+                .setParameter("filename", filename, StandardBasicTypes.STRING)
+                .uniqueResultOptional();
     }
 
     /**
@@ -748,7 +751,7 @@ public class ErrataFactory extends HibernateFactory {
     public static List<Tuple2<Long, Long>> retractedPackages(List<Long> pids, List<Long> sids) {
         List<Object[]> results = singleton.listObjectsByNamedQuery("Errata.retractedPackages",
                 Map.of("pids", pids, "sids", sids));
-        return results.stream().map(r -> new Tuple2<>((long)r[0], (long)r[1])).collect(Collectors.toList());
+        return results.stream().map(r -> new Tuple2<>((long)r[0], (long)r[1])).toList();
     }
 
     /**
@@ -766,7 +769,7 @@ public class ErrataFactory extends HibernateFactory {
         }
         List<Object[]> results = singleton.listObjectsByNamedQuery("Errata.retractedPackagesByNevra",
                 Map.of("nevras", nevras, "sids", sids));
-        return results.stream().map(r -> new Tuple2<>((long)r[0], (long)r[1])).collect(Collectors.toList());
+        return results.stream().map(r -> new Tuple2<>((long)r[0], (long)r[1])).toList();
     }
 
     /**

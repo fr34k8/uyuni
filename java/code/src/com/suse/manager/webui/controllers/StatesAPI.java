@@ -15,7 +15,6 @@
 package com.suse.manager.webui.controllers;
 
 import static com.suse.manager.webui.utils.SparkApplicationHelper.asJson;
-import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUser;
 import static spark.Spark.get;
 import static spark.Spark.post;
@@ -70,6 +69,7 @@ import com.suse.manager.webui.utils.SaltPkgInstalled;
 import com.suse.manager.webui.utils.SaltPkgLatest;
 import com.suse.manager.webui.utils.SaltPkgRemoved;
 import com.suse.manager.webui.utils.SaltStateGenerator;
+import com.suse.manager.webui.utils.SparkApplicationHelper;
 import com.suse.manager.webui.utils.YamlHelper;
 import com.suse.manager.webui.utils.gson.ConfigChannelJson;
 import com.suse.manager.webui.utils.gson.PackageStateJson;
@@ -84,6 +84,7 @@ import com.suse.salt.netapi.results.Result;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -106,6 +107,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -125,7 +127,9 @@ public class StatesAPI {
     private final SaltApi saltApi;
     private final ServerGroupManager serverGroupManager;
 
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final Gson GSON = new GsonBuilder()
+            .registerTypeAdapterFactory(new OptionalTypeAdapterFactory())
+            .create();
 
     /** ID of the state that installs the SUSE Manager repo file in SUSE systems. */
     public static final String ZYPPER_SUMA_CHANNEL_REPO_FILE
@@ -254,7 +258,7 @@ public class StatesAPI {
                 }
         ).orElseGet(Collections::emptyList).stream()
                 .filter(c -> c.getName().toLowerCase().contains(targetLowerCase))
-                .collect(Collectors.toList());
+                .toList();
 
         // Find matches among this currently assigned salt states
         Set<ConfigChannelJson> result = new HashSet<>(); // use a set to avoid duplicates
@@ -267,7 +271,7 @@ public class StatesAPI {
                 .map(ConfigChannelJson::new)
                 .forEach(result::add);
 
-        return json(response, result);
+        return SparkApplicationHelper.json(response, result, new TypeToken<>() { });
     }
 
     /**
@@ -286,7 +290,7 @@ public class StatesAPI {
         List<ConfigChannel> channels = json.getChannels().stream()
                 .sorted(Comparator.comparingInt(ConfigChannelJson::getPosition))
                 .map(j -> configManager.lookupConfigChannel(user, j.getId()))
-                .collect(Collectors.toList());
+                .toList();
 
         try {
             SaltConfigurable entity = handleTarget(json.getTargetType(), json.getTargetId(),
@@ -309,7 +313,8 @@ public class StatesAPI {
             );
             entity.setConfigChannels(channels, user);
             StateRevision revision = StateRevisionService.INSTANCE.getLatest(entity).get();
-            return json(response, ConfigChannelJson.listOrdered(revision.getConfigChannels()));
+            return SparkApplicationHelper.json(response, ConfigChannelJson.listOrdered(revision.getConfigChannels()),
+                    new TypeToken<>() { });
         }
         catch (Throwable t) {
             LOG.error(t.getMessage(), t);
@@ -429,7 +434,7 @@ public class StatesAPI {
                     MinionServerFactory.lookupByIds(json.getIds()).map(server -> {
                         checkUserHasPermissionsOnServer(server, user);
                         return server.getId();
-                    }).collect(Collectors.toList());
+                    }).toList();
 
             ActionChain actionChain = json.getActionChain()
                     .filter(StringUtils::isNotEmpty)
@@ -490,7 +495,7 @@ public class StatesAPI {
                         List<Long> minionServerIds = MinionServerUtils
                                 .filterSaltMinions(ServerGroupFactory.listServers(group))
                                 .map(Server::getId)
-                                .collect(Collectors.toList());
+                                .toList();
 
                         List<String> states = json.getStates();
                         if (states.size() == 1 && "custom_groups".equals(states.get(0))) {
@@ -511,7 +516,7 @@ public class StatesAPI {
                         List<Long> minionServerIds = MinionServerFactory
                                 .lookupByOrg(org.getId()).stream()
                                 .map(MinionServer::getId)
-                                .collect(Collectors.toList());
+                                .toList();
 
                         ApplyStatesAction action = ActionManager.scheduleApplyStates(user,
                                 minionServerIds, json.getStates(), getScheduleDate(json));
@@ -531,7 +536,8 @@ public class StatesAPI {
     }
 
     private Date getScheduleDate(ServerApplyStatesJson json) {
-        ZoneId zoneId = Context.getCurrentContext().getTimezone().toZoneId();
+        ZoneId zoneId = Optional.ofNullable(Context.getCurrentContext().getTimezone())
+                .orElse(TimeZone.getDefault()).toZoneId();
         return Date.from(
             json.getEarliest().map(t -> t.atZone(zoneId).toInstant())
                 .orElseGet(Instant::now)
@@ -539,7 +545,8 @@ public class StatesAPI {
     }
 
     private Date getScheduleDate(ServerApplyHighstateJson json) {
-        ZoneId zoneId = Context.getCurrentContext().getTimezone().toZoneId();
+        ZoneId zoneId = Optional.ofNullable(Context.getCurrentContext().getTimezone())
+                .orElse(TimeZone.getDefault()).toZoneId();
         return Date.from(
             json.getEarliest().orElseGet(LocalDateTime::now).atZone(zoneId).toInstant()
         );
@@ -754,7 +761,7 @@ public class StatesAPI {
         return MinionServerFactory
                 .lookupById(Long.valueOf(request.queryParams("sid")))
                 .map(StateSourceService::getSystemStateSources)
-                .map(stateSources -> json(response, stateSources))
+                .map(stateSources -> SparkApplicationHelper.json(response, stateSources, new TypeToken<>() { }))
                 .orElse("Server not found.");
     }
 }

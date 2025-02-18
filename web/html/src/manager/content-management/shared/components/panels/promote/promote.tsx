@@ -8,7 +8,7 @@ import { Button } from "components/buttons";
 import { closeDialog, Dialog } from "components/dialog/LegacyDialog";
 import { ModalButton } from "components/dialog/ModalButton";
 import { showErrorToastr, showSuccessToastr } from "components/toastr/toastr";
-import { Loading } from "components/utils/Loading";
+import { Loading } from "components/utils/loading/Loading";
 
 import useLifecycleActionsApi from "../../../api/use-lifecycle-actions-api";
 import { ProjectEnvironmentType, ProjectHistoryEntry } from "../../../type/project.type";
@@ -77,8 +77,8 @@ const Promote = (props: Props) => {
           ) : (
             <React.Fragment>
               <dl className="row">
-                <dt className="col-xs-4">{t("Version")}:</dt>
-                <dd className="col-xs-8">
+                <dt className="col-4 col-xs-4">{t("Version")}:</dt>
+                <dd className="col-8 col-xs-8">
                   <BuildVersion
                     id={`${props.environmentPromote.version}_promote_${props.environmentTarget.id}`}
                     text={
@@ -90,13 +90,16 @@ const Promote = (props: Props) => {
                 </dd>
               </dl>
               <dl className="row">
-                <dt className="col-xs-4">{t("Target environment")}:</dt>
-                <dd className="col-xs-8">{props.environmentTarget.name}</dd>
+                <dt className="col-4 col-xs-4">{t("Target environment")}:</dt>
+                <dd className="col-8 col-xs-8">{props.environmentTarget.name}</dd>
               </dl>
             </React.Fragment>
           )
         }
-        title={t("Promote version {0} into {1}", props.environmentPromote.version, props.environmentTarget.name)}
+        title={t("Promote version {version} into {environmentName}", {
+          version: props.environmentPromote.version,
+          environmentName: props.environmentTarget.name,
+        })}
         buttons={
           <div className="col-lg-12">
             <div className="pull-right btn-group">
@@ -109,7 +112,7 @@ const Promote = (props: Props) => {
                 }}
               />
               <Button
-                className="btn-success"
+                className="btn-primary"
                 text={t("Promote")}
                 title={t("Promote environment")}
                 handler={() => {
@@ -124,11 +127,10 @@ const Promote = (props: Props) => {
                     .then((projectWithUpdatedSources) => {
                       closeDialog(modalNameId);
                       showSuccessToastr(
-                        t(
-                          "Version {0} successfully promoted into {1}",
-                          props.versionToPromote,
-                          props.environmentTarget.name
-                        )
+                        t("Version {version} successfully promoted into {environmentName}", {
+                          version: props.versionToPromote,
+                          environmentName: props.environmentTarget.name,
+                        })
                       );
                       props.onChange(projectWithUpdatedSources);
                     })

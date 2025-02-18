@@ -41,6 +41,7 @@ import com.suse.utils.Opt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -53,7 +54,7 @@ import java.util.stream.Collectors;
 /**
  * ServerGroupManager
  */
-public class ServerGroupManager {
+public class ServerGroupManager implements Serializable {
 
     private static final Logger LOG = LogManager.getLogger(ServerGroupManager.class);
 
@@ -357,7 +358,7 @@ public class ServerGroupManager {
         // Trigger pillar refresh
         List<String> minionIds = servers.stream()
                 .flatMap(s -> Opt.stream(s.asMinionServer()))
-                .map(MinionServer::getMinionId).collect(Collectors.toList());
+                .map(MinionServer::getMinionId).toList();
         saltApi.refreshPillar(new MinionList(minionIds));
     }
 

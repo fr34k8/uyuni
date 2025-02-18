@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.redhat.rhn.common.util.FileUtils;
-import com.redhat.rhn.domain.credentials.Credentials;
 import com.redhat.rhn.domain.credentials.CredentialsFactory;
+import com.redhat.rhn.domain.credentials.VHMCredentials;
 import com.redhat.rhn.domain.server.virtualhostmanager.VirtualHostManager;
 import com.redhat.rhn.domain.server.virtualhostmanager.VirtualHostManagerConfig;
 import com.redhat.rhn.testing.TestUtils;
@@ -55,9 +55,10 @@ public class GathererJsonIOTest  {
                 FileUtils.readStringFromFile(TestUtils.findTestData(MODULELIST).getPath());
         Map<String, GathererModule> mods = new GathererJsonIO().readGathererModules(json);
 
-        assertEquals(2, mods.keySet().size());
+        assertEquals(3, mods.keySet().size());
         assertTrue(mods.keySet().contains("VMware"));
         assertTrue(mods.keySet().contains("SUSECloud"));
+        assertTrue(mods.keySet().contains("Libvirt"));
 
         for (GathererModule g : mods.values()) {
             if (g.getName().equals("VMware")) {
@@ -76,6 +77,11 @@ public class GathererJsonIOTest  {
                 assertTrue(g.getParameters().containsKey("protocol"));
                 assertTrue(g.getParameters().containsKey("tenant"));
             }
+            else if (g.getName().equals("Libvirt")) {
+                assertTrue(g.getParameters().containsKey("uri"));
+                assertTrue(g.getParameters().containsKey("sasl_username"));
+                assertTrue(g.getParameters().containsKey("sasl_password"));
+            }
             else {
                 fail("Unknown Module");
             }
@@ -83,10 +89,8 @@ public class GathererJsonIOTest  {
     }
 
     @Test
-    public void testVHMtoJson() {
-        Credentials creds = CredentialsFactory.createVHMCredentials();
-        creds.setUsername("tux");
-        creds.setPassword("penguin");
+    public void testVHMtoJson() throws Exception {
+        VHMCredentials creds = CredentialsFactory.createVHMCredentials("tux", "penguin");
 
         Set<VirtualHostManagerConfig> config = new HashSet<>();
         VirtualHostManagerConfig vhmc = new VirtualHostManagerConfig();

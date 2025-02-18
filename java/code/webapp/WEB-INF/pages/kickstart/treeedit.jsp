@@ -24,8 +24,8 @@
             <rhn:csrf />
             <%@ include file="tree-form.jspf" %>
             <c:if test="${requestScope.hidesubmit != 'true'}">
-                <div class="col-md-offset-3 col-md-6">
-                    <html:submit styleClass="btn btn-success">
+                <div class="col-md-offset-3 offset-md-3 col-md-6">
+                    <html:submit styleClass="btn btn-primary">
                         <bean:message key="edittree.jsp.submit"/>
                     </html:submit>
                 </div>

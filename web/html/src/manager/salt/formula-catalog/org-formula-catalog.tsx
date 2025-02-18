@@ -3,7 +3,7 @@ import { hot } from "react-hot-loader/root";
 import * as React from "react";
 
 import withPageWrapper from "components/general/with-page-wrapper";
-import { Messages, MessageType, ServerMessageType } from "components/messages";
+import { Messages, MessageType, ServerMessageType } from "components/messages/messages";
 import { TopPanel } from "components/panels/TopPanel";
 import { Column } from "components/table/Column";
 import { SearchField } from "components/table/SearchField";
@@ -58,16 +58,20 @@ class FormulaCatalog extends React.Component<Props, State> {
         severity: "info",
         text: (
           <p>
-            The formula catalog page enables viewing of currently installed{" "}
-            <a
-              href="https://docs.saltstack.com/en/latest/topics/development/conventions/formulas.html"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Salt Formulas
-            </a>
-            . Apply these formulas to individual systems or server groups. Formulas allow automatic installation and
-            configuration of software and may be installed via RPM packages.
+            {t(
+              "The formula catalog page enables viewing of currently installed <link>Salt Formulas</link>. Apply these formulas to individual systems or server groups. Formulas allow automatic installation and configuration of software and may be installed via RPM packages.",
+              {
+                link: (str) => (
+                  <a
+                    href="https://docs.saltstack.com/en/latest/topics/development/conventions/formulas.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {str}
+                  </a>
+                ),
+              }
+            )}
           </p>
         ),
       },

@@ -2,7 +2,6 @@ import { getUrlParam, urlBounce } from "./url";
 
 // This as opposed to a regular type definition lets Typescript know we're dealing with a real promise-like in async contexts
 export class Cancelable<T = any> extends Promise<T> {
-  promise!: Promise<T>;
   cancel!: (reason?: any) => void;
 }
 
@@ -27,7 +26,6 @@ function cancelable<T = any>(promise: Promise<T>, onCancel?: (arg0: Error | void
    *  while also allowing using await directly on a Cancelable.
    */
   const castRace = race as Cancelable<T>;
-  castRace.promise = race;
   castRace.cancel = (reason: any) => {
     isCancelled = true;
     rejectFn(reason);
@@ -118,15 +116,21 @@ function capitalize(str: string): string {
 }
 
 function generatePassword(): string {
-  const length = Math.floor(Math.random() * 10) + 15;
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-_";
+  const length = 32;
+  // All printable ASCII chars except whitespace
+  const lowerCase = "abcdefghijklmnopqrstuvwxyz";
+  const upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+  const otherPrintable = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+  const charset = lowerCase + upperCase + numbers + otherPrintable;
+
+  // See https://stackoverflow.com/a/68617567/1470607
+  const array = new Uint32Array(charset.length);
+  window.crypto.getRandomValues(array);
+
   let password = "";
-  if (window.crypto && window.crypto.getRandomValues) {
-    var rand = new Uint16Array(length);
-    window.crypto.getRandomValues(rand);
-    for (let i = 0; i < length; i++) password += charset.charAt(Math.floor((rand[i] * charset.length) / 65536));
-  } else {
-    for (let i = 0; i < length; i++) password += charset.charAt(Math.floor(Math.random() * charset.length));
+  for (let i = 0; i < length; i++) {
+    password += charset[array[i] % charset.length];
   }
   return password;
 }

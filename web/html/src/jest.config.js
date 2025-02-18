@@ -15,7 +15,7 @@ module.exports = {
     "^core/(.*)$": "<rootDir>/core/$1",
     "^manager/(.*)$": "<rootDir>/manager/$1",
     "^utils/(.*)$": "<rootDir>/utils/$1",
-    "\\.(css|less)$": "identity-obj-proxy",
+    "\\.(css|scss)$": "identity-obj-proxy",
   },
   modulePaths: ["<rootDir>"],
   moduleDirectories: ["node_modules"],
@@ -28,6 +28,7 @@ module.exports = {
     userTimeZone: "America/Los_Angeles", // GMT-7
     userDateFormat: "YYYY-MM-DD",
     userTimeFormat: "HH:mm",
+    preferredLocale: "en",
   },
   // Until tests with `async (done) => ...` are fixed, we need to use a custom runner, see https://github.com/facebook/jest/issues/11404
   testRunner: "jest-jasmine2",

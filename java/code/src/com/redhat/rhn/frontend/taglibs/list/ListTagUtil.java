@@ -104,11 +104,11 @@ public class ListTagUtil {
      */
     public static ListCommand getCurrentCommand(Tag caller, PageContext ctx) {
         ListTag parent = null;
-        if (!(caller instanceof ListTag)) {
+        if (!(caller instanceof ListTag listTag)) {
             parent = (ListTag) TagSupport.findAncestorWithClass(caller, ListTag.class);
         }
         else {
-            parent = (ListTag) caller;
+            parent = listTag;
         }
         if (parent != null) {
             return (ListCommand) ctx.getAttribute(parent.getUniqueName() + "_cmd");
@@ -643,7 +643,7 @@ public class ListTagUtil {
         StringBuilder sb = new StringBuilder();
 
         // create a new row
-        sb.append("<div class=\"input-group input-group-sm\">");
+        sb.append("<div class=\"input-group\">");
 
         String placeHolder = StringUtils.defaultString(ls.getMessage("message.filterby", fields.get(0)));
         sb.append(String.format("<input autofocus=\"autofocus\" type=\"text\" " +

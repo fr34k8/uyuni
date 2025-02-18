@@ -4,7 +4,7 @@ import SpaRenderer from "core/spa/spa-renderer";
 
 import { AsyncButton, LinkButton } from "components/buttons";
 import { IconTag } from "components/icontag";
-import { Messages } from "components/messages";
+import { Messages } from "components/messages/messages";
 import { TopPanel } from "components/panels/TopPanel";
 import { Column } from "components/table/Column";
 import { Highlight } from "components/table/Highlight";
@@ -18,36 +18,84 @@ import Network from "utils/network";
 
 const AFFECTED_PATCH_INAPPLICABLE = "AFFECTED_PATCH_INAPPLICABLE";
 const AFFECTED_PATCH_INAPPLICABLE_SUCCESSOR_PRODUCT = "AFFECTED_PATCH_INAPPLICABLE_SUCCESSOR_PRODUCT";
-const AFFECTED_PATCH_APPLICABLE = "AFFECTED_PATCH_APPLICABLE";
+const AFFECTED_FULL_PATCH_APPLICABLE = "AFFECTED_FULL_PATCH_APPLICABLE";
 const NOT_AFFECTED = "NOT_AFFECTED";
 const PATCHED = "PATCHED";
+const AFFECTED_PATCH_UNAVAILABLE = "AFFECTED_PATCH_UNAVAILABLE";
+const AFFECTED_PATCH_UNAVAILABLE_IN_UYUNI = "AFFECTED_PATCH_UNAVAILABLE_IN_UYUNI";
+const AFFECTED_PARTIAL_PATCH_APPLICABLE = "AFFECTED_PARTIAL_PATCH_APPLICABLE";
+const UNKNOWN = "UNKNOWN";
+
 const ALL = [
+  AFFECTED_PATCH_UNAVAILABLE,
+  AFFECTED_PATCH_UNAVAILABLE_IN_UYUNI,
+  AFFECTED_PARTIAL_PATCH_APPLICABLE,
   AFFECTED_PATCH_INAPPLICABLE,
-  AFFECTED_PATCH_APPLICABLE,
   AFFECTED_PATCH_INAPPLICABLE_SUCCESSOR_PRODUCT,
+  AFFECTED_FULL_PATCH_APPLICABLE,
   NOT_AFFECTED,
   PATCHED,
+  UNKNOWN,
 ];
 const PATCH_STATUS_LABEL = {
   AFFECTED_PATCH_INAPPLICABLE: {
-    className: "fa-exclamation-circle text-danger",
+    className: "fa-exclamation-triangle text-warning",
     label: t("Affected, patches available in channels which are not assigned"),
+    description: t(
+      "The client is affected by a vulnerability and we have a patch for it," +
+        " but the channel(s) offering the patch are not assigned to the client."
+    ),
   },
   AFFECTED_PATCH_INAPPLICABLE_SUCCESSOR_PRODUCT: {
-    className: "fa-exclamation-circle text-danger",
-    label: t("Affected, patches available in a Product Migration target"),
-  },
-  AFFECTED_PATCH_APPLICABLE: {
     className: "fa-exclamation-triangle text-warning",
+    label: t("Affected, patches available in a Product Migration target"),
+    description: t(
+      "The client is affected by a vulnerability and we have a patch for it," +
+        " but applying the patch requires migrating the product to a newer version."
+    ),
+  },
+  AFFECTED_FULL_PATCH_APPLICABLE: {
+    className: "fa-shield text-warning",
     label: t("Affected, at least one patch available in an assigned channel"),
+    description: t("Affected, at least one patch available in an assigned channel"),
   },
   NOT_AFFECTED: {
     className: "fa-circle text-success",
     label: t("Not affected"),
+    description: t("The client is not affected because none of the known CVE vulnerable packages are installed."),
   },
   PATCHED: {
     className: "fa-check-circle text-success",
     label: t("Patched"),
+    description: t("A patch has been successfully installed on the client."),
+  },
+  AFFECTED_PATCH_UNAVAILABLE: {
+    className: "fa-exclamation-circle text-danger",
+    label: t("Affected, patch is unavailable"),
+    description: t("The client is affected by a vulnerability for which a patch has not yet been released."),
+  },
+  AFFECTED_PATCH_UNAVAILABLE_IN_UYUNI: {
+    className: "fa-exclamation-circle text-danger",
+    label: t("Affected, patch is unavailable in relevant channels"),
+    description: t(
+      "The client is affected by a vulnerability for which a patch has been released," +
+        " but the patch can't be found in the relevant channels."
+    ),
+  },
+  AFFECTED_PARTIAL_PATCH_APPLICABLE: {
+    className: "fa-shield text-danger",
+    label: t("Affected, partial patch available in assigned channel"),
+    description: t(
+      "The client is affected by a vulnerability and we have a patch for it," +
+        " but applying the patch will only update some of the vulnerable packages."
+    ),
+  },
+  UNKNOWN: {
+    className: "fa-minus-circle text-secondary",
+    label: t("Unknown, CVE metadata not available"),
+    description: t(
+      "It is not possible to scan the client server for CVE vulnerabilities without channels or OVAL metadata."
+    ),
   },
 };
 const TARGET_IMAGE = "IMAGE";
@@ -180,6 +228,26 @@ class CVEAudit extends React.Component<Props, State> {
     });
   };
 
+  getPatchStatusAccuracyWarning = (row) => {
+    const dataSources: string[] = row.scanDataSources;
+    if (!dataSources) {
+      Loggerhead.error("CVE audit data sources were not supplied by server.");
+      return t("Error, see console");
+    }
+
+    if (dataSources.length === 0) {
+      return t("Unknown patch status");
+    } else if (dataSources.indexOf("OVAL") === -1) {
+      return t("OVAL data out of sync. Potential missed vulnerabilities");
+    } else if (dataSources.indexOf("CHANNELS") === -1) {
+      return t("Server product channels out of sync; no patch information available");
+    }
+
+    Loggerhead.error(`Invalid scan data sources: ${dataSources}`);
+
+    return t("Error, see console");
+  };
+
   render() {
     return (
       <span>
@@ -190,7 +258,7 @@ class CVEAudit extends React.Component<Props, State> {
             })}
           />
           <div className="input-group">
-            <span className="input-group-addon">{t("CVE")}</span>
+            <span className="input-group-addon input-group-text">{t("CVE")}</span>
             <select
               id="cveIdentifierYear"
               value={this.state.cveYear}
@@ -201,7 +269,7 @@ class CVEAudit extends React.Component<Props, State> {
                 <option value={year}>{year}</option>
               ))}
             </select>
-            <span className="input-group-addon">-</span>
+            <span className="input-group-addon input-group-text">-</span>
             <input
               id="cveIdentifierId"
               className="form-control"
@@ -261,7 +329,6 @@ class CVEAudit extends React.Component<Props, State> {
             <div>
               <p>
                 <a
-                  className="btn btn-link"
                   target="_blank"
                   rel="noopener noreferrer"
                   href={
@@ -273,7 +340,6 @@ class CVEAudit extends React.Component<Props, State> {
                   {t("MITRE CVE link")}
                 </a>
                 <a
-                  className="btn btn-link"
                   target="_blank"
                   rel="noopener noreferrer"
                   href={
@@ -305,8 +371,14 @@ class CVEAudit extends React.Component<Props, State> {
                 <div>
                   <i
                     className={"fa fa-big " + PATCH_STATUS_LABEL[row.patchStatus].className}
-                    title={PATCH_STATUS_LABEL[row.patchStatus].label}
+                    title={PATCH_STATUS_LABEL[row.patchStatus].description}
                   />
+                  {row.patchStatus !== UNKNOWN && row.scanDataSources && row.scanDataSources.length < 2 && (
+                    <i
+                      className={"fa fa-big fa-dot-circle-o text-secondary"}
+                      title={this.getPatchStatusAccuracyWarning(row)}
+                    />
+                  )}
                 </div>
               )}
             />
@@ -334,9 +406,16 @@ class CVEAudit extends React.Component<Props, State> {
               header={t("Actions")}
               cell={(row, criteria) => {
                 if (this.state.resultType === TARGET_SERVER) {
-                  if (row.patchStatus === NOT_AFFECTED || row.patchStatus === PATCHED) {
+                  if (
+                    row.patchStatus === NOT_AFFECTED ||
+                    row.patchStatus === PATCHED ||
+                    row.patchStatus === AFFECTED_PATCH_UNAVAILABLE ||
+                    row.patchStatus === AFFECTED_PATCH_UNAVAILABLE_IN_UYUNI ||
+                    row.patchStatus === AFFECTED_PATCH_UNAVAILABLE ||
+                    row.patchStatus === UNKNOWN
+                  ) {
                     return t("No action required");
-                  } else if (row.patchStatus === AFFECTED_PATCH_APPLICABLE) {
+                  } else if (row.patchStatus === AFFECTED_FULL_PATCH_APPLICABLE) {
                     return (
                       <div>
                         <div>
@@ -377,13 +456,34 @@ class CVEAudit extends React.Component<Props, State> {
                         <div>{"Patch: " + row.erratas[0].advisory}</div>
                       </div>
                     );
+                  } else if (row.patchStatus === AFFECTED_PARTIAL_PATCH_APPLICABLE) {
+                    return (
+                      <div>
+                        <div>
+                          <a href={"/rhn/systems/details/ErrataList.do?sid=" + row.id}>
+                            {t("Install a new partial patch on this system.")}
+                          </a>
+                        </div>
+                        {row.erratas.map((errata) => {
+                          return (
+                            <div>
+                              <a href={"/rhn/errata/details/SystemsAffected.do?eid=" + errata.id}>{errata.advisory}</a>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
                   } else {
                     return t("If you see this report a bug.");
                   }
                 } else if (this.state.resultType === TARGET_IMAGE) {
-                  if (row.patchStatus === NOT_AFFECTED || row.patchStatus === PATCHED) {
+                  if (
+                    row.patchStatus === NOT_AFFECTED ||
+                    row.patchStatus === PATCHED ||
+                    row.patchStatus === AFFECTED_PATCH_UNAVAILABLE
+                  ) {
                     return t("No action required");
-                  } else if (row.patchStatus === AFFECTED_PATCH_APPLICABLE) {
+                  } else if (row.patchStatus === AFFECTED_FULL_PATCH_APPLICABLE) {
                     return (
                       <LinkButton
                         icon="fa-cogs"
@@ -425,6 +525,7 @@ class CVEAudit extends React.Component<Props, State> {
               this.state.statuses
             }
             data-senna-off="true"
+            className="btn btn-default"
           >
             <IconTag type="item-download-csv" />
             {t("Download CSV")}

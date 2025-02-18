@@ -21,7 +21,7 @@ Feature: Bootstrap a Oracle 9 Salt minion
     And I select "1-oracle9_minion_key" from "activationKeys"
     And I select the hostname of "proxy" from "proxies" if present
     And I click on "Bootstrap"
-    And I wait until I see "Successfully bootstrapped host!" text
+    And I wait until I see "Bootstrap process initiated." text
     And I wait until onboarding is completed for "oracle9_minion"
 
 @proxy
@@ -37,6 +37,10 @@ Feature: Bootstrap a Oracle 9 Salt minion
     When I follow "Details" in the content area
     And I follow "Proxy" in the content area
     Then I should see "oracle9_minion" hostname
+
+@monitoring_server
+  Scenario: Prepare Oracle 9 Salt minion firewall for monitoring
+    When I enable firewall ports for monitoring on this "oracle9_minion"
 
   Scenario: Check events history for failures on Oracle 9 Salt minion
     Given I am on the Systems overview page of this "oracle9_minion"

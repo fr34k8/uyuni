@@ -48,6 +48,7 @@ import com.suse.manager.webui.utils.gson.SsmScheduleChannelChangesResultJson;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.commons.collections.CollectionUtils;
 
@@ -56,7 +57,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import spark.Request;
@@ -106,25 +106,24 @@ public class SsmController {
             SsmAllowedBaseChannelsJson allowedBaseJson = new SsmAllowedBaseChannelsJson();
             allowedBaseJson.setBase(new SsmChannelDto(c.getId(), c.getName(), c.isCustom()));
 
-            List<EssentialChannelDto> compatibles = ChannelManager
-                    .listCompatibleBaseChannelsForChannel(user, c);
+            List<EssentialChannelDto> compatibles = ChannelManager.listCompatibleBaseChannelsForChannel(user, c);
 
             allowedBaseJson.setAllowedBaseChannels(
                 compatibles.stream().map(cc ->
                         new SsmChannelDto(
                                 cc.getId(), cc.getName(), cc.isCustom()))
-                        .collect(Collectors.toList()));
+                        .toList());
             List<Server> serversByChannel = SsmManager.findServersInSetByChannel(user, c.getId());
             allowedBaseJson.setServers(serversByChannel.stream()
                     .map(s -> new SsmServerDto(s.getId(), s.getName()))
-                    .collect(Collectors.toList()));
+                    .toList());
             result.add(allowedBaseJson);
         }
 
         createAllowedBaseChannelsForUnbasedSystems(user)
                 .ifPresent(nobase -> result.add(0, nobase));
 
-        return json(GSON, response, ResultJson.success(result));
+        return json(GSON, response, ResultJson.success(result), new TypeToken<>() { });
     }
 
     /**
@@ -148,11 +147,11 @@ public class SsmController {
                         ChannelFactory.listCompatibleBasesForSSMNoBaseInNullOrg(user).stream())
                         .map(c ->
                             new SsmChannelDto(c.getId(), c.getName(), c.isCustom()))
-                        .collect(Collectors.toList());
+                        .toList();
             rslt.setAllowedBaseChannels(allowed);
             rslt.setServers(noBase.stream()
                     .map(s -> new SsmServerDto(s.getId(), s.getName()))
-                    .collect(Collectors.toList()));
+                    .toList());
             return Optional.of(rslt);
 
         }
@@ -171,7 +170,7 @@ public class SsmController {
     public static String computeAllowedChannelChanges(Request request, Response response, User user) {
         SsmBaseChannelChangesDto changes = GSON.fromJson(request.body(), SsmBaseChannelChangesDto.class);
         List<SsmAllowedChildChannelsDto> result = SsmManager.computeAllowedChannelChanges(changes, user);
-        return json(GSON, response, ResultJson.success(result));
+        return json(GSON, response, ResultJson.success(result), new TypeToken<>() { });
     }
 
     /**
@@ -195,6 +194,6 @@ public class SsmController {
                 Optional.ofNullable(actionChain).map(ActionChain::getId),
                 scheduleResult
         );
-        return json(GSON, response, ResultJson.success(result));
+        return json(GSON, response, ResultJson.success(result), new TypeToken<>() { });
     }
 }

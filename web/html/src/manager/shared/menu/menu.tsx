@@ -1,17 +1,18 @@
 import * as React from "react";
 
-import escapeHtml from "html-react-parser";
-
 import SpaRenderer from "core/spa/spa-renderer";
 
 import { MessagesContainer } from "components/toastr/toastr";
 
+import { stringToReact } from "utils";
 import { flatten } from "utils/jsx";
 import { DEPRECATED_unsafeEquals } from "utils/legacy";
 
+import styles from "./menu.module.scss";
+
 type LinkProps = {
   url: string;
-  cssClass?: string;
+  className?: string;
   target?: string;
   title?: string;
   responsiveLabel?: React.ReactNode;
@@ -19,7 +20,7 @@ type LinkProps = {
 };
 
 const Link = (props: LinkProps) => (
-  <a href={props.url} className={flatten([props.cssClass, "js-spa"])} target={props.target} title={props.title}>
+  <a href={props.url} className={flatten([props.className, "js-spa"])} target={props.target} title={props.title}>
     {props.responsiveLabel}
     {props.label}
   </a>
@@ -48,7 +49,7 @@ class Node extends React.Component<NodeProps> {
     return (
       <div className={this.props.isLeaf ? "leafLink" : "nodeLink"} onClick={(event) => this.handleClick(event)}>
         {this.props.icon ? <i className={"fa " + this.props.icon}></i> : null}
-        <Link url={this.props.url} target={this.props.target} label={escapeHtml(this.props.label)} />
+        <Link url={this.props.url} target={this.props.target} label={stringToReact(this.props.label)} />
         {this.props.isLeaf ? null : !this.props.isSearchActive ? (
           <i className={"submenuIcon " + (this.props.isOpen ? "fa fa-angle-up" : "fa fa-angle-down")}></i>
         ) : null}
@@ -237,9 +238,8 @@ class Breadcrumb extends React.Component {
     const product_name_link = window._IS_UYUNI ? (
       <Link
         key="home"
-        cssClass="navbar-brand"
+        className="navbar-brand"
         url="/"
-        responsiveLabel={<i className="fa fa-home" title={t("Uyuni homepage")}></i>}
         label={<span>{t("Uyuni")}</span>}
         target=""
         title={t("Uyuni homepage")}
@@ -247,9 +247,8 @@ class Breadcrumb extends React.Component {
     ) : (
       <Link
         key="home"
-        cssClass="navbar-brand"
+        className="navbar-brand"
         url="/"
-        responsiveLabel={<i className="fa fa-home" title={t("SUSE Manager homepage")}></i>}
         label={
           <span>
             {t("SUSE")}
@@ -261,19 +260,21 @@ class Breadcrumb extends React.Component {
         title={t("SUSE Manager homepage")}
       />
     );
+
     return (
-      <div>
+      <div className={styles.breadcrumb}>
         {product_name_link}
-        <span>&gt;</span>
+        <span className="menu-link">&gt;</span>
         {breadcrumbArray.map((a, i) => {
           return (
             <span key={a.label + "_" + i}>
               <Link
+                className="menu-link"
                 url={a.submenu ? a.submenu[0].primaryUrl : a.primaryUrl}
-                label={escapeHtml(a.label)}
+                label={stringToReact(a.label)}
                 target={a.target}
               />
-              {DEPRECATED_unsafeEquals(i, breadcrumbArray.length - 1) ? null : ">"}
+              {i === breadcrumbArray.length - 1 ? null : <span className="menu-link">&gt;</span>}
             </span>
           );
         })}

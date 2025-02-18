@@ -21,6 +21,7 @@ import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.common.messaging.Mail;
 import com.redhat.rhn.common.messaging.SmtpMail;
 import com.redhat.rhn.domain.notification.types.NotificationData;
+import com.redhat.rhn.domain.notification.types.NotificationType;
 import com.redhat.rhn.domain.org.Org;
 import com.redhat.rhn.domain.role.Role;
 import com.redhat.rhn.domain.user.User;
@@ -53,13 +54,21 @@ import javax.persistence.criteria.Root;
  */
 public class UserNotificationFactory extends HibernateFactory {
 
-    private static UserNotificationFactory singleton = new UserNotificationFactory();
     private static Logger log = LogManager.getLogger(UserNotificationFactory.class);
-
+    private static UserNotificationFactory singleton = new UserNotificationFactory();
     private static Mail mailer;
 
     private UserNotificationFactory() {
         super();
+        try {
+            configureMailer();
+        }
+        catch (Exception e) {
+            log.error("Unable to configure the mailer: {}", e.getMessage(), e);
+        }
+    }
+
+    private static void configureMailer() {
         String clazz = Config.get().getString("web.mailer_class");
         if (clazz == null) {
             mailer = new SmtpMail();
@@ -69,7 +78,8 @@ public class UserNotificationFactory extends HibernateFactory {
             Class<? extends Mail> cobj = Class.forName(clazz).asSubclass(Mail.class);
             mailer = cobj.getDeclaredConstructor().newInstance();
         }
-        catch (Exception e) {
+        catch (Exception | LinkageError e) {
+            log.error("An exception was thrown while initializing custom mailer class", e);
             mailer = new SmtpMail();
         }
     }
@@ -79,7 +89,7 @@ public class UserNotificationFactory extends HibernateFactory {
      * @param mailerIn the mailer
      */
     public static void setMailer(Mail mailerIn) {
-        singleton.mailer = mailerIn;
+        mailer = mailerIn;
     }
 
     /**
@@ -90,9 +100,7 @@ public class UserNotificationFactory extends HibernateFactory {
      * @return new UserNotification
      */
     public static UserNotification create(User userIn, NotificationMessage messageIn) {
-        UserNotification userNotification =
-                new UserNotification(userIn, messageIn);
-        return userNotification;
+        return new UserNotification(userIn, messageIn);
     }
 
     /**
@@ -133,8 +141,7 @@ public class UserNotificationFactory extends HibernateFactory {
      * @return new notificationMessage
      */
     public static NotificationMessage createNotificationMessage(NotificationData notification) {
-        NotificationMessage notificationMessage = new NotificationMessage(notification);
-        return notificationMessage;
+        return new NotificationMessage(notification);
     }
 
     /**
@@ -158,7 +165,7 @@ public class UserNotificationFactory extends HibernateFactory {
                                         .filter(user -> user.getEmailNotify() == 1)
                                         .map(User::getEmail)
                                         .toArray(String[]::new);
-            if (receipients.length > 0) {
+            if (receipients.length > 0 && mailer != null) {
                 String subject = String.format("%s Notification from %s: %s",
                         MailHelper.PRODUCT_PREFIX,
                         ConfigDefaults.get().getHostname(),
@@ -168,8 +175,8 @@ public class UserNotificationFactory extends HibernateFactory {
                 if (!StringUtils.isBlank(data.getDetails())) {
                     message += "\n\n" + data.getDetails();
                 }
-                MailHelper.withMailer(singleton.mailer)
-                        .sendEmail(receipients, subject, message.replaceAll("\\<.*?\\>", ""));
+                MailHelper.withMailer(mailer)
+                        .sendEmail(receipients, subject, message.replaceAll("<[^>]*>", ""));
             }
         }
         // Update Notification WebSocket Sessions right now
@@ -232,6 +239,22 @@ public class UserNotificationFactory extends HibernateFactory {
     }
 
     /**
+     * Fetch the most recent {@link NotificationMessage} of a given type.
+     *
+     * @param messageType the type of the notification message
+     * @return the latest NotificationMessage of the specified type, or null if none found
+     */
+    public static NotificationMessage getLastNotificationMessageByType(NotificationType messageType) {
+        CriteriaBuilder builder = getSession().getCriteriaBuilder();
+        CriteriaQuery<NotificationMessage> criteria = builder.createQuery(NotificationMessage.class);
+        Root<NotificationMessage> root = criteria.from(NotificationMessage.class);
+        criteria.where(builder.equal(root.get("type"), messageType));
+        criteria.orderBy(builder.desc(root.get("created")));
+        List<NotificationMessage> result = getSession().createQuery(criteria).setMaxResults(1).getResultList();
+        return result.isEmpty() ? null : result.get(0);
+    }
+
+    /**
      * Lookup for unread {@link UserNotification}.
      *
      * @param userIn the user
@@ -278,7 +301,7 @@ public class UserNotificationFactory extends HibernateFactory {
     }
 
     /**
-     * Lookup for a single {@link UserNotification} by its id
+     * Lookup for a single {@link UserNotification} by its message id
      *
      * @param messageIdIn the id of the message
      * @param userIn the user
@@ -294,6 +317,21 @@ public class UserNotificationFactory extends HibernateFactory {
                 builder.equal(root.get("messageId"), messageIdIn));
 
         return getSession().createQuery(query).uniqueResultOptional();
+    }
+
+    /**
+     * Lookup for a single {@link UserNotification} by its id
+     *
+     * @param notificationIdIn the id of the user notification
+     * @param userIn the user
+     * @return the Optional wrapper for the UserNotification
+     */
+    public static Optional<UserNotification> lookupByUserAndId(Long notificationIdIn, User userIn) {
+        return getSession().createQuery("FROM UserNotification WHERE userId = :userid AND id = :id",
+                UserNotification.class)
+                .setParameter("userid", userIn.getId())
+                .setParameter("id", notificationIdIn)
+                .uniqueResultOptional();
     }
 
     /**
@@ -318,7 +356,7 @@ public class UserNotificationFactory extends HibernateFactory {
         CriteriaBuilder builder = getSession().getCriteriaBuilder();
         CriteriaDelete<NotificationMessage> delete = builder.createCriteriaDelete(NotificationMessage.class);
         Root<NotificationMessage> root = delete.from(NotificationMessage.class);
-        delete.where(builder.lessThan(root.<Date>get("created"), before));
+        delete.where(builder.lessThan(root.get("created"), before));
         return getSession().createQuery(delete).executeUpdate();
     }
 

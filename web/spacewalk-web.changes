@@ -1,6 +1,307 @@
-- Add support to add optional channels via webUI
-- Fix CLM environments UI for environment labels containing dots (bsc#1207838)
-- Added pages to install and remove ptf
+-------------------------------------------------------------------
+Fri Jan 24 14:46:12 CET 2025 - marina.latini@suse.com
+
+- version 5.1.6-0
+  * Fixed misleading error while waiting for SCC credentials
+    synchronisation (bsc#1227374)
+  * Show Source String change for translations
+  * Remove virtualization features
+  * Add notification for users with disabled SCC data forwarding
+    (jsc#SUMA-431)
+
+-------------------------------------------------------------------
+Mon Dec 16 13:37:50 CET 2024 - rosuna@suse.com
+
+- version 5.1.5-0
+  * Update the WebUI version
+
+-------------------------------------------------------------------
+Thu Dec 12 16:07:40 CET 2024 - rosuna@suse.com
+
+- version 5.1.4-0
+  * Layout improvements for the login page and error page
+
+-------------------------------------------------------------------
+Thu Dec 12 10:19:09 CET 2024 - rosuna@suse.com
+
+- version 5.1.3-0
+  * Ensure icon fonts are loaded correctly on buttons (bsc#1231378)
+  * Introduce numeric search field in table filters
+  * Update numerous page layouts
+  * Update shared Javascript dependencies
+  * Remove unused module dobby
+  * Enhance buttons readability and consistency across the product
+  * Add safeguard against CVE-2024-21528
+  * Upgrade DOMPurify to fix CVE-2024-45801
+  * Reduced Bundle size for the web UI
+  * Update web UI build tooling
+
+-------------------------------------------------------------------
+Mon Nov 18 18:33:44 CET 2024 - marina.latini@suse.com
+
+- version 5.1.2-0
+  * CVE-2024-49502: Validate proxy hostname format and escape proxy
+    username to mitigate XSS vulnerabilities (bsc#1231852)
+  * CVE-2024-49503: Escape organization credentials username to
+    mitigate XSS vulnerability (bsc#1231922)
+
+-------------------------------------------------------------------
+Mon Oct 14 15:57:04 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Add a column to the CVE auditing result table to show the data
+    source (OVAL or channels) used for auditing the system
+  * Fix Find targets button behavior for the feature
+    Salt > remote commands page
+  * Fix the missing background color for the pending status badge
+    and show/hide the response Badge component
+  * Fixed stretched button issue in Audit Search and Subscription
+    Matching pages
+  * Fix alert layout in formula catalog
+  * Fix sticky header infinite scroll
+  * Fix layout mismatch in patches management
+  * Fix column alignment on repository and system pages
+  * Integrate UI debugging stories
+  * Bump version to 5.1.0
+  * Fix Extra Packages column in systems list (bsc#1228980)
+
+-------------------------------------------------------------------
+Thu Aug 01 16:45:13 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.12-0
+  * Update the WebUI version
+
+-------------------------------------------------------------------
+Wed Jul 31 16:55:21 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.11-0
+  * Fix btn-info style in new theme
+  * Fix missing margin in CVE audit list on cve page
+  * Fix broken layout of system formulas configuration page
+  * Fix table filters for description, first character dropdown
+    and toggle button.
+  * Fix channel selection using SSM (bsc#1226917)
+  * Fix broken layout in monitoring page
+  * Fix missing margin between inline radio buttons
+  * Fix OpenSCAP search page layout
+  * Remove Bare metal systems tab from General Configuration page
+  * Update setup wizard UI
+  * Remove reboot from uptodate state, introduce reboot and
+    rebootifneeded states
+  * Fix space between radio button and label in forms
+  * Fix layout of SSM subpages in updated theme
+  * Fix broken layout of build image page
+  * Fix layout of advanced package search page
+  * Fix badege color in salt key table
+  * Fix hidden section issue in Monitoring and General
+    Configuration pages
+  * Fix double padding in recurring actions table
+  * Fix missing top border in table footer
+  * Fix broken layout of system highstate page
+  * Fix input alignment and style issues on schedule creation page
+  * Fix datetime selection when using maintenance windows
+    (bsc#1228036)
+  * Configure AppStreams via Activation Keys
+
+-------------------------------------------------------------------
+Fri Jul 19 11:55:59 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.10-0
+  * Bump the WebUI version to 2024.07
+
+-------------------------------------------------------------------
+Tue Jun 18 17:59:31 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.9-0
+  * Show Server timezone with execution time in recurring action
+    details
+  * Fix displayed time in datetime pickers that use server's
+    timezone (bsc#1225196)
+
+-------------------------------------------------------------------
+Mon Jun 10 17:14:33 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.8-0
+  * Fix header layout alignment bugs (bsc#1225072)
+  * Fix tab alignment on system detail pages
+  * Fix height of search icon button
+  * Fix modal backwards compatibility event handling
+  * Fix color contrast issue in tables for the status like,
+    skipped, and read messages
+  * Fix button link styles
+  * Fix modal layouts on notification messages page (bsc#1224401)
+  * Added "Add System" link on System page
+  * Fix dark sidebar color scheme
+
+-------------------------------------------------------------------
+Fri May 03 14:21:08 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.7-0
+  * Added pages to configure and schedule Confidential Computing
+    attestations from the System Set Manager
+  * Add two filters for rpmlint in package spacewalk-web:
+    explicit-lib-dependency and filename-too-long-for-joliet
+    * Added: spacewalk-web-rpmlintrc
+  * Added Confidential Computing UI in Audit
+  * Remove the d3 library
+  * Remove the Visualization feature
+  * Fixed alert alignment issue in credentials modal
+  * Migrate my preferences page to Bootstrap 5
+  * Migrate notification messages page to Bootstrap 5
+  * Added Confidential Computing UI in System details
+  * Fixed alignment issue in the Product table
+  * Added a title to Recommended column in the Products page
+  * Migrate user account pages to Bootstrap 5
+  * Display the attestation process output if available
+  * Enable PAM Authentication by default
+  * Prevent error in case of inconsistent subscription matcher
+    message data (bsc#1221629)
+
+-------------------------------------------------------------------
+Thu Apr 04 18:17:56 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6-0
+  * Improve CLM Create New Filter button
+  * Layout improvements for the header and menu
+  * Migrate web UI landing page to Bootstrap 5
+  * Adapt the CVE Audit UI to the added patch statuses
+  * Fix incorrectly scoped web UI styles
+  * Build with at least Node.js 20
+  * Change the states package API serialization of optional values
+    for Java 17
+  * Fix layout on wide content areas
+  * fix virtual systems filters (bsc#1208572)
+  * Upgrade json5 to 2.2.3
+  * Upgrade semver to 7.6.0
+  * Scope off all Bootstrap 3 styles
+  * Update web UI build pipeline
+
+-------------------------------------------------------------------
+Fri Feb 16 10:10:16 CET 2024 - rosuna@suse.com
+
+- version 5.0.5-1
+  * Bump the WebUI version to 2024.02
+
+-------------------------------------------------------------------
+Tue Feb 13 17:24:01 CET 2024 - marina.latini@suse.com
+
+- version 5.0.4-1
+  * Bump the WebUI version to 5.0.0 Beta1
+
+-------------------------------------------------------------------
+Mon Jan 29 11:50:51 CET 2024 - rosuna@suse.com
+
+- version 5.0.3-1
+  * Reduce UI inconsistencies between the SUSE Manager and Uyuni themes
+  * Add one-shot action execution to recurring custom state create/edit
+  * Bump the WebUI version to 2024.01
+
+-------------------------------------------------------------------
+Tue Jan 16 08:32:17 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.2-1
+  * Fix the use of page size preference in systems and packages
+    lists (bsc#1217209)
+  * Revert reordering of license tags for spacewalk-html
+
+-------------------------------------------------------------------
+Thu Jan 11 12:09:38 CET 2024 - marina.latini@suse.com
+
+- version 5.0.1-1
+  * Fix missing action chain schedule initial value
+  * Update shared page layouts
+  * Move release files from spacewalk to spacewalk web, and add
+    the Mainteanance Update or Milestone version when the package
+    is built for SUSE Manager
+  * Bump the WebUI version to 5.0.0 Alpha 1
+
+-------------------------------------------------------------------
+Fri Dec 15 17:25:38 CET 2023 - rosuna@suse.com
+
+- version 4.4.13-1
+  * Fix issue displaying Ansible playbook name (bsc#1216657) 
+  * Add support for `PaygNotCompliantWarning` notification
+  * Safeguard request URLs against tempering (bsc#1216754)
+  * Remove Select2
+  * Handle new message from subscription-matcher (bsc#1216506)
+  * Fix Enterprise Linux 9 RPM
+  * Move all file managed by RPM from /srv to /usr/share/susemanager
+  * Remove ssh_push_port_http default configuration as it is used
+    only by traditional clients which are now unsupported
+  * Adapt Enterprise Linux for /usr/share/susemanager structure
+  * Add option to filter packages by build time in CLM (jsc#SUMA-282)
+  * Update the version in the WebUI to 2023.12
+
+-------------------------------------------------------------------
+Wed Nov 01 20:13:53 CET 2023 - marina.latini@suse.com
+
+- version 4.4.12-1
+  * Fix the use of page size preference in systems and packages lists
+  * Fix datetimepicker erroneously updating the date field (bsc#1210253, bsc#1215820)
+  * Improve datetimepicker input formatting
+  * Improved logging to better capture third-party library issues
+  * Simplify and modernize password generation logic
+  * Update webpack to 5.88.2
+  * Add sanity checks for FQDNs in proxy configuration dialog
+  * Update the version in the WebUI
+
+-------------------------------------------------------------------
+Mon Sep 18 14:37:15 CEST 2023 - rosuna@suse.com
+
+- version 4.4.11-1
+  * Integrate @formatjs/intl as a replacement for t()
+  * Fix link interpolation in message maps
+  * Update the messages after syncing the products
+  * Fixed issue that prevented to delete credentials
+  * Add warning message in login UI for PAYG with SCC credentials and no forward registration.
+  * Hide SSH info for `localhost` in Pay-as-you-go section
+  * disable editing for special local payg connection
+  * Enhance new systems list filter UI
+  * Add missing translation wrappers for Salt formula catalog
+  * remove unused config variable
+  * Adjust the version number in web/conf/rhn_web.conf (web.version.uyuni)
+  * Shows a notification when an update for Uyuni is available
+  * Fix VHM CPU and RAM display when 0 (bsc#1175823)
+  * Align the order of the Refresh and Create buttons for more
+    consistency
+  * Fix layout alignment on pages showing failed states logs (bsc#1211713)
+  * Fix parsing error when showing notification message details (bsc#1211469)
+  * Fix spelling on monitoring-admin page.
+  * force all mandatory channels being selected in software channel
+    change page (bsc#1211062)
+  * Fix font contrast in dark theme search field (bsc#1201337)
+  * Ignore mandatory channels results that don't match list of channels (bsc#1204270)
+  * Show loading indicator on formula details pages (bsc#1179747)
+  * Fix systems list sorting buttons
+  * Fix wrong credentials error message (bsc#1210456)
+  * Recurring custom states
+  * Increase datetimepicker font sizes (bsc#1210437)
+  * Disable login button with empty password
+
+-------------------------------------------------------------------
+Wed Apr 19 12:48:03 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.10-1
+  * fix an issue where the datetimepicker shows wrong date (bsc#1209231)
+  * Fix datetime picker appearing behind modal edge (bsc#1209703)
+  * Refactor Software / Manage / Packages to use SQL paging (bsc#1206725)
+  * Fix UI inconsistencies in susemanager-light and susemanager-dark
+    theme
+  * Deprecate jQuery datepicker, integrate React datepicker (bsc#1209689)
+
+-------------------------------------------------------------------
+Tue Feb 28 15:34:47 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.9-1
+  * Update the version for the WebUI
+
+-------------------------------------------------------------------
+Tue Feb 21 14:12:36 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.8-1
+  * Add support to add optional channels via webUI
+  * Fix CLM environments UI for environment labels containing dots (bsc#1207838)
+  * Added pages to install and remove ptf
 
 -------------------------------------------------------------------
 Mon Jan 23 08:32:14 CET 2023 - jgonzalez@suse.com

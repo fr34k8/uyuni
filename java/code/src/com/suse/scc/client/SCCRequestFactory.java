@@ -14,11 +14,12 @@
  */
 package com.suse.scc.client;
 
-import com.redhat.rhn.common.conf.Config;
 import com.redhat.rhn.common.conf.ConfigDefaults;
 
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
+
+import java.util.Map;
 
 /**
  * Helper class for setting up HTTP Requests as {@link HttpRequestBase} objects.
@@ -70,8 +71,13 @@ public class SCCRequestFactory {
         request.addHeader("SMS", uuid != null ? uuid : "undefined");
 
         // overwrite the default
-        request.addHeader("User-Agent", Config.get().getString(ConfigDefaults.PRODUCT_NAME) + "/" +
+        request.addHeader("User-Agent", ConfigDefaults.get().getProductName() + "/" +
                 ConfigDefaults.get().getProductVersion());
+
+        // add additional headers from the config
+        for (Map.Entry<String, String> e : config.getAdditionalHeaders().entrySet()) {
+            request.addHeader(e.getKey(), e.getValue());
+        }
 
         return request;
     }

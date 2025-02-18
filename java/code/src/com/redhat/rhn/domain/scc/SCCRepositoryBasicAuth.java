@@ -15,6 +15,7 @@
 package com.redhat.rhn.domain.scc;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -58,7 +59,7 @@ public class SCCRepositoryBasicAuth extends SCCRepositoryAuth {
 
             List<String> sourceParams = new ArrayList<>(Arrays.asList(
                     StringUtils.split(Optional.ofNullable(url.getQuery()).orElse(""), '&')));
-            sourceParams.add(MIRRCRED_QUERY + getCredentials().getId());
+            sourceParams.add(MIRRCRED_QUERY + getOptionalCredentials().orElseThrow().getId());
             String newQuery = StringUtils.join(sourceParams, "&");
 
             URI newURI = new URI(url.getScheme(), url.getUserInfo(), url.getHost(), url.getPort(),
@@ -78,5 +79,16 @@ public class SCCRepositoryBasicAuth extends SCCRepositoryAuth {
             Function<SCCRepositoryTokenAuth, ? extends T> tokenAuth,
             Function<SCCRepositoryCloudRmtAuth, ? extends T> cloudRmtAuth) {
         return basicAuth.apply(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .appendSuper(super.toString())
+                .append("authType", "basic")
+                .toString();
     }
 }

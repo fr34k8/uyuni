@@ -26,4 +26,7 @@ public enum NotificationType {
     PaygAuthenticationUpdateFailed,
     EndOfLifePeriod,
     SubscriptionWarning,
+    UpdateAvailable,
+    PaygNotCompliantWarning,
+    SCCOptOutWarning,
 }

@@ -14,9 +14,10 @@
  */
 package com.redhat.rhn.taskomatic.task;
 
-import com.redhat.rhn.common.conf.Config;
+import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.db.datasource.DataResult;
 import com.redhat.rhn.common.db.datasource.ModeFactory;
+import com.redhat.rhn.common.db.datasource.Row;
 import com.redhat.rhn.common.db.datasource.SelectMode;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.common.localization.LocalizationService;
@@ -30,8 +31,8 @@ import com.suse.manager.utils.MailHelper;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.quartz.SchedulerException;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,15 +61,9 @@ public class TaskHelper {
         LocalizationService ls = LocalizationService.getInstance();
         String[] recipients = MailHelper.getAdminRecipientsFromConfig();
 
-        StringBuilder subject = new StringBuilder();
-        subject.append(ls.getMessage("web traceback subject", Locale.getDefault()));
-        try {
-            subject.append(InetAddress.getLocalHost().getHostName());
-        }
-        catch (Throwable t) {
-            subject.append("Taskomatic");
-        }
-        MailHelper.withSmtp().sendEmail(recipients, subject.toString(), messageBody);
+        String subject = ls.getMessage("web traceback subject", Locale.getDefault()) +
+                ConfigDefaults.get().getJavaHostname();
+        MailHelper.withSmtp().sendEmail(recipients, subject, messageBody);
 
     }
 
@@ -78,24 +73,17 @@ public class TaskHelper {
      * @param messageBody to send.
      */
     public static void sendTaskoEmail(Integer orgId, String messageBody) {
-        Config c = Config.get();
         LocalizationService ls = LocalizationService.getInstance();
         String[] recipients = MailHelper.getAdminRecipientsFromConfig();
         if (orgId != null) {
             List<String> emails = getActiveOrgAdminEmails(orgId);
             recipients = !emails.isEmpty() ?
-                    emails.toArray(new String[emails.size()]) :
+                    emails.toArray(new String[0]) :
                     MailHelper.getAdminRecipientsFromConfig();
         }
-        StringBuilder subject = new StringBuilder();
-        subject.append(ls.getMessage("taskomatic notif subject", Locale.getDefault()));
-        try {
-            subject.append(" from " + InetAddress.getLocalHost().getHostName());
-        }
-        catch (Throwable t) {
-            // nothing
-        }
-        MailHelper.withSmtp().sendEmail(recipients, subject.toString(), messageBody);
+        String subject = ls.getMessage("taskomatic notif subject", Locale.getDefault()) +
+                " from " + ConfigDefaults.get().getJavaHostname();
+        MailHelper.withSmtp().sendEmail(recipients, subject, messageBody);
     }
 
     /**
@@ -106,11 +94,11 @@ public class TaskHelper {
         SelectMode m = ModeFactory.getMode("User_queries", "active_org_admin_emails");
         Map<String, Object> params = new HashMap<>();
         params.put("org_id", orgId);
-        DataResult<Map> dr = m.execute(params);
-        List toReturn = new ArrayList<String>();
+        DataResult<Row> dr = m.execute(params);
+        List<String> toReturn = new ArrayList<>();
         if (dr != null) {
-            for (Map item : dr) {
-                toReturn.add(item.get("email"));
+            for (Row item : dr) {
+                toReturn.add((String)item.get("email"));
             }
         }
 
@@ -141,7 +129,7 @@ public class TaskHelper {
             new TaskoXmlRpcHandler().scheduleSingleSatBunchRun(TaskomaticApi.MINION_ACTION_BUNCH_LABEL,
                     TaskomaticApi.MINION_ACTION_JOB_PREFIX + action.getId(), params, action.getEarliestAction());
         }
-        catch (NoSuchBunchTaskException | InvalidParamException e) {
+        catch (NoSuchBunchTaskException | InvalidParamException | SchedulerException e) {
             LOG.error("Could not schedule action: {}", action.getActionType(), e);
         }
     }

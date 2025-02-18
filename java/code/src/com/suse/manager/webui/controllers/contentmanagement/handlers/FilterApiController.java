@@ -40,9 +40,11 @@ import com.redhat.rhn.manager.contentmgmt.FilterTemplateManager;
 import com.suse.manager.webui.controllers.contentmanagement.request.FilterRequest;
 import com.suse.manager.webui.controllers.contentmanagement.request.ProjectFiltersUpdateRequest;
 import com.suse.manager.webui.utils.FlashScopeHelper;
+import com.suse.manager.webui.utils.SparkApplicationHelper;
 import com.suse.manager.webui.utils.gson.ResultJson;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -54,7 +56,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import spark.Request;
 import spark.Response;
@@ -111,9 +112,9 @@ public class FilterApiController {
 
         List<Long> filterIdsToDetach = dbContentProject.getProjectFilters()
                 .stream()
-                .map(filter -> filter.getFilter().getId())
+                .map(pf -> pf.getFilter().getId())
                 .filter(filterId -> !filtersIdToUpdate.contains(filterId))
-                .collect(Collectors.toList());
+                .toList();
         filterIdsToDetach.forEach(filterId -> CONTENT_MGR.detachFilter(
                 projectLabel,
                 filterId,
@@ -123,13 +124,11 @@ public class FilterApiController {
         List<Long> filterIdsToAttach = filtersIdToUpdate
                 .stream()
                 .filter(filterId ->
-                        !dbContentProject.getProjectFilters()
+                        dbContentProject.getProjectFilters()
                                 .stream()
-                                .filter(filter -> filter.getId() == filterId)
-                                .findFirst()
-                                .isPresent()
+                                .noneMatch(pf -> pf.getFilter().getId().equals(filterId))
                 )
-                .collect(Collectors.toList());
+                .toList();
         filterIdsToAttach
                 .forEach(filterId ->
                         CONTENT_MGR.attachFilter(
@@ -174,21 +173,24 @@ public class FilterApiController {
                     createdFilters = TEMPLATE_MGR.createAppStreamFilters(prefix, channel, user);
                 }
                 catch (ModulemdApiException e) {
-                    LOG.error(e);
-                    return json(GSON, res, ResultJson.error(LOC.getMessage("contentmanagement.modules_error")));
+                    LOG.error(e.getMessage(), e);
+                    return SparkApplicationHelper.json(GSON, res,
+                            ResultJson.error(LOC.getMessage("contentmanagement.modules_error")),
+                            new TypeToken<>() { });
                 }
                 break;
             default:
                 return json(GSON, res, HttpStatus.SC_BAD_REQUEST, ResultJson.error(Collections.emptyList(),
                         Collections.singletonMap("invalid_template",
-                                Collections.singletonList(LOC.getMessage("contentmanagement.invalid_template")))));
+                                Collections.singletonList(LOC.getMessage("contentmanagement.invalid_template")))),
+                        new TypeToken<>() { });
             }
         }
         catch (EntityExistsException error) {
             return json(GSON, res, HttpStatus.SC_BAD_REQUEST, ResultJson.error(Collections.emptyList(),
                     Collections.singletonMap("filter_name",
                             Collections.singletonList(LOC.getMessage("contentmanagement.filter_exists")))
-            ));
+            ), new TypeToken<>() { });
         }
 
         if (!StringUtils.isEmpty(createFilterRequest.getProjectLabel())) {
@@ -241,7 +243,7 @@ public class FilterApiController {
                     new LinkedList<>(),
                     Collections.singletonMap("filter_name",
                             Arrays.asList(LOC.getMessage("contentmanagement.filter_exists")))
-            ));
+            ), new TypeToken<>() { });
         }
         catch (ValidatorException e) {
             return json(GSON, res, HttpStatus.SC_BAD_REQUEST,

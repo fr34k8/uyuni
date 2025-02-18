@@ -79,6 +79,13 @@ INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
 
 INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
              VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
+                        (SELECT id FROM rhnTaskoBunch WHERE name='repo-sync-bunch'),
+                        (SELECT id FROM rhnTaskoTask WHERE name='ubuntu-errata'),
+                        1,
+                        'FINISHED');
+
+INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
+             VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
                         (SELECT id FROM rhnTaskoBunch WHERE name='package-cleanup-bunch'),
                         (SELECT id FROM rhnTaskoTask WHERE name='package-cleanup'),
                         0,
@@ -142,8 +149,8 @@ INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
 
 INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
              VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
-                        (SELECT id FROM rhnTaskoBunch WHERE name='ssh-push-bunch'),
-                        (SELECT id FROM rhnTaskoTask WHERE name='ssh-push'),
+                        (SELECT id FROM rhnTaskoBunch WHERE name='ssh-service-bunch'),
+                        (SELECT id FROM rhnTaskoTask WHERE name='ssh-service'),
                         0,
                         null);
 
@@ -219,13 +226,6 @@ INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
 
 INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
             VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
-                        (SELECT id FROM rhnTaskoBunch WHERE name='minion-action-chain-cleanup-bunch'),
-                        (SELECT id FROM rhnTaskoTask WHERE name='minion-action-chain-cleanup'),
-                        0,
-                        null);
-
-INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
-            VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
                         (SELECT id FROM rhnTaskoBunch WHERE name='notifications-cleanup-bunch'),
                         (SELECT id FROM rhnTaskoTask WHERE name='notifications-cleanup'),
                         0,
@@ -240,8 +240,8 @@ INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
 
 INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
             VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
-                        (SELECT id FROM rhnTaskoBunch WHERE name='recurring-state-apply-bunch'),
-                        (SELECT id FROM rhnTaskoTask WHERE name='recurring-state-apply'),
+                        (SELECT id FROM rhnTaskoBunch WHERE name='recurring-action-executor-bunch'),
+                        (SELECT id FROM rhnTaskoTask WHERE name='recurring-action-executor'),
                         0,
                         null);
 
@@ -305,6 +305,27 @@ INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
             VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
                     (SELECT id FROM rhnTaskoBunch WHERE name='system-overview-update-queue-bunch'),
                     (SELECT id FROM rhnTaskoTask WHERE name='system-overview-update-queue'),
+                    0,
+                    null);
+
+INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
+            VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
+                    (SELECT id FROM rhnTaskoBunch WHERE name='system-profile-refresh-bunch'),
+                    (SELECT id FROM rhnTaskoTask WHERE name='system-profile-refresh'),
+                    0,
+                    null);
+
+INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
+            VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
+                    (SELECT id FROM rhnTaskoBunch WHERE name='payg-dimension-computation-bunch'),
+                    (SELECT id FROM rhnTaskoTask WHERE name='payg-dimension-computation'),
+                    0,
+                    null);
+
+INSERT INTO rhnTaskoTemplate (id, bunch_id, task_id, ordering, start_if)
+            VALUES (sequence_nextval('rhn_tasko_template_id_seq'),
+                    (SELECT id FROM rhnTaskoBunch WHERE name = 'oval-data-sync-bunch'),
+                    (SELECT id FROM rhnTaskoTask WHERE name = 'oval-data-sync'),
                     0,
                     null);
 

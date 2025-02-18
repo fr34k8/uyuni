@@ -14,7 +14,9 @@
  */
 package com.suse.manager.api;
 
+
 import static com.suse.manager.webui.utils.SparkApplicationHelper.asJson;
+import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
 
 import com.redhat.rhn.FaultException;
 import com.redhat.rhn.domain.user.User;
@@ -23,11 +25,13 @@ import com.redhat.rhn.frontend.xmlrpc.BaseHandler;
 import com.redhat.rhn.frontend.xmlrpc.serializer.SerializerFactory;
 import com.redhat.rhn.manager.session.SessionManager;
 
-import com.suse.manager.webui.utils.SparkApplicationHelper;
+import com.suse.utils.ParameterizedTypeImpl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
@@ -36,10 +40,13 @@ import org.apache.logging.log4j.Logger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,6 +54,9 @@ import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import javax.servlet.http.HttpServletRequest;
+
+import spark.Request;
 import spark.Route;
 import spark.Spark;
 
@@ -93,7 +103,7 @@ public class RouteFactory {
         return Collectors.collectingAndThen(
                 Collectors.toList(),
                 list -> {
-                    list = list.stream().filter(Objects::nonNull).collect(Collectors.toList());
+                    list = list.stream().filter(Objects::nonNull).toList();
                     if (list.size() > 1) {
                         throw new IllegalStateException("Multiple items found.");
                     }
@@ -129,6 +139,17 @@ public class RouteFactory {
         return createRoute(Collections.singletonList(method), handler);
     }
 
+    private Map<Type, Type> primToBoxed = Map.of(
+            boolean.class, Boolean.class,
+            byte.class, Byte.class,
+            short.class, Short.class,
+            int.class, Integer.class,
+            long.class, Long.class,
+            float.class, Float.class,
+            double.class, Double.class,
+            char.class, Character.class
+    );
+
     /**
      * Creates an API {@link Route} from a list of methods defined in an API handler
      *
@@ -156,16 +177,22 @@ public class RouteFactory {
                 requestParams.putAll(requestParser.parseBody(req.body()));
             }
             catch (ParseException e) {
-                LOG.error(e);
+                LOG.error(e.getMessage(), e);
                 throw Spark.halt(HttpStatus.SC_BAD_REQUEST, e.getMessage());
             }
 
             String sessionKey = new RequestContext(req.raw()).getWebSession().getKey();
             try {
                 // Find an overload matching the parameter names and types
-                MethodCall call = findMethod(methods, requestParams, sessionKey);
-                HttpApiResponse response = HttpApiResponse.success(call.invoke(handler));
-                return SparkApplicationHelper.json(gson, res, response);
+                MethodCall call = findMethod(methods, requestParams, sessionKey, req);
+                HttpApiResponse<?> response = HttpApiResponse.success(call.invoke(handler));
+
+                Type genericReturnType = call.getMethod().getGenericReturnType();
+                ParameterizedType parameterizedType = new ParameterizedTypeImpl(null, HttpApiResponse.class,
+                        primToBoxed.getOrDefault(genericReturnType, genericReturnType));
+
+                res.type("application/json");
+                return gson.toJson(response, TypeToken.get(parameterizedType).getType());
             }
             catch (NoSuchMethodException e) {
                 throw Spark.halt(HttpStatus.SC_BAD_REQUEST, e.getMessage());
@@ -180,8 +207,8 @@ public class RouteFactory {
             catch (InvocationTargetException e) {
                 Throwable exceptionInMethod = e.getCause();
                 if (exceptionInMethod instanceof FaultException) {
-                    return SparkApplicationHelper.json(gson, res,
-                            HttpApiResponse.error(exceptionInMethod.getMessage()));
+                    return json(gson, res,
+                            HttpApiResponse.error(exceptionInMethod.getMessage()), new TypeToken<>() { });
                 }
                 throw new RuntimeException(exceptionInMethod);
             }
@@ -197,17 +224,20 @@ public class RouteFactory {
      * @param methods list of methods
      * @param jsonArgs the JSON arguments
      * @param sessionKey the session key
+     * @param request the spark request
      * @return the matched method, if exists
      * @throws NoSuchMethodException if no match is found
      */
-    private MethodCall findMethod(List<Method> methods, Map<String, JsonElement> jsonArgs, String sessionKey)
+    private MethodCall findMethod(List<Method> methods, Map<String, JsonElement> jsonArgs,
+                                  String sessionKey, Request request)
             throws NoSuchMethodException {
         User user = SessionManager.loadSession(sessionKey).getUser();
         // Filter methods with parameter names that match the request parameters, excluding the User parameter
         return methods.stream()
                 .filter(m -> jsonArgs.keySet().equals(
                         Arrays.stream(m.getParameters())
-                                .filter(p -> !User.class.equals(p.getType()))
+                                .filter(p -> !(User.class.equals(p.getType()) ||
+                                        HttpServletRequest.class.equals(p.getType())))
                                 .map(Parameter::getName)
                                 .filter(p -> !"sessionKey".equals(p))
                                 .collect(Collectors.toSet())))
@@ -219,13 +249,25 @@ public class RouteFactory {
                         if (User.class.equals(param.getType())) {
                             args.add(user);
                         }
+                        else if (HttpServletRequest.class.equals(param.getType())) {
+                            args.add(request.raw());
+                        }
                         else if ("sessionKey".equals(param.getName())) {
                             args.add(sessionKey);
                         }
                         else {
+                            JsonElement jsonArg = jsonArgs.get(param.getName());
+
+                            // If the method expects a List, try to wrap the value in a JSON array
+                            if (List.class.isAssignableFrom(param.getType()) && !jsonArg.isJsonArray()) {
+                                JsonArray arr = new JsonArray(1);
+                                arr.add(jsonArg);
+                                jsonArg = arr;
+                            }
+
                             try {
                                 // Parse each value and add to the argument list
-                                args.add(requestParser.parseValue(jsonArgs.get(param.getName()), param.getType()));
+                                args.add(requestParser.parseValue(jsonArg, param.getType()));
                             }
                             catch (ParseException e) {
                                 // Type mismatch, skip the method
@@ -248,6 +290,7 @@ public class RouteFactory {
      */
     private Gson initGsonWithSerializers() {
         GsonBuilder builder = new GsonBuilder()
+                .registerTypeAdapter(Date.class, new DateSerializer())
                 .registerTypeAdapter(Map.class, new MapDeserializer())
                 .registerTypeAdapter(List.class, new ListDeserializer());
 

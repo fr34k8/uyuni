@@ -47,10 +47,8 @@ import com.redhat.rhn.testing.ConfigTestUtils;
 import com.redhat.rhn.testing.ServerTestUtils;
 import com.redhat.rhn.testing.UserTestUtils;
 
-import com.suse.manager.virtualization.VirtManagerSalt;
 import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.test.TestSaltApi;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -75,11 +73,10 @@ public class MigrationManagerTest extends BaseTestCaseWithUser {
 
     private final SaltApi saltApi = new TestSaltApi();
     private final ServerGroupManager serverGroupManager = new ServerGroupManager(saltApi);
-    private final VirtManager virtManager = new VirtManagerSalt(saltApi);
     private final MonitoringManager monitoringManager = new FormulaMonitoringManager(saltApi);
     private final SystemEntitlementManager systemEntitlementManager = new SystemEntitlementManager(
-            new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-            new SystemEntitler(saltApi, virtManager, monitoringManager, serverGroupManager)
+            new SystemUnentitler(monitoringManager, serverGroupManager),
+            new SystemEntitler(saltApi, monitoringManager, serverGroupManager)
     );
     private final MigrationManager migrationManager = new MigrationManager(serverGroupManager);
 
@@ -234,7 +231,7 @@ public class MigrationManagerTest extends BaseTestCaseWithUser {
         assertFalse(server.getHistory().isEmpty());
         boolean migrationRecorded = false;
         for (ServerHistoryEvent event : server.getHistory()) {
-            if (event.getSummary().equals("System migration") &&
+            if (event.getSummary().equals(String.format("System migration scheduled by %s", origOrgAdmin.getLogin())) &&
                 event.getDetails().contains("From organization: " + origOrg.getName()) &&
                 event.getDetails().contains("To organization: " + destOrg.getName()) &&
                 (event.getCreated() != null)) {
@@ -273,7 +270,7 @@ public class MigrationManagerTest extends BaseTestCaseWithUser {
         assertFalse(bootstrapServer.getHistory().isEmpty());
         boolean migrationRecorded = false;
         for (ServerHistoryEvent event : bootstrapServer.getHistory()) {
-            if (event.getSummary().equals("System migration") &&
+            if (event.getSummary().equals(String.format("System migration scheduled by %s", origOrgAdmin.getLogin())) &&
                 event.getDetails().contains("From organization: " + origOrg.getName()) &&
                 event.getDetails().contains("To organization: " + destOrg.getName()) &&
                 (event.getCreated() != null)) {

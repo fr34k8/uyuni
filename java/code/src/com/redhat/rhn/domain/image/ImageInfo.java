@@ -88,7 +88,7 @@ public class ImageInfo extends BaseDomainHelper {
      * @return the id
      */
     @Id
-    @Column(name = "id")
+    @Column(name = "id", insertable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "imginfo_seq")
     @SequenceGenerator(name = "imginfo_seq", sequenceName = "suse_imginfo_imgid_seq",
                        allocationSize = 1)
@@ -493,10 +493,9 @@ public class ImageInfo extends BaseDomainHelper {
      */
     @Override
     public boolean equals(final Object other) {
-        if (!(other instanceof ImageInfo)) {
+        if (!(other instanceof ImageInfo castOther)) {
             return false;
         }
-        ImageInfo castOther = (ImageInfo) other;
         return new EqualsBuilder()
                 .append(id, castOther.id)
                 .isEquals();

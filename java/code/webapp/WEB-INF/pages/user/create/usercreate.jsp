@@ -33,7 +33,7 @@
                 <div class="col-sm-6">
                   <div id="desiredpassword-input-group" class="input-group">
                       <html:password property="desiredpassword" styleClass="form-control" size="15"/>
-                      <span class="input-group-addon">
+                      <span class="input-group-addon input-group-text">
                           <i class="fa fa-times-circle text-danger fa-1-5x" id="desiredtick"></i>
                       </span>
                   </div>
@@ -45,18 +45,16 @@
                 <div class="col-sm-6">
                   <div class="input-group">
                       <html:password styleClass="form-control" property="desiredpasswordConfirm" onkeyup="updateTickIcon()" size="15" styleId="confirmpass"/>
-                      <span class="input-group-addon">
+                      <span class="input-group-addon input-group-text">
                           <i class="fa fa-times-circle text-danger fa-1-5x" id="confirmtick"></i>
                       </span>
                   </div>
                 </div>
               </div>
-              <script type="text/javascript" src="/javascript/legacy/pwstrength-bootstrap-1.0.2.js?cb=${rhn:getConfig('web.buildtimestamp')}"></script>
-              <script type="text/javascript" src="/javascript/spacewalk-pwstrength-handler.js?cb=${rhn:getConfig('web.buildtimestamp')}"></script>
               <script type="text/javascript">
-function toggleAsterisk() {
-  jQuery("[name='password-asterisk']").toggle()
-}
+                    function toggleAsterisk() {
+                      jQuery("[name='password-asterisk']").toggle()
+                    }
               </script>
               <div class="form-group">
                 <label class="col-sm-3 control-label"><bean:message key="help.credentials.jsp.passwordstrength"/>:</label>
@@ -240,10 +238,8 @@ function toggleAsterisk() {
             </div>
         </div>
     </div>
-
-<hr/>
-<div class="text-center">
-  <html:submit styleClass="btn btn-success">
+<div>
+  <html:submit styleClass="btn btn-primary">
     <bean:message key="usercreate.jsp.createlogin"/>
   </html:submit>
 </div>

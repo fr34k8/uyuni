@@ -1,14 +1,30 @@
-# Copyright (c) 2017-2021 SUSE LLC
+# Copyright (c) 2017-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
+#
+# This feature can cause failures in:
+# Almost every feature if the "admin" user fails to be created.
+# If the "testing" user fails to be created:
+# - features/core/srv_user_preferences.feature
+# - features/secondary/min_action_chain.feature
+# - features/secondary/min_rhlike_remote_command.feature
+# - features/secondary/minssh_action_chain.feature
+# - features/secondary/srv_cobbler_buildiso.feature
+# - features/secondary/srv_cobbler_distro.feature
+# - features/secondary/srv_cobbler_profile.feature
+# - features/secondary/srv_mainpage.feature
+# - features/secondary/srv_users.feature
 
 Feature: Very first settings
   In order to use the product
   As the admin user
   I want to create the organisation, the first users and set the HTTP proxy
 
+  Scenario: Cleanup Salt files
+    When I run "rm -Rf /srv/salt/*" on "server"
+
+@skip_if_containerized_server
   Scenario: Create admin user and first organization
     Given I access the host the first time
-    And I run "rm -Rf /srv/salt/*" on "server"
     When I go to the home page
     And I enter "SUSE Test" as "orgName"
     And I enter "admin" as "login"
@@ -17,7 +33,7 @@ Feature: Very first settings
     And I select "Mr." from "prefix"
     And I enter "Admin" as "firstNames"
     And I enter "Admin" as "lastName"
-    And I enter "galaxy-noise@suse.de" as "email"
+    And I enter "galaxy-noise@localhost" as "email"
     And I click on "Create Organization"
     Then I am logged in
 
@@ -36,9 +52,9 @@ Feature: Very first settings
     And I select "Mr." from "prefix"
     And I enter "Test" as "firstNames"
     And I enter "User" as "lastName"
-    And I enter "galaxy-noise@suse.de" as "email"
+    And I enter "galaxy-noise@localhost" as "email"
     And I click on "Create Login"
-    Then I should see a "Account testing created, login information sent to galaxy-noise@suse.de" text
+    Then I should see a "Account testing created, login information sent to galaxy-noise@localhost" text
     And I should see a "testing" link
 
   Scenario: Grant testing user administrative priviledges

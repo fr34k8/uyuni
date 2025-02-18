@@ -16,7 +16,7 @@
         <property name="modified" column="modified" type="timestamp" insert="false"/>
 
         <many-to-one name="org" column="org_id" not-null="true" class="com.redhat.rhn.domain.org.Org" />
-        <many-to-one name="credentials" column="cred_id" cascade="save-update,delete" class="com.redhat.rhn.domain.credentials.Credentials" />
+        <many-to-one name="credentials" column="cred_id" cascade="save-update,delete" class="com.redhat.rhn.domain.credentials.VHMCredentials" />
 
         <set name="configs" table="suseVHMConfig" inverse="true" cascade="all-delete-orphan">
             <key column="virtual_host_manager_id" />
@@ -33,13 +33,5 @@
             <many-to-many class="com.redhat.rhn.domain.server.virtualhostmanager.VirtualHostManagerNodeInfo" column="node_id"/>
         </set>
     </class>
-
-    <query name="VirtualHostManager.listByOrg">
-        <![CDATA[ select
-                new com.redhat.rhn.manager.visualization.json.VirtualHostManager(vhm.id, vhm.label)
-                from com.redhat.rhn.domain.server.virtualhostmanager.VirtualHostManager vhm
-                where vhm.org = :org
-        ]]>
-    </query>
 
 </hibernate-mapping>

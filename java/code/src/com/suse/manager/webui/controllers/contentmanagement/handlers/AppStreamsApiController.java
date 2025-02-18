@@ -14,7 +14,7 @@
  */
 package com.suse.manager.webui.controllers.contentmanagement.handlers;
 
-import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
+import static com.suse.manager.webui.utils.SparkApplicationHelper.result;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUser;
 import static spark.Spark.get;
 
@@ -26,6 +26,8 @@ import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.channel.ChannelManager;
 
 import com.suse.manager.webui.utils.gson.ResultJson;
+
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
@@ -63,14 +65,16 @@ public class AppStreamsApiController {
     public static String getModulesInChannel(Request req, Response res, User user) {
         try {
             Channel channel = ChannelManager.lookupByIdAndUser(Long.parseLong(req.params("channelId")), user);
-            return json(res, ResultJson.success(API.getAllModulesInChannel(channel)));
+            return result(res, ResultJson.success(API.getAllModulesInChannel(channel)), new TypeToken<>() { });
         }
         catch (NumberFormatException e) {
+            LOG.error(e.getMessage(), e);
             throw Spark.halt(HttpStatus.SC_BAD_REQUEST);
         }
         catch (ModulemdApiException e) {
-            LOG.error(e);
-            return json(res, ResultJson.error(LOC.getMessage("contentmanagement.modules_error")));
+            LOG.error(e.getMessage(), e);
+            return result(res, ResultJson.error(LOC.getMessage("contentmanagement.modules_error")),
+                    new TypeToken<>() { });
         }
     }
 

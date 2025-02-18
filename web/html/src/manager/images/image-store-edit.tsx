@@ -3,12 +3,12 @@ import * as React from "react";
 import SpaRenderer from "core/spa/spa-renderer";
 
 import { Button, SubmitButton } from "components/buttons";
-import { Check } from "components/input/Check";
-import { Form } from "components/input/Form";
-import { Password } from "components/input/Password";
-import { Select } from "components/input/Select";
-import { Text } from "components/input/Text";
-import { Messages } from "components/messages";
+import { Select } from "components/input";
+import { Check } from "components/input/check/Check";
+import { Form } from "components/input/form/Form";
+import { Password } from "components/input/password/Password";
+import { Text } from "components/input/text/Text";
+import { Messages } from "components/messages/messages";
 import { TopPanel } from "components/panels/TopPanel";
 
 import { Utils } from "utils/functions";
@@ -26,7 +26,7 @@ const typeMap = {
   os_image: "OS Image",
 };
 
-const msgMap = {
+const messageMap = {
   // Nothing for now
 };
 
@@ -104,7 +104,7 @@ class CreateImageStore extends React.Component<Props, State> {
           messages: (
             <Messages
               items={data.messages.map((msg) => {
-                return { severity: "error", text: msgMap[msg] };
+                return { severity: "error", text: messageMap[msg] };
               })}
             />
           ),
@@ -128,7 +128,7 @@ class CreateImageStore extends React.Component<Props, State> {
           messages: (
             <Messages
               items={data.messages.map((msg) => {
-                return { severity: "error", text: msgMap[msg] };
+                return { severity: "error", text: messageMap[msg] };
               })}
             />
           ),
@@ -163,7 +163,7 @@ class CreateImageStore extends React.Component<Props, State> {
             key="useCredentials"
             name="useCredentials"
             label={t("Use credentials")}
-            divClass="col-md-6 col-md-offset-3"
+            divClass="col-md-6 col-md-offset-3 offset-md-3"
           />,
           <Text
             key="username"
@@ -209,7 +209,7 @@ class CreateImageStore extends React.Component<Props, State> {
         <SubmitButton
           key="update-btn"
           id="update-btn"
-          className="btn-success"
+          className="btn-primary"
           icon="fa-edit"
           text={t("Update")}
           disabled={this.state.isInvalid}
@@ -220,7 +220,7 @@ class CreateImageStore extends React.Component<Props, State> {
         <SubmitButton
           key="create-btn"
           id="create-btn"
-          className="btn-success"
+          className="btn-primary"
           icon="fa-plus"
           text={t("Create")}
           disabled={this.state.isInvalid}
@@ -278,7 +278,7 @@ class CreateImageStore extends React.Component<Props, State> {
           />
           {this.renderTypeInputs(this.state.model.storeType)}
           <div className="form-group">
-            <div className="col-md-offset-3 col-md-6">{this.renderButtons()}</div>
+            <div className="col-md-offset-3 offset-md-3 col-md-6">{this.renderButtons()}</div>
           </div>
         </Form>
       </TopPanel>

@@ -49,7 +49,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -115,7 +114,7 @@ public class LockPackageAction extends BaseSystemPackagesAction {
 
         List<Package> pkgsFindAlreadyLocked = PackageManager.lookupByIdAndUser(
                 lockedPackagesResult.stream().map(PackageListItem::getPackageId)
-                        .collect(Collectors.toList()), user);
+                        .toList(), user);
         pkgsAlreadyLocked.addAll(pkgsFindAlreadyLocked);
 
         SessionSetHelper helper = new SessionSetHelper(request);
@@ -144,8 +143,7 @@ public class LockPackageAction extends BaseSystemPackagesAction {
                     }
                 }
                 catch (TaskomaticApiException e) {
-                    LOG.error("Could not schedule package lock action:");
-                    LOG.error(e);
+                    LOG.error("Could not schedule package lock action:", e);
                     this.getStrutsDelegate().addError(errorMessages, "taskscheduler.down");
                 }
             }

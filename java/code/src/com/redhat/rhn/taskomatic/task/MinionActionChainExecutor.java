@@ -20,7 +20,9 @@ import com.redhat.rhn.domain.action.ActionChain;
 import com.redhat.rhn.domain.action.ActionChainEntry;
 import com.redhat.rhn.domain.action.ActionChainFactory;
 import com.redhat.rhn.domain.action.ActionFactory;
+import com.redhat.rhn.domain.server.Server;
 
+import com.suse.cloud.CloudPaygManager;
 import com.suse.manager.webui.services.SaltServerActionService;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -31,6 +33,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -44,20 +47,24 @@ public class MinionActionChainExecutor extends RhnJavaJob {
     public static final LocalizationService LOCALIZATION = LocalizationService.getInstance();
 
     private final SaltServerActionService saltServerActionService;
+    private final CloudPaygManager cloudPaygManager;
 
     /**
      * Default constructor.
      */
     public MinionActionChainExecutor() {
-        this(GlobalInstanceHolder.SALT_SERVER_ACTION_SERVICE);
+        this(GlobalInstanceHolder.SALT_SERVER_ACTION_SERVICE, GlobalInstanceHolder.PAYG_MANAGER);
     }
 
     /**
      * Constructs an instance specifying the {@link SaltServerActionService}. Meant to be used only for unit test.
      * @param saltServerActionServiceIn the salt service
+     * @param cloudPaygManagerIn the cloud payg manager
      */
-    public MinionActionChainExecutor(SaltServerActionService saltServerActionServiceIn) {
+    public MinionActionChainExecutor(SaltServerActionService saltServerActionServiceIn,
+                                     CloudPaygManager cloudPaygManagerIn) {
         saltServerActionService = saltServerActionServiceIn;
+        cloudPaygManager = cloudPaygManagerIn;
     }
 
     @Override
@@ -118,14 +125,56 @@ public class MinionActionChainExecutor extends RhnJavaJob {
                                               .stream()
                                               .map(ActionChainEntry::getActionId)
                                               .filter(Objects::nonNull)
-                                              .collect(Collectors.toList());
+                                              .toList();
 
             ActionFactory.rejectScheduledActions(actionsId,
                 LOCALIZATION.getMessage("task.action.rejection.reason", MAXIMUM_TIMEDELTA_FOR_SCHEDULED_ACTIONS));
 
             return;
         }
+        if (!cloudPaygManager.isCompliant()) {
+            log.error("This action was not executed because SUSE Manager Server PAYG is unable to send " +
+                    "accounting data to the cloud provider.");
+            List<Long> actionsId = actionChain.getEntries()
+                    .stream()
+                    .map(ActionChainEntry::getActionId)
+                    .filter(Objects::nonNull)
+                    .toList();
+            ActionFactory.rejectScheduledActions(actionsId,
+                    LOCALIZATION.getMessage("task.action.rejection.notcompliant"));
+            return;
+        }
 
+        if (cloudPaygManager.isPaygInstance()) {
+            cloudPaygManager.checkRefreshCache(true);
+            if (!cloudPaygManager.hasSCCCredentials()) {
+                boolean hasNonCompliantByosMinion = actionChain.getEntries()
+                        .stream()
+                        .map(ActionChainEntry::getServer)
+                        .filter(Objects::nonNull)
+                        .anyMatch(server -> server.isDeniedOnPayg());
+
+                if (hasNonCompliantByosMinion) {
+                    List<Long> actionsId = actionChain.getEntries()
+                            .stream()
+                            .map(ActionChainEntry::getActionId)
+                            .filter(Objects::nonNull)
+                            .toList();
+
+                    Set<Server> nonCompliantByosMinions = actionChain.getEntries()
+                            .stream()
+                            .map(ActionChainEntry::getServer)
+                            .filter(s -> s.isDeniedOnPayg())
+                            .collect(Collectors.toSet());
+
+                    ActionFactory.rejectScheduledActions(actionsId,
+                            LOCALIZATION.getMessage("task.action.rejection.notcompliantPaygByosActionChain",
+                                    formatByosListToStringErrorMsg(nonCompliantByosMinions)
+                                    ));
+                    return;
+                }
+            }
+        }
         log.info("Executing action chain: {}", actionChainId);
 
         saltServerActionService.executeActionChain(actionChainId);
@@ -148,5 +197,22 @@ public class MinionActionChainExecutor extends RhnJavaJob {
                           .flatMap(action -> action.getServerActions().stream())
                           .filter(serverAction -> ActionFactory.STATUS_QUEUED.equals(serverAction.getStatus()))
                           .count();
+    }
+
+    private String formatByosListToStringErrorMsg(Set<Server> byosMinions) {
+        if (byosMinions.size() <= 2) {
+            return byosMinions.stream()
+                    .map(Server::getName)
+                    .collect(Collectors.joining(","));
+        }
+
+        String errorMsg = byosMinions.stream()
+                .map(Server::getName)
+                .limit(2)
+                .collect(Collectors.joining(","));
+
+        int numberOfLeftByosServers = byosMinions.size() - 2;
+
+        return String.format("%s and %d more", errorMsg, numberOfLeftByosServers);
     }
 }

@@ -34,6 +34,7 @@ module.exports = {
     "@typescript-eslint/no-redeclare": ["error"],
     // TODO: Eventually this should be "error"
     "local-rules/no-raw-date": "warn",
+    "local-rules/intl-apostrophe-curly": "error",
     // TODO: Eventually we should enforce this as well
     // "no-eq-null": "error",
     // TODO: This needs to be reworked with Typescript support in mind
@@ -53,7 +54,7 @@ module.exports = {
           ["^\\u0000"],
           // HMR needs to be imported before everything else
           ["^react-hot-loader/root"],
-          ["^react$"],
+          ["^react$", "^react-dom$"],
           // Fullcalendar needs to be imported before its plugins
           ["^@fullcalendar/react"],
           // Packages
@@ -69,6 +70,15 @@ module.exports = {
       },
     ],
     "sort-imports": "off",
+    // We use a `DEPRECATED_` prefix for old components that doesn't conform with this rule
+    "react/jsx-pascal-case": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        name: "node-gettext",
+        message: "Please import from `core/intl/node-gettext` instead.",
+      },
+    ],
     ...(process.env.NODE_ENV === "production" ? productionRules : {}),
   },
 

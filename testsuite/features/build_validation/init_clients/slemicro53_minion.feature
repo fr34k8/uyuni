@@ -1,4 +1,4 @@
-# Copyright (c) 2023 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 # Licensed under the terms of the MIT license.
 
 # Beware: After altering the system e.g. package installation/removal, the system
@@ -6,6 +6,10 @@
 
 @slemicro53_minion
 Feature: Bootstrap a SLE Micro 5.3 Salt minion
+
+  Scenario: Clean up sumaform leftovers on a SLE Micro 5.3 minion
+    When I perform a full salt minion cleanup on "slemicro53_minion"
+    And I reboot the "slemicro53_minion" host through SSH, waiting until it comes back
 
   Scenario: Log in as admin user
     Given I am authorized for the "Admin" section
@@ -20,14 +24,17 @@ Feature: Bootstrap a SLE Micro 5.3 Salt minion
     And I select "1-slemicro53_minion_key" from "activationKeys"
     And I select the hostname of "proxy" from "proxies" if present
     And I click on "Bootstrap"
-    And I wait until I see "Successfully bootstrapped host!" text
-    And I wait until onboarding is completed for "slemicro53_minion"
+    And I wait until I see "Bootstrap process initiated." text
 
-  Scenario: Reboot the SLE Micro 5.3 minion and wait until reboot is completed
-    When I reboot the "slemicro53_minion" minion through SSH
+  # Following the bootstrapping process, automatic booting is disabled.
+  # This change was implemented due to intermittent errors with automatic reboots, which could occur before Salt could relay the results of applying the bootstrap salt state.
+  Scenario: Reboot the SLE Micro 5.3 minion through SSH
+    When I reboot the "slemicro53_minion" host through SSH, waiting until it comes back
+    Then service "venv-salt-minion" is active on "slemicro53_minion"
 
   Scenario: Check the new bootstrapped SLE Micro 5.3 minion in System Overview page
-    When I follow the left menu "Salt > Keys"
+    When I wait until onboarding is completed for "slemicro53_minion"
+    And I follow the left menu "Salt > Keys"
     Then I should see a "accepted" text
     And the Salt master can reach "slemicro53_minion"
 

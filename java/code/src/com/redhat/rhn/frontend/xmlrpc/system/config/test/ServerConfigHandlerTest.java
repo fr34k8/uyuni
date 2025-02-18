@@ -53,6 +53,9 @@ import com.redhat.rhn.taskomatic.TaskomaticApi;
 import com.redhat.rhn.testing.ConfigTestUtils;
 import com.redhat.rhn.testing.TestUtils;
 
+import com.suse.cloud.CloudPaygManager;
+import com.suse.cloud.test.TestCloudPaygManagerBuilder;
+import com.suse.manager.attestation.AttestationManager;
 import com.suse.manager.webui.controllers.bootstrap.RegularMinionBootstrapper;
 import com.suse.manager.webui.controllers.bootstrap.SSHMinionBootstrapper;
 import com.suse.manager.webui.services.iface.SaltApi;
@@ -78,24 +81,26 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * SystemConfigHandlerTest
  */
 @ExtendWith(JUnit5Mockery.class)
 public class ServerConfigHandlerTest extends BaseHandlerTestCase {
-    private TaskomaticApi taskomaticApi = new TaskomaticApi();
-    private SaltApi saltApi = new TestSaltApi();
-    private SystemQuery systemQuery = new TestSystemQuery();
-    private RegularMinionBootstrapper regularMinionBootstrapper = new RegularMinionBootstrapper(systemQuery, saltApi);
-    private SSHMinionBootstrapper sshMinionBootstrapper = new SSHMinionBootstrapper(systemQuery, saltApi);
-    private XmlRpcSystemHelper xmlRpcSystemHelper = new XmlRpcSystemHelper(
+    private final TaskomaticApi taskomaticApi = new TaskomaticApi();
+    private final SaltApi saltApi = new TestSaltApi();
+    private final SystemQuery systemQuery = new TestSystemQuery();
+    private final CloudPaygManager paygManager = new TestCloudPaygManagerBuilder().build();
+    private final AttestationManager attestationManager = new AttestationManager();
+    private final RegularMinionBootstrapper regularMinionBootstrapper =
+            new RegularMinionBootstrapper(systemQuery, saltApi, paygManager, attestationManager);
+    private final SSHMinionBootstrapper sshMinionBootstrapper =
+            new SSHMinionBootstrapper(systemQuery, saltApi, paygManager, attestationManager);
+    private final XmlRpcSystemHelper xmlRpcSystemHelper = new XmlRpcSystemHelper(
             regularMinionBootstrapper,
             sshMinionBootstrapper
     );
-    private ServerConfigHandler handler = new ServerConfigHandler(taskomaticApi, xmlRpcSystemHelper);
+    private final ServerConfigHandler handler = new ServerConfigHandler(taskomaticApi, xmlRpcSystemHelper);
 
     @RegisterExtension
     protected final Mockery mockContext = new JUnit5Mockery() {{
@@ -104,7 +109,7 @@ public class ServerConfigHandlerTest extends BaseHandlerTestCase {
     }};
 
     @Test
-    public void testDeployConfiguration() throws Exception {
+    public void testDeployConfiguration() {
         // Create  global config channels
         ConfigChannel gcc1 = ConfigTestUtils.createConfigChannel(admin.getOrg(),
                 ConfigChannelType.normal());
@@ -153,7 +158,7 @@ public class ServerConfigHandlerTest extends BaseHandlerTestCase {
 
         try {
             // validate that system must have config deployment capability
-            // in order to deploy config files... (e.g. rhncfg* pkgs installed)
+            // in order to deploy config files...
             handler.deployAll(regular, systems, date);
 
             fail("Shouldn't be permitted to deploy without config deploy capability.");
@@ -199,8 +204,7 @@ public class ServerConfigHandlerTest extends BaseHandlerTestCase {
         srv1.setConfigChannels(List.of(gcc2), regular);
 
         //test add channels
-        handler.addChannels(admin, serverIds,
-                Stream.of(gcc1).map(cc -> cc.getLabel()).collect(Collectors.toList()), true);
+        handler.addChannels(admin, serverIds, List.of(gcc1.getLabel()), true);
 
         TestUtils.saveAndFlush(srv1);
         HibernateFactory.getSession().detach(srv1);
@@ -220,7 +224,7 @@ public class ServerConfigHandlerTest extends BaseHandlerTestCase {
 
         List<ConfigChannel> channels = List.of(gcc1, gcc2);
 
-        List<String> channelLabels = channels.stream().map(cc -> cc.getLabel()).collect(Collectors.toList());
+        List<String> channelLabels = channels.stream().map(ConfigChannel::getLabel).toList();
 
         //test set channels
         handler.setChannels(admin, serverIds, channelLabels);
@@ -246,8 +250,7 @@ public class ServerConfigHandlerTest extends BaseHandlerTestCase {
         srv1.setConfigChannels(List.of(gcc1), regular);
 
         //test add channels
-        handler.addChannels(admin, serverIds,
-                Stream.of(gcc2).map(cc -> cc.getLabel()).collect(Collectors.toList()), false);
+        handler.addChannels(admin, serverIds, List.of(gcc2.getLabel()), false);
 
         TestUtils.saveAndFlush(srv1);
         HibernateFactory.getSession().detach(srv1);
@@ -269,8 +272,8 @@ public class ServerConfigHandlerTest extends BaseHandlerTestCase {
 
         List<ConfigChannel> channels = List.of(gcc1, gcc2);
         List<String> channelLabels = channels.stream()
-                .map(cc -> cc.getLabel())
-                .collect(Collectors.toList());
+                .map(ConfigChannel::getLabel)
+                .toList();
 
         srv1.setConfigChannels(channels, regular);
 

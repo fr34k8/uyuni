@@ -5,6 +5,9 @@ const LicenseCheckerWebpackPlugin = require("license-checker-webpack-plugin");
 const webpackAlias = require("./webpack.alias");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
+const autoprefixer = require("autoprefixer");
+
+const GenerateStoriesPlugin = require("./plugins/generate-stories-plugin");
 
 const DEVSERVER_WEBSOCKET_PATHNAME = "/ws";
 
@@ -27,20 +30,21 @@ module.exports = (env, argv) => {
       // Translations
       { from: path.resolve(__dirname, "../../../po"), to: path.resolve(__dirname, "../dist/po") },
       // Unimported branding assets
-      { from: path.resolve(__dirname, "../branding/fonts"), to: path.resolve(__dirname, "../dist/fonts") },
+      {
+        from: path.resolve(__dirname, "../branding/fonts/font-spacewalk"),
+        to: path.resolve(__dirname, "../dist/fonts/font-spacewalk"),
+      },
+      // TODO: Copy all font licenses too
       { from: path.resolve(__dirname, "../branding/img"), to: path.resolve(__dirname, "../dist/img") },
-      // Any non-compiled CSS, Less files will be compiled by their entry points
+      // Any non-compiled CSS files will be compiled by their entry points
       {
         from: path.resolve(__dirname, "../branding/css/*.css"),
         context: path.resolve(__dirname, "../branding/css"),
         to: path.resolve(__dirname, "../dist/css"),
       },
-      /**
-       * Scripts and dependencies we're migrating from susemanager-frontend-libs to spacewalk-web
-       */
       {
-        from: path.resolve(__dirname, "../node_modules/bootstrap/dist/js/bootstrap.min.js"),
-        to: path.resolve(__dirname, "../dist/javascript/legacy"),
+        from: path.resolve(__dirname, "../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"),
+        to: path.resolve(__dirname, "../dist/javascript/legacy/bootstrap-webpack.js"),
       },
       {
         from: path.resolve(__dirname, "../node_modules/jquery/dist/jquery.min.js"),
@@ -50,13 +54,9 @@ module.exports = (env, argv) => {
         from: path.resolve(__dirname, "../node_modules/jquery-ui/jquery-ui.js"),
         to: path.resolve(__dirname, "../dist/javascript/legacy"),
       },
-      // Font-awesome
+      // TODO: In the future it would be nice to bundle this instead of copying it
       {
-        from: path.resolve(__dirname, "../node_modules/font-awesome/fonts"),
-        to: path.resolve(__dirname, "../dist/fonts/font-awesome"),
-      },
-      {
-        from: path.resolve(__dirname, "../node_modules/font-awesome/css"),
+        from: path.resolve(__dirname, "../node_modules/font-awesome"),
         to: path.resolve(__dirname, "../dist/fonts/font-awesome"),
       },
       {
@@ -64,14 +64,6 @@ module.exports = (env, argv) => {
         to: path.resolve(__dirname, "../dist/javascript/legacy"),
       },
       // TODO: Take only what we need after we've confirmed it works fine, otherwise there's a lot of fluff in this
-      {
-        from: path.resolve(__dirname, "../node_modules/select2"),
-        to: path.resolve(__dirname, "../dist/javascript/legacy/select2"),
-      },
-      {
-        from: path.resolve(__dirname, "../node_modules/select2-bootstrap-css/select2-bootstrap.css"),
-        to: path.resolve(__dirname, "../dist/javascript/legacy/select2"),
-      },
       {
         from: path.resolve(__dirname, "../node_modules/timepicker/jquery.timepicker.js"),
         to: path.resolve(__dirname, "../dist/javascript/legacy"),
@@ -89,15 +81,16 @@ module.exports = (env, argv) => {
     new MiniCssExtractPlugin({
       chunkFilename: "css/[name].css",
     }),
+    new GenerateStoriesPlugin({
+      inputDir: path.resolve(__dirname, "../manager"),
+      outputFile: path.resolve(__dirname, "../manager/storybook/stories.generated.ts"),
+    }),
   ];
 
   if (isProductionMode) {
     pluginsInUse = [
       ...pluginsInUse,
       new LicenseCheckerWebpackPlugin({
-        // If we want, we could check licenses at build time via https://github.com/openSUSE/obs-service-format_spec_file or similar in the future
-        // allow: [...],
-        // emitError: true,
         outputFilename: "../vendors/npm.licenses.structured.js",
         outputWriter: path.resolve(__dirname, "../vendors/licenses.template.ejs"),
       }),
@@ -110,10 +103,9 @@ module.exports = (env, argv) => {
   return {
     entry: {
       "javascript/manager/main": "./manager/index.ts",
-      "css/uyuni": path.resolve(__dirname, "../branding/css/uyuni.less"),
-      "css/susemanager-fullscreen": path.resolve(__dirname, "../branding/css/susemanager-fullscreen.less"),
-      "css/susemanager-light": path.resolve(__dirname, "../branding/css/susemanager-light.less"),
-      "css/susemanager-dark": path.resolve(__dirname, "../branding/css/susemanager-dark.less"),
+      "css/updated-susemanager-light": path.resolve(__dirname, "../branding/css/susemanager-light.scss"),
+      "css/updated-susemanager-dark": path.resolve(__dirname, "../branding/css/susemanager-dark.scss"),
+      "css/updated-uyuni": path.resolve(__dirname, "../branding/css/uyuni.scss"),
     },
     output: {
       filename: `[name].bundle.js`,
@@ -122,19 +114,33 @@ module.exports = (env, argv) => {
       publicPath: "/",
       hashFunction: "md5",
     },
+    node: {
+      __filename: true,
+      __dirname: true,
+    },
     devtool: isProductionMode ? "source-map" : "eval-source-map",
     module: {
       rules: [
         {
-          test: /\.(ts|js)x?$/,
-          exclude: /node_modules/,
-          use: {
-            loader: "babel-loader",
-          },
+          oneOf: [
+            {
+              resourceQuery: /raw/,
+              type: "asset/source",
+            },
+            {
+              test: /\.(ts|js)x?$/,
+              exclude: /node_modules/,
+              use: [
+                {
+                  loader: "babel-loader",
+                },
+              ],
+            },
+          ],
         },
         {
           // Stylesheets that are imported directly by components
-          test: /(components|core|manager)\/.*\.(css|less)$/,
+          test: /(components|core|manager)\/.*\.css$/,
           exclude: /node_modules/,
           use: [
             MiniCssExtractPlugin.loader,
@@ -144,23 +150,6 @@ module.exports = (env, argv) => {
                 modules: true,
               },
             },
-            { loader: "less-loader" },
-          ],
-        },
-        {
-          // Global stylesheets
-          test: /branding\/.*\.less$/,
-          exclude: /node_modules/,
-          use: [
-            MiniCssExtractPlugin.loader,
-            {
-              loader: "css-loader",
-              options: {
-                // NB! This is crucial, we don't consume Bootstrap etc as a module, but as a regular style
-                modules: false,
-              },
-            },
-            { loader: "less-loader" },
           ],
         },
         {
@@ -191,6 +180,47 @@ module.exports = (env, argv) => {
             filename: "fonts/[hash][ext][query]",
           },
         },
+        // See https://getbootstrap.com/docs/5.3/getting-started/webpack/
+        {
+          test: /\.(scss)$/,
+          use: [
+            MiniCssExtractPlugin.loader,
+            // {
+            //   // Adds CSS to the DOM by injecting a `<style>` tag
+            //   loader: "style-loader",
+            // },
+            {
+              // Interprets `@import` and `url()` like `import/require()` and will resolve them
+              loader: "css-loader",
+              options: {
+                modules: {
+                  auto: true,
+                  localIdentName: isProductionMode
+                    ? "[hash:base64:5]" // This is the default value for CSS modules
+                    : "[path][name]__[local]--[hash:base64:5]",
+                },
+              },
+            },
+            {
+              // Loader for webpack to process CSS with PostCSS
+              loader: "postcss-loader",
+              options: {
+                postcssOptions: {
+                  plugins: [autoprefixer],
+                },
+              },
+            },
+            {
+              // Loads a SASS/SCSS file and compiles it to CSS
+              loader: "sass-loader",
+              options: {
+                sassOptions: {
+                  loadPaths: path.resolve(__dirname, "../"),
+                },
+              },
+            },
+          ],
+        },
       ],
     },
     resolve: {
@@ -216,6 +246,7 @@ module.exports = (env, argv) => {
           // Hardcode this so it always matches
           pathname: DEVSERVER_WEBSOCKET_PATHNAME,
         },
+        logging: "error",
       },
       // Override CORS headers for `yarn storybook`, these are not required otherwise
       headers: {

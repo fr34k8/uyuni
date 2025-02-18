@@ -104,10 +104,12 @@ import java.util.stream.Stream;
  */
 public class SaltSSHService {
 
-    private static final String SSH_KEY_DIR = "/srv/susemanager/salt/salt_ssh";
+    private static final String SSH_KEY_DIR = "/var/lib/salt/.ssh";
+    private static final String PUB_SSH_KEY_DIR = "/srv/susemanager/salt/salt_ssh";
     public static final String SSH_KEY_PATH = SSH_KEY_DIR + "/mgr_ssh_id";
     public static final String SSH_PUBKEY_PATH = SSH_KEY_DIR + "/mgr_ssh_id.pub";
-    private static final String SSH_TEMP_BOOTSTRAP_KEY_DIR = SSH_KEY_DIR + "/temp_bootstrap_keys";
+    public static final String SUMA_SSH_PUB_KEY = PUB_SSH_KEY_DIR + "/mgr_ssh_id.pub";
+    private static final Path SSH_TEMP_BOOTSTRAP_KEY_DIR = Path.of(SSH_KEY_DIR,  "temp_bootstrap_keys");
     private static final String PROXY_SSH_PUSH_USER = "mgrsshtunnel";
     private static final String PROXY_SSH_PUSH_KEY =
             "/var/lib/spacewalk/" + PROXY_SSH_PUSH_USER + "/.ssh/id_susemanager_ssh_push";
@@ -263,7 +265,7 @@ public class SaltSSHService {
                             Optional.ofNullable(getSaltSSHPreflightScriptPath()),
                             Optional.of(Arrays.asList(
                                     proxyPath.isEmpty() ?
-                                            ConfigDefaults.get().getCobblerHost() :
+                                            ConfigDefaults.get().getJavaHostname() :
                                             proxyPath.get(proxyPath.size() - 1).split(":")[0],
                                     ContactMethodUtil.SSH_PUSH_TUNNEL.equals(contactMethodLabel) ?
                                             getSshPushRemotePort() : SSL_PORT,
@@ -407,7 +409,7 @@ public class SaltSSHService {
 
         return serverPaths.stream()
                           .sorted(Comparator.comparing(ServerPath::getPosition).reversed())
-                          .collect(Collectors.toList());
+                          .toList();
     }
 
     /**
@@ -535,7 +537,7 @@ public class SaltSSHService {
                     Optional.ofNullable(getSaltSSHPreflightScriptPath()),
                     Optional.of(Arrays.asList(
                             bootstrapProxyPath.isEmpty() ?
-                                    ConfigDefaults.get().getCobblerHost() :
+                                    ConfigDefaults.get().getJavaHostname() :
                                     bootstrapProxyPath.get(bootstrapProxyPath.size() - 1).split(":")[0],
                             ContactMethodUtil.SSH_PUSH_TUNNEL.equals(contactMethod) ?
                                     getSshPushRemotePort() : SSL_PORT,
@@ -559,8 +561,12 @@ public class SaltSSHService {
 
     // create temp key absolute path
     private Path createTempKeyFilePath() {
+        if (!GlobalInstanceHolder.SALT_API.mkDir(SSH_TEMP_BOOTSTRAP_KEY_DIR, "0700").orElse(false)) {
+            LOG.error("Unable to create temp ssh bootstrap directory");
+            return null;
+        }
         String fileName = "boostrapKeyTmp-" + UUID.randomUUID();
-        return Path.of(SSH_TEMP_BOOTSTRAP_KEY_DIR).resolve(fileName).toAbsolutePath();
+        return SSH_TEMP_BOOTSTRAP_KEY_DIR.resolve(fileName).toAbsolutePath();
     }
 
     private void cleanUpTempKeyFile(Path path) {
@@ -582,8 +588,7 @@ public class SaltSSHService {
     private Optional<String> remotePortForwarding(List<String> proxyPath,
                                                   String sshContactMethod) {
         if (ContactMethodUtil.SSH_PUSH_TUNNEL.equals(sshContactMethod)) {
-            return Optional.of(getSshPushRemotePort() + ":" +
-                    ConfigDefaults.get().getCobblerHost() + ":" + SSL_PORT);
+            return Optional.of(getSshPushRemotePort() + ":" + "localhost" + ":" + SSL_PORT);
         }
         return Optional.empty();
     }
@@ -756,7 +761,7 @@ public class SaltSSHService {
     public static Optional<String> getOrRetrieveSSHPushProxyPubKey(long proxyId) {
         Server proxy = ServerFactory.lookupById(proxyId);
         String keyFile = proxy.getHostname() + ".pub";
-        if (Files.exists(Paths.get(SSH_KEY_DIR, keyFile))) {
+        if (Files.exists(Paths.get(PUB_SSH_KEY_DIR, keyFile))) {
             return Optional.of(keyFile);
         }
         return retrieveSSHPushProxyPubKey(proxyId);
@@ -782,7 +787,7 @@ public class SaltSSHService {
                         PROXY_SSH_PUSH_USER,
                         options,
                         "cat " + PROXY_SSH_PUSH_KEY + ".pub",
-                        SSH_KEY_DIR + "/" + keyFile);
+                        PUB_SSH_KEY_DIR + "/" + keyFile);
         if (ret.map(MgrUtilRunner.ExecResult::getReturnCode).orElse(-1) == 0) {
             return Optional.of(keyFile);
         }
@@ -812,6 +817,7 @@ public class SaltSSHService {
             if (!minion.getServerPaths().isEmpty()) {
                 List<ServerPath> paths = sortServerPaths(minion.getServerPaths());
                 ServerPath last = paths.get(paths.size() - 1);
+
                 SaltSSHService.getOrRetrieveSSHPushProxyPubKey(
                         last.getId().getProxyServer().getId())
                         .ifPresent(key ->
@@ -838,7 +844,7 @@ public class SaltSSHService {
                         (saltRes) -> saltRes.values().stream()
                                             .filter(value -> !value.isResult())
                                             .map(StateApplyResult::getComment)
-                                            .collect(Collectors.toList())
+                                            .toList()
                     );
 
                     return result.isEmpty() ? Optional.<List<String>>empty() : Optional.of(result);
@@ -908,14 +914,14 @@ public class SaltSSHService {
             return; // guard against infinite recursion
         }
         data.forEach((key, val) -> {
-            if (val instanceof String) {
-                gatherSaltFileRefs((String)val, fileRefs);
+            if (val instanceof String str) {
+                gatherSaltFileRefs(str, fileRefs);
             }
-            else if (val instanceof List) {
-                gatherSaltFileRefs((List)val, fileRefs, depth + 1);
+            else if (val instanceof List list) {
+                gatherSaltFileRefs(list, fileRefs, depth + 1);
             }
-            else if (val instanceof Map) {
-                gatherSaltFileRefs((Map)val, fileRefs, depth + 1);
+            else if (val instanceof Map map) {
+                gatherSaltFileRefs(map, fileRefs, depth + 1);
             }
         });
     }
@@ -925,14 +931,14 @@ public class SaltSSHService {
             return; // guard against infinite recursion
         }
         for (Object val : data) {
-            if (val instanceof String) {
-                gatherSaltFileRefs((String) val, fileRefs);
+            if (val instanceof String str) {
+                gatherSaltFileRefs(str, fileRefs);
             }
-            else if (val instanceof List) {
-                gatherSaltFileRefs((List)val, fileRefs, depth + 1);
+            else if (val instanceof List list) {
+                gatherSaltFileRefs(list, fileRefs, depth + 1);
             }
-            else if (val instanceof Map) {
-                gatherSaltFileRefs((Map)val, fileRefs, depth + 1);
+            else if (val instanceof Map map) {
+                gatherSaltFileRefs(map, fileRefs, depth + 1);
             }
         }
     }
@@ -959,13 +965,12 @@ public class SaltSSHService {
                                 .filter(SaltSSHService::isApplyHighstate)
                                 .filter(state -> state instanceof ActionSaltState)
                                 .map(state -> ((ActionSaltState)state).getActionId())
-                        .collect(Collectors.toList())
+                        .toList()
                 ));
     }
 
     private static boolean isApplyHighstate(SaltState state) {
-        if (state instanceof SaltModuleRun) {
-            SaltModuleRun moduleRun = (SaltModuleRun)state;
+        if (state instanceof SaltModuleRun moduleRun) {
             return "state.top".equals(moduleRun.getName());
         }
         return false;
@@ -1010,5 +1015,45 @@ public class SaltSSHService {
                                 "/var/tmp/.root_XXXX_salt/minion.d manually. ", minion.getMinionId(), err);
                     }
                 }));
+    }
+
+    /**
+     * Remove server hostname from ssh known_hosts of the proxy where this server is connected to.
+     *
+     * @param server the server to remove from proxy ssh known_hosts
+     * @return return true on success and false otherwise
+     */
+    public static boolean cleanupKnownHostsFromProxy(Server server) {
+        if (server == null || server.getServerPaths().isEmpty()) {
+            return true;
+        }
+        String hostname = server.getHostname();
+        List<ServerPath> paths = sortServerPaths(server.getServerPaths());
+        ServerPath last = paths.get(paths.size() - 1);
+        Server proxy = last.getId().getProxyServer();
+        List<String> proxyPath = proxyPathToHostnames(proxy);
+
+        Map<String, String> options = new HashMap<>();
+        options.put("StrictHostKeyChecking", "no");
+        options.put("ConnectTimeout", ConfigDefaults.get().getSaltSSHConnectTimeout() + "");
+        Optional<MgrUtilRunner.ExecResult> ret = GlobalInstanceHolder.SALT_API
+                .chainSSHCommand(proxyPath,
+                        SSH_KEY_PATH,
+                        PROXY_SSH_PUSH_KEY,
+                        PROXY_SSH_PUSH_USER,
+                        options,
+                        "/usr/bin/ssh-keygen -R " + hostname,
+                        null);
+        if (ret.map(MgrUtilRunner.ExecResult::getReturnCode).orElse(-1) != 0) {
+            String msg = ret.map(r -> "Failed to remove [" + hostname +
+                            "]. from ssh known_hosts on proxy [" + proxy.getHostname() +
+                            "] return code [" + r.getReturnCode() +
+                            "[, stderr [" + r.getStderr() + "]")
+                    .orElse("Could not remove " + hostname + " from ssh known_hosts on proxy " +
+                            proxy.getHostname() + ". Please check the logs.");
+            LOG.error(msg);
+            return false;
+        }
+        return true;
     }
 }

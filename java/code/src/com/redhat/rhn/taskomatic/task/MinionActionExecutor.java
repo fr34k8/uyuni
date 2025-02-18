@@ -18,22 +18,20 @@ import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.domain.action.Action;
 import com.redhat.rhn.domain.action.ActionFactory;
-import com.redhat.rhn.domain.action.channel.SubscribeChannelsAction;
-import com.redhat.rhn.domain.action.server.ServerAction;
-import com.redhat.rhn.domain.server.MinionServerFactory;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.domain.user.UserFactory;
-import com.redhat.rhn.manager.system.SystemManager;
+import com.redhat.rhn.taskomatic.TaskoQuartzHelper;
 
+import com.suse.cloud.CloudPaygManager;
 import com.suse.manager.webui.services.SaltServerActionService;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.quartz.JobExecutionContext;
+import org.quartz.SchedulerException;
 
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,26 +40,29 @@ import java.util.Optional;
  */
 public class MinionActionExecutor extends RhnJavaJob {
 
-    public static final int ACTION_DATABASE_GRACE_TIME = 600_000;
-    public static final int ACTION_DATABASE_POLL_TIME = 100;
+    public static final int MAX_RETRIES = 25;
     public static final long MAXIMUM_TIMEDELTA_FOR_SCHEDULED_ACTIONS = 24; // hours
     private static final LocalizationService LOCALIZATION = LocalizationService.getInstance();
 
     private final SaltServerActionService saltServerActionService;
+    private final CloudPaygManager cloudPaygManager;
 
     /**
      * Default constructor.
      */
     public MinionActionExecutor() {
-        this(GlobalInstanceHolder.SALT_SERVER_ACTION_SERVICE);
+        this(GlobalInstanceHolder.SALT_SERVER_ACTION_SERVICE, GlobalInstanceHolder.PAYG_MANAGER);
     }
 
     /**
      * Constructs an instance specifying the {@link SaltServerActionService}. Meant to be used only for unit test.
      * @param saltServerActionServiceIn the salt service
+     * @param cloudPaygManagerIn the cloud payg manager
      */
-    public MinionActionExecutor(SaltServerActionService saltServerActionServiceIn) {
+    public MinionActionExecutor(SaltServerActionService saltServerActionServiceIn,
+                                CloudPaygManager cloudPaygManagerIn) {
         this.saltServerActionService = saltServerActionServiceIn;
+        this.cloudPaygManager = cloudPaygManagerIn;
     }
 
     @Override
@@ -80,15 +81,15 @@ public class MinionActionExecutor extends RhnJavaJob {
      */
     @Override
     public void execute(JobExecutionContext context) {
+        long actionId = context.getJobDetail().getJobDataMap().getLongValueFromString("action_id");
+
         if (log.isDebugEnabled()) {
-            log.debug("Start minion action executor");
+            log.debug("Start minion action executor for action {}", actionId);
         }
 
         // Measure time to calculate the total duration
         long start = System.currentTimeMillis();
         boolean forcePackageListRefresh = false;
-        long actionId = context.getJobDetail()
-                .getJobDataMap().getLongValueFromString("action_id");
         User user = Optional.ofNullable(context.getJobDetail().getJobDataMap().get("user_id"))
                 .map(id -> Long.parseLong(id.toString()))
                 .map(UserFactory::lookupById)
@@ -108,19 +109,26 @@ public class MinionActionExecutor extends RhnJavaJob {
 
         Action action = ActionFactory.lookupById(actionId);
 
+        if (log.isDebugEnabled()) {
+            log.debug("Number of Queued Server Actions for {}: {}", actionId, countQueuedServerActions(action));
+        }
+
         // HACK: it is possible that this Taskomatic task triggered before the corresponding Action was really
-        // COMMITted in the database. Wait for some minutes checking if it appears
-        int waitedTime = 0;
-        while (countQueuedServerActions(action) == 0 && waitedTime < ACTION_DATABASE_GRACE_TIME) {
-            action = ActionFactory.lookupById(actionId);
+        // COMMITted in the database. If it is the case, reschedule the Job.
+        int retryCount = (Integer) context.getTrigger().getJobDataMap().getOrDefault("retryCount", 1);
+
+        if (retryCount <= MAX_RETRIES && countQueuedServerActions(action) == 0) {
+            log.debug("Couldn't find queued actions for action {}, scheduling retry {} of {}",
+                actionId, retryCount, MAX_RETRIES
+            );
             try {
-                Thread.sleep(ACTION_DATABASE_POLL_TIME);
+                // The retry interval gradually increases based on the number of retries.
+                TaskoQuartzHelper.rescheduleJob(context, retryCount, retryCount);
+                return;
             }
-            catch (InterruptedException e) {
-                // never happens
-                Thread.currentThread().interrupt();
+            catch (SchedulerException e) {
+                log.error("Error scheduling retry job for action {}.", actionId, e);
             }
-            waitedTime += ACTION_DATABASE_POLL_TIME;
         }
 
         if (action == null) {
@@ -132,8 +140,6 @@ public class MinionActionExecutor extends RhnJavaJob {
             log.error("Action with id={} has no server with status QUEUED", actionId);
             return;
         }
-
-        log.debug("Action {} found after: {}ms", actionId, waitedTime);
 
         // calculate offset between scheduled time of
         // actions and (now)
@@ -150,12 +156,25 @@ public class MinionActionExecutor extends RhnJavaJob {
 
             return;
         }
+        if (!cloudPaygManager.isCompliant()) {
+            log.error("This action was not executed because SUSE Manager Server PAYG is unable to send " +
+                    "accounting data to the cloud provider.");
+            ActionFactory.rejectScheduledActions(List.of(actionId),
+                    LOCALIZATION.getMessage("task.action.rejection.notcompliant"));
+            return;
+        }
+
+        // Check if dealing with SUMA PAYG and BYOS minions without SCC credentials
+        if (cloudPaygManager.isPaygInstance()) {
+            cloudPaygManager.checkRefreshCache(true);
+            if (!cloudPaygManager.hasSCCCredentials()) {
+                if (ActionFactory.rejectScheduleActionIfByos(action)) {
+                    return;
+                    }
+                }
+            }
 
         log.info("Executing action: {}", actionId);
-
-        if (ActionFactory.TYPE_SUBSCRIBE_CHANNELS.equals(action.getActionType())) {
-            handleTraditionalClients(user, (SubscribeChannelsAction) action);
-        }
 
         saltServerActionService.execute(action, forcePackageListRefresh,
                 isStagingJob, Optional.ofNullable(stagingJobMinionServerId));
@@ -166,21 +185,6 @@ public class MinionActionExecutor extends RhnJavaJob {
         }
     }
 
-    // for traditional systems only the subscribe channels action will be handled here
-    // all other actions are still handled like before
-    private void handleTraditionalClients(User user, SubscribeChannelsAction sca) {
-        List<ServerAction> serverActions = MinionServerFactory.findTradClientServerActions(sca.getId());
-
-        serverActions.forEach(sa -> {
-            SystemManager.updateServerChannels(user, sa.getServer(),
-                    Optional.ofNullable(sca.getDetails().getBaseChannel()),
-                    sca.getDetails().getChannels());
-            sa.setStatus(ActionFactory.STATUS_COMPLETED);
-            sa.setCompletionTime(new Date());
-            sa.setResultCode(0L);
-            sa.setResultMsg("Successfully changed channels");
-        });
-    }
 
     private long countQueuedServerActions(Action action) {
         if (action == null || CollectionUtils.isEmpty(action.getServerActions())) {

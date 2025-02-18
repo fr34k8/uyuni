@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2022 SUSE LLC
+# Copyright (c) 2015-2023 SUSE LLC
 # Licensed under the terms of the MIT license.
 #
 #  1) check users page
@@ -31,9 +31,9 @@ Feature: Manage users
     And I select "Mr." from "prefix"
     And I enter "Test" as "firstNames"
     And I enter "User" as "lastName"
-    And I enter "galaxy-noise@suse.de" as "email"
+    And I enter "galaxy-noise@localhost" as "email"
     And I click on "Create Login"
-    Then I should see a "Account user1 created, login information sent to galaxy-noise@suse.de" text
+    Then I should see a "Account user1 created, login information sent to galaxy-noise@localhost" text
     And I should see a "user1" link
     And I should see a "normal user" text
 
@@ -56,9 +56,9 @@ Feature: Manage users
     And I should see a "Addresses" link
     And I should see a "user1" text
     And option "Mr." is selected as "prefix"
-    And I should see "Test" in field "firstNames"
-    And I should see "User" in field "lastName"
-    And I should see a "galaxy-noise@suse.de" link
+    And I should see "Test" in field identified by "firstNames"
+    And I should see "User" in field identified by "lastName"
+    And I should see a "galaxy-noise@localhost" link
     And I should see a "Administrative Roles" text
     And I should see a "Roles:" text
     And I should see a "Created:" text
@@ -210,7 +210,7 @@ Feature: Manage users
     And I choose ";"
     And I click on "Save Preferences"
     Then I should see a "Preferences modified" text
-    And radio button "radio-semicolon" is checked
+    And radio button "radio-semicolon" should be checked
 
   Scenario: Cleanup: configure the CSV separator char to comma
     Given I am authorized as "testing" with password "testing"
@@ -218,4 +218,4 @@ Feature: Manage users
     And I choose ","
     And I click on "Save Preferences"
     Then I should see a "Preferences modified" text
-    And radio button "radio-comma" is checked
+    And radio button "radio-comma" should be checked

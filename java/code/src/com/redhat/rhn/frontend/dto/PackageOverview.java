@@ -20,12 +20,17 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+
+import javax.persistence.Tuple;
 
 /**
  * PackageOverview
  */
-public class PackageOverview extends BaseDto {
+public class PackageOverview extends BaseTupleDto {
 
     private Long id;
     private String packageName;
@@ -40,7 +45,30 @@ public class PackageOverview extends BaseDto {
     private String epoch;
     private String release;
     private Boolean retracted;
+    private String appstream;
 
+
+    /**
+     * Default constructor for hibernate
+     */
+    public PackageOverview() {
+    }
+
+    /**
+     * Constructor using a tuple for paged SQL queries
+     * @param tuple the tuple from hibernate
+     */
+    public PackageOverview(Tuple tuple) {
+        id = getTupleValue(tuple, "id", Number.class).map(Number::longValue).orElse(null);
+        nvrea = getTupleValue(tuple, "nvrea", String.class).orElse(null);
+        provider = getTupleValue(tuple, "provider", String.class).orElse(null);
+        packageChannels = getTupleValue(tuple, "channels", String.class)
+                .map(value ->
+                        Arrays.stream(value.split(","))
+                                .map(c -> new Row(Map.of("name", c)))
+                                .toList())
+                .orElse(new ArrayList<>());
+    }
 
     /**
      * @return Returns the packageChannels.
@@ -236,6 +264,24 @@ public class PackageOverview extends BaseDto {
      */
     public void setRetracted(Boolean retractedIn) {
         retracted = retractedIn;
+    }
+
+    /**
+     * Gets the appStream.
+     *
+     * @return appStream
+     */
+    public String getAppstream() {
+        return appstream;
+    }
+
+    /**
+     * Sets the appStream.
+     *
+     * @param appStreamIn the appStream
+     */
+    public void setAppstream(String appStreamIn) {
+        appstream = appStreamIn;
     }
 
 }

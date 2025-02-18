@@ -16,6 +16,7 @@ package com.redhat.rhn.manager.rhnpackage.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -106,7 +107,7 @@ public class PackageManagerTest extends BaseTestCaseWithUser {
         assertEquals(1, dr.size());
 
         for (Object o : dr) {
-            assertTrue(o instanceof PackageListItem);
+            assertInstanceOf(PackageListItem.class, o);
         }
     }
 
@@ -122,7 +123,10 @@ public class PackageManagerTest extends BaseTestCaseWithUser {
         Server server = ServerFactoryTest.createTestServer(user, true);
 
         // create 2 packages with same NEVRA in different channels
-        PackageArch parch = (PackageArch) TestUtils.lookupFromCacheById(100L, "PackageArch.findById");
+        PackageArch parch = HibernateFactory.getSession().createNativeQuery("""
+                SELECT p.* from rhnPackageArch as p WHERE p.id = :id
+                """, PackageArch.class).setParameter("id", 100L).getSingleResult();
+
         PackageName pname = PackageNameTest.createTestPackageName();
         PackageEvr pevr = PackageEvrFactoryTest.createTestPackageEvr(parch.getArchType().getPackageType());
 
@@ -147,7 +151,7 @@ public class PackageManagerTest extends BaseTestCaseWithUser {
         assertEquals(1, dr.size());
 
         for (Object o : dr) {
-            assertTrue(o instanceof PackageListItem);
+            assertInstanceOf(PackageListItem.class, o);
             PackageListItem pli = (PackageListItem) o;
             assertEquals(p1.getId(), pli.getPackageId());
         }
@@ -230,7 +234,7 @@ public class PackageManagerTest extends BaseTestCaseWithUser {
         assertEquals(0, dr.size());
 
         for (Object o : dr) {
-            assertTrue(o instanceof PackageListItem);
+            assertInstanceOf(PackageListItem.class, o);
         }
     }
 

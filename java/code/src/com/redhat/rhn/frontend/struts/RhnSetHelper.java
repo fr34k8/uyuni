@@ -85,7 +85,7 @@ public class RhnSetHelper {
      * along with the ActionForward
      * @return The ActionForward to go to next.
      */
-    public ActionForward updatelist(Map paramsIn) {
+    public ActionForward updatelist(Map<String, Object> paramsIn) {
         updateSet();
         paramsIn.put("setupdated", "true");
         paramsIn.put(RhnAction.SUBMITTED, "true");
@@ -125,7 +125,7 @@ public class RhnSetHelper {
      * along with the ActionForward
      * @return The ActionForward to go to next.
      */
-    public ActionForward selectall(DataResult dr, Map paramsIn) {
+    public ActionForward selectall(DataResult dr, Map<String, Object> paramsIn) {
 
         selectAllData(dr, requestContext.getCurrentUser());
 
@@ -152,14 +152,12 @@ public class RhnSetHelper {
          * RhnSet containing all of the items.
          */
         for (Object dataObject : result) {
-            if (dataObject instanceof BaseDto) {
-                BaseDto next = (BaseDto) dataObject;
+            if (dataObject instanceof BaseDto next) {
                 if (next.isSelectable()) {
                     next.addToSet(rs);
                 }
             }
-            else if (dataObject instanceof Identifiable) {
-                Identifiable row = (Identifiable) dataObject;
+            else if (dataObject instanceof Identifiable row) {
                 rs.addElement(row.getId());
             }
             else {
@@ -177,7 +175,7 @@ public class RhnSetHelper {
      * along with the ActionForward
      * @return The ActionForward to go to next.
      */
-    public ActionForward unselectall(Map paramsIn) {
+    public ActionForward unselectall(Map<String, Object> paramsIn) {
 
         User user = requestContext.getCurrentUser();
 

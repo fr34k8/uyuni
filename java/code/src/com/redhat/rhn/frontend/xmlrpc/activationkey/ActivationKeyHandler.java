@@ -287,7 +287,7 @@ public class ActivationKeyHandler extends BaseHandler {
             String token = tokenBuilder.getToken();
             return key.getChannels().stream().map(
                 c -> new ChannelInfo(c.getLabel(), c.getName(), url + c.getLabel(), token)
-            ).collect(Collectors.toList());
+            ).toList();
         }
         catch (JoseException e) {
             throw new TokenCreationException(e);
@@ -830,6 +830,72 @@ public class ActivationKeyHandler extends BaseHandler {
 
             manager.removePackage(activationKey, packageName, packageArch);
         }
+        return 1;
+    }
+
+    /**
+     * Add app streams to an activation key.
+     *
+     * @param loggedInUser The current user
+     * @param key The activation key to act upon
+     * @param appStreams List of app streams to be added to this activation key
+     * @return 1 on success, exception thrown otherwise
+     *
+     * @apidoc.doc Add app streams to an activation key. If any of the provided app streams is not available in the
+     * channels of the activation key, the request will fail.
+     * @apidoc.param #session_key()
+     * @apidoc.param #param("string", "key")
+     * @apidoc.param #array_begin("appStreams")
+     *     #struct_begin("Module Stream")
+     *         #prop("string", "module")
+     *         #prop("string", "stream")
+     *     #struct_end()
+     * #array_end()
+     * @apidoc.returntype #return_int_success()
+     */
+    public int addAppStreams(User loggedInUser, String key, List<Map<String, String>> appStreams) {
+        ActivationKeyManager akm = ActivationKeyManager.getInstance();
+        ActivationKey activationKey = lookupKey(key, loggedInUser);
+        List<String> appStreamsKeys = appStreams.stream()
+            .map(it -> it.get("module") + ":" + it.get("stream"))
+            .toList();
+        Map<String, Channel> channelsProviding = akm.getChannelsProvidingAppStreams(activationKey, appStreamsKeys);
+        Map<Channel, List<String>> toIncludeMap = channelsProviding.entrySet().stream()
+            .collect(Collectors.groupingBy(
+                Map.Entry::getValue,
+                Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+            ));
+        toIncludeMap.forEach((channel, toInclude) ->
+            akm.saveChannelAppStreams(activationKey, channel, toInclude, Collections.emptyList())
+        );
+        return 1;
+    }
+
+    /**
+     * Remove app streams from an activation key.
+     *
+     * @param loggedInUser The current user
+     * @param key The activation key to act upon
+     * @param appStreams List of app streams to be removed from this activation key
+     * @return 1 on success, exception thrown otherwise
+     *
+     * @apidoc.doc Remove app streams from an activation key.
+     * @apidoc.param #session_key()
+     * @apidoc.param #param("string", "key")
+     * @apidoc.param #array_begin("appStreams")
+     *     #struct_begin("Module Stream")
+     *         #prop("string", "module")
+     *         #prop("string", "stream")
+     *     #struct_end()
+     * #array_end()
+     * @apidoc.returntype #return_int_success()
+     */
+    public int removeAppStreams(User loggedInUser, String key, List<Map<String, String>> appStreams) {
+        ActivationKeyManager akm = ActivationKeyManager.getInstance();
+        ActivationKey activationKey = lookupKey(key, loggedInUser);
+        var toRemove = appStreams.stream().map(it -> it.get("module") + ":" + it.get("stream"))
+                .toList();
+        akm.removeAppStreams(activationKey, toRemove);
         return 1;
     }
 

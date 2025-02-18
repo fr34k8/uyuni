@@ -33,7 +33,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -124,6 +123,11 @@ public class DebRepositoryWriter extends RepositoryWriter {
                 for (PackageDto pkgDto : packageBatch) {
                     writer.addPackage(pkgDto);
                 }
+                log.info("Processed {} packages", i + packageBatch.getEnd());
+                if (commitTransaction) {
+                    // commit pre generated package snippets in the cache
+                    HibernateFactory.commitTransaction();
+                }
             }
             packagesFile = writer.getFilenamePackages();
         }
@@ -165,7 +169,7 @@ public class DebRepositoryWriter extends RepositoryWriter {
     private void loadExtraTags(DataResult<PackageDto> packageBatch) {
         List<Long> pkgIds = packageBatch.stream()
                 .map(PackageDto::getId)
-                .collect(Collectors.toList());
+                .toList();
         Map<Long, Map<String, String>> extraTags = TaskManager.getChannelPackageExtraTags(pkgIds);
         packageBatch.stream().forEach(pkgDto ->
                 pkgDto.setExtraTags(extraTags.get(pkgDto.getId())));

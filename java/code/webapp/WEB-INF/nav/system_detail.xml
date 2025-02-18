@@ -7,7 +7,7 @@
       <rhn-tab-url>/rhn/systems/details/RebootSystem.do</rhn-tab-url>
     </rhn-tab>
     <rhn-tab name="Properties" url="/rhn/systems/details/Edit.do" />
-    <rhn-tab name="Remote Command" acl="system_feature(ftr_remote_command)">
+    <rhn-tab name="Remote Command" acl="system_feature(ftr_remote_command); not is(java.disable_remote_commands_from_ui)">
       <rhn-tab-url>/rhn/systems/details/SystemRemoteCommand.do</rhn-tab-url>
     </rhn-tab>
     <rhn-tab name="Connection" url="/rhn/systems/details/Connection.do" acl="org_has_proxies()"/>
@@ -68,6 +68,8 @@
         <rhn-tab-url>/rhn/systems/details/packages/RemoveConfirm.do</rhn-tab-url>
       </rhn-tab>
     </rhn-tab>
+
+    <rhn-tab name="AppStreams" acl="system_has_modular_channels()" url="/rhn/manager/systems/details/appstreams" />
 
     <rhn-tab name="PTF" acl="has_ptf_repositories(); system_supports_ptf_removal() or system_feature(ftr_package_updates)">
       <rhn-tab-url>/rhn/manager/systems/details/ptf/overview</rhn-tab-url>
@@ -165,30 +167,32 @@
     </rhn-tab>
   </rhn-tab>
 
-  <rhn-tab name="Groups" acl="system_feature(ftr_system_grouping); user_role(org_admin) or user_role(system_group_admin);system_has_management_entitlement() or system_has_salt_entitlement() or system_is_bootstrap_minion_server()" url="/rhn/systems/details/groups/ListRemove.do">
+  <rhn-tab name="Groups" acl="system_feature(ftr_system_grouping); user_role(org_admin) or user_role(system_group_admin)" url="/rhn/systems/details/groups/ListRemove.do">
     <rhn-tab name="List / Leave" url="/rhn/systems/details/groups/ListRemove.do"/>
     <rhn-tab name="Join" url="/rhn/systems/details/groups/Add.do"/>
   </rhn-tab>
 
-  <rhn-tab name="Virtualization" acl="not system_is_proxy(); system_has_virtualization_entitlement() or system_has_foreign_entitlement()">
-    <rhn-tab-url>/rhn/manager/systems/details/virtualization/guests/${sid}</rhn-tab-url>
-    <rhn-tab name="Guests" url="/rhn/manager/systems/details/virtualization/guests/${sid}"/>
-    <rhn-tab name="Storage" url="/rhn/manager/systems/details/virtualization/storage/${sid}" acl="system_has_salt_entitlement()"/>
-    <rhn-tab name="Networks" url="/rhn/manager/systems/details/virtualization/nets/${sid}" acl="system_has_salt_entitlement()"/>
-    <rhn-tab name="Provisioning" url="/rhn/systems/details/virtualization/ProvisionVirtualizationWizard.do" acl="system_has_management_entitlement(); system_feature(ftr_kickstart) or system_feature(ftr_snapshotting)"/>
-    <rhn-tab name="Deployment" url="/rhn/systems/details/virtualization/Deployment.do" acl="not system_is_virtual(); system_has_management_entitlement()"/>
-  </rhn-tab>
-
-  <rhn-tab name="Audit" acl="system_has_management_entitlement() or system_has_salt_entitlement_and_contact_method(default)">
-    <rhn-tab-url>/rhn/systems/details/audit/ListScap.do</rhn-tab-url>
-    <rhn-tab name="nav.system.audit.list_scans">
+  <rhn-tab name="Audit" acl="system_has_management_entitlement() or system_has_salt_entitlement_and_contact_method(default)" url="/rhn/systems/details/audit/ListScap.do">
+    <rhn-tab name="OpenSCAP" url="/rhn/systems/details/audit/ListScap.do">
       <rhn-tab-url>/rhn/systems/details/audit/ListScap.do</rhn-tab-url>
-      <rhn-tab-url>/rhn/systems/details/audit/XccdfDetails.do</rhn-tab-url>
-      <rhn-tab-url>/rhn/systems/details/audit/RuleDetails.do</rhn-tab-url>
-      <rhn-tab-url>/rhn/systems/details/audit/XccdfDeleteConfirm.do</rhn-tab-url>
+      <rhn-tab name="nav.system.audit.list_scans">
+        <rhn-tab-url>/rhn/systems/details/audit/ListScap.do</rhn-tab-url>
+        <rhn-tab-url>/rhn/systems/details/audit/XccdfDetails.do</rhn-tab-url>
+        <rhn-tab-url>/rhn/systems/details/audit/RuleDetails.do</rhn-tab-url>
+        <rhn-tab-url>/rhn/systems/details/audit/XccdfDeleteConfirm.do</rhn-tab-url>
+      </rhn-tab>
+      <rhn-tab name="nav.system.audit.schedule">
+        <rhn-tab-url>/rhn/systems/details/audit/ScheduleXccdf.do</rhn-tab-url>
+      </rhn-tab>
     </rhn-tab>
-    <rhn-tab name="nav.system.audit.schedule">
-      <rhn-tab-url>/rhn/systems/details/audit/ScheduleXccdf.do</rhn-tab-url>
+
+    <rhn-tab name="nav.system.coco" url="/rhn/manager/systems/details/coco/settings">
+      <rhn-tab name="nav.system.coco.settings">
+        <rhn-tab-url>/rhn/manager/systems/details/coco/settings</rhn-tab-url>
+      </rhn-tab>
+      <rhn-tab name="nav.system.coco.list_attestations" acl="system_has_co_co_config()">
+        <rhn-tab-url>/rhn/manager/systems/details/coco/list</rhn-tab-url>
+      </rhn-tab>
     </rhn-tab>
   </rhn-tab>
 
@@ -196,9 +200,6 @@
     <rhn-tab-url>/rhn/manager/systems/details/highstate</rhn-tab-url>
     <rhn-tab name="Highstate">
       <rhn-tab-url>/rhn/manager/systems/details/highstate</rhn-tab-url>
-    </rhn-tab>
-    <rhn-tab name="Recurring States">
-      <rhn-tab-url>/rhn/manager/systems/details/recurring-states</rhn-tab-url>
     </rhn-tab>
     <rhn-tab name="Packages">
       <rhn-tab-url>/rhn/manager/systems/details/packages</rhn-tab-url>
@@ -217,6 +218,10 @@
     <rhn-tab name="Ansible Control Node" url="/rhn/manager/systems/details/ansible/control-node" acl="system_has_ansible_control_node_entitlement()"/>
     <rhn-tab name="Playbooks" url="/rhn/manager/systems/details/ansible/playbooks" acl="system_has_ansible_control_node_entitlement()"/>
     <rhn-tab name="Inventories" url="/rhn/manager/systems/details/ansible/inventories" acl="system_has_ansible_control_node_entitlement()"/>
+  </rhn-tab>
+
+  <rhn-tab name="Recurring Actions" acl="system_has_salt_entitlement()">
+    <rhn-tab-url>/rhn/manager/systems/details/recurring-actions</rhn-tab-url>
   </rhn-tab>
 
   <rhn-tab name="Events" acl="system_has_management_entitlement() or system_has_salt_entitlement()">

@@ -13,7 +13,6 @@
 -- in this software or its documentation.
 --
 
-
 CREATE TABLE rhnPackageChangeLogData
 (
     id          NUMERIC NOT NULL

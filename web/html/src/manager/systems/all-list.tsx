@@ -1,13 +1,15 @@
 import * as React from "react";
 
+import { LinkButton } from "components/buttons";
 import { IconTag } from "components/icontag";
 import * as Systems from "components/systems";
 import { Column } from "components/table/Column";
-import { SearchField } from "components/table/SearchField";
 import { Table } from "components/table/Table";
 
 import { Utils } from "utils/functions";
 import Network from "utils/network";
+
+import { SystemsListFilter } from "./list-filter";
 
 type Props = {
   /** Locale of the help links */
@@ -16,21 +18,6 @@ type Props = {
   queryColumn?: string;
   query?: string;
 };
-
-const allListOptions = [
-  { value: "server_name", label: t("System") },
-  { value: "system_kind", label: t("System Kind") },
-  { value: "status_type", label: t("Updates") },
-  { value: "total_errata_count", label: t("Patches") },
-  { value: "outdated_packages", label: t("Packages") },
-  { value: "extra_pkg_count", label: t("Extra Packages") },
-  { value: "config_files_with_differences", label: t("Config Diffs") },
-  { value: "channel_labels", label: t("Base Channel") },
-  { value: "entitlement_level", label: t("System Type") },
-  { value: "requires_reboot", label: t("Requires Reboot") },
-  { value: "created_days", label: t("Registered Days") },
-  { value: "group_count", label: t("Groups") },
-];
 
 export function AllSystems(props: Props) {
   const [selectedSystems, setSelectedSystems] = React.useState<string[]>([]);
@@ -56,8 +43,18 @@ export function AllSystems(props: Props) {
         >
           <IconTag type="header-help" />
         </a>
-      </h1>
 
+        <div className="pull-right btn-group">
+          <LinkButton
+            id="addsystem"
+            icon="fa-plus"
+            className="btn btn-primary"
+            title={t("Add a system")}
+            text={t("Add system")}
+            href="/rhn/manager/systems/bootstrap"
+          />
+        </div>
+      </h1>
       <Table
         data="/rhn/manager/api/systems/list/all"
         identifier={(item) => item.id}
@@ -65,7 +62,7 @@ export function AllSystems(props: Props) {
         selectable={(item) => item.hasOwnProperty("id")}
         selectedItems={selectedSystems}
         onSelect={handleSelectedSystems}
-        searchField={<SearchField options={allListOptions} name="criteria" />}
+        searchField={<SystemsListFilter />}
         defaultSearchField={props.queryColumn || "server_name"}
         initialSearch={props.query}
         emptyText={t("No Systems.")}
@@ -77,7 +74,7 @@ export function AllSystems(props: Props) {
           cell={(item) => Systems.iconAndName(item)}
         />
         <Column
-          columnKey="statusType"
+          columnKey="status_type"
           comparator={Utils.sortByText}
           header={t("Updates")}
           cell={(item) => {
@@ -101,7 +98,7 @@ export function AllSystems(props: Props) {
         />
 
         <Column
-          columnKey="outdatedPackages"
+          columnKey="outdated_packages"
           comparator={Utils.sortByText}
           header={t("Packages")}
           cell={(item) => {
@@ -115,7 +112,7 @@ export function AllSystems(props: Props) {
         />
 
         <Column
-          columnKey="extraPkgCount"
+          columnKey="extra_pkg_count"
           comparator={Utils.sortByText}
           header={t("Extra Packages")}
           cell={(item) => {
@@ -124,12 +121,12 @@ export function AllSystems(props: Props) {
                 <a href={`/rhn/systems/details/packages/ExtraPackagesList.do?sid=${item.id}`}>{item.extraPkgCount}</a>
               );
             }
-            return item.outdatedPackages;
+            return item.extraPkgCount;
           }}
         />
 
         <Column
-          columnKey="configFilesWithDifferences"
+          columnKey="config_files_with_differences"
           comparator={Utils.sortByText}
           header={t("Config Diffs")}
           cell={(item) => {
@@ -144,7 +141,7 @@ export function AllSystems(props: Props) {
           }}
         />
         <Column
-          columnKey="channelLabels"
+          columnKey="channel_labels"
           comparator={Utils.sortByText}
           header={t("Base Channel")}
           cell={(item) => {
@@ -155,7 +152,7 @@ export function AllSystems(props: Props) {
           }}
         />
         <Column
-          columnKey="entitlementLevel"
+          columnKey="entitlement_level"
           comparator={Utils.sortByText}
           header={t("System Type")}
           cell={(item) => item.entitlementLevel}
@@ -163,7 +160,7 @@ export function AllSystems(props: Props) {
       </Table>
 
       <div className="spacewalk-csv-download">
-        <a href="/rhn/manager/systems/csv/all" className="btn btn-link" data-senna-off="true">
+        <a role="button" href="/rhn/manager/systems/csv/all" className="btn btn-default" data-senna-off="true">
           <IconTag type="item-download-csv" />
           Download CSV
         </a>

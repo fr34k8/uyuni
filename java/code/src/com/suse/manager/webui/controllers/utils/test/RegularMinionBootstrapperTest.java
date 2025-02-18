@@ -15,6 +15,7 @@
 
 package com.suse.manager.webui.controllers.utils.test;
 
+import static java.util.Optional.of;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.redhat.rhn.common.conf.ConfigDefaults;
@@ -29,7 +30,9 @@ import com.redhat.rhn.manager.token.ActivationKeyManager;
 import com.suse.manager.webui.controllers.bootstrap.BootstrapResult;
 import com.suse.manager.webui.controllers.bootstrap.RegularMinionBootstrapper;
 import com.suse.manager.webui.controllers.utils.ContactMethodUtil;
+import com.suse.manager.webui.services.impl.SaltSSHService;
 import com.suse.manager.webui.services.impl.SaltService.KeyStatus;
+import com.suse.manager.webui.services.impl.runner.MgrUtilRunner;
 import com.suse.manager.webui.utils.gson.BootstrapHostsJson;
 import com.suse.manager.webui.utils.gson.BootstrapParameters;
 import com.suse.salt.netapi.calls.wheel.Key;
@@ -59,7 +62,7 @@ public class RegularMinionBootstrapperTest extends AbstractMinionBootstrapperTes
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        bootstrapper = new RegularMinionBootstrapper(saltServiceMock, saltServiceMock);
+        bootstrapper = new RegularMinionBootstrapper(saltServiceMock, saltServiceMock, paygManager, attestationManager);
     }
 
     /**
@@ -83,6 +86,10 @@ public class RegularMinionBootstrapperTest extends AbstractMinionBootstrapperTes
 
             allowing(saltServiceMock).generateKeysAndAccept("myhost", false);
             will(returnValue(keyPair));
+
+            MgrUtilRunner.ExecResult mockResult = new MgrUtilRunner.SshKeygenResult("key", "pubkey");
+            allowing(saltServiceMock).generateSSHKey(SaltSSHService.SSH_KEY_PATH, SaltSSHService.SUMA_SSH_PUB_KEY);
+            will(returnValue(of(mockResult)));
 
             List<String> bootstrapMods = bootstrapMods();
             Map<String, Object> pillarData = createPillarData(Optional.empty(), Optional.empty());
@@ -151,8 +158,8 @@ public class RegularMinionBootstrapperTest extends AbstractMinionBootstrapperTes
         .filter(ak -> k.getKey().equals(ak.getKey()))
         .findFirst()
         .ifPresent(ak -> pillarData.put("activation_key", ak.getKey())));
-        pillarData.put("mgr_server", ConfigDefaults.get().getCobblerHost());
-        pillarData.put("mgr_origin_server", ConfigDefaults.get().getCobblerHost());
+        pillarData.put("mgr_server", ConfigDefaults.get().getJavaHostname());
+        pillarData.put("mgr_origin_server", ConfigDefaults.get().getJavaHostname());
         pillarData.put("contact_method", key
                 .map(k -> k.getContactMethod().getLabel())
                 .orElse(getDefaultContactMethod()));

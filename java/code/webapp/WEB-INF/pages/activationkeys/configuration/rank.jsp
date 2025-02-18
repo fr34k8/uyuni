@@ -39,10 +39,11 @@
             <%@ include file="/WEB-INF/pages/common/fragments/configuration/rankchannels.jspf" %>
             <div class="form-group">
                 <rhn:submitted/>
-                <div class="col-lg-offset-3 col-lg-6">
+                <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
                     <html:hidden property="dispatch" value="${rhn:localize('sdc.config.rank.jsp.update')}"/>
                     <input type="submit" name="dispatcher"
-                           class="btn btn-success"
+                           role="button"
+                           class="btn btn-primary"
                            value="${rhn:localize('sdc.config.rank.jsp.update')}"
                            onclick="handle_ranking_dispatch('ranksWidget','rankedValues','channelRanksForm');"/>
                 </div>

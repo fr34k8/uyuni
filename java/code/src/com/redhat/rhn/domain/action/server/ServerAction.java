@@ -24,9 +24,13 @@ import com.suse.manager.maintenance.MaintenanceManager;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -35,6 +39,8 @@ import java.util.Set;
 public class ServerAction extends ActionChild implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOG = LogManager.getLogger(ServerAction.class);
+
     private Long resultCode;
     private Long serverId;
     private String resultMsg;
@@ -61,6 +67,16 @@ public class ServerAction extends ActionChild implements Serializable {
      * @param statusIn to set
     */
     public void setStatus(ActionStatus statusIn) {
+        if (Objects.equals(statusIn, ActionFactory.STATUS_FAILED) && !Objects.equals(status, statusIn)) {
+            Optional.ofNullable(getParentAction()).ifPresent(pa -> {
+                try {
+                    pa.onFailAction(this);
+                }
+                catch (RuntimeException eIn) {
+                    LOG.error(eIn);
+                }
+            });
+        }
         this.status = statusIn;
     }
 
@@ -202,11 +218,9 @@ public class ServerAction extends ActionChild implements Serializable {
      */
     @Override
     public boolean equals(final Object otherObject) {
-        if (otherObject == null || !(otherObject instanceof ServerAction)) {
+        if (!(otherObject instanceof ServerAction other)) {
             return false;
         }
-        ServerAction other = (ServerAction) otherObject;
-
         // HACK: if object are fully populated, only look at IDs to avoid costly
         // compare hash operations
         Action thisAction = getParentAction();
@@ -304,4 +318,13 @@ public class ServerAction extends ActionChild implements Serializable {
         return  ActionFactory.STATUS_FAILED.equals(status);
     }
 
+    @Override
+    public String toString() {
+        return "ServerAction{" +
+                "serverId=" + serverId +
+                ", actionId=" + Optional.ofNullable(getParentAction()).map(a -> a.getId().toString()).orElse("?") +
+                ", resultCode=" + resultCode +
+                ", status=" + status +
+                '}';
+    }
 }

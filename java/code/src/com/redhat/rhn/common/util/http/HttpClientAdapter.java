@@ -43,8 +43,11 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,6 +55,7 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import spark.route.HttpMethod;
 
@@ -77,25 +81,26 @@ public class HttpClientAdapter {
     public static final String MAX_CONNCECTIONS = "java.mgr_sync_max_connections";
     public static final String HTTP_CONNECTION_TIMEOUT = "java.http_connection_timeout";
     public static final String HTTP_SOCKET_TIMEOUT = "java.http_socket_timeout";
+    public static final String SALT_API_HTTP_SOCKET_TIMEOUT = "java.salt_api_http_socket_timeout";
     private static final int TO_MILLISECONDS = 1000;
 
     /** The log. */
-    private static Logger log = LogManager.getLogger(HttpClientAdapter.class);
+    private static final Logger LOG = LogManager.getLogger(HttpClientAdapter.class);
 
     /** The proxy host. */
     private HttpHost proxyHost;
 
     /** The http client. */
-    private HttpClient httpClient;
+    private final HttpClient httpClient;
 
     /** The no proxy domains. */
-    private List<String> noProxyDomains = new ArrayList<>();
+    private final List<String> noProxyDomains = new ArrayList<>();
 
     /** The request config. */
-    private RequestConfig requestConfig;
+    private final RequestConfig requestConfig;
 
     /** The credentials provider. */
-    private CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+    private final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
     /**
      * Initialize an {@link HttpClient} for performing requests. Proxy settings will
      * be read from the configuration and applied transparently.
@@ -103,7 +108,7 @@ public class HttpClientAdapter {
     public HttpClientAdapter() {
         Optional<SSLConnectionSocketFactory> sslSocketFactory = Optional.empty();
         try {
-            SSLContext sslContext = SSLContext.getDefault();
+            SSLContext sslContext = buildSslSocketContext();
             List<String> supportedProtocols = Arrays.asList(sslContext.getSupportedSSLParameters().getProtocols());
             List<String> wantedProtocols = Arrays.asList("TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3");
             wantedProtocols.retainAll(supportedProtocols);
@@ -114,7 +119,7 @@ public class HttpClientAdapter {
                     SSLConnectionSocketFactory.getDefaultHostnameVerifier()));
         }
         catch (NoSuchAlgorithmException e) {
-            log.warn("No such algorithm. Using default context", e);
+            LOG.warn("No such algorithm. Using default context", e);
         }
 
         HttpClientBuilder clientBuilder = HttpClientBuilder.create();
@@ -122,8 +127,8 @@ public class HttpClientAdapter {
 
         clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         Builder requestConfigBuilder = RequestConfig.custom()
-                .setConnectTimeout(Config.get().getInt(HTTP_CONNECTION_TIMEOUT, 5) * TO_MILLISECONDS)
-                .setSocketTimeout(Config.get().getInt(HTTP_SOCKET_TIMEOUT, 5 * 60) * TO_MILLISECONDS)
+                .setConnectTimeout(HttpClientAdapter.getHTTPConnectionTimeout(5))
+                .setSocketTimeout(HttpClientAdapter.getHTTPSocketTimeout(5 * 60))
                 .setCookieSpec(CookieSpecs.IGNORE_COOKIES);
 
         // Store the proxy settings
@@ -146,8 +151,8 @@ public class HttpClientAdapter {
             }
 
             // Explicitly exclude the NTLM authentication scheme
-            requestConfigBuilder =  requestConfigBuilder.setProxyPreferredAuthSchemes(
-                                    Arrays.asList(AuthSchemes.DIGEST, AuthSchemes.BASIC));
+            requestConfigBuilder = requestConfigBuilder.setProxyPreferredAuthSchemes(
+                    Arrays.asList(AuthSchemes.DIGEST, AuthSchemes.BASIC));
 
             clientBuilder.setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy());
 
@@ -157,7 +162,7 @@ public class HttpClientAdapter {
         // Read proxy exceptions from the "no_proxy" config option
         String noProxy = Config.get().getString(NO_PROXY);
         if (!StringUtils.isBlank(noProxy)) {
-            for (String domain : Arrays.asList(noProxy.split(","))) {
+            for (String domain : noProxy.split(",")) {
                 noProxyDomains.add(domain.toLowerCase().trim());
             }
         }
@@ -166,6 +171,38 @@ public class HttpClientAdapter {
         clientBuilder.setMaxConnPerRoute(Config.get().getInt(MAX_CONNCECTIONS, 1));
         clientBuilder.setMaxConnTotal(Config.get().getInt(MAX_CONNCECTIONS, 1));
         httpClient = clientBuilder.build();
+    }
+
+    private SSLContext buildSslSocketContext() throws NoSuchAlgorithmException {
+
+        LOG.info("Started checking for certificates and if it finds the certificates will be loaded...");
+
+        String keyStoreLoc = System.getProperty("javax.net.ssl.trustStore",
+                System.getProperty("java.home") + "/lib/security/cacerts");
+        SSLContext context;
+
+        try (InputStream in = new FileInputStream(keyStoreLoc)) {
+            // Create a KeyStore containing our trusted CAs
+            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keystore.load(in, null);
+
+            // Create a TrustManager that trusts the CAs in our KeyStore
+            String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+            tmf.init(keystore);
+
+            // Create an SSLContext that uses our TrustManager
+            context = SSLContext.getInstance("TLS");
+            context.init(null, tmf.getTrustManagers(), null);
+            LOG.info("Completed loading of certificates.");
+        }
+        catch (Exception e) {
+            LOG.error("unable to create ssl context {}." +
+                    "If the trust store has been updated, some certificates might not have been loaded.",
+                    e.getMessage());
+            context = SSLContext.getDefault();
+        }
+        return context;
     }
 
     /**
@@ -190,20 +227,20 @@ public class HttpClientAdapter {
          */
         @Override
         public HttpRoute determineRoute(final HttpHost host, final HttpRequest request,
-                final HttpContext context) throws HttpException {
+                                        final HttpContext context) throws HttpException {
 
             Boolean ignoreNoProxy = (Boolean) context.getAttribute(IGNORE_NO_PROXY);
             URI requestUri = (URI) context.getAttribute(REQUEST_URI);
 
             if (proxyHost != null &&
                     (Boolean.TRUE.equals(ignoreNoProxy) || useProxyFor(requestUri))) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Using proxy: {}", proxyHost);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Using proxy: {}", proxyHost);
                 }
                 return super.determineRoute(host, request, context);
             }
-            if (log.isDebugEnabled()) {
-                log.debug("Using a direct connection (no proxy)");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Using a direct connection (no proxy)");
             }
             // Return direct route
             return new HttpRoute(host);
@@ -231,8 +268,8 @@ public class HttpClientAdapter {
      */
     public HttpResponse executeRequest(HttpRequestBase request, boolean ignoreNoProxy)
             throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("{} {}", request.getMethod(), request.getURI());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("{} {}", request.getMethod(), request.getURI());
         }
         // Decide if a proxy should be used for this request
 
@@ -245,8 +282,8 @@ public class HttpClientAdapter {
         request.setConfig(requestConfig);
         HttpResponse httpResponse = httpClient.execute(request, httpContxt);
 
-        if (log.isDebugEnabled()) {
-            log.debug("Response code: {}", httpResponse.getStatusLine().getStatusCode());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Response code: {}", httpResponse.getStatusLine().getStatusCode());
         }
         return httpResponse;
     }
@@ -323,5 +360,29 @@ public class HttpClientAdapter {
             }
         }
         return true;
+    }
+
+    /**
+     * @param defaultTimeout default timeout in seconds
+     * @return return the HTTP Connection Timeout in milliseconds
+     */
+    public static int getHTTPConnectionTimeout(int defaultTimeout) {
+        return Config.get().getInt(HTTP_CONNECTION_TIMEOUT, defaultTimeout) * TO_MILLISECONDS;
+    }
+
+    /**
+     * @param defaultTimeout default timeout in seconds
+     * @return return the HTTP Socket Timeout in milliseconds
+     */
+    public static int getHTTPSocketTimeout(int defaultTimeout) {
+        return Config.get().getInt(HTTP_SOCKET_TIMEOUT, defaultTimeout) * TO_MILLISECONDS;
+    }
+
+    /**
+     * @param defaultTimeout default timeout in seconds
+     * @return return the HTTP Socket Timeout in milliseconds for salt api connections
+     */
+    public static int getSaltApiHTTPSocketTimeout(int defaultTimeout) {
+        return Config.get().getInt(SALT_API_HTTP_SOCKET_TIMEOUT, defaultTimeout) * TO_MILLISECONDS;
     }
 }

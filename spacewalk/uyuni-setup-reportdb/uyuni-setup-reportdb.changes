@@ -1,4 +1,55 @@
-- improve postgres user check
+-------------------------------------------------------------------
+Fri Jan 24 14:55:34 CET 2025 - marina.latini@suse.com
+
+- version 5.1.2-0
+  * Remove the need for a running systemd during setup
+
+-------------------------------------------------------------------
+Mon Oct 14 17:18:10 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Tue Feb 13 17:23:07 CET 2024 - marina.latini@suse.com
+
+- version 5.0.3-1
+  * Use the first detected PostgreSQL service in case multiple are defined.
+
+-------------------------------------------------------------------
+Thu Jan 18 11:05:11 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.2-1
+  * schema dir moved to /usr/share/susemanager/db
+
+-------------------------------------------------------------------
+Tue Jan 16 08:16:04 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Bump version to 5.0.0
+
+-------------------------------------------------------------------
+Fri Dec 15 17:34:50 CET 2023 - rosuna@suse.com
+
+- version 4.4.6-1
+  * Fix postgres require macros to be installable introducing
+    postgresql_version_min and postgresql_version_max to limit
+    allowed postgresql version
+  * Allow postgresql version dependency to be set in project config
+
+-------------------------------------------------------------------
+Mon Sep 18 14:44:28 CEST 2023 - rosuna@suse.com
+
+- version 4.4.5-1
+  * use pg_isactive to wait for postgres
+  * only use fqdn when nothing provided in --host
+  * Automatically detect PostgreSQL service and data folder name.
+
+-------------------------------------------------------------------
+Tue Feb 21 12:33:30 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.4-1
+  * improve postgres user check
 
 -------------------------------------------------------------------
 Mon Jan 23 08:26:26 CET 2023 - jgonzalez@suse.com

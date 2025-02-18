@@ -80,12 +80,24 @@
     "name" : "SUSE Linux Enterprise High Performance Computing LTSS 15 SP4 x86_64"
   },
   {
+    "label" : "HPC15-SP5-LTSS-ARM64",
+    "name" : "SUSE Linux Enterprise High Performance Computing LTSS 15 SP5 ARM64"
+  },
+  {
+    "label" : "HPC15-SP5-LTSS-X86",
+    "name" : "SUSE Linux Enterprise High Performance Computing LTSS 15 SP5 x86_64"
+  },
+  {
     "label" : "HPE-HELION-OPENSTACK-X86",
     "name" : "HPE Helion Openstack (x86)"
   },
   {
     "label" : "MICROOS-ARM64",
     "name" : "MicroOS for ARM64"
+  },
+  {
+    "label" : "MICROOS-PPC",
+    "name" : "MicroOS for PPC"
   },
   {
     "label" : "MICROOS-X86",
@@ -110,6 +122,10 @@
   {
     "label" : "RES",
     "name" : "SUSE Linux Enterprise RedHat Expanded Support"
+  },
+  {
+    "label" : "RES-7-LTSS-X86",
+    "name" : "SUSE Linux Enterprise RedHat Expanded Support LTSS"
   },
   {
     "label" : "RES-HA",
@@ -182,6 +198,10 @@
   {
     "label" : "SLE-WE",
     "name" : "SUSE Linux Enterprise Workstation Extension"
+  },
+  {
+    "label" : "SLES-12-SP5-LTSS-Extended-Security",
+    "name" : "SUSE Linux Enterprise Server LTSS Extended Security 12 SP5 x86_64"
   },
   {
     "label" : "SLES-ARM64",
@@ -268,6 +288,26 @@
     "name" : "SUSE Linux Enterprise Server LTSS 12 SP4 Z-Series"
   },
   {
+    "label" : "SLES12-SP5-LTSS-ARM64",
+    "name" : "SUSE Linux Enterprise Server LTSS 12 SP5 ARM64"
+  },
+  {
+    "label" : "SLES12-SP5-LTSS-CORE-X86",
+    "name" : "SUSE Linux Enterprise Server LTSS CORE 12 SP5 x86_64"
+  },
+  {
+    "label" : "SLES12-SP5-LTSS-PPC",
+    "name" : "SUSE Linux Enterprise Server LTSS 12 SP5 PPC"
+  },
+  {
+    "label" : "SLES12-SP5-LTSS-X86",
+    "name" : "SUSE Linux Enterprise Server LTSS 12 SP5 x86_64"
+  },
+  {
+    "label" : "SLES12-SP5-LTSS-Z",
+    "name" : "SUSE Linux Enterprise Server LTSS 12 SP5 Z-Series"
+  },
+  {
     "label" : "SLES15-GA-LTSS-PPC",
     "name" : "SUSE Linux Enterprise Server LTSS 15 GA PPC"
   },
@@ -332,6 +372,38 @@
     "name" : "SUSE Linux Enterprise Server LTSS 15 SP3 Z-Series"
   },
   {
+    "label" : "SLES15-SP4-LTSS-ARM64",
+    "name" : "SUSE Linux Enterprise Server LTSS 15 SP4 ARM64"
+  },
+  {
+    "label" : "SLES15-SP4-LTSS-PPC",
+    "name" : "SUSE Linux Enterprise Server LTSS 15 SP4 PPC"
+  },
+  {
+    "label" : "SLES15-SP4-LTSS-X86",
+    "name" : "SUSE Linux Enterprise Server LTSS 15 SP4 x86_64"
+  },
+  {
+    "label" : "SLES15-SP4-LTSS-Z",
+    "name" : "SUSE Linux Enterprise Server LTSS 15 SP4 Z-Series"
+  },
+  {
+    "label" : "SLES15-SP5-LTSS-ARM64",
+    "name" : "SUSE Linux Enterprise Server LTSS 15 SP5 ARM64"
+  },
+  {
+    "label" : "SLES15-SP5-LTSS-PPC",
+    "name" : "SUSE Linux Enterprise Server LTSS 15 SP5 PPC"
+  },
+  {
+    "label" : "SLES15-SP5-LTSS-X86",
+    "name" : "SUSE Linux Enterprise Server LTSS 15 SP5 x86_64"
+  },
+  {
+    "label" : "SLES15-SP5-LTSS-Z",
+    "name" : "SUSE Linux Enterprise Server LTSS 15 SP5 Z-Series"
+  },
+  {
     "label" : "SLESMT",
     "name" : "SUSE Linux Enterprise Subscription Management Tool"
   },
@@ -341,11 +413,23 @@
   },
   {
     "label" : "SMP",
-    "name" : "SUSE Manager Proxy"
+    "name" : "SUSE Manager Proxy x86_64"
+  },
+  {
+    "label" : "SMP-ARM64",
+    "name" : "SUSE Manager Proxy ARM64"
   },
   {
     "label" : "SMRBS",
-    "name" : "SUSE Manager for Retail Branch Server"
+    "name" : "SUSE Manager for Retail Branch Server x86_64"
+  },
+  {
+    "label" : "SMRBS-ARM64",
+    "name" : "SUSE Manager for Retail Branch Server ARM64"
+  },
+  {
+    "label" : "SMS-ARM64",
+    "name" : "SUSE Manager Server ARM64"
   },
   {
     "label" : "SMS-PPC",
@@ -353,7 +437,7 @@
   },
   {
     "label" : "SMS-X86",
-    "name" : "SUSE Manager Server X86-64"
+    "name" : "SUSE Manager Server X86_64"
   },
   {
     "label" : "SMS-Z",

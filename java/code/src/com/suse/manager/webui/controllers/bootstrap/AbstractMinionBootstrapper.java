@@ -32,6 +32,8 @@ import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.system.AnsibleManager;
 import com.redhat.rhn.manager.token.ActivationKeyManager;
 
+import com.suse.cloud.CloudPaygManager;
+import com.suse.manager.attestation.AttestationManager;
 import com.suse.manager.utils.SaltUtils;
 import com.suse.manager.webui.controllers.utils.CommandExecutionException;
 import com.suse.manager.webui.controllers.utils.ContactMethodUtil;
@@ -39,12 +41,14 @@ import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;
 import com.suse.manager.webui.services.impl.SaltSSHService;
 import com.suse.manager.webui.services.impl.SaltService.KeyStatus;
+import com.suse.manager.webui.services.impl.runner.MgrUtilRunner;
 import com.suse.manager.webui.utils.gson.BootstrapHostsJson;
 import com.suse.manager.webui.utils.gson.BootstrapParameters;
 import com.suse.salt.netapi.calls.LocalCall;
 import com.suse.salt.netapi.calls.modules.State;
 import com.suse.salt.netapi.calls.modules.State.ApplyResult;
 import com.suse.salt.netapi.results.SSHResult;
+import com.suse.salt.netapi.results.StateApplyResult;
 import com.suse.utils.Opt;
 
 import org.apache.logging.log4j.LogManager;
@@ -53,6 +57,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +73,8 @@ public abstract class AbstractMinionBootstrapper {
 
     protected final SaltApi saltApi;
     protected final SystemQuery systemQuery;
+    protected final CloudPaygManager paygManager;
+    protected final AttestationManager attestationManager;
 
     private static final int KEY_LENGTH_LIMIT = 1_000_000;
 
@@ -78,10 +85,14 @@ public abstract class AbstractMinionBootstrapper {
      * Constructor
      * @param systemQueryIn salt service
      * @param saltApiIn salt service
+     * @param paygMgrIn cloudPaygManager
      */
-    protected AbstractMinionBootstrapper(SystemQuery systemQueryIn, SaltApi saltApiIn) {
+    protected AbstractMinionBootstrapper(SystemQuery systemQueryIn, SaltApi saltApiIn, CloudPaygManager paygMgrIn,
+                                         AttestationManager attMgrIn) {
         this.saltApi = saltApiIn;
         this.systemQuery = systemQueryIn;
+        this.paygManager = paygMgrIn;
+        this.attestationManager = attMgrIn;
     }
 
     /**
@@ -95,7 +106,7 @@ public abstract class AbstractMinionBootstrapper {
     public BootstrapResult bootstrap(BootstrapParameters params, User user, String defaultContactMethod) {
         List<String> errors = validateBootstrap(params);
         if (!errors.isEmpty()) {
-            return new BootstrapResult(false, errors.stream().map(BootstrapError::new).collect(Collectors.toList()));
+            return new BootstrapResult(false, errors.stream().map(BootstrapError::new).toList());
         }
 
         return bootstrapInternal(params, user, defaultContactMethod);
@@ -132,6 +143,10 @@ public abstract class AbstractMinionBootstrapper {
 
         try {
             if (prc.waitFor() != 0) {
+                String error = new String(prc.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+                if (error.contains("No such file or directory")) {
+                    return true;
+                }
                 throw new CommandExecutionException("Error running command: " + cmd, prc);
             }
         }
@@ -184,9 +199,21 @@ public abstract class AbstractMinionBootstrapper {
             }
         }
         catch (CommandExecutionException | IOException e) {
-            LOG.error(e);
+            LOG.error(e.getMessage(), e);
             return new BootstrapResult(false, contactMethod,
                     LOC.getMessage("bootstrap.minion.error.permcmdexec", SALT_SSH_DIR_PATH + "/known_hosts"));
+        }
+
+        Optional<MgrUtilRunner.SshKeygenResult> res = saltApi.generateSSHKey(SaltSSHService.SSH_KEY_PATH,
+                SaltSSHService.SUMA_SSH_PUB_KEY);
+        if (res.isEmpty()) {
+            LOG.error("Could not generate salt-ssh public key.");
+            return new BootstrapResult(false, LOC.getMessage("bootstrap.minion.error.generatekey"));
+        }
+        if (!(res.get().getReturnCode() == 0 || res.get().getReturnCode() == -1)) {
+            LOG.error("Generating salt-ssh public key failed: {}", res.get().getStderr());
+            return new BootstrapResult(false,
+                    LOC.getMessage("bootstrap.minion.error.generatekey.failed", res.get().getStderr()));
         }
 
         try {
@@ -250,9 +277,9 @@ public abstract class AbstractMinionBootstrapper {
                     saltApi.callSync(call, minionId).ifPresentOrElse(
                             res -> {
                                 // all results must be successful, otherwise we throw an exception
-                                List<Object> failedStates = res.entrySet().stream()
-                                        .filter(r -> !r.getValue().isResult())
-                                        .map(r -> r.getValue().getChanges())
+                                List<Object> failedStates = res.values().stream()
+                                        .filter(applyResultIn -> !applyResultIn.isResult())
+                                        .map(StateApplyResult::getChanges)
                                         .collect(Collectors.toList());
 
                                 if (!failedStates.isEmpty()) {
@@ -294,13 +321,13 @@ public abstract class AbstractMinionBootstrapper {
         String mgrServer = input.getProxyId()
                 .map(ServerFactory::lookupById)
                 .map(Server::getHostname)
-                .orElse(ConfigDefaults.get().getCobblerHost());
+                .orElse(ConfigDefaults.get().getJavaHostname());
 
         pillarData.put("mgr_server", mgrServer);
         if ("ssh-push-tunnel".equals(contactMethod)) {
             pillarData.put("mgr_server_https_port", Config.get().getInt("ssh_push_port_https"));
         }
-        pillarData.put("mgr_origin_server", ConfigDefaults.get().getCobblerHost());
+        pillarData.put("mgr_origin_server", ConfigDefaults.get().getJavaHostname());
         pillarData.put("minion_id", input.getHost());
         pillarData.put("contact_method", contactMethod);
         pillarData.put("mgr_sudo_user", SaltSSHService.getSSHUser());

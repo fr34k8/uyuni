@@ -14,6 +14,7 @@
  */
 package com.redhat.rhn.manager.channel;
 
+import static java.util.Comparator.comparing;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
@@ -52,7 +53,9 @@ import com.redhat.rhn.domain.product.SUSEProductChannel;
 import com.redhat.rhn.domain.product.SUSEProductExtension;
 import com.redhat.rhn.domain.product.SUSEProductFactory;
 import com.redhat.rhn.domain.rhnpackage.PackageEvr;
+import com.redhat.rhn.domain.rhnpackage.PackageFactory;
 import com.redhat.rhn.domain.role.RoleFactory;
+import com.redhat.rhn.domain.server.InstalledProduct;
 import com.redhat.rhn.domain.server.MinionServer;
 import com.redhat.rhn.domain.server.Server;
 import com.redhat.rhn.domain.server.ServerFactory;
@@ -126,6 +129,13 @@ public class ChannelManager extends BaseManager {
     private static TaskomaticApi taskomaticApi = new TaskomaticApi();
     private static Logger log = LogManager.getLogger(ChannelManager.class);
 
+    private static final Map<InstalledProduct, InstalledProduct> COMPATIBLE_PRODUCTS = new HashMap<>();
+    static {
+        COMPATIBLE_PRODUCTS.put(
+                new InstalledProduct("res", "7", PackageFactory.lookupPackageArchByLabel("x86_64"), null, true),
+                new InstalledProduct("res-ltss", "7", PackageFactory.lookupPackageArchByLabel("x86_64"), null, true)
+        );
+    }
     public static final String QRY_ROLE_MANAGE = "manage";
     public static final String QRY_ROLE_SUBSCRIBE = "subscribe";
     public static final String RHEL7_EUS_VERSION = "7Server";
@@ -142,7 +152,7 @@ public class ChannelManager extends BaseManager {
      * Key used to identify the rhn-tools channel.  Used in searches to find the channel
      */
     public static final String TOOLS_CHANNEL_PACKAGE_NAME =
-        Config.get().getString("tools_channel.package_name", "mgr-cfg");
+        Config.get().getString("tools_channel.package_name", "venv-salt-minion");
 
 
     /**
@@ -151,13 +161,6 @@ public class ChannelManager extends BaseManager {
      */
     public static final String VIRT_CHANNEL_PACKAGE_NAME =
         Config.get().getString("virt_channel.package_name", "libvirt");
-
-    /**
-     * Package name of rhn-virtualization-host
-     */
-    public static final String RHN_VIRT_HOST_PACKAGE_NAME =
-        Config.get().getString("tools_channel.virt_package_name",
-                "mgr-virtualization-host");
 
     /**
      * OS name for the virt child channel.  rhnDistChannelMap.OS field.
@@ -1687,10 +1690,9 @@ public class ChannelManager extends BaseManager {
      * @param s Server to check against
      * @return List of Channel objects that match
      */
-    public static List<EssentialChannelDto> listBaseChannelsForSystem(User usr,
-            Server s) {
+    public static List<EssentialChannelDto> listBaseChannelsForSystem(User usr, Server s) {
 
-        List<EssentialChannelDto> channelDtos = new LinkedList<>();
+        Set<EssentialChannelDto> channelDtos = new HashSet<>();
         PackageEvr releaseEvr = PackageManager.lookupReleasePackageEvrFor(s);
         if (releaseEvr != null) {
             String rhelVersion =
@@ -1716,6 +1718,7 @@ public class ChannelManager extends BaseManager {
         }
 
         listPossibleSuseBaseChannelsForServer(s).ifPresent(channelDtos::addAll);
+        channelDtos.addAll(listCompatibleBaseChannelsForServer(s));
 
         // Get all the possible base-channels owned by this Org
         channelDtos.addAll(listCustomBaseChannelsForServer(s));
@@ -1724,28 +1727,96 @@ public class ChannelManager extends BaseManager {
             channelDtos.add(new EssentialChannelDto(dcm.getChannel()));
         }
 
-        return channelDtos;
+        return channelDtos.stream().sorted(comparing(EssentialChannelDto::getName)).toList();
+    }
+
+    /**
+     * Support switching Channels. For a Server using a base channel find the right compatible base channel to switch to
+     * @param s the server to switch the base channel
+     * @return Optional List of possible base channels where this system can change to
+     */
+    public static Set<EssentialChannelDto> listCompatibleBaseChannelsForServer(Server s) {
+        log.debug("listCompatibleChannels called");
+
+        Optional<InstalledProduct> installedBaseProduct = s.getInstalledProducts()
+                .stream()
+                .filter(InstalledProduct::isBaseproduct)
+                .findFirst();
+
+        return Opt.fold(installedBaseProduct,
+                () -> {
+                    log.info("Server has no base product installed");
+                    return Collections.emptySet();
+                },
+                bp -> {
+                    if (COMPATIBLE_PRODUCTS.containsKey(bp)) {
+                        SUSEProduct compatProduct = COMPATIBLE_PRODUCTS.get(bp).getSUSEProduct();
+                        if (compatProduct != null) {
+                            return compatProduct.getSuseProductChannels()
+                                    .stream()
+                                    .map(SUSEProductChannel::getChannel)
+                                    .filter(Channel::isBaseChannel)
+                                    .map(EssentialChannelDto::new)
+                                    .collect(Collectors.toSet());
+                        }
+                    }
+                    return Collections.emptySet();
+                });
+    }
+
+    /**
+     * Support switching Channels. For a channel find the right compatible base channel to switch to
+     * @param baseChannelIn the base channel
+     * @return Set of possible base channels where a system which use current base channel can switch to
+     */
+    public static Set<EssentialChannelDto> listCompatibleBaseChannelsForChannel(Channel baseChannelIn) {
+        Set<EssentialChannelDto> retval = new HashSet<>();
+        for (Map.Entry<InstalledProduct, InstalledProduct> compatProducts : COMPATIBLE_PRODUCTS.entrySet()) {
+            SUSEProduct sourceProduct = compatProducts.getKey().getSUSEProduct();
+            if (sourceProduct != null && sourceProduct
+                    .getSuseProductChannels()
+                    .stream()
+                    .map(SUSEProductChannel::getChannel)
+                    .filter(Channel::isBaseChannel)
+                    .map(Channel::getLabel)
+                    .anyMatch(l -> l.equals(baseChannelIn.getLabel()))) {
+                SUSEProduct targetProduct = compatProducts.getValue().getSUSEProduct();
+                if (targetProduct != null) {
+                    targetProduct
+                            .getSuseProductChannels()
+                            .stream()
+                            .map(SUSEProductChannel::getChannel)
+                            .filter(Channel::isBaseChannel)
+                            .map(EssentialChannelDto::new)
+                            .forEach(retval::add);
+                }
+            }
+        }
+        return retval;
     }
 
     /**
      * Given a base-channel, find all the base channels available to the specified user
      * that a system with the specified channel may be re-subscribed to.
      *
-     * @param u User of interest
+     * @param u      User of interest
      * @param inChan Base-channel of interest
      * @return List of channels that a system subscribed to "c" could be re-subscribed to
      */
     public static List<EssentialChannelDto> listCompatibleBaseChannelsForChannel(User u, Channel inChan) {
+
         // Get all the custom-channels owned by this org and add them
-        List<EssentialChannelDto> retval = ChannelFactory.listCustomBaseChannelsForSSM(u, inChan).stream()
-                .map(c -> new EssentialChannelDto(c))
-                .collect(Collectors.toList());
+        Set<EssentialChannelDto> retval = ChannelFactory.listCustomBaseChannelsForSSM(u, inChan)
+                .stream()
+                .map(EssentialChannelDto::new)
+                .collect(Collectors.toSet());
 
-        retval.addAll(ChannelFactory.listCompatibleDcmForChannelSSMInNullOrg(u, inChan).stream()
-                .map(c -> new EssentialChannelDto(c))
-                .collect(Collectors.toList()));
+        ChannelFactory.listCompatibleDcmForChannelSSMInNullOrg(u, inChan)
+               .stream()
+               .map(EssentialChannelDto::new)
+               .forEach(retval::add);
 
-        List<EssentialChannelDto> eusBaseChans = new LinkedList<>();
+        Set<EssentialChannelDto> eusBaseChans = new HashSet<>();
 
         ReleaseChannelMap rcm = lookupDefaultReleaseChannelMapForChannel(inChan);
         if (rcm != null) {
@@ -1765,6 +1836,7 @@ public class ChannelManager extends BaseManager {
             }
         }
         retval.addAll(eusBaseChans);
+        retval.addAll(listCompatibleBaseChannelsForChannel(inChan));
 
         for (EssentialChannelDto dto : retval) {
             if (dto.getId().longValue() == inChan.getId().longValue()) {
@@ -1773,7 +1845,7 @@ public class ChannelManager extends BaseManager {
             }
         }
 
-       return retval;
+       return retval.stream().sorted(comparing(EssentialChannelDto::getName)).toList();
     }
 
     /**
@@ -2029,7 +2101,7 @@ public class ChannelManager extends BaseManager {
     */
    public static Channel getOriginalChannel(Channel channel) {
        while (channel.isCloned()) {
-           channel = channel.getOriginal();
+           channel = channel.asCloned().map(ClonedChannel::getOriginal).orElse(channel);
        }
        return channel;
     }
@@ -2068,18 +2140,13 @@ public class ChannelManager extends BaseManager {
      * @param user the user doing the query
      * @param packageAssoc whether to filter packages on what packages are already
      *                      in the channel
+     * @param listAlreadyIncluded whether to list erratas that are already in the channel
      * @return List of Errata
      */
     public static DataResult<ErrataOverview> findErrataFromRhnSetForTarget(
-            Channel targetChannel, boolean packageAssoc, User user) {
+            Channel targetChannel, boolean packageAssoc, boolean listAlreadyIncluded, User user) {
 
-        String mode;
-        if (packageAssoc) {
-             mode =  "in_sources_for_target_package_assoc";
-        }
-        else {
-             mode =  "in_sources_for_target";
-        }
+        String mode = getModeFindErrataFromRhnSet(packageAssoc, listAlreadyIncluded);
 
         Map<String, Long> params = new HashMap<>();
         params.put("custom_cid", targetChannel.getId());
@@ -2090,6 +2157,12 @@ public class ChannelManager extends BaseManager {
                 ERRATA_QUERIES, mode);
 
         return m.execute(params);
+    }
+
+    private static String getModeFindErrataFromRhnSet(boolean packageAssoc, boolean listAlreadyIncluded) {
+        return "in_sources_for_target" +
+                (packageAssoc ? "_package_assoc" : "") +
+                (listAlreadyIncluded ? "_with_already_included" : "");
     }
 
     /**
@@ -2361,7 +2434,7 @@ public class ChannelManager extends BaseManager {
         if (c.isCloned()) {
             Map<String, Long> params = new HashMap<>();
             params.put("cid", c.getId());
-            params.put("ocid", c.getOriginal().getId());
+            params.put("ocid", c.asCloned().map(ClonedChannel::getOriginal).orElseThrow().getId());
             SelectMode m = ModeFactory.getMode(ERRATA_QUERIES,
                                         "list_errata_needing_sync");
             return m.execute(params);
@@ -2383,7 +2456,7 @@ public class ChannelManager extends BaseManager {
         if (c.isCloned()) {
             Map<String, Long> params = new HashMap<>();
             params.put("cid", c.getId());
-            params.put("ocid", c.getOriginal().getId());
+            params.put("ocid", c.asCloned().map(ClonedChannel::getOriginal).orElseThrow().getId());
             SelectMode m = ModeFactory.getMode(ERRATA_QUERIES,
                     "list_packages_needing_sync");
             return m.execute(params);
@@ -2408,7 +2481,7 @@ public class ChannelManager extends BaseManager {
             Map<String, Object> params = new HashMap<>();
             params.put("cid", c.getId());
             params.put("set_label", setLabel);
-            params.put("ocid", c.getOriginal().getId());
+            params.put("ocid", c.asCloned().map(ClonedChannel::getOriginal).orElseThrow().getId());
             SelectMode m = ModeFactory.getMode(ERRATA_QUERIES, "list_packages_needing_sync_from_set");
             return m.execute(params);
         }
@@ -2565,6 +2638,11 @@ public class ChannelManager extends BaseManager {
         return Opt.fold(baseProductId,
                 () -> {
                     log.info("Server has no base product installed");
+                    if (s.getBaseChannel() != null &&
+                            !s.getBaseChannel().getSuseProductChannels().isEmpty()) {
+                        // but we should return at least the assigned one if it is a SUSE Channel
+                        return of(new DataResult(List.of(new EssentialChannelDto(s.getBaseChannel()))));
+                    }
                     return empty();
                 },
                 id -> {

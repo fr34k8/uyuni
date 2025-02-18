@@ -18,12 +18,14 @@ import static java.util.stream.Collectors.toList;
 
 import com.redhat.rhn.FaultException;
 import com.redhat.rhn.common.hibernate.LookupException;
-import com.redhat.rhn.domain.common.SatConfigFactory;
+import com.redhat.rhn.domain.common.RhnConfiguration;
+import com.redhat.rhn.domain.common.RhnConfigurationFactory;
 import com.redhat.rhn.domain.config.ConfigChannel;
 import com.redhat.rhn.domain.formula.Formula;
 import com.redhat.rhn.domain.formula.FormulaFactory;
 import com.redhat.rhn.domain.role.RoleFactory;
 import com.redhat.rhn.domain.server.ManagedServerGroup;
+import com.redhat.rhn.domain.server.Server;
 import com.redhat.rhn.domain.server.ServerGroup;
 import com.redhat.rhn.domain.server.ServerGroupFactory;
 import com.redhat.rhn.domain.state.StateFactory;
@@ -48,7 +50,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * ServerGroupHandler
@@ -163,7 +164,7 @@ public class ServerGroupHandler extends BaseHandler {
      *      #array_end()
      */
     @ReadOnly
-    public List listSystems(User loggedInUser, String systemGroupName) {
+    public List<Server> listSystems(User loggedInUser, String systemGroupName) {
         ManagedServerGroup group = serverGroupManager.lookup(systemGroupName, loggedInUser);
         return group.getServers();
     }
@@ -184,8 +185,8 @@ public class ServerGroupHandler extends BaseHandler {
      *          $SystemOverviewSerializer
      *      #array_end()
      */
-    public List<SystemOverview>
-            listSystemsMinimal(User loggedInUser, String systemGroupName) {
+    @ReadOnly
+    public List<SystemOverview> listSystemsMinimal(User loggedInUser, String systemGroupName) {
         ManagedServerGroup group = serverGroupManager.lookup(systemGroupName, loggedInUser);
         return SystemManager.systemsInGroupShort(group.getId());
     }
@@ -430,7 +431,8 @@ public class ServerGroupHandler extends BaseHandler {
 
     private List<Long> activeSystemsInGroup(User loggedInUser, String systemGroupName) {
         ServerGroup sg = lookup(systemGroupName, loggedInUser);
-        Long threshold = SatConfigFactory.getSatConfigLongValue(SatConfigFactory.SYSTEM_CHECKIN_THRESHOLD, 1L);
+        RhnConfigurationFactory factory = RhnConfigurationFactory.getSingleton();
+        Long threshold = factory.getLongConfiguration(RhnConfiguration.KEYS.SYSTEM_CHECKIN_THRESHOLD).getValue();
         return serverGroupManager.listActiveServers(sg, threshold);
     }
 
@@ -473,7 +475,8 @@ public class ServerGroupHandler extends BaseHandler {
     @ReadOnly
     public List<Long> listInactiveSystemsInGroup(User loggedInUser,
             String systemGroupName) {
-        Long threshold = SatConfigFactory.getSatConfigLongValue(SatConfigFactory.SYSTEM_CHECKIN_THRESHOLD, 1L);
+        RhnConfigurationFactory factory = RhnConfigurationFactory.getSingleton();
+        Long threshold = factory.getLongConfiguration(RhnConfiguration.KEYS.SYSTEM_CHECKIN_THRESHOLD).getValue();
         return listInactiveSystemsInGroup(loggedInUser, systemGroupName,
                 threshold.intValue());
     }
@@ -605,7 +608,7 @@ public class ServerGroupHandler extends BaseHandler {
         List<ConfigChannel> channels = configChannelLabels.stream()
             .map(l -> Optional.ofNullable(manager.lookupGlobalConfigChannel(loggedInUser, l))
                     .orElseThrow(() -> new NoSuchChannelException(l)))
-            .collect(Collectors.toList());
+            .toList();
 
         group.subscribeConfigChannels(channels, loggedInUser);
         return 1;
@@ -635,7 +638,7 @@ public class ServerGroupHandler extends BaseHandler {
         List<ConfigChannel> channels = configChannelLabels.stream()
             .map(l -> Optional.ofNullable(manager.lookupGlobalConfigChannel(loggedInUser, l))
                     .orElseThrow(() -> new NoSuchChannelException(l)))
-            .collect(Collectors.toList());
+            .toList();
 
         group.unsubscribeConfigChannels(channels, loggedInUser);
         return 1;
@@ -664,6 +667,6 @@ public class ServerGroupHandler extends BaseHandler {
 
         List<Formula> formulas = FormulaFactory.listFormulas();
         List<String> assigned = FormulaFactory.getFormulasByGroup(group);
-        return formulas.stream().filter(f -> assigned.contains(f.getName())).collect(Collectors.toList());
+        return formulas.stream().filter(f -> assigned.contains(f.getName())).toList();
     }
 }

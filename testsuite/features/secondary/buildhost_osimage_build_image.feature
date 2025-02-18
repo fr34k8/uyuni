@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2023 SUSE LLC
+# Copyright (c) 2018-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
 #
 # This feature relies on having properly configured
@@ -9,25 +9,32 @@
 #   java.kiwi_os_image_building_enabled = true
 # which means "Enable Kiwi OS Image building"
 #
-# Idempotency note:
-# This feature leaves an JeOS image built
-# The image is used in proxy_retail_pxeboot_and_mass_import.feature
+# This feature can cause failures in the following features:
+# - features/secondary/proxy_retail_pxeboot_and_mass_import.feature:
+# This feature leaves a JeOS image built that is used in the "PXE boot a Retail terminal" feature.
+# - features/secondary/srv_docker_cve_audit.feature
+# If the image is not created, the message shown is "There are no entries to show."
 
+@skip_if_github_validation
 @skip_if_cloud
-@buildhost
+@build_host
 @scope_retail
 @scope_building_container_images
+@scc_credentials
 Feature: Build OS images
 
+  Scenario: Log in as org admin user
+    Given I am authorized
+
   Scenario: Create an OS image profile with activation key
-    Given I am authorized for the "Admin" section
     When I follow the left menu "Images > Profiles"
     And I follow "Create"
     And I enter "suse_os_image" as "label"
     And I select "Kiwi" from "imageType"
-    And I select "1-SUSE-KEY-x86_64" from "activationKey"
+    And I select "1-TERMINAL-KEY-x86_64" from "activationKey"
     And I enter the image filename for "pxeboot_minion" relative to profiles as "path"
     And I click on "create-btn"
+    And I wait until no Salt job is running on "build_host"
 
   # WORKAROUND
   # Remove as soon as the issue is fixed
@@ -49,6 +56,7 @@ Feature: Build OS images
     Then I should see a "[OS Image Build Host]" text
     When I wait until the image build "suse_os_image" is completed
     And I wait until the image inspection for "pxeboot_minion" is completed
+    And I wait until no Salt job is running on "build_host"
     And I am on the image store of the Kiwi image for organization "1"
     Then I should see the name of the image for "pxeboot_minion"
 
@@ -63,3 +71,6 @@ Feature: Build OS images
     And I should see a "Are you sure you want to delete the selected profile?" text
     And I click on the red confirmation button
     And I wait until I see "Image profile has been deleted" text
+
+  Scenario: Cleanup: Make sure no job is left running on buildhost
+    When I wait until no Salt job is running on "build_host"

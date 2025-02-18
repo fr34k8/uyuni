@@ -8,8 +8,8 @@ import { ActionSchedule } from "components/action-schedule";
 import { ActionChain } from "components/action-schedule";
 import { AsyncButton, Button } from "components/buttons";
 import { ActionChainLink, ActionLink, ChannelAnchorLink } from "components/links";
-import { Messages } from "components/messages";
-import { Utils as MessagesUtils } from "components/messages";
+import { Messages } from "components/messages/messages";
+import { Utils as MessagesUtils } from "components/messages/messages";
 import { BootstrapPanel } from "components/panels/BootstrapPanel";
 import { Toggler } from "components/toggler";
 
@@ -20,7 +20,7 @@ import { JsonResult } from "utils/network";
 
 declare var actionChains: Array<ActionChain>;
 
-const msgMap = {
+const messageMap = {
   taskomatic_error: t("Error scheduling job in Taskomatic. Please check the logs."),
   base_not_found_or_not_authorized: t("Base channel not found or not authorized."),
   child_not_found_or_not_authorized: t("Child channel not found or not authorized."),
@@ -173,6 +173,20 @@ class SystemChannels extends React.Component<SystemChannelsProps, SystemChannels
         selectedChildrenIds: this.state.selectedChildrenIds,
       });
       this.enableAllRecommended();
+
+      // force all mandatory channels being selected (bsc#1211062)
+      const availableChildren = this.getAvailableChildren();
+      const mandatoryChannels = this.state.requiredChannels.get(newBaseId);
+      const selectedChildren = this.getSelectedChildren() || [];
+      Array.from(availableChildren.values())
+        .filter(
+          (c) =>
+            mandatoryChannels &&
+            mandatoryChannels.has(c.id) &&
+            selectedChildren &&
+            !selectedChildren.some((child) => child.id === c.id)
+        )
+        .forEach((c) => this.selectChildChannel(c.id, true));
     }
   };
 
@@ -205,7 +219,9 @@ class SystemChannels extends React.Component<SystemChannelsProps, SystemChannels
   }
 
   handleResponseError = (jqXHR: JQueryXHR, arg: string = "") => {
-    const msg = Network.responseErrorMessage(jqXHR, (status, msg) => (msgMap[msg] ? t(msgMap[msg], arg) : null));
+    const msg = Network.responseErrorMessage(jqXHR, (status, msg) =>
+      messageMap[msg] ? t(messageMap[msg], arg) : null
+    );
     this.setState({ messages: this.state.messages.concat(msg) });
   };
 
@@ -451,7 +467,7 @@ class SystemChannels extends React.Component<SystemChannelsProps, SystemChannels
               const isChecked = c.id === (this.state.selectedBase && this.state.selectedBase.id);
 
               return (
-                <div className="radio">
+                <div className="radio" key={c.id}>
                   <input
                     type="radio"
                     value={c.id}
@@ -477,7 +493,7 @@ class SystemChannels extends React.Component<SystemChannelsProps, SystemChannels
               const isChecked = c.id === (this.state.selectedBase && this.state.selectedBase.id);
 
               return (
-                <div className="radio">
+                <div className="radio" key={c.id}>
                   <input
                     type="radio"
                     value={c.id}
@@ -503,7 +519,7 @@ class SystemChannels extends React.Component<SystemChannelsProps, SystemChannels
       let mandatoryChannels = this.state.selectedBase && this.state.requiredChannels.get(this.state.selectedBase.id);
 
       childChannels = Array.from(availableChildren.values()).map((c) => (
-        <div className="checkbox">
+        <div className="checkbox" key={c.id}>
           <input
             type="checkbox"
             value={c.id}
@@ -657,7 +673,7 @@ class SystemChannels extends React.Component<SystemChannelsProps, SystemChannels
             />
             <AsyncButton
               id="btn-confirm"
-              defaultType="btn-success"
+              defaultType="btn-primary"
               text={t("Confirm")}
               action={this.handleConfirm}
               disabled={this.state.scheduled}
@@ -676,7 +692,7 @@ class SystemChannels extends React.Component<SystemChannelsProps, SystemChannels
           <div>
             {availableChildren &&
               Array.from(availableChildren.values()).map((c) => (
-                <div className="checkbox">
+                <div className="checkbox" key={c.id}>
                   <input
                     type="checkbox"
                     value={c.id}

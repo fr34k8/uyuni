@@ -15,6 +15,8 @@
 package com.redhat.rhn.domain.server;
 
 import com.redhat.rhn.domain.channel.AccessToken;
+import com.redhat.rhn.domain.channel.AccessTokenFactory;
+import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.config.ConfigChannel;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.configuration.SaltConfigSubscriptionService;
@@ -24,10 +26,13 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * MinionServer
@@ -39,14 +44,9 @@ public class MinionServer extends Server implements SaltConfigurable {
     private Integer sshPushPort;
     private Set<AccessToken> accessTokens = new HashSet<>();
     private Set<Pillar> pillars = new HashSet<>();
-    /**
-       We typically look at the packages installed on a system to identify whether a reboot is necessary.
-       This property initially only works for transactional systems, but the idea is that gradually the
-       other types of systems also provide this information directly to be stored here so we no longer rely
-       on package related inference to determine whether a reboot is necessary. Even because this
-       information does not always depend only on the packages.
-    */
-    private Boolean rebootNeeded;
+    private Date rebootRequiredAfter;
+    private String containerRuntime;
+    private String uname;
 
     /**
      * Constructs a MinionServer instance.
@@ -172,9 +172,12 @@ public class MinionServer extends Server implements SaltConfigurable {
 
     @Override
     public boolean doesOsSupportsMonitoring() {
-        return isSLES12() || isSLES15() || isLeap15() || isUbuntu1804() || isUbuntu2004() || isUbuntu2204() ||
-                isRedHat6() || isRedHat7() || isRedHat8() || isRedHat9() || isAlibaba2() || isAmazon2() || isRocky8() ||
-                isRocky9() || isDebian11() || isDebian10();
+        return isSLES12() || isSLES15() || isLeap15() || isLeapMicro() ||
+                isSLEMicro5() || // Micro 6 miss the node exporter
+                isUbuntu1804() || isUbuntu2004() || isUbuntu2204() || isUbuntu2404() ||
+                isRedHat6() || isRedHat7() || isRedHat8() || isRedHat9() || // isRedHat catch also Rocky and Alma
+                isAlibaba2() || isAmazon2() || isAmazon2023() ||
+                isDebian10() || isDebian11() || isDebian12();
     }
 
     /**
@@ -193,6 +196,13 @@ public class MinionServer extends Server implements SaltConfigurable {
     }
 
     /**
+     * @param pillarIn value of pillar
+     */
+    public void addPillar(Pillar pillarIn) {
+        pillars.add(pillarIn);
+    }
+
+    /**
      * Get the pillar corresponding to a category.
      *
      * @param category the category of the pillar to look for
@@ -207,15 +217,30 @@ public class MinionServer extends Server implements SaltConfigurable {
      */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof MinionServer)) {
+        if (!(other instanceof MinionServer otherMinion)) {
             return false;
         }
-        MinionServer otherMinion = (MinionServer) other;
         return new EqualsBuilder()
                 .appendSuper(super.equals(otherMinion))
                 .append(getMachineId(), otherMinion.getMachineId())
                 .append(getMinionId(), otherMinion.getMinionId())
                 .isEquals();
+    }
+
+
+    /**
+     * @return Return true when all assigned software channels have valid access tokens.
+     */
+    public boolean hasValidTokensForAllChannels() {
+
+        Set<Channel> tokenChannels = AccessTokenFactory.listByMinion(this)
+                .stream()
+                .filter(AccessToken::getValid)
+                .filter(t -> t.getExpiration().toInstant().isAfter(Instant.now()))
+                .flatMap(t -> t.getChannels().stream())
+                .collect(Collectors.toSet());
+
+        return tokenChannels.containsAll(getChannels()) && getChannels().containsAll(tokenChannels);
     }
 
     /**
@@ -318,11 +343,43 @@ public class MinionServer extends Server implements SaltConfigurable {
         return changed;
     }
 
-    public Boolean isRebootNeeded() {
-        return rebootNeeded;
+    public boolean isRebootNeeded() {
+        return getLastBoot() != null && rebootRequiredAfter != null && getLastBootAsDate().before(rebootRequiredAfter);
     }
 
-    public void setRebootNeeded(Boolean rebootNeededIn) {
-        this.rebootNeeded = rebootNeededIn;
+    public Date getRebootRequiredAfter() {
+        return rebootRequiredAfter;
+    }
+
+    public void setRebootRequiredAfter(Date rebootRequiredAfterIn) {
+        rebootRequiredAfter = rebootRequiredAfterIn;
+    }
+
+    /**
+     * @return the container runtime
+     */
+    public String getContainerRuntime() {
+        return containerRuntime;
+    }
+
+    /**
+     * @param containerRuntimeIn the container runtime to set
+     */
+    public void setContainerRuntime(String containerRuntimeIn) {
+        this.containerRuntime = containerRuntimeIn;
+    }
+
+    /**
+     * @return the uname
+     */
+    public String getUname() {
+        return uname;
+    }
+
+    /**
+     * @param unameIn the uname to set
+     */
+    public void setUname(String unameIn) {
+        uname = unameIn;
     }
 }

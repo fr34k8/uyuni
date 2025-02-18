@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2021 SUSE LLC
+# Copyright (c) 2015-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
 
 @scope_configuration_channels
@@ -7,8 +7,8 @@ Feature: The channels page
   As an authorized user
   I want to see all the texts and links
 
-  Scenario: Log in as admin user
-    Given I am authorized for the "Admin" section
+  Scenario: Log in as org admin user
+    Given I am authorized
 
   Scenario: Completeness of the channels page
     When I follow the left menu "Software > Channel List > All"
@@ -34,7 +34,7 @@ Feature: The channels page
   Scenario: Check packages in test channel
     When I follow the left menu "Software > Channel List > All"
     And I follow "Show All Child Channels"
-    And I follow "Fake-RPM-SLES-Channel"
+    And I follow "Fake-RPM-SUSE-Channel"
     And I follow "Packages"
     Then I should see package "andromeda-dummy-2.0-1.1.noarch"
     And I should see package "hoag-dummy-1.1-1.1.i586"
@@ -46,19 +46,19 @@ Feature: The channels page
   Scenario: Check package metadata
     When I follow the left menu "Software > Channel List > All"
     And I follow "Show All Child Channels"
-    And I follow "Fake-RPM-SLES-Channel"
+    And I follow "Fake-RPM-SUSE-Channel"
     And I follow "Packages"
     And I follow "andromeda-dummy-2.0-1.1.noarch"
     Then I should see a "This is the andromeda dummy package used for testing SUSE Manager" text
-    And I should see a "Fake-RPM-SLES-Channel" link
+    And I should see a "Fake-RPM-SUSE-Channel" link
     And I should see a "build.opensuse.org" text
-    And I should see a "SHA256sum:" text
-    And I should see a "packages/1/ba3/andromeda-dummy/2.0-1.1/noarch/ba3f6d939fce43b60f4d20a09887e211f11024b61defb246dd62705bf4f4ced0/andromeda-dummy-2.0-1.1.noarch.rpm" text
+    And I should see a "SHA512sum:" text
+    And I should see a "packages/1/199/andromeda-dummy/2.0-1.1/noarch/19940cc4a9f0d38a038a4455b0f1cf1290c4a4296b27f5a62f4aae60585ac6e2677e88c3c3127d487116ed8d9b1787379e23aafac46bc14408864926bedee693/andromeda-dummy-2.0-1.1.noarch.rpm" text
 
   Scenario: Check package dependencies page
     When I follow the left menu "Software > Channel List > All"
     And I follow "Show All Child Channels"
-    And I follow "Fake-RPM-SLES-Channel"
+    And I follow "Fake-RPM-SUSE-Channel"
     And I follow "Packages"
     And I follow "andromeda-dummy-2.0-1.1.noarch"
     And I follow "Dependencies"
@@ -69,7 +69,7 @@ Feature: The channels page
   Scenario: Check package change log page
     When I follow the left menu "Software > Channel List > All"
     And I follow "Show All Child Channels"
-    And I follow "Fake-RPM-SLES-Channel"
+    And I follow "Fake-RPM-SUSE-Channel"
     And I follow "Packages"
     And I follow "andromeda-dummy-2.0-1.1.noarch"
     And I follow "Change Log"
@@ -79,7 +79,7 @@ Feature: The channels page
   Scenario: Check package file list page
     When I follow the left menu "Software > Channel List > All"
     And I follow "Show All Child Channels"
-    And I follow "Fake-RPM-SLES-Channel"
+    And I follow "Fake-RPM-SUSE-Channel"
     And I follow "Packages"
     And I follow "andromeda-dummy-2.0-1.1.noarch"
     And I follow "File List"

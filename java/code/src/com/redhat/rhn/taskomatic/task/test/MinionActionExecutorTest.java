@@ -28,6 +28,7 @@ import com.redhat.rhn.taskomatic.task.MinionActionExecutor;
 import com.redhat.rhn.testing.JMockBaseTestCaseWithUser;
 import com.redhat.rhn.testing.TestUtils;
 
+import com.suse.cloud.test.TestCloudPaygManagerBuilder;
 import com.suse.manager.webui.services.SaltServerActionService;
 
 import org.jmock.imposters.ByteBuddyClassImposteriser;
@@ -119,11 +120,11 @@ public class MinionActionExecutorTest extends JMockBaseTestCaseWithUser {
 
         JobExecutionContext context = new JobExecutionContextImpl(scheduler, firedBundle, job);
 
-        MinionActionExecutor actionExecutor = new MinionActionExecutor(saltServerActionService);
+        MinionActionExecutor actionExecutor = new MinionActionExecutor(saltServerActionService,
+            new TestCloudPaygManagerBuilder().build());
         actionExecutor.execute(context);
 
-        HibernateFactory.commitTransaction();
-        HibernateFactory.closeSession();
+        HibernateFactory.getSession().clear();
 
         sa1 = HibernateFactory.reload(sa1);
         sa2 = HibernateFactory.reload(sa2);

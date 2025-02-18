@@ -1,7 +1,7 @@
 #
 # spec file for package susemanager-sync-data
 #
-# Copyright (c) 2022 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -17,15 +17,14 @@
 
 
 Name:           susemanager-sync-data
-Version:        4.4.3
-Release:        1
+Version:        5.1.2
+Release:        0
 Summary:        SUSE Manager specific scripts
 License:        GPL-2.0-only
 Group:          Productivity/Other
 URL:            https://github.com/uyuni-project/uyuni
 Source0:        %{name}-%{version}.tar.gz
 Requires:       spacewalk-java-lib >= 2.5.59.7
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
 %description
@@ -37,21 +36,21 @@ This package contains data files with information used to channel syncing
 %build
 
 %install
-mkdir -p %{buildroot}/usr/share/susemanager/scc
-install -m 0644 channel_families.json %{buildroot}/usr/share/susemanager/scc/channel_families.json
-install -m 0644 upgrade_paths.json    %{buildroot}/usr/share/susemanager/scc/upgrade_paths.json
-install -m 0644 additional_products.json    %{buildroot}/usr/share/susemanager/scc/additional_products.json
-install -m 0644 additional_repositories.json    %{buildroot}/usr/share/susemanager/scc/additional_repositories.json
-install -m 0644 product_tree.json    %{buildroot}/usr/share/susemanager/scc/product_tree.json
+mkdir -p %{buildroot}%{_datadir}/susemanager/scc
+mkdir -p %{buildroot}%{_datadir}/susemanager/oval
+install -m 0644 channel_families.json %{buildroot}%{_datadir}/susemanager/scc/channel_families.json
+install -m 0644 additional_products.json    %{buildroot}%{_datadir}/susemanager/scc/additional_products.json
+install -m 0644 additional_repositories.json    %{buildroot}%{_datadir}/susemanager/scc/additional_repositories.json
+install -m 0644 oval.config.json    %{buildroot}%{_datadir}/susemanager/oval/oval.config.json
 
 %files
 %defattr(-,root,root,-)
-%dir /usr/share/susemanager
-%dir /usr/share/susemanager/scc
-/usr/share/susemanager/scc/channel_families.json
-/usr/share/susemanager/scc/upgrade_paths.json
-/usr/share/susemanager/scc/additional_products.json
-/usr/share/susemanager/scc/additional_repositories.json
-/usr/share/susemanager/scc/product_tree.json
+%dir %{_datadir}/susemanager
+%dir %{_datadir}/susemanager/scc
+%dir %{_datadir}/susemanager/oval
+%{_datadir}/susemanager/scc/channel_families.json
+%{_datadir}/susemanager/scc/additional_products.json
+%{_datadir}/susemanager/scc/additional_repositories.json
+%{_datadir}/susemanager/oval/oval.config.json
 
 %changelog

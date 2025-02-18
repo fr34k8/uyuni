@@ -19,7 +19,7 @@
 
         <rpm-excludedocs>true</rpm-excludedocs>
 
-        <type boot="saltboot/suse-SLES12" bootloader="grub2" checkprebuilt="true" compressed="false" filesystem="ext3" fsmountoptions="acl" fsnocheck="true" image="pxe" kernelcmdline="quiet"/>
+        <type boot="saltboot/suse-SLES12" bootloader="grub2" checkprebuilt="true" compressed="true" filesystem="ext3" fsmountoptions="acl" fsnocheck="true" image="pxe" kernelcmdline="quiet"/>
         <type boot="isoboot/suse-SLES12" image="iso"/>
         <type boot="oemboot/suse-SLES12" filesystem="ext3" image="oem" installiso="true"/>
     </preferences>
@@ -32,19 +32,19 @@
     </drivers>
 
     <repository type="rpm-md">  <!-- product -->
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Products/SLE-SERVER/12-SP5/x86_64/product/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Products/SLE-SERVER/12-SP5/x86_64/product/"/>
     </repository>
     <repository type="rpm-md">
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Updates/SLE-SERVER/12-SP5/x86_64/update/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Updates/SLE-SERVER/12-SP5/x86_64/update/"/>
     </repository>
     <repository type="rpm-md">
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Products/SLE-Manager-Tools/12/x86_64/product/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Products/SLE-Manager-Tools/12/x86_64/product/"/>
     </repository>
     <repository type="rpm-md">  <!-- manager tools -->
-        <source path="http://minima-mirror.mgr.prv.suse.net/SUSE/Updates/SLE-Manager-Tools/12/x86_64/update/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/SUSE/Updates/SLE-Manager-Tools/12/x86_64/update/"/>
     </repository>
     <repository type="rpm-md">  <!-- head development client tools -->
-        <source path="http://minima-mirror.mgr.prv.suse.net/ibs/Devel:/Galaxy:/Manager:/Head:/SLE12-SUSE-Manager-Tools/images/repo/SLE-12-Manager-Tools-Beta-POOL-x86_64-Media1/"/>
+        <source path="http://minima-mirror-ci-bv.mgr.prv.suse.net/ibs/Devel:/Galaxy:/Manager:/Head:/SLE12-SUSE-Manager-Tools/images/repo/SLE-12-Manager-Tools-Beta-POOL-x86_64-Media1/"/>
     </repository>
 
     <packages type="image">
@@ -55,6 +55,7 @@
         <package name="btrfsmaintenance"/>
         <package name="cron"/>
         <package name="curl"/>
+        <package name="procps"/>
         <package name="dracut"/>
         <package name="fipscheck"/>
         <package name="grub2-branding-SLE" bootinclude="true"/>
@@ -85,7 +86,7 @@
         <package name="kernel-default"/>
         <package name="python-base"/>
         <package name="rsync"/>
-	<package name="salt-minion"/>
+        <package name="venv-salt-minion"/>
         <package name="suse-build-key"/>
         <package name="pkg-config"/>
         <package name="sg3_utils"/>
@@ -94,7 +95,6 @@
         <package name="dialog"/>
         <package name="grub2-snapper-plugin"/>
         <package name="snapper-zypp-plugin"/>
-
         <package name="mdadm"/>
         <package name="cryptsetup"/>
         <package name="kernel-firmware"/>

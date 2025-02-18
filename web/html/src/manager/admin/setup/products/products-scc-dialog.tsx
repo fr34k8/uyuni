@@ -1,11 +1,11 @@
 import * as React from "react";
 
 import { Button } from "components/buttons";
-import { Messages, MessageType } from "components/messages";
+import { Messages, MessageType } from "components/messages/messages";
 
 import Network from "utils/network";
 
-const msgMap = {
+const messageMap = {
   // Nothing for now
 };
 
@@ -136,13 +136,15 @@ class SCCDialog extends React.Component<Props> {
       currentStep.inProgress = false;
       currentStep.success = false;
     }
-    const msg = Network.responseErrorMessage(jqXHR, (status, msg) => (msgMap[msg] ? t(msgMap[msg], arg) : null));
+    const msg = Network.responseErrorMessage(jqXHR, (status, msg) =>
+      messageMap[msg] ? t(messageMap[msg], arg) : null
+    );
     this.setState({ steps: stepList, errors: this.state.errors.concat(msg) });
   };
 
   render() {
     return (
-      <div className="panel panel-default panel-body text-left">
+      <div>
         <h4>{t("Refresh the product catalog from SUSE Customer Center")}</h4>
         <hr />
         <div className="d-block">
@@ -168,7 +170,7 @@ class SCCDialog extends React.Component<Props> {
             })}
           </ul>
         </div>
-        <div className="text-left">
+        <div>
           <Button
             id="scc-refresh-button"
             className="btn btn-default"

@@ -15,24 +15,33 @@
 
 package com.redhat.rhn.taskomatic.task.payg;
 
+import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
-import com.redhat.rhn.common.localization.LocalizationService;
+import com.redhat.rhn.common.hibernate.LookupException;
+import com.redhat.rhn.common.util.FileLocks;
 import com.redhat.rhn.domain.cloudpayg.PaygSshData;
 import com.redhat.rhn.domain.cloudpayg.PaygSshDataFactory;
+import com.redhat.rhn.domain.credentials.CloudRMTCredentials;
 import com.redhat.rhn.domain.notification.NotificationMessage;
 import com.redhat.rhn.domain.notification.UserNotificationFactory;
 import com.redhat.rhn.domain.notification.types.PaygAuthenticationUpdateFailed;
 import com.redhat.rhn.domain.role.RoleFactory;
+import com.redhat.rhn.manager.content.ContentSyncException;
+import com.redhat.rhn.manager.content.ContentSyncManager;
+import com.redhat.rhn.taskomatic.TaskomaticApi;
 import com.redhat.rhn.taskomatic.task.RhnJavaJob;
 import com.redhat.rhn.taskomatic.task.payg.beans.PaygInstanceInfo;
 
+import com.suse.cloud.CloudPaygManager;
+import com.suse.manager.admin.PaygAdminManager;
+
 import com.jcraft.jsch.JSchException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.quartz.JobExecutionContext;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public class PaygUpdateAuthTask extends RhnJavaJob {
@@ -40,7 +49,11 @@ public class PaygUpdateAuthTask extends RhnJavaJob {
     private final PaygAuthDataProcessor paygDataProcessor = new PaygAuthDataProcessor();
     private PaygAuthDataExtractor paygDataExtractor = new PaygAuthDataExtractor();
 
-    private static final Logger LOG = LogManager.getLogger(PaygUpdateAuthTask.class);
+    private CloudPaygManager cloudPaygManager = GlobalInstanceHolder.PAYG_MANAGER;
+
+    private ContentSyncManager contentSyncManager = new ContentSyncManager();
+
+    private FileLocks sccRefreshLock = FileLocks.SCC_REFRESH_LOCK;
 
     private static final String KEY_ID = "sshData_id";
 
@@ -49,17 +62,56 @@ public class PaygUpdateAuthTask extends RhnJavaJob {
         return "payg";
     }
 
+    private void manageLocalHostPayg() {
+        if (cloudPaygManager.isPaygInstance()) {
+            if (PaygSshDataFactory.lookupByHostname("localhost").isEmpty()) {
+                PaygSshData paygSshData = PaygSshDataFactory.createPaygSshData();
+                paygSshData.setHost("localhost");
+                paygSshData.setDescription("SUSE Manager PAYG");
+                paygSshData.setUsername("root");
+                PaygSshDataFactory.savePaygSshData(paygSshData);
+                HibernateFactory.getSession().flush();
+                HibernateFactory.commitTransaction();
+            }
+        }
+        else {
+            try {
+                PaygAdminManager pam = new PaygAdminManager(new TaskomaticApi());
+                pam.delete("localhost");
+            }
+            catch (LookupException e) {
+                log.debug("No localhost PAYG instance found, noting to delete");
+            }
+        }
+    }
+
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
         log.debug("Running PaygUpdateAuthTask");
+
+        manageLocalHostPayg();
+
+        List<PaygSshData> paygSshData;
         if (jobExecutionContext != null && jobExecutionContext.getJobDetail().getJobDataMap().containsKey(KEY_ID)) {
-            Optional<PaygSshData> paygData = PaygSshDataFactory.lookupById(
-                    Integer.parseInt((String) jobExecutionContext.getJobDetail().getJobDataMap().get(KEY_ID)));
-            paygData.ifPresent(this::updateInstanceData);
+            int sshId = Integer.parseInt((String) jobExecutionContext.getJobDetail().getJobDataMap().get(KEY_ID));
+            paygSshData = PaygSshDataFactory.lookupById(sshId).stream().toList();
         }
         else {
-            PaygSshDataFactory.lookupPaygSshData()
-                    .forEach(this::updateInstanceData);
+            paygSshData = PaygSshDataFactory.lookupPaygSshData();
+        }
+
+        if (CollectionUtils.isNotEmpty(paygSshData)) {
+            sccRefreshLock.withTimeoutFileLock(() -> {
+                paygSshData.forEach(this::updateInstanceData);
+
+                // Call the content sync manager to refresh all repositories content sources and the authorizations
+                try {
+                    contentSyncManager.updateRepositoriesPayg();
+                }
+                catch (ContentSyncException ex) {
+                    log.error("Unable to refresh repositories", ex);
+                }
+            }, 60);
         }
     }
 
@@ -71,11 +123,33 @@ public class PaygUpdateAuthTask extends RhnJavaJob {
         this.paygDataExtractor = paygDataExtractorIn;
     }
 
+    /**
+     * Needed for unit tests
+     * @param mgrIn
+     */
+    public void setCloudPaygManager(CloudPaygManager mgrIn) {
+        cloudPaygManager = mgrIn;
+    }
+
+    /**
+     * Needed for unit tests
+     * @param contentSyncManagerIn
+     */
+    public void setContentSyncManager(ContentSyncManager contentSyncManagerIn) {
+        this.contentSyncManager = contentSyncManagerIn;
+    }
+
+    /**
+     * Needed for unit testing
+     * @param sccRefreshLockIn
+     */
+    public void setSccRefreshLock(FileLocks sccRefreshLockIn) {
+        this.sccRefreshLock = sccRefreshLockIn;
+    }
+
     private void updateInstanceData(PaygSshData instance) {
-        PaygInstanceInfo paygData;
-        LocalizationService ls = LocalizationService.getInstance();
         try {
-            paygData = paygDataExtractor.extractAuthData(instance);
+            PaygInstanceInfo paygData = paygDataExtractor.extractAuthData(instance);
             paygDataProcessor.processPaygInstanceData(instance, paygData);
             instance.setStatus(PaygSshData.Status.S);
             instance.setErrorMessage("");
@@ -83,12 +157,12 @@ public class PaygUpdateAuthTask extends RhnJavaJob {
 
         }
         catch (PaygDataExtractException | JSchException e) {
-            LOG.error("error getting instance data ", e);
+            log.error("error getting instance data ", e);
             saveError(instance,  e.getMessage());
 
         }
         catch (Exception e) {
-            LOG.error("error processing instance data", e);
+            log.error("error processing instance data", e);
             // Error message will be empty because we don't want to show this error on UI
             saveError(instance, "");
         }
@@ -98,16 +172,27 @@ public class PaygUpdateAuthTask extends RhnJavaJob {
         }
     }
 
+    private boolean hasInstanceValidCreds(PaygSshData instance) {
+        return Optional.ofNullable(instance.getCredentials())
+                .flatMap(c -> c.castAs(CloudRMTCredentials.class))
+                .map(CloudRMTCredentials::isValid)
+                .orElse(false);
+    }
+
     private void saveError(PaygSshData instance, String errorMessage) {
         // rollback any data changed by the process
         HibernateFactory.rollbackTransaction();
         // Save a special error to know that a problem happened
-        if (!instance.getStatus().equals(PaygSshData.Status.E)) {
+        if (instance.getStatus().equals(PaygSshData.Status.E) && hasInstanceValidCreds(instance)) {
             NotificationMessage notificationMessage = UserNotificationFactory.createNotificationMessage(
                     new PaygAuthenticationUpdateFailed(instance.getHost(), instance.getId()));
             UserNotificationFactory.storeNotificationMessageFor(notificationMessage,
                     Collections.singleton(RoleFactory.CHANNEL_ADMIN), Optional.empty());
+            // was in error state before. At least second time failed to get the data
+            // invalidate existing credentials
+            paygDataProcessor.invalidateCredentials(instance);
         }
+
         instance.setStatus(PaygSshData.Status.E);
         instance.setErrorMessage(errorMessage);
         PaygSshDataFactory.savePaygSshData(instance);

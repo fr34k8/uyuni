@@ -1,8 +1,8 @@
 import * as React from "react";
 
 import { AsyncButton } from "components/buttons";
-import { Messages } from "components/messages";
-import { MessageType, Utils as MessagesUtils } from "components/messages";
+import { Messages } from "components/messages/messages";
+import { MessageType, Utils as MessagesUtils } from "components/messages/messages";
 import { TopPanel } from "components/panels/TopPanel";
 
 import Network from "utils/network";
@@ -26,7 +26,7 @@ type State = {
   messages: MessageType[];
 };
 
-const msgMap = {
+const messageMap = {
   invalid_systemid: t("Not a system id"),
   unknown_system: t("Unknown System"),
   system_not_mgr_server: t("System is not a peripheral server"),
@@ -53,7 +53,7 @@ class MgrServer extends React.Component<Props, State> {
           });
         } else {
           this.setState({
-            messages: MessagesUtils.error(data.messages.map((m) => msgMap[m])),
+            messages: MessagesUtils.error(data.messages.map((m) => messageMap[m])),
           });
         }
       })
@@ -64,7 +64,7 @@ class MgrServer extends React.Component<Props, State> {
 
   handleResponseError = (jqXHR, arg = "") => {
     this.setState({
-      messages: Network.responseErrorMessage(jqXHR, (status, msg) => (msgMap[msg] ? t(msgMap[msg], arg) : msg)),
+      messages: Network.responseErrorMessage(jqXHR, (status, msg) => (messageMap[msg] ? t(messageMap[msg], arg) : msg)),
     });
   };
 
@@ -80,30 +80,30 @@ class MgrServer extends React.Component<Props, State> {
           <div className="panel panel-default">
             <div className="panel-body">
               <dl className="row">
-                <dt className="col-xs-2">{t("Name")}</dt>
-                <dd className="col-xs-10">{this.props.name}</dd>
+                <dt className="col-2 col-xs-2">{t("Name")}</dt>
+                <dd className="col-10 col-xs-10">{this.props.name}</dd>
               </dl>
               <dl className="row">
-                <dt className="col-xs-2">{t("Version")}</dt>
-                <dd className="col-xs-10">{this.props.version}</dd>
+                <dt className="col-2 col-xs-2">{t("Version")}</dt>
+                <dd className="col-10 col-xs-10">{this.props.version}</dd>
               </dl>
               <dl className="row">
-                <dt className="col-xs-2">{t("Report Database Name")}</dt>
-                <dd className="col-xs-10">{this.props.reportDbName}</dd>
+                <dt className="col-2 col-xs-2">{t("Report Database Name")}</dt>
+                <dd className="col-10 col-xs-10">{this.props.reportDbName}</dd>
               </dl>
               <dl className="row">
-                <dt className="col-xs-2">{t("Report Database Host")}</dt>
-                <dd className="col-xs-10">
+                <dt className="col-2 col-xs-2">{t("Report Database Host")}</dt>
+                <dd className="col-10 col-xs-10">
                   {this.props.reportDbHost}:{this.props.reportDbPort}
                 </dd>
               </dl>
               <dl className="row">
-                <dt className="col-xs-2">{t("Report Database User")}</dt>
-                <dd className="col-xs-10">{this.props.reportDbUser}</dd>
+                <dt className="col-2 col-xs-2">{t("Report Database User")}</dt>
+                <dd className="col-10 col-xs-10">{this.props.reportDbUser}</dd>
               </dl>
               <dl className="row">
-                <dt className="col-xs-2">{t("Report Database Last Synced")}</dt>
-                <dd className="col-xs-10">{this.props.reportDbLastSynced}</dd>
+                <dt className="col-2 col-xs-2">{t("Report Database Last Synced")}</dt>
+                <dd className="col-10 col-xs-10">{this.props.reportDbLastSynced}</dd>
               </dl>
             </div>
           </div>

@@ -103,15 +103,19 @@ const MatcherRunDescription = (props: MatcherRunDescriptionProps) => {
 
   if (props.latestEnd == null) {
     return (
-      <div>{t("Matching data is currently being recomputed, it was started {0}.", fromNow(props.latestStart))}</div>
+      <div>
+        {t("Matching data is currently being recomputed, it was started {timeFromNow}.", {
+          timeFromNow: fromNow(props.latestStart),
+        })}
+      </div>
     );
   }
 
   return (
     <div>
       {t(
-        "Latest successful match data was computed {0}, you can trigger a new run by clicking the button below.",
-        fromNow(props.latestEnd)
+        "Latest successful match data was computed {timeFromNow}, you can trigger a new run by clicking the button below.",
+        { timeFromNow: fromNow(props.latestEnd) }
       )}
     </div>
   );
@@ -140,8 +144,7 @@ class MatcherScheduleButton extends React.Component<MatcherScheduleButtonProps> 
   };
 
   render() {
-    const buttonClass =
-      "btn spacewalk-btn-margin-vertical " + (!this.props.matcherRunning ? "btn-success" : "btn-default");
+    const buttonClass = "btn spacewalk-btn-margin-vertical btn-default";
 
     return (
       <button type="button" className={buttonClass} disabled={this.props.matcherRunning} onClick={this.onClick}>

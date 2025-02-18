@@ -1,7 +1,7 @@
 import * as React from "react";
 
 type Props = {
-  headingLevel: keyof JSX.IntrinsicElements;
+  headingLevel?: keyof JSX.IntrinsicElements;
   collapseId?: string | null | undefined;
   customIconClass?: string | null | undefined;
   title: string | null | undefined;
@@ -14,7 +14,7 @@ type Props = {
 };
 
 const Panel = (props: Props) => {
-  const { headingLevel: HeadingLevel } = props;
+  const { headingLevel: HeadingLevel = "h1" } = props;
 
   const titleContent = props.title && (
     <React.Fragment>
@@ -56,7 +56,7 @@ const Panel = (props: Props) => {
             <HeadingLevel style={{ width: "85%" }}>
               {props.collapseId ? (
                 <div
-                  data-toggle="collapse"
+                  data-bs-toggle="collapse"
                   data-target={`#${props.collapseId}-panel-closable`}
                   className="accordion-toggle"
                 >

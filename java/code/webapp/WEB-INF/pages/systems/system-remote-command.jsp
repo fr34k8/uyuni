@@ -70,8 +70,8 @@
                     </div>
                     <jsp:include page="/WEB-INF/pages/common/fragments/schedule-options.jspf"/>
                     <div class="form-group">
-                        <div class="col-lg-offset-3 col-lg-6">
-                            <button type="submit" name="schedule" class="btn btn-success"
+                        <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
+                            <button type="submit" name="schedule" class="btn btn-primary"
                                     value="<bean:message key='ssm.operations.provisioning.remotecommand.form.submit'/>">
                                 <bean:message key="ssm.operations.provisioning.remotecommand.form.submit" />
                         </button>

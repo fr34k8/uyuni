@@ -15,6 +15,7 @@
 package com.redhat.rhn.domain.scc;
 
 import com.redhat.rhn.domain.BaseDomainHelper;
+import com.redhat.rhn.domain.credentials.BaseCredentials;
 import com.redhat.rhn.domain.credentials.Credentials;
 import com.redhat.rhn.domain.product.SUSEProduct;
 
@@ -84,7 +85,7 @@ public class SCCSubscription extends BaseDomainHelper {
      * Get the mirror credentials.
      * @return the credentials
      */
-    @ManyToOne
+    @ManyToOne(targetEntity = BaseCredentials.class)
     public Credentials getCredentials() {
         return credentials;
     }
@@ -243,10 +244,9 @@ public class SCCSubscription extends BaseDomainHelper {
      */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof SCCSubscription)) {
+        if (!(other instanceof SCCSubscription otherSCCSubscription)) {
             return false;
         }
-        SCCSubscription otherSCCSubscription = (SCCSubscription) other;
         return new EqualsBuilder()
                 .append(getSccId(), otherSCCSubscription.getSccId())
                 .append(getRegcode(), otherSCCSubscription.getRegcode())

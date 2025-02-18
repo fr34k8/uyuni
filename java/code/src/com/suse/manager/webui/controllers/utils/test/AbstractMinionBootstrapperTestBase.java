@@ -26,6 +26,9 @@ import com.redhat.rhn.domain.server.test.MinionServerFactoryTest;
 import com.redhat.rhn.domain.token.ActivationKey;
 import com.redhat.rhn.testing.JMockBaseTestCaseWithUser;
 
+import com.suse.cloud.CloudPaygManager;
+import com.suse.cloud.test.TestCloudPaygManagerBuilder;
+import com.suse.manager.attestation.AttestationManager;
 import com.suse.manager.webui.controllers.bootstrap.AbstractMinionBootstrapper;
 import com.suse.manager.webui.controllers.bootstrap.BootstrapResult;
 import com.suse.manager.webui.services.impl.SaltSSHService;
@@ -57,6 +60,8 @@ import java.util.Optional;
 public abstract class AbstractMinionBootstrapperTestBase extends JMockBaseTestCaseWithUser {
 
     protected SaltService saltServiceMock;
+    protected CloudPaygManager paygManager;
+    protected AttestationManager attestationManager;
 
     // tested object, initialized in subclasses
     protected AbstractMinionBootstrapper bootstrapper;
@@ -67,6 +72,8 @@ public abstract class AbstractMinionBootstrapperTestBase extends JMockBaseTestCa
         super.setUp();
         setImposteriser(ByteBuddyClassImposteriser.INSTANCE);
         saltServiceMock = mock(SaltService.class);
+        paygManager = new TestCloudPaygManagerBuilder().build();
+        attestationManager = new AttestationManager();
     }
 
     /**
@@ -170,7 +177,7 @@ public abstract class AbstractMinionBootstrapperTestBase extends JMockBaseTestCa
             will(returnValue(keyPair));
 
             MgrUtilRunner.ExecResult mockResult = new MgrUtilRunner.SshKeygenResult("key", "pubkey");
-            allowing(saltServiceMock).generateSSHKey(SaltSSHService.SSH_KEY_PATH);
+            allowing(saltServiceMock).generateSSHKey(SaltSSHService.SSH_KEY_PATH, SaltSSHService.SUMA_SSH_PUB_KEY);
             will(returnValue(of(mockResult)));
 
             List<String> bootstrapMods = bootstrapMods();
@@ -238,7 +245,7 @@ public abstract class AbstractMinionBootstrapperTestBase extends JMockBaseTestCa
             will(returnValue(keyPair));
 
             MgrUtilRunner.ExecResult mockResult = new MgrUtilRunner.SshKeygenResult("key", "pubkey");
-            allowing(saltServiceMock).generateSSHKey(SaltSSHService.SSH_KEY_PATH);
+            allowing(saltServiceMock).generateSSHKey(SaltSSHService.SSH_KEY_PATH, SaltSSHService.SUMA_SSH_PUB_KEY);
             will(returnValue(of(mockResult)));
 
             List<String> bootstrapMods = bootstrapMods();
@@ -278,6 +285,10 @@ public abstract class AbstractMinionBootstrapperTestBase extends JMockBaseTestCa
             Key.Pair keyPair = mockKeyPair();
             allowing(saltServiceMock).generateKeysAndAccept("myhost", false);
             will(returnValue(keyPair));
+
+            MgrUtilRunner.ExecResult mockResult = new MgrUtilRunner.SshKeygenResult("key", "pubkey");
+            allowing(saltServiceMock).generateSSHKey(SaltSSHService.SSH_KEY_PATH, SaltSSHService.SUMA_SSH_PUB_KEY);
+            will(returnValue(of(mockResult)));
 
             List<String> bootstrapMods = bootstrapMods();
             Map<String, Object> pillarData = createPillarData(Optional.of(key), Optional.of(reactKey));

@@ -14,11 +14,13 @@
  */
 package com.suse.manager.ssl;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 /**
  * Data contained in an SSL certificate, also used to generate them
@@ -73,7 +75,7 @@ public class SSLCertData {
 
         if (cnames != null) {
             params.addAll(cnames.stream()
-                    .flatMap(cname -> List.of("--set-cname", cname).stream()).collect(Collectors.toList()));
+                    .flatMap(cname -> List.of("--set-cname", cname).stream()).toList());
         }
 
         if (country != null) {
@@ -139,12 +141,26 @@ public class SSLCertData {
      * @return machine name
      */
     public String getMachineName() {
-        List<String> dataList = Arrays.asList(this.getCn().split("\\."));
-        if (dataList.size() > 2) {
-            return String.join(".", dataList.subList(0, dataList.size() - 2));
+        String[] hostnameParts = this.getCn().split("\\.");
+
+        return hostnameParts.length > 2 ?
+                StringUtils.join(hostnameParts, ".", 0, hostnameParts.length - 2) :
+                this.getCn();
+    }
+
+    /**
+     * Return the set of aggregates cn and cnames.
+     *
+     * @return all cnames and cn without duplicate.
+     */
+    public Set<String> getAllCnames() {
+        Set<String> allCnames = new HashSet<>();
+        if (cn != null) {
+            allCnames.add(cn);
         }
-        else {
-            return String.join(".");
+        if (cnames != null) {
+            allCnames.addAll(cnames);
         }
+        return allCnames;
     }
 }

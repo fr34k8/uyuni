@@ -23,7 +23,7 @@ Feature: Main landing page options and preferences
     Given I am not authorized
     When I go to the home page
     And I follow "Copyright Notice"
-    Then I should see a "Copyright (c) 2011 - 2022 SUSE LLC." text
+    Then I should see a "Copyright (c) 2011 - 2025 SUSE LLC." text
 
 @susemanager
   Scenario: Access the EULA
@@ -47,7 +47,7 @@ Feature: Main landing page options and preferences
     Then I should not be authorized
 
   Scenario: Top level bar
-    Given I am authorized
+    Given I am authorized for the "Admin" section
     When I go to the home page
     And I should see a "Manage" link
     And I should see a "admin" text

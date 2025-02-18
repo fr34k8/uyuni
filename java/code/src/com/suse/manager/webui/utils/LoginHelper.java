@@ -25,7 +25,8 @@ import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.common.messaging.MessageQueue;
 import com.redhat.rhn.common.util.FileUtils;
 import com.redhat.rhn.common.util.StringUtil;
-import com.redhat.rhn.domain.common.SatConfigFactory;
+import com.redhat.rhn.domain.common.RhnConfiguration;
+import com.redhat.rhn.domain.common.RhnConfigurationFactory;
 import com.redhat.rhn.domain.org.Org;
 import com.redhat.rhn.domain.org.OrgFactory;
 import com.redhat.rhn.domain.org.usergroup.OrgUserExtGroup;
@@ -68,13 +69,10 @@ public class LoginHelper {
 
     private static Logger log = LogManager.getLogger(LoginHelper.class);
     private static final String DEFAULT_KERB_USER_PASSWORD = "0";
-    private static final Long MIN_PG_DB_VERSION = 130001L;
-    private static final Long MAX_PG_DB_VERSION = 149999L;
-    private static final String MIN_PG_DB_VERSION_STRING = "13";
-    private static final String MAX_PG_DB_VERSION_STRING = "14";
-    private static final Double OS_VERSION_CHECK = 15.4;
-    private static final Long OS_VERSION_MIN_DB_VERSION = 140000L;
-    private static final String OS_VERSION_WANTED_DB_VERSION = "14";
+    private static final Long MIN_PG_DB_VERSION = 140001L;
+    private static final Long MAX_PG_DB_VERSION = 169999L;
+    private static final String MIN_PG_DB_VERSION_STRING = "14";
+    private static final String MAX_PG_DB_VERSION_STRING = "16";
     public static final String DEFAULT_URL_BOUNCE = "/rhn/YourRhn.do";
 
     /**
@@ -135,8 +133,9 @@ public class LoginHelper {
             }
             catch (LookupException le) {
                 Org newUserOrg = null;
-                Boolean useOrgUnit = SatConfigFactory.getSatConfigBooleanValue(
-                        SatConfigFactory.EXT_AUTH_USE_ORGUNIT);
+                RhnConfigurationFactory factory = RhnConfigurationFactory.getSingleton();
+                Boolean useOrgUnit =
+                        factory.getBooleanConfiguration(RhnConfiguration.KEYS.EXTAUTH_USE_ORGUNIT).getValue();
                 if (useOrgUnit) {
                     String orgUnitString =
                             (String) request.getAttribute("REMOTE_USER_ORGUNIT");
@@ -146,8 +145,8 @@ public class LoginHelper {
                     }
                 }
                 if (newUserOrg == null) {
-                    Long defaultOrgId = SatConfigFactory.getSatConfigLongValue(
-                            SatConfigFactory.EXT_AUTH_DEFAULT_ORGID, 1L);
+                    Long defaultOrgId =
+                            factory.getLongConfiguration(RhnConfiguration.KEYS.EXTAUTH_DEFAULT_ORGID).getValue();
                     if (defaultOrgId != null) {
                         newUserOrg = OrgFactory.lookupById(defaultOrgId);
                         if (newUserOrg == null) {
@@ -372,12 +371,6 @@ public class LoginHelper {
         else if (serverVersion > MAX_PG_DB_VERSION) {
             validationErrors.add(ls.getMessage("error.unsupported_db_max", pgVersion, MAX_PG_DB_VERSION_STRING));
             log.error(ls.getMessage("error.unsupported_db_max", pgVersion, MAX_PG_DB_VERSION_STRING));
-        }
-        else if (osVersion >= OS_VERSION_CHECK && serverVersion < OS_VERSION_MIN_DB_VERSION) {
-            validationErrors.add(ls.getMessage("error.unsupported_db_migrate", pgVersion, osName,
-                    OS_VERSION_WANTED_DB_VERSION));
-            log.error(ls.getMessage("error.unsupported_db_migrate", pgVersion, osName,
-                    OS_VERSION_WANTED_DB_VERSION));
         }
 
         m = ModeFactory.getMode("General_queries", "installed_schema_version");

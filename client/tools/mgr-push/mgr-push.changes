@@ -1,4 +1,47 @@
 -------------------------------------------------------------------
+Mon Oct 14 15:38:18 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Fri May 03 14:25:28 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.2-0
+  * Remove unused code from the traditional stack
+
+-------------------------------------------------------------------
+Tue Jan 16 08:33:33 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Bump version to 5.0.0
+
+-------------------------------------------------------------------
+Fri Dec 15 16:53:05 CET 2023 - rosuna@suse.com
+
+- version 4.4.6-1
+  * Remove unused makefiles
+
+-------------------------------------------------------------------
+Wed Nov 01 20:57:11 CET 2023 - marina.latini@suse.com
+
+- version 4.4.5-1
+  * Use http to connect to localhost server
+  * Use bundle CA certificate in rhnpush (bsc#1222731)
+
+-------------------------------------------------------------------
+Wed Apr 19 12:45:23 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.4-1
+  * remove pylint check at build time
+
+-------------------------------------------------------------------
+Tue Feb 21 14:12:58 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.3-1
+  * Ensure installation of make for building
+
+-------------------------------------------------------------------
 Wed Dec 14 14:17:57 CET 2022 - jgonzalez@suse.com
 
 - version 4.4.2-1

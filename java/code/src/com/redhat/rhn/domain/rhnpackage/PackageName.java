@@ -18,10 +18,12 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.io.Serializable;
+
 /**
  * PackageName
  */
-public class PackageName implements Comparable<PackageName> {
+public class PackageName implements Comparable<PackageName>, Serializable {
 
     private Long id;
     private String name;
@@ -69,8 +71,7 @@ public class PackageName implements Comparable<PackageName> {
      */
     @Override
     public boolean equals(Object other) {
-        if (other instanceof PackageName) {
-            PackageName otherPack = (PackageName) other;
+        if (other instanceof PackageName otherPack) {
             return new EqualsBuilder().append(this.getName(), otherPack.getName()).append(
                     this.getId(), otherPack.getId()).isEquals();
         }

@@ -24,7 +24,6 @@ import com.redhat.rhn.domain.server.ServerFactory;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.frontend.dto.SystemOverview;
 import com.redhat.rhn.frontend.xmlrpc.BaseHandler;
-import com.redhat.rhn.frontend.xmlrpc.IOFaultException;
 import com.redhat.rhn.frontend.xmlrpc.InvalidParameterException;
 import com.redhat.rhn.frontend.xmlrpc.InvalidProxyVersionException;
 import com.redhat.rhn.frontend.xmlrpc.MethodInvalidParamException;
@@ -34,7 +33,6 @@ import com.redhat.rhn.frontend.xmlrpc.ProxyMissingEntitlementException;
 import com.redhat.rhn.frontend.xmlrpc.ProxyNotActivatedException;
 import com.redhat.rhn.frontend.xmlrpc.ProxySystemIsSatelliteException;
 import com.redhat.rhn.frontend.xmlrpc.SSLCertFaultException;
-import com.redhat.rhn.frontend.xmlrpc.SystemIdInstantiationException;
 import com.redhat.rhn.frontend.xmlrpc.system.XmlRpcSystemHelper;
 import com.redhat.rhn.manager.entitlement.EntitlementManager;
 import com.redhat.rhn.manager.system.SystemManager;
@@ -42,12 +40,12 @@ import com.redhat.rhn.manager.system.SystemManager;
 import com.suse.manager.api.ReadOnly;
 import com.suse.manager.ssl.SSLCertData;
 import com.suse.manager.ssl.SSLCertGenerationException;
+import com.suse.manager.ssl.SSLCertManager;
 import com.suse.manager.ssl.SSLCertPair;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -218,7 +216,7 @@ public class ProxyHandler extends BaseHandler {
      * @apidoc.param #session_key()
      * @apidoc.returntype
      * #return_array_begin()
-     *   $SystemOverviewSerializer
+     *   $ShortSystemInfoSerializer
      * #array_end()
      */
     @ReadOnly
@@ -293,15 +291,8 @@ public class ProxyHandler extends BaseHandler {
             }
 
             return systemManager.createProxyContainerConfig(loggedInUser, proxyName, proxyPort, server,
-                    maxCache.longValue(), email, rootCA, intermediateCAs, proxyCrtKey, null, null, null);
-        }
-        catch (InstantiationException e) {
-            LOG.error("Failed to generate proxy system id", e);
-            throw new SystemIdInstantiationException();
-        }
-        catch (IOException e) {
-            LOG.error("Failed to generate container config", e);
-            throw new IOFaultException(e);
+                    maxCache.longValue(), email, rootCA, intermediateCAs, proxyCrtKey, null, null, null,
+                    new SSLCertManager());
         }
         catch (SSLCertGenerationException e) {
             LOG.error("Failed to generate SSL certificate", e);
@@ -364,15 +355,8 @@ public class ProxyHandler extends BaseHandler {
             SSLCertData certData = new SSLCertData(nullable(proxyName), cnames, nullable(country),
                     nullable(state), nullable(city), nullable(org), nullable(orgUnit), nullable(sslEmail));
             return systemManager.createProxyContainerConfig(loggedInUser, proxyName, proxyPort, server,
-                    maxCache.longValue(), email, null, Collections.emptyList(), null, caCrtKey, caPassword, certData);
-        }
-        catch (InstantiationException e) {
-            LOG.error("Failed to generate proxy system id", e);
-            throw new SystemIdInstantiationException();
-        }
-        catch (IOException e) {
-            LOG.error("Failed to generate container config", e);
-            throw new IOFaultException(e);
+                    maxCache.longValue(), email, null, List.of(), null, caCrtKey, caPassword, certData,
+                    new SSLCertManager());
         }
         catch (SSLCertGenerationException e) {
             LOG.error("Failed to generate SSL certificate", e);

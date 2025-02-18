@@ -7,10 +7,10 @@ import { AsyncButton, Button } from "components/buttons";
 import { Combobox, ComboboxItem } from "components/combobox";
 import { Check, Form } from "components/input";
 import { ActionChainLink, ActionLink } from "components/links";
-import { Messages, MessageType, Utils as MsgUtils } from "components/messages";
+import { Messages, MessageType, Utils as MsgUtils } from "components/messages/messages";
 import { InnerPanel } from "components/panels/InnerPanel";
 import { Toggler } from "components/toggler";
-import { Loading } from "components/utils/Loading";
+import { Loading } from "components/utils/loading/Loading";
 
 import { localizedMoment } from "utils";
 import Network, { JsonResult } from "utils/network";
@@ -93,7 +93,7 @@ export default function SchedulePlaybook({ playbook, onBack }: SchedulePlaybookP
         handler={onBack}
       />
       <AsyncButton
-        defaultType="btn-success"
+        defaultType="btn-primary"
         action={schedule}
         title={t("Schedule playbook execution")}
         text={t("Schedule")}
@@ -104,7 +104,7 @@ export default function SchedulePlaybook({ playbook, onBack }: SchedulePlaybookP
   return (
     <>
       <Messages items={messages} />
-      <InnerPanel title={t("Playbook '{0}'", playbook.name)} icon="fa-file-text-o" buttons={buttons}>
+      <InnerPanel title={t('Playbook "{name}"', { name: playbook.name })} icon="fa-file-text-o" buttons={buttons}>
         <div className="panel panel-default">
           <div className="panel-heading">
             <div>
@@ -129,19 +129,18 @@ export default function SchedulePlaybook({ playbook, onBack }: SchedulePlaybookP
                   <Combobox
                     id="inventory-path-select"
                     name="inventory-path-select"
-                    data={inventoryOpts}
+                    options={inventoryOpts}
                     selectedId={inventoryPath?.id}
                     onSelect={setInventoryPath}
                   />
                 </div>
               </div>
-              <div className="col-sm-offset-3 col-sm-6">
-                <Check
-                  name="flushCache"
-                  label={t("Flush Ansible fact cache")}
-                  title={t("Clear the fact cache for every host in inventory")}
-                />
-              </div>
+              <Check
+                name="flushCache"
+                label={t("Flush Ansible fact cache")}
+                title={t("Clear the fact cache for every host in inventory")}
+                divClass="col-sm-offset-3 offset-sm-3 col-sm-6"
+              />
             </Form>
           </div>
         </div>

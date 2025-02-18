@@ -6,10 +6,10 @@ import validator from "validator";
 import { Button } from "components/buttons";
 import { DangerDialog } from "components/dialog/LegacyDangerDialog";
 import { ModalButton } from "components/dialog/ModalButton";
-import { Check } from "components/input/Check";
-import { Form } from "components/input/Form";
-import { Text } from "components/input/Text";
-import { MessageType, Utils as MessagesUtils } from "components/messages";
+import { Check } from "components/input/check/Check";
+import { Form } from "components/input/form/Form";
+import { Text } from "components/input/text/Text";
+import { MessageType, Utils as MessagesUtils } from "components/messages/messages";
 
 type CalendarEditProps = {
   messages: (messages: MessageType[]) => any;
@@ -112,7 +112,7 @@ const MaintenanceCalendarEdit = forwardRef((props: CalendarEditProps, ref) => {
       }
       validateUrl(params.url)
         ? props.onEdit(params)
-        : props.messages(MessagesUtils.error(t("Url '{0}' is invalid", params.url)));
+        : props.messages(MessagesUtils.error(t('Url "{url}" is invalid', { url: params.url })));
     },
   }));
 
@@ -128,7 +128,11 @@ const MaintenanceCalendarEdit = forwardRef((props: CalendarEditProps, ref) => {
         disabled={props.isEdit}
       />
       {props.isEdit && !props.calendar?.url && (
-        <Check name="strategy" label={<b>{t("Cancel affected actions")}</b>} divClass="col-md-6 col-md-offset-3" />
+        <Check
+          name="strategy"
+          label={<b>{t("Cancel affected actions")}</b>}
+          divClass="col-md-6 col-md-offset-3 offset-md-3"
+        />
       )}
       <div className="form-horizontal">
         <div className="form-group">

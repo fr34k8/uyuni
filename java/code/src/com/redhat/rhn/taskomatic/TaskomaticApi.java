@@ -52,9 +52,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import redstone.xmlrpc.XmlRpcClient;
 import redstone.xmlrpc.XmlRpcException;
@@ -84,7 +84,7 @@ public class TaskomaticApi {
         }
     }
 
-    private Object invoke(String name, Object...args) throws TaskomaticApiException {
+    protected Object invoke(String name, Object...args) throws TaskomaticApiException {
         try {
             return getClient().invoke(name, args);
         }
@@ -230,7 +230,7 @@ public class TaskomaticApi {
             Map<String, String> params) throws TaskomaticApiException {
         String jobLabel = createRepoSyncScheduleName(chan, user);
 
-        Map task = findScheduleByBunchAndLabel("repo-sync-bunch", jobLabel, user);
+        Map<String, Object> task = findScheduleByBunchAndLabel("repo-sync-bunch", jobLabel, user);
         if (task != null) {
             unscheduleRepoTask(jobLabel, user);
         }
@@ -330,7 +330,7 @@ public class TaskomaticApi {
             throw new PermissionException(String.format("User '%s' can't schedule action '$s'", user, action));
         }
 
-        doScheduleSatBunch(user, action.computeTaskoScheduleName(), "recurring-state-apply-bunch",
+        doScheduleSatBunch(user, action.computeTaskoScheduleName(), "recurring-action-executor-bunch",
                 action.getCronExpr());
     }
 
@@ -357,7 +357,7 @@ public class TaskomaticApi {
             throw new PermissionException(String.format("User '%s' can't unschedule action '$s'", user, action));
         }
 
-        doUnscheduleSatBunch(user, action.computeTaskoScheduleName(), "recurring-state-apply-bunch");
+        doUnscheduleSatBunch(user, action.computeTaskoScheduleName(), "recurring-action-executor-bunch");
     }
 
     //helper method for unscheduling bunch without permission checking
@@ -381,7 +381,7 @@ public class TaskomaticApi {
      */
     public void unscheduleRepoSync(Channel chan, User user) throws TaskomaticApiException {
         String jobLabel = createRepoSyncScheduleName(chan, user);
-        Map task = findScheduleByBunchAndLabel("repo-sync-bunch", jobLabel, user);
+        Map<String, Object> task = findScheduleByBunchAndLabel("repo-sync-bunch", jobLabel, user);
         if (task != null) {
             unscheduleRepoTask(jobLabel, user);
         }
@@ -462,8 +462,8 @@ public class TaskomaticApi {
      */
     public boolean satScheduleActive(String jobLabel, User user)
         throws TaskomaticApiException {
-        List<Map> schedules = (List<Map>) invoke("tasko.listActiveSatSchedules");
-        for (Map schedule : schedules) {
+        List<Map<String, Object>> schedules = (List<Map<String, Object>>) invoke("tasko.listActiveSatSchedules");
+        for (Map<String, Object> schedule : schedules) {
             if (schedule.get("job_label").equals(jobLabel)) {
                 return Boolean.TRUE;
             }
@@ -481,7 +481,7 @@ public class TaskomaticApi {
     public String getRepoSyncSchedule(Channel chan, User user)
         throws TaskomaticApiException {
         String jobLabel = createRepoSyncScheduleName(chan, user);
-        Map task = findScheduleByBunchAndLabel("repo-sync-bunch", jobLabel, user);
+        Map<String, Object> task = findScheduleByBunchAndLabel("repo-sync-bunch", jobLabel, user);
         if (task == null) {
             return null;
         }
@@ -609,14 +609,19 @@ public class TaskomaticApi {
     public void scheduleMinionActionExecutions(List<Action> actions, boolean forcePackageListRefresh)
             throws TaskomaticApiException {
         List<Map<String, String>> paramsList = new ArrayList<>();
+        List<String> ids = new ArrayList<>();
         for (Action action: actions) {
             Map<String, String> params = new HashMap<>();
-            params.put("action_id", Long.toString(action.getId()));
+            String id = Long.toString(action.getId());
+            params.put("action_id", id);
             params.put("force_pkg_list_refresh", Boolean.toString(forcePackageListRefresh));
             params.put("earliest_action", action.getEarliestAction().toInstant().toString());
             paramsList.add(params);
+            ids.add(id);
         }
+        LOG.debug("Scheduling actions: {}.", ids);
         invoke("tasko.scheduleRuns", MINION_ACTION_BUNCH_LABEL, MINION_ACTION_JOB_PREFIX, paramsList);
+        LOG.debug("Actions scheduled: {}.", ids);
     }
 
     /**
@@ -677,7 +682,7 @@ public class TaskomaticApi {
                             params.put("staging_job_minion_server_id", Long.toString(minionData.getKey()));
                             params.put("earliest_action", minionData.getValue().toInstant().toString());
                             return params;
-                        })).collect(Collectors.toList());
+                        })).toList();
         invoke("tasko.scheduleRuns", MINION_ACTION_BUNCH_LABEL, MINION_ACTION_JOB_DOWNLOAD_PREFIX, paramList);
     }
 
@@ -731,19 +736,33 @@ public class TaskomaticApi {
     public void deleteScheduledActions(Map<Action, Set<Server>> actionMap)
         throws TaskomaticApiException {
 
-        Stream<Action> actionsToBeUnscheduled = actionMap.entrySet().stream()
-            // select Actions that have no minions besides those in the specified set
-            // (those that have any other minion should NOT be unscheduled!)
-            .filter(e -> e.getKey().getServerActions().stream()
-                    .map(ServerAction::getServer)
-                    .filter(MinionServerUtils::isMinionServer)
-                    .allMatch(s -> e.getValue().contains(s))
-            )
-            .map(Map.Entry::getKey);
+        List<Action> actionsToBeUnscheduled = actionMap.entrySet().stream()
+                // select Actions that have no minions besides those in the specified set
+                // (those that have any other minion should NOT be unscheduled!)
+                .filter(e -> e.getKey().getServerActions().stream()
+                        .map(ServerAction::getServer)
+                        .filter(MinionServerUtils::isMinionServer)
+                        .allMatch(s -> e.getValue().contains(s))
+                )
+                .map(Map.Entry::getKey)
+                .toList();
 
-        List<String> jobLabels = actionsToBeUnscheduled
+        Set<ActionChain> affectedActionChains = actionsToBeUnscheduled.stream()
+                .map(a -> ActionChainFactory.getActionChainsByAction(a).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<String> jobLabels = actionsToBeUnscheduled.stream()
                 .map(a -> MINION_ACTION_JOB_PREFIX + a.getId())
+                .filter(job -> !TaskoFactory.listScheduleByLabel(job).isEmpty())
                 .collect(Collectors.toList());
+
+        affectedActionChains.forEach(ac -> {
+            List<Action> activeActionsForChain = ActionChainFactory.getActiveActionsForChain(ac);
+            if (activeActionsForChain.removeAll(actionsToBeUnscheduled) && activeActionsForChain.isEmpty()) {
+                jobLabels.add(MINION_ACTIONCHAIN_JOB_PREFIX + ac.getId());
+            }
+        });
 
         if (!jobLabels.isEmpty()) {
             LOG.debug("Unscheduling jobs: {}", jobLabels);

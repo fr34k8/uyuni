@@ -18,6 +18,9 @@ INSERT INTO rhnTaskoTask (id, name, class)
          VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'repo-sync', 'com.redhat.rhn.taskomatic.task.RepoSyncTask');
 
 INSERT INTO rhnTaskoTask (id, name, class)
+         VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'ubuntu-errata', 'com.redhat.rhn.taskomatic.task.UbuntuErrataTask');
+
+INSERT INTO rhnTaskoTask (id, name, class)
          VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'satellite-sync', 'com.redhat.rhn.taskomatic.task.SatSyncTask');
 
 INSERT INTO rhnTaskoTask (id, name, class)
@@ -66,7 +69,7 @@ INSERT INTO rhnTaskoTask (id, name, class)
          VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'cleanup-packagechangelog-data', 'com.redhat.rhn.taskomatic.task.ChangeLogCleanUp');
 
 INSERT INTO rhnTaskoTask (id, name, class)
-         VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'ssh-push', 'com.redhat.rhn.taskomatic.task.SSHPush');
+         VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'ssh-service', 'com.redhat.rhn.taskomatic.task.SSHService');
 
 INSERT INTO rhnTaskoTask (id, name, class)
          VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'cve-server-channels', 'com.redhat.rhn.taskomatic.task.CVEServerChannels');
@@ -102,16 +105,13 @@ INSERT INTO rhnTaskoTask (id, name, class)
    VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'minion-action-chain-executor', 'com.redhat.rhn.taskomatic.task.MinionActionChainExecutor');
 
 INSERT INTO rhnTaskoTask (id, name, class)
-   VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'minion-action-chain-cleanup', 'com.redhat.rhn.taskomatic.task.MinionActionChainCleanup');
-
-INSERT INTO rhnTaskoTask (id, name, class)
    VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'notifications-cleanup', 'com.redhat.rhn.taskomatic.task.NotificationsCleanup');
 
 INSERT INTO rhnTaskoTask (id, name, class)
    VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'minion-checkin', 'com.redhat.rhn.taskomatic.task.MinionCheckin');
 
 INSERT INTO rhnTaskoTask (id, name, class)
-   VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'recurring-state-apply', 'com.redhat.rhn.taskomatic.task.RecurringStateApplyJob');
+   VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'recurring-action-executor', 'com.redhat.rhn.taskomatic.task.RecurringActionJob');
 
 INSERT INTO rhnTaskoTask (id, name, class)
    VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'ssh-minion-action-executor', 'com.redhat.rhn.taskomatic.task.SSHMinionActionExecutor');
@@ -139,5 +139,14 @@ VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'update-system-overview', 'co
 
 INSERT INTO rhnTaskoTask (id, name, class)
 VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'system-overview-update-queue', 'com.redhat.rhn.taskomatic.task.SystemOverviewUpdateQueue');
+
+INSERT INTO rhnTaskoTask (id, name, class)
+VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'system-profile-refresh', 'com.redhat.rhn.taskomatic.task.SystemProfileRefreshTask');
+
+INSERT INTO rhnTaskoTask (id, name, class)
+VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'payg-dimension-computation', 'com.redhat.rhn.taskomatic.task.payg.PaygComputeDimensionsTask');
+
+INSERT INTO rhnTaskoTask (id, name, class)
+VALUES (sequence_nextval('rhn_tasko_task_id_seq'), 'oval-data-sync', 'com.redhat.rhn.taskomatic.task.OVALDataSync');
 
 commit;

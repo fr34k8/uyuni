@@ -60,11 +60,15 @@ import com.redhat.rhn.manager.rhnset.RhnSetManager;
 import com.redhat.rhn.manager.satellite.SystemCommandExecutor;
 import com.redhat.rhn.manager.system.IncompatibleArchException;
 
+import com.suse.manager.utils.PagedSqlQueryBuilder;
+import com.suse.oval.ShallowSystemPackage;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
+import org.hibernate.type.StandardBasicTypes;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -82,9 +86,6 @@ import java.util.Set;
  */
 public class PackageManager extends BaseManager {
     private static final Logger LOG = LogManager.getLogger(PackageManager.class);
-    public static final String RHNCFG = "mgr-cfg";
-    public static final String RHNCFG_CLIENT = "mgr-cfg-client";
-    public static final String RHNCFG_ACTIONS = "mgr-cfg-actions";
 
     // Valid dependency types
     public static final String[]
@@ -94,7 +95,7 @@ public class PackageManager extends BaseManager {
 
     private static final String[]
         CLEANUP_QUERIES = {"requires", "provides", "conflicts", "obsoletes",
-            "recommends", "suggests", "supplements", "enhances",
+            "recommends", "suggests", "supplements", "enhances", "predepends", "breaks",
             "channels", "files", "caps", "changelogs"};
 
     /**
@@ -246,7 +247,7 @@ public class PackageManager extends BaseManager {
      * @param pid The id of the package in question
      * @return Returns a list of channels that provide the given package
      */
-    public static DataResult orgPackageChannels(Long orgId, Long pid) {
+    public static DataResult<Row> orgPackageChannels(Long orgId, Long pid) {
         SelectMode m = ModeFactory.getMode("Channel_queries", "org_pkg_channels",
                                            Map.class);
         Map<String, Object> params = new HashMap<>();
@@ -318,6 +319,21 @@ public class PackageManager extends BaseManager {
      */
     public static DataResult<PackageListItem> systemPackageList(Long sid, PageControl pc) {
         return PackageManager.getPackagesPerSystem(sid, "system_package_list", pc);
+    }
+
+    /**
+     * Returns list of packages for given server
+     *
+     * @param sid Server Id
+     * @return list of packages for given server
+     */
+    public static DataResult<ShallowSystemPackage> shallowSystemPackageList(Long sid) {
+        SelectMode m = ModeFactory.getMode("Package_queries", "shallow_system_package_list");
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("sid", sid);
+
+        return m.execute(params);
     }
 
     /**
@@ -621,7 +637,7 @@ public class PackageManager extends BaseManager {
         try {
             session = HibernateFactory.getSession();
             return (PackageName)session.getNamedQuery("PackageName.findByName")
-                                       .setString("name", name)
+                                       .setParameter("name", name, StandardBasicTypes.STRING)
                                        .uniqueResult();
         }
         catch (HibernateException e) {
@@ -791,7 +807,7 @@ public class PackageManager extends BaseManager {
         if (!user.hasRole(RoleFactory.ORG_ADMIN)) {
             throw new PermissionCheckFailureException();
         }
-        DataResult channels = PackageManager.orgPackageChannels(
+        DataResult<Row> channels = PackageManager.orgPackageChannels(
                 user.getOrg().getId(), pkg.getId());
         if (pkg.getOrg() == null || user.getOrg() != pkg.getOrg()) {
             throw new PermissionCheckFailureException();
@@ -809,8 +825,7 @@ public class PackageManager extends BaseManager {
 
         // For every channel the package is in, mark the channel as "changed" in case its
         // metadata needs tto be updated (RHEL5+, mostly)
-        for (Object channelIn : channels) {
-            Map m = (Map) channelIn;
+        for (Row m : channels) {
             String channelLabel = m.get("label").toString();
             Channel channel = ChannelFactory.lookupByLabel(user.getOrg(), channelLabel);
             // force channel save to change last_modified
@@ -1235,6 +1250,150 @@ public class PackageManager extends BaseManager {
             elabs.put("org_id", orgId);
             dr.setElaborationParams(elabs);
             return dr;
+    }
+
+    /**
+     * List all custom packages for an org
+     * @param orgId the org
+     * @param source list source packages instead of regular
+     * @param pc page controller
+     * @return List of custom package (PackageOverview)
+     */
+    public static DataResult<PackageOverview> listCustomPackages(Long orgId, boolean source, PageControl pc) {
+        if (source) {
+            if (List.of("provider", "channels").contains(pc.getSortColumn())) {
+                pc.setSortColumn(null);
+            }
+            return new PagedSqlQueryBuilder("PS.id")
+                    .select("PS.id AS ID, " +
+                            "SRPM.name AS NVREA, " +
+                            "PS.path as PATH")
+                    .from("rhnPackageSource PS " +
+                            "inner join rhnSourceRPM SRPM on PS.source_rpm_id = SRPM.id")
+                    .where("PS.org_id = :org_id")
+                    .run(Map.of("org_id", orgId), pc, PagedSqlQueryBuilder::parseFilterAsText, PackageOverview.class);
+        }
+
+        // We can't use aliases in WHERE clauses and using a subquery would defeat the idea of paged SQL query
+        if ("nvrea".equals(pc.getFilterColumn())) {
+            pc.setFilterColumn("PN.name");
+        }
+        return new PagedSqlQueryBuilder("P.id")
+                .select("P.id AS ID, " +
+                        "PN.name || '-' || evr_t_as_vre_simple(PE.evr) || '.' || PA.label AS NVREA, " +
+                        "PP.name as provider, " +
+                        "(select string_agg(C.name, ',') " +
+                            "FROM rhnChannel C, rhnChannelPackage CP " +
+                            "WHERE CP.package_id = P.id AND c.id = CP.channel_id) AS channels")
+                .from("rhnPackage P " +
+                        "inner join rhnPackageArch PA on P.package_arch_id = PA.id " +
+                        "inner join rhnPackageName PN on P.name_id = PN.id " +
+                        "inner join rhnPackageEVR PE on P.evr_id = PE.id " +
+                        "left join rhnPackageKeyAssociation assoc on assoc.package_id = P.id " +
+                        "left join rhnPackageKey KEY on KEY.id = assoc.key_id " +
+                        "left join rhnPackageProvider PP on KEY.provider_id = PP.id")
+                .countFrom("rhnPackage P inner join rhnPackageName PN on P.name_id = PN.id")
+                .where("P.org_id = :org_id")
+                .run(Map.of("org_id", orgId), pc, PagedSqlQueryBuilder::parseFilterAsText, PackageOverview.class);
+    }
+
+    /**
+     * List orphaned custom packages for an org
+     * @param orgId the org
+     * @param source list source packages instead of regular
+     * @param pc page controller
+     * @return list of package overview objects
+     */
+    public static DataResult<PackageOverview> listOrphanPackages(Long orgId, boolean source, PageControl pc) {
+        if ("channels".equals(pc.getSortColumn())) {
+            pc.setSortColumn(null);
+        }
+
+        if (source) {
+            if ("provider".equals(pc.getSortColumn())) {
+                pc.setSortColumn(null);
+            }
+            return new PagedSqlQueryBuilder("PS.id")
+                    .select("PS.id AS ID, " +
+                            "SRPM.name AS NVREA, " +
+                            "PS.path as PATH")
+                    .from("rhnPackageSource PS " +
+                            "inner join rhnSourceRPM SRPM on PS.source_rpm_id = SRPM.id " +
+                            "left join rhnPackage P on SRPM.id = P.source_rpm_id " +
+                            "left join rhnChannelPackage CP on CP.package_id = P.id ")
+                    .where("PS.org_id = :org_id AND CP.package_id is null")
+                    .run(Map.of("org_id", orgId), pc, PagedSqlQueryBuilder::parseFilterAsText, PackageOverview.class);
+        }
+
+        // We can't use aliases in WHERE clauses and using a subquery would defeat the idea of paged SQL query
+        if ("nvrea".equals(pc.getFilterColumn())) {
+            pc.setFilterColumn("PN.name");
+        }
+        return new PagedSqlQueryBuilder("P.id")
+                .select("P.id AS ID, " +
+                        "PN.name || '-' || evr_t_as_vre_simple(PE.evr) || '.' || PA.label AS NVREA, " +
+                        "PP.name as provider")
+                .from("rhnPackage P " +
+                        "inner join rhnPackageArch PA on P.package_arch_id = PA.id " +
+                        "inner join rhnPackageName PN on P.name_id = PN.id " +
+                        "inner join rhnPackageEVR PE on P.evr_id = PE.id " +
+                        "left join rhnChannelPackage CP on CP.package_id = P.id " +
+                        "left join rhnPackageKeyAssociation assoc on assoc.package_id = P.id " +
+                        "left join rhnPackageKey KEY on KEY.id = assoc.key_id " +
+                        "left join rhnPackageProvider PP on KEY.provider_id = PP.id")
+                .where("P.org_id = :org_id AND CP.package_id is null")
+                .run(Map.of("org_id", orgId), pc, PagedSqlQueryBuilder::parseFilterAsText, PackageOverview.class);
+    }
+
+    /**
+     * list custom packages contained in a channel
+     * @param cid the channel id
+     * @param orgId the org id
+     * @param source list source packages instead of regular
+     * @param pc page controller
+     * @return the list of custom package (package overview)
+     */
+    public static DataResult<PackageOverview> listCustomPackageForChannel(Long cid, Long orgId,
+                                                                          boolean source, PageControl pc) {
+        if (source) {
+            if (List.of("provider", "channels").contains(pc.getSortColumn())) {
+                pc.setSortColumn(null);
+            }
+            return new PagedSqlQueryBuilder("PS.id")
+                    .select("PS.id AS ID, " +
+                            "SRPM.name AS NVREA, " +
+                            "PS.path as PATH")
+                    .from("rhnPackageSource PS " +
+                            "inner join rhnSourceRPM SRPM on PS.source_rpm_id = SRPM.id " +
+                            "left join rhnPackage P on SRPM.id = P.source_rpm_id " +
+                            "left join rhnChannelPackage CP on CP.package_id = P.id")
+                    .where("PS.org_id = :org_id AND CP.channel_id = :cid")
+                    .run(Map.of("org_id", orgId, "cid", cid), pc,
+                            PagedSqlQueryBuilder::parseFilterAsText, PackageOverview.class);
+        }
+
+        // We can't use aliases in WHERE clauses and using a subquery would defeat the idea of paged SQL query
+        if ("nvrea".equals(pc.getFilterColumn())) {
+            pc.setFilterColumn("PN.name");
+        }
+        return new PagedSqlQueryBuilder("P.id")
+                .select("P.id AS ID, " +
+                        "PN.name || '-' || evr_t_as_vre_simple(PE.evr) || '.' || PA.label AS NVREA, " +
+                        "PP.name as provider, " +
+                        "(select string_agg(C.name, ',') " +
+                        "FROM rhnChannel C, rhnChannelPackage CP " +
+                        "WHERE CP.package_id = P.id AND c.id = CP.channel_id) AS channels")
+                .from("rhnPackage P " +
+                        "inner join rhnPackageArch PA on P.package_arch_id = PA.id " +
+                        "inner join rhnPackageName PN on P.name_id = PN.id " +
+                        "inner join rhnPackageEVR PE on P.evr_id = PE.id " +
+                        "left join rhnPackageKeyAssociation assoc on assoc.package_id = P.id " +
+                        "left join rhnPackageKey KEY on KEY.id = assoc.key_id " +
+                        "left join rhnPackageProvider PP on KEY.provider_id = PP.id " +
+                        "left join rhnChannelPackage CP on P.id = CP.package_id")
+                .where("P.org_id = :org_id AND CP.channel_id = :cid")
+                .run(Map.of("org_id", orgId, "cid", cid), pc,
+                        PagedSqlQueryBuilder::parseFilterAsText, PackageOverview.class);
     }
 
     /**

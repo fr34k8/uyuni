@@ -15,7 +15,7 @@
 
 package com.suse.manager.webui.controllers;
 
-import static com.suse.manager.webui.utils.SparkApplicationHelper.json;
+import static com.suse.manager.webui.utils.SparkApplicationHelper.result;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withCsrfToken;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUser;
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUserPreferences;
@@ -25,7 +25,7 @@ import static spark.Spark.post;
 import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.audit.CVEAuditImage;
-import com.redhat.rhn.manager.audit.CVEAuditManager;
+import com.redhat.rhn.manager.audit.CVEAuditManagerOVAL;
 import com.redhat.rhn.manager.audit.CVEAuditServer;
 import com.redhat.rhn.manager.audit.CVEAuditSystem;
 import com.redhat.rhn.manager.audit.PatchStatus;
@@ -36,6 +36,7 @@ import com.suse.manager.webui.utils.gson.ResultJson;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -141,21 +142,21 @@ public class CVEAuditController {
             switch (cveAuditRequest.getTarget()) {
                 case SERVER:
                     Set<Long> systemSet = RhnSetDecl.SYSTEMS.get(user).getElementValues();
-                    List<CVEAuditServer> cveAuditServers = CVEAuditManager
+                    List<CVEAuditServer> cveAuditServers = CVEAuditManagerOVAL
                     .listSystemsByPatchStatus(user, cveAuditRequest.cveIdentifier,
                             cveAuditRequest.statuses);
                     cveAuditServers.forEach(serv -> serv.setSelected(systemSet.contains(serv.getId())));
-                    return json(res, ResultJson.success(cveAuditServers));
+                    return result(res, ResultJson.success(cveAuditServers), new TypeToken<>() { });
                 case IMAGE:
-                    List<CVEAuditImage> cveAuditImages = CVEAuditManager
+                    List<CVEAuditImage> cveAuditImages = CVEAuditManagerOVAL
                     .listImagesByPatchStatus(user, cveAuditRequest.cveIdentifier,
                             cveAuditRequest.statuses);
-                    return json(res, ResultJson.success(cveAuditImages));
+                    return result(res, ResultJson.success(cveAuditImages), new TypeToken<>() { });
                     default: throw new RuntimeException("unreachable");
             }
         }
         catch (UnknownCVEIdentifierException e) {
-            return json(res, ResultJson.error(LOC.getMessage("cveaudit.notfound")));
+            return result(res, ResultJson.error(LOC.getMessage("cveaudit.notfound")), new TypeToken<>() { });
         }
     }
 
@@ -163,17 +164,17 @@ public class CVEAuditController {
             throws UnknownCVEIdentifierException {
         switch (request.getTarget()) {
         case SERVER:
-            List<CVEAuditServer> cveAuditServers = CVEAuditManager
+            List<CVEAuditServer> cveAuditServers = CVEAuditManagerOVAL
             .listSystemsByPatchStatus(user, request.cveIdentifier,
                     request.statuses);
             return cveAuditServers.stream().map(x -> (CVEAuditSystem)x)
-                    .collect(Collectors.toList());
+                    .toList();
         case IMAGE:
-            List<CVEAuditImage> cveAuditImages = CVEAuditManager
+            List<CVEAuditImage> cveAuditImages = CVEAuditManagerOVAL
             .listImagesByPatchStatus(user, request.cveIdentifier,
                     request.statuses);
             return cveAuditImages.stream().map(x -> (CVEAuditSystem)x)
-                    .collect(Collectors.toList());
+                    .toList();
         default: throw new RuntimeException("unreachable");
         }
     }
@@ -197,7 +198,7 @@ public class CVEAuditController {
                     catch (IllegalArgumentException e) {
                         return Stream.empty();
                     }
-                }).collect(Collectors.toList());
+                }).toList();
         List<CVEAuditSystem> cveAuditSystems = Collections.emptyList();
         if (!psList.isEmpty()) {
             EnumSet<PatchStatus> statuses = EnumSet.copyOf(psList);

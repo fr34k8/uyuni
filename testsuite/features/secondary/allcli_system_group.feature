@@ -1,11 +1,11 @@
-# Copyright (c) 2017-2022 SUSE LLC
+# Copyright (c) 2017-2025 SUSE LLC
 # Licensed under the terms of the MIT license.
 
 @scope_visualization
 Feature: Manage a group of systems
 
-  Scenario: Log in as admin user
-    Given I am authorized for the "Admin" section
+  Scenario: Log in as org admin user
+    Given I am authorized
 
   Scenario: Fail to create a group with only its name
     When I follow the left menu "Systems > System Groups"
@@ -60,9 +60,13 @@ Feature: Manage a group of systems
     And I should see "rhlike_minion" as link
     And I should see "sle_minion" as link
 
-  Scenario: Install some formula on the server
-    When I manually install the "locale" formula on the server
-    And I synchronize all Salt dynamic modules on "sle_minion"
+   #container already has locale formula installed
+   @skip_if_containerized_server
+   Scenario: Install the locale formula package on the server
+     When I manually install the "locale" formula on the server
+
+   Scenario: I synchronize all Salt dynamic modules on "sle_minion"
+     When I synchronize all Salt dynamic modules on "sle_minion"
 
   Scenario: New formula page is rendered for the system group
     When I follow the left menu "Systems > System Groups"
@@ -85,13 +89,6 @@ Feature: Manage a group of systems
     And I should see a "Action Details" text
     And I wait until I see "2 systems successfully completed this action." text, refreshing the page
 
-  Scenario: Remove SLE client from new group
-    Given I am on the Systems overview page of this "rhlike_minion"
-    When I follow "Groups"
-    And I check "new-systems-group" in the list
-    And I click on "Leave Selected Groups"
-    Then I should see a "1 system groups removed." text
-
   Scenario: Remove SLE minion from new group
     Given I am on the Systems overview page of this "sle_minion"
     When I follow "Groups"
@@ -101,6 +98,7 @@ Feature: Manage a group of systems
 
   # Red Hat-like minion is intentionally not removed from group
 
+@skip_if_containerized_server
   Scenario: Cleanup: uninstall formula from the server
     When I manually uninstall the "locale" formula from the server
 

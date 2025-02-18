@@ -114,10 +114,10 @@
                     <rhn:hidden name="disabledRoles" value="${disabledRoles}"/>
 
                     <div class="form-group">
-                        <div class="col-lg-offset-3 col-lg-6">
+                        <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
                             <c:choose>
                                 <c:when test="${!empty mailableAddress}">
-                                    <button type="submit" class="btn btn-success">
+                                    <button type="submit" class="btn btn-primary">
                                         <bean:message key="button.update"/>
                                     </button>
                                 </c:when>

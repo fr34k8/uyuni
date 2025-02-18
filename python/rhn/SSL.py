@@ -1,3 +1,4 @@
+#  pylint: disable=invalid-name
 #
 # Higher-level SSL objects used by rpclib
 #
@@ -24,6 +25,7 @@ rhn.SSL builds an abstraction on top of the objects provided by pyOpenSSL
 """
 
 # SSL.crypto is provided to other modules
+# pylint: disable-next=unused-import
 from OpenSSL import crypto
 import ssl as SSL
 import os
@@ -35,21 +37,27 @@ import sys
 
 DEFAULT_TIMEOUT = 120
 
-if hasattr(socket, 'sslerror'):
+if hasattr(socket, "sslerror"):
     socket_error = socket.sslerror
 else:
+    # pylint: disable-next=unused-import
     from ssl import socket_error
 
 try:
+    # pylint: disable-next=unused-import
     from ssl import CertificateError
 except ImportError:
     # python 2.6
+    # pylint: disable-next=unused-import
     from backports.ssl_match_hostname import match_hostname, CertificateError
+
 
 class SSLSocket:
     """
     Class that wraps a pyOpenSSL Connection object, adding more methods
     """
+
+    # pylint: disable-next=redefined-outer-name
     def __init__(self, socket, trusted_certs=None):
         # SSL.Context object
         self._ctx = None
@@ -61,11 +69,6 @@ class SSLSocket:
         trusted_certs = trusted_certs or []
         for f in trusted_certs:
             self.add_trusted_cert(f)
-        # SSL method to use
-        if hasattr(SSL, 'PROTOCOL_TLS'):
-            self._ssl_method = SSL.PROTOCOL_TLS
-        else:
-            self._ssl_method = SSL.PROTOCOL_SSLv23
 
         # Buffer size for reads
         self._buffer_size = 8192
@@ -86,6 +89,7 @@ class SSLSocket:
         object.
         """
         if not os.access(file, os.R_OK):
+            # pylint: disable-next=consider-using-f-string
             raise ValueError("Unable to read certificate file %s" % file)
         self._trusted_certs.append(file.encode("utf-8"))
 
@@ -94,29 +98,59 @@ class SSLSocket:
         Initializes the SSL connection.
         """
         self._check_closed()
-        # Get a context
-        if hasattr(SSL, 'SSLContext'):
-            self._ctx = SSL.SSLContext(self._ssl_method)
+        if hasattr(SSL, "PROTOCOL_TLS_CLIENT"):
+            self._ctx = SSL.SSLContext(SSL.PROTOCOL_TLS_CLIENT)
+            self._ctx.options |= SSL.OP_NO_TLSv1
+            self._ctx.options |= SSL.OP_NO_TLSv1_1
             self._ctx.verify_mode = SSL.CERT_REQUIRED
             self._ctx.check_hostname = True
             self._ctx.load_default_certs(SSL.Purpose.SERVER_AUTH)
             if self._trusted_certs:
-               # We have been supplied with trusted CA certs
+                # We have been supplied with trusted CA certs
                 for f in self._trusted_certs:
                     self._ctx.load_verify_locations(f)
-            self._connection = self._ctx.wrap_socket(self._sock, server_hostname=server_name)
+            self._connection = self._ctx.wrap_socket(
+                self._sock, server_hostname=server_name
+            )
         else:
-            # Python 2.6-2.7.8
-            cacert = None
-            if self._trusted_certs:
-                # seems python2.6 supports only 1
-                cacert = self._trusted_certs[0]
-            self._connection = SSL.wrap_socket(self._sock,
-                                               ssl_version=self._ssl_method,
-                                               cert_reqs=SSL.CERT_REQUIRED,
-                                               ca_certs=cacert)
-            match_hostname(self._connection.getpeercert(), server_name)
+            # This needs to be kept for old traditional clients
+            # SSL method to use
+            if hasattr(SSL, "PROTOCOL_TLS"):
+                self._ssl_method = SSL.PROTOCOL_TLS
+            else:
+                self._ssl_method = SSL.PROTOCOL_SSLv23
 
+            if hasattr(SSL, "SSLContext"):
+                self._ctx = SSL.SSLContext(self._ssl_method)
+                self._ctx.verify_mode = SSL.CERT_REQUIRED
+                self._ctx.check_hostname = True
+                self._ctx.load_default_certs(SSL.Purpose.SERVER_AUTH)
+                if self._trusted_certs:
+                    # We have been supplied with trusted CA certs
+                    for f in self._trusted_certs:
+                        self._ctx.load_verify_locations(f)
+
+                # pylint: disable-next=deprecated-method
+                self._connection = self._ctx.wrap_socket(
+                    self._sock, server_hostname=server_name
+                )
+            else:
+                # Python 2.6-2.7.8
+                cacert = None
+                if self._trusted_certs:
+                    # seems python2.6 supports only 1
+                    cacert = self._trusted_certs[0]
+                # pylint: disable-next=deprecated-method
+                self._connection = SSL.wrap_socket(
+                    self._sock,
+                    ssl_version=self._ssl_method,
+                    cert_reqs=SSL.CERT_REQUIRED,
+                    ca_certs=cacert,
+                )
+                # pylint: disable-next=used-before-assignment
+                match_hostname(self._connection.getpeercert(), server_name)
+
+    # pylint: disable-next=unused-argument
     def makefile(self, mode, bufsize=None):
         """
         Returns self, since we are a file-like object already
@@ -217,9 +251,9 @@ class SSLSocket:
                     print("SSL exception", e.args)
                     break
                 elif err.args[0] == SSL.SSL_ERROR_WANT_WRITE:
-                    self._poll(select.POLLOUT, 'read')
+                    self._poll(select.POLLOUT, "read")
                 elif err.args[0] == SSL.SSL_ERROR_WANT_READ:
-                    self._poll(select.POLLIN, 'read')
+                    self._poll(select.POLLIN, "read")
 
         if amt:
             ret = self._buffer[:amt]
@@ -240,6 +274,7 @@ class SSLSocket:
         poller.register(self._sock, filter_type)
         res = poller.poll(self._sock.gettimeout() * 1000)
         if res == []:
+            # pylint: disable-next=consider-using-f-string
             raise TimeoutException("Connection timed out on %s" % caller_name)
 
     def write(self, data):
@@ -259,9 +294,9 @@ class SSLSocket:
                 data = data[sent:]
             except SSL.SSLError as err:
                 if err.args[0] == SSL.SSL_ERROR_WANT_WRITE:
-                    self._poll(select.POLLOUT, 'write')
+                    self._poll(select.POLLOUT, "write")
                 elif err.args[0] == SSL.SSL_ERROR_WANT_READ:
-                    self._poll(select.POLLIN, 'write')
+                    self._poll(select.POLLIN, "write")
 
         return origlen
 
@@ -282,7 +317,7 @@ class SSLSocket:
             # charcount contains the number of chars to be outputted (or None
             # if none to be outputted at this time)
             charcount = None
-            i = self._buffer.find(bstr('\n'))
+            i = self._buffer.find(bstr("\n"))
             if i >= 0:
                 # Go one char past newline
                 charcount = i + 1
@@ -311,9 +346,9 @@ class SSLSocket:
                     # Nothing more to be read
                     break
                 elif err.args[0] == SSL.SSL_ERROR_WANT_WRITE:
-                    self._poll(select.POLLOUT, 'readline')
+                    self._poll(select.POLLOUT, "readline")
                 elif err.args[0] == SSL.SSL_ERROR_WANT_READ:
-                    self._poll(select.POLLIN, 'readline')
+                    self._poll(select.POLLIN, "readline")
 
         # We got here if we're done reading, so return everything
         ret = self._buffer
@@ -323,7 +358,6 @@ class SSLSocket:
 
 
 class TimeoutException(SSL.SSLError, socket.timeout):
-
     def __init__(self, *args):
         self.args = args
 

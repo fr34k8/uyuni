@@ -1,7 +1,7 @@
 #
 # spec file for package spacewalk-branding
 #
-# Copyright (c) 2022 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 # Copyright (c) 2008-2018 Red Hat, Inc.
 #
 # All modifications and additions to the file contributed by third parties
@@ -18,51 +18,41 @@
 
 
 %global debug_package %{nil}
-
-%if 0%{?fedora} || 0%{?rhel} >= 7
-%global tomcat_path %{_var}/lib/tomcat
-%global wwwdocroot %{_var}/www/html
-%else
-%if 0%{?suse_version}
-%global tomcat_path /srv/tomcat
-%global wwwdocroot /srv/www/htdocs
-%else
-%global tomcat_path %{_var}/lib/tomcat6
-%global wwwdocroot %{_var}/www/html
-%endif
-%endif
-
+%global susemanager_shared_path  %{_datadir}/susemanager
+%global wwwroot %{susemanager_shared_path}/www
+%global tomcat_path %{wwwroot}/tomcat
+%global wwwdocroot %{wwwroot}/htdocs
 Name:           spacewalk-branding
-Version:        4.4.1
-Release:        1
+Version:        5.1.1
+Release:        0
 Summary:        Spacewalk branding data
 License:        GPL-2.0-only AND OFL-1.1
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
-
 URL:            https://github.com/uyuni-project/uyuni
 Source0:        https://github.com/spacewalkproject/spacewalk/archive/%{name}-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-#BuildArch:  noarch
 BuildRequires:  java-devel >= 11
 Requires:       httpd
-%if 0%{?suse_version}
-Requires(pre):  tomcat
-BuildRequires:  apache2
 Requires:       susemanager-advanced-topics_en-pdf
 Requires:       susemanager-best-practices_en-pdf
 Requires:       susemanager-docs_en
+Requires:       susemanager-frontend-libs
 Requires:       susemanager-getting-started_en-pdf
 Requires:       susemanager-reference_en-pdf
+Requires(pre):  tomcat
+#BuildArch:  noarch
+%if 0%{?suse_version}
+BuildRequires:  apache2
 %endif
-Requires:       susemanager-frontend-libs
 
 %description
 Spacewalk specific branding, CSS, and images.
 
 %package devel
-Requires:       %{name} = %{version}-%{release}
 Summary:        Spacewalk LESS source files for development use
+# FIXME: use correct group or remove it, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 Group:          Applications/Internet
+Requires:       %{name} = %{version}-%{release}
 
 %description devel
 This package contains LESS source files corresponding to Spacewalk's
@@ -92,12 +82,15 @@ ln -s %{_datadir}/rhn/lib/java-branding.jar %{buildroot}%{tomcat_path}/webapps/r
 %{_datadir}/rhn/lib/java-branding.jar
 %{tomcat_path}/webapps/rhn/WEB-INF/lib/java-branding.jar
 %license LICENSE
-%if 0%{?suse_version}
+%dir %{susemanager_shared_path}
+%dir %{wwwroot}
+%dir %{wwwdocroot}
+%attr(775,tomcat,tomcat) %dir %{tomcat_path}
+%attr(775,tomcat,tomcat) %dir %{tomcat_path}/webapps
 %attr(775,tomcat,tomcat) %dir %{tomcat_path}/webapps/rhn
 %attr(775,tomcat,tomcat) %dir %{tomcat_path}/webapps/rhn/WEB-INF
 %attr(775,tomcat,tomcat) %dir %{tomcat_path}/webapps/rhn/WEB-INF/lib/
-%dir %{_prefix}/share/rhn
-%dir %{_prefix}/share/rhn/lib
-%endif
+%dir %{_datadir}/rhn
+%dir %{_datadir}/rhn/lib
 
 %changelog

@@ -67,9 +67,7 @@ import com.redhat.rhn.taskomatic.TaskomaticApiException;
 import com.redhat.rhn.testing.ImageTestUtils;
 import com.redhat.rhn.testing.TestUtils;
 
-import com.suse.manager.virtualization.VirtManagerSalt;
 import com.suse.manager.webui.services.iface.MonitoringManager;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.impl.SaltSSHService;
 import com.suse.manager.webui.services.impl.SaltService;
 import com.suse.manager.webui.services.impl.runner.MgrUtilRunner;
@@ -114,11 +112,10 @@ public class ImageInfoHandlerTest extends BaseHandlerTestCase {
         Config.get().setBoolean(ConfigDefaults.KIWI_OS_IMAGE_BUILDING_ENABLED, "true");
         saltServiceMock = context.mock(SaltService.class);
         ServerGroupManager serverGroupManager = new ServerGroupManager(saltServiceMock);
-        VirtManager virtManager = new VirtManagerSalt(saltServiceMock);
         MonitoringManager monitoringManager = new FormulaMonitoringManager(saltServiceMock);
         systemEntitlementManager = new SystemEntitlementManager(
-                new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-                new SystemEntitler(saltServiceMock, virtManager, monitoringManager, serverGroupManager)
+                new SystemUnentitler(monitoringManager, serverGroupManager),
+                new SystemEntitler(saltServiceMock, monitoringManager, serverGroupManager)
         );
         handler = new ImageInfoHandler(saltServiceMock);
         context.checking(new Expectations() {{
@@ -194,7 +191,8 @@ public class ImageInfoHandlerTest extends BaseHandlerTestCase {
         ImageInfoFactory.setTaskomaticApi(getTaskomaticApi());
         MgrUtilRunner.ExecResult mockResult = new MgrUtilRunner.ExecResult();
         context.checking(new Expectations() {{
-                allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)));
+                allowing(saltServiceMock).generateSSHKey(with(equal(SaltSSHService.SSH_KEY_PATH)),
+                        with(equal(SaltSSHService.SUMA_SSH_PUB_KEY)));
                 will(returnValue(Optional.of(mockResult)));
         }});
 
@@ -299,9 +297,10 @@ public class ImageInfoHandlerTest extends BaseHandlerTestCase {
         assertEquals("newvalue1", result.get(orgKey1.getLabel()));
     }
 
+    @Test
     public final void testImportOSImage() {
         Integer id1 = handler.importOSImage(admin, "testimg", "1.0.0", "x86_64-redhat-linux").intValue();
-        handler.setPillar(admin, id1, Map.of("name1", "val1", "name2", "val2"));
+        handler.setPillar(admin, id1, Map.of("name1", "val1", "name2", "val2", "size", "10000000000"));
         handler.addImageFile(admin, id1, "testimg.tgz", "bundle", false);
 
         try {
@@ -320,6 +319,12 @@ public class ImageInfoHandlerTest extends BaseHandlerTestCase {
 
         Map<String, Object> pillar1 = handler.getPillar(admin, id1);
         assertEquals("val1", pillar1.get("name1"));
+        assertEquals("10000000000", pillar1.get("size"));
+
+        // image size is stored as Long, but sent through the xml-rpc API as String
+        Optional<ImageInfo> info = ImageInfoFactory.lookupById(id1.longValue());
+        assertEquals(10000000000L, info.get().getPillar().getPillar().get("size"));
+
 
         ImageOverview details2 = handler.getDetails(admin, id2);
         System.out.println("details" + details2.getCurrRevisionNum());

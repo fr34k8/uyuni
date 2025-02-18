@@ -21,8 +21,10 @@ import com.redhat.rhn.common.security.PermissionException;
 import com.redhat.rhn.domain.BaseDomainHelper;
 import com.redhat.rhn.domain.Identifiable;
 import com.redhat.rhn.domain.channel.Channel;
+import com.redhat.rhn.domain.channel.ChannelFamily;
 import com.redhat.rhn.domain.common.ProvisionState;
-import com.redhat.rhn.domain.common.SatConfigFactory;
+import com.redhat.rhn.domain.common.RhnConfiguration;
+import com.redhat.rhn.domain.common.RhnConfigurationFactory;
 import com.redhat.rhn.domain.config.ConfigChannel;
 import com.redhat.rhn.domain.config.ConfigChannelListProcessor;
 import com.redhat.rhn.domain.config.ConfigChannelType;
@@ -40,6 +42,8 @@ import com.redhat.rhn.manager.entitlement.EntitlementManager;
 import com.redhat.rhn.manager.kickstart.cobbler.CobblerXMLRPCHelper;
 import com.redhat.rhn.manager.system.SystemManager;
 
+import com.suse.manager.model.attestation.ServerCoCoAttestationConfig;
+import com.suse.manager.model.attestation.ServerCoCoAttestationReport;
 import com.suse.manager.model.maintenance.MaintenanceSchedule;
 import com.suse.utils.Opt;
 
@@ -121,6 +125,8 @@ public class Server extends BaseDomainHelper implements Identifiable {
     private List<ConfigChannel> configChannels = new ArrayList<>();
     private Set<ConfigChannel> localChannels = new HashSet<>();
     private Location serverLocation;
+    private ServerCoCoAttestationConfig cocoAttestationConfig;
+    private Set<ServerCoCoAttestationReport> cocoAttestationReports;
     private Set<VirtualInstance> guests = new HashSet<>();
     private VirtualInstance virtualInstance;
     private PushClient pushClient;
@@ -138,6 +144,11 @@ public class Server extends BaseDomainHelper implements Identifiable {
     private boolean payg;
     private MaintenanceSchedule maintenanceSchedule;
     private Boolean hasConfigFeature;
+    private Set<ServerAppStream> appStreams = new HashSet<>();
+
+    private Set<SAPWorkload> sapWorkloads = new HashSet<>();
+
+    private String cpe;
 
     public static final String VALID_CNAMES = "valid_cnames_";
 
@@ -727,6 +738,10 @@ public class Server extends BaseDomainHelper implements Identifiable {
     }
 
     /**
+     * This may be null in some cases:
+     * - If a server was bootstrapped with Salt and the key was accepted manually via "salt-key".
+     * - If a server was created by a user and the user was later on deleted.
+     *
      * @return Returns the creator.
      */
     public User getCreator() {
@@ -883,7 +898,7 @@ public class Server extends BaseDomainHelper implements Identifiable {
      */
     public List<ServerGroupType> getEntitledGroupTypes() {
         return this.groups.stream().filter(g ->g.getGroupType() != null)
-                .map(ServerGroup::getGroupType).collect(Collectors.toList());
+                .map(ServerGroup::getGroupType).toList();
     }
 
     /**
@@ -892,7 +907,7 @@ public class Server extends BaseDomainHelper implements Identifiable {
      */
     public List<EntitlementServerGroup> getEntitledGroups() {
         return this.groups.stream().filter(g ->g.getGroupType() != null)
-                .map(s -> (EntitlementServerGroup) s).collect(Collectors.toList());
+                .map(s -> (EntitlementServerGroup) s).toList();
     }
 
     /**
@@ -901,7 +916,8 @@ public class Server extends BaseDomainHelper implements Identifiable {
      */
     public List<ManagedServerGroup> getManagedGroups() {
         return this.groups.stream().filter(g -> g.getGroupType() == null)
-                .map(s -> (ManagedServerGroup) s).collect(Collectors.toList());
+                .map(s -> (ManagedServerGroup) s)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -1296,6 +1312,47 @@ public class Server extends BaseDomainHelper implements Identifiable {
         serverLocation = locationIn;
     }
 
+    /**
+     * @return Returns the cocoAttestationConfiguration assosiated with the server
+     */
+    protected ServerCoCoAttestationConfig getCocoAttestationConfig() {
+        return cocoAttestationConfig;
+    }
+
+    /**
+     * @return Returns the cocoAttestationConfiguration assosiated with the server if available
+     */
+    public Optional<ServerCoCoAttestationConfig> getOptCocoAttestationConfig() {
+        return Optional.ofNullable(cocoAttestationConfig);
+    }
+
+    /**
+     * @param cocoAttestationConfigIn cocoAttestationConfiguration for this server
+     */
+    public void setCocoAttestationConfig(ServerCoCoAttestationConfig cocoAttestationConfigIn) {
+        cocoAttestationConfig = cocoAttestationConfigIn;
+    }
+
+    /**
+     * @return Returns the Attestation Reports assosiated with the server
+     */
+    public Set<ServerCoCoAttestationReport> getCocoAttestationReports() {
+        return cocoAttestationReports;
+    }
+
+    /**
+     * @param cocoAttestationReportsIn the attestation reports to set
+     */
+    public void setCocoAttestationReports(Set<ServerCoCoAttestationReport> cocoAttestationReportsIn) {
+        cocoAttestationReports = cocoAttestationReportsIn;
+    }
+
+    /**
+     * @param cocoAttestationReportIn the attestation report to add
+     */
+    public void addCocoAttestationReports(ServerCoCoAttestationReport cocoAttestationReportIn) {
+        cocoAttestationReports.add(cocoAttestationReportIn);
+    }
     private void initializeRam() {
         if (ram == null) {
             ram = new Ram();
@@ -1598,6 +1655,16 @@ public class Server extends BaseDomainHelper implements Identifiable {
     }
 
     /**
+     * Return <code>true</code> if this system has Peripheral Server entitlement,
+     * <code>false</code> otherwise.
+     * @return <code>true</code> if this system has Peripheral Server entitlement,
+     *      <code>false</code> otherwise.
+     */
+    public boolean hasPeripheralServerEntitlement() {
+        return hasEntitlement(EntitlementManager.PERIPHERAL_SERVER);
+    }
+
+    /**
      * Return <code>true</code> if this is a bare metal system.
      * @return <code>true</code> if this is bare metal
      */
@@ -1605,6 +1672,13 @@ public class Server extends BaseDomainHelper implements Identifiable {
         return hasEntitlement(EntitlementManager.BOOTSTRAP);
     }
 
+    /**
+     * Return <code>true</code> if this is a foreign unmanaged system.
+     * @return <code>true</code> if this is a foreign unmanaged system.
+     */
+    public boolean isForeign() {
+        return hasEntitlement(EntitlementManager.FOREIGN);
+    }
 
     /**
      *
@@ -1698,10 +1772,9 @@ public class Server extends BaseDomainHelper implements Identifiable {
      */
     @Override
     public boolean equals(final Object other) {
-        if (!(other instanceof Server)) {
+        if (!(other instanceof Server castOther)) {
             return false;
         }
-        Server castOther = (Server) other;
 
         Optional<PackageEvr> proxyVersion =
                 Optional.ofNullable(proxyInfo).map(ProxyInfo::getVersion);
@@ -1807,7 +1880,8 @@ public class Server extends BaseDomainHelper implements Identifiable {
     public boolean isInactive() {
         Date lastCheckin = this.getLastCheckin();
         long millisInDay = (1000 * 60 * 60 * 24);
-        long threshold = SatConfigFactory.getSatConfigLongValue(SatConfigFactory.SYSTEM_CHECKIN_THRESHOLD, 1L);
+        RhnConfigurationFactory factory = RhnConfigurationFactory.getSingleton();
+        long threshold = factory.getLongConfiguration(RhnConfiguration.KEYS.SYSTEM_CHECKIN_THRESHOLD).getValue();
         Date yesterday = new Timestamp(System.currentTimeMillis() -
                 (millisInDay * threshold));
         return lastCheckin.before(yesterday);
@@ -2001,6 +2075,19 @@ public class Server extends BaseDomainHelper implements Identifiable {
     }
 
     /**
+     * Add an InstalledProduct to this server
+     *
+     * @param product the product
+     */
+    public void addInstalledProduct(InstalledProduct product) {
+        if (this.installedProducts == null) {
+            this.installedProducts = new HashSet<>();
+        }
+
+        this.installedProducts.add(product);
+    }
+
+    /**
      * Return the installed products or null in case of no products found.
      * @return installed products
      */
@@ -2187,6 +2274,28 @@ public class Server extends BaseDomainHelper implements Identifiable {
     }
 
     /**
+     * @return true if this server is denied to be managed by SUSE Manager PAYG
+     */
+    public boolean isDeniedOnPayg() {
+        if (isPayg()) {
+            return false;
+        }
+        return !getInstalledProducts().stream()
+                .map(InstalledProduct::getSUSEProduct)
+                .filter(Objects::nonNull)
+                .allMatch(p -> {
+                    if (p.getFree()) {
+                        return true;
+                    }
+                    ChannelFamily cf = p.getChannelFamily();
+                    if (cf != null) {
+                        return cf.getLabel().startsWith("SMP") || cf.getLabel().equals("SLE-M-T");
+                    }
+                    return false;
+                });
+    }
+
+    /**
      *
      * @param paygIn boolean
      */
@@ -2264,7 +2373,7 @@ public class Server extends BaseDomainHelper implements Identifiable {
      */
     public String getChannelHost() {
         return this.getFirstServerPath().map(ServerPath::getHostname)
-                .orElseGet(() -> ConfigDefaults.get().getCobblerHost());
+                .orElseGet(() -> ConfigDefaults.get().getJavaHostname());
     }
 
     public PackageType getPackageType() {
@@ -2312,9 +2421,12 @@ public class Server extends BaseDomainHelper implements Identifiable {
      * @return <code>true</code> if OS supports monitoring
      */
     public boolean doesOsSupportsMonitoring() {
-        return isSLES12() || isSLES15() || isLeap15() || isUbuntu1804() || isUbuntu2004() || isUbuntu2204() ||
-                isRedHat6() || isRedHat7() || isRedHat8() || isAlibaba2() || isAmazon2() || isRocky8() ||
-                isRocky9() || isDebian11() || isDebian10();
+        return isSLES12() || isSLES15() || isLeap15() || isLeapMicro() ||
+                isSLEMicro5() || // Micro 6 miss the node exporter
+                isUbuntu1804() || isUbuntu2004() || isUbuntu2204() || isUbuntu2404() ||
+                isRedHat6() || isRedHat7() || isRedHat8() || isRedHat9() || // isRedHat catch also Rocky and Alma
+                isAlibaba2() || isAmazon2() || isAmazon2023() ||
+                isDebian10() || isDebian11() || isDebian12();
     }
 
     /**
@@ -2323,7 +2435,24 @@ public class Server extends BaseDomainHelper implements Identifiable {
      * @return <code>true</code> if OS supports PTF uninstallation
      */
     public boolean doesOsSupportPtf() {
-        return ServerConstants.SLES.equals(getOs());
+        return ServerConstants.SLES.equals(getOs()) || isSLEMicro();
+    }
+
+    boolean isSLES() {
+        return ServerConstants.SLES.equalsIgnoreCase(getOs());
+    }
+    boolean isSLED() {
+        return ServerConstants.SLED.equalsIgnoreCase(getOs());
+    }
+
+    /**
+     * Return <code>true</code> if OS supports Confidential Computing Attestation
+     *
+     * @return <code>true</code> if OS supports CoCo Attestation
+     */
+    public boolean doesOsSupportCoCoAttestation() {
+        return (isSLES15() && getRelease().equals("15.6")) ||
+            (isLeap15() && getRelease().equals("15.6"));
     }
 
     /**
@@ -2348,10 +2477,24 @@ public class Server extends BaseDomainHelper implements Identifiable {
     }
 
     /**
-     * @return true if the installer type is of SLE Micro
+     * @return true if the installer type is of SLE Micro (version independent)
      */
     boolean isSLEMicro() {
-        return ServerConstants.SLEMICRO.equals(getOs());
+        return ServerConstants.SLEMICRO.equals(getOs()) || ServerConstants.SLMICRO.equals(getOs());
+    }
+
+    /**
+     * @return true if the installer type is of SLE Micro 5
+     */
+    boolean isSLEMicro5() {
+        return ServerConstants.SLEMICRO.equals(getOs()) && getRelease().startsWith("5.");
+    }
+
+    /**
+     * @return true if the installer type is of SE Micro 6
+     */
+    boolean isSEMicro6() {
+        return ServerConstants.SLMICRO.equals(getOs()) && getRelease().startsWith("6.");
     }
 
     /**
@@ -2359,6 +2502,10 @@ public class Server extends BaseDomainHelper implements Identifiable {
      */
     boolean isSLES15() {
         return ServerConstants.SLES.equals(getOs()) && getRelease().startsWith("15");
+    }
+
+    boolean isLeap() {
+       return ServerConstants.LEAP.equalsIgnoreCase(getOs());
     }
 
     boolean isLeap15() {
@@ -2379,6 +2526,10 @@ public class Server extends BaseDomainHelper implements Identifiable {
         return ServerConstants.OPENSUSEMICROOS.equals(getOs());
     }
 
+    boolean isUbuntu() {
+        return ServerConstants.UBUNTU.equalsIgnoreCase(getOs());
+    }
+
     boolean isUbuntu1804() {
         return ServerConstants.UBUNTU.equals(getOs()) && getRelease().equals("18.04");
     }
@@ -2391,6 +2542,18 @@ public class Server extends BaseDomainHelper implements Identifiable {
         return ServerConstants.UBUNTU.equals(getOs()) && getRelease().equals("22.04");
     }
 
+    boolean isUbuntu2404() {
+        return ServerConstants.UBUNTU.equals(getOs()) && getRelease().equals("24.04");
+    }
+
+    boolean isDebian() {
+        return ServerConstants.DEBIAN.equalsIgnoreCase(getOs());
+    }
+
+    boolean isDebian12() {
+        return ServerConstants.DEBIAN.equals(getOs()) && getRelease().equals("12");
+    }
+
     boolean isDebian11() {
         return ServerConstants.DEBIAN.equals(getOs()) && getRelease().equals("11");
     }
@@ -2399,23 +2562,35 @@ public class Server extends BaseDomainHelper implements Identifiable {
         return ServerConstants.DEBIAN.equals(getOs()) && getRelease().equals("10");
     }
 
+    boolean isRHEL() {
+        return ServerConstants.RHEL.equals(getOs());
+    }
+
     /**
      * This is supposed to cover all RedHat flavors (incl. RHEL, RES and CentOS Linux)
      */
     boolean isRedHat6() {
-        return ServerConstants.REDHAT.equals(getOsFamily()) && getRelease().equals("6");
+        return ServerConstants.REDHAT.equals(getOsFamily()) &&
+                (getRelease().equals("6") || getRelease().startsWith("6."));
     }
 
     boolean isRedHat7() {
-        return ServerConstants.REDHAT.equals(getOsFamily()) && getRelease().equals("7");
+        return ServerConstants.REDHAT.equals(getOsFamily()) &&
+                (getRelease().equals("7") || getRelease().startsWith("7."));
     }
 
     boolean isRedHat8() {
-        return ServerConstants.REDHAT.equals(getOsFamily()) && getRelease().equals("8");
+        return ServerConstants.REDHAT.equals(getOsFamily()) &&
+                (getRelease().equals("8") || getRelease().startsWith("8."));
     }
 
     boolean isRedHat9() {
-        return ServerConstants.REDHAT.equals(getOsFamily()) && getRelease().equals("9");
+        return ServerConstants.REDHAT.equals(getOsFamily()) &&
+                (getRelease().equals("9") || getRelease().startsWith("9."));
+    }
+
+    public boolean isRedHat() {
+        return ServerConstants.REDHAT.equals(getOsFamily());
     }
 
     boolean isAlibaba2() {
@@ -2423,15 +2598,13 @@ public class Server extends BaseDomainHelper implements Identifiable {
     }
 
     boolean isAmazon2() {
-        return ServerConstants.AMAZON.equals(getOsFamily()) && getRelease().equals("2");
+        return ServerConstants.AMAZON.equals(getOsFamily()) &&
+                (getRelease().equals("2") || getRelease().startsWith("2."));
     }
 
-    boolean isRocky8() {
-        return ServerConstants.ROCKY.equals(getOs()) && getRelease().startsWith("8.");
-    }
-
-    boolean isRocky9() {
-        return ServerConstants.ROCKY.equals(getOs()) && getRelease().startsWith("9.");
+    boolean isAmazon2023() {
+        return ServerConstants.AMAZON.equals(getOsFamily()) &&
+                (getRelease().equals("2023") || getRelease().startsWith("2023."));
     }
 
     /**
@@ -2452,4 +2625,68 @@ public class Server extends BaseDomainHelper implements Identifiable {
         this.osFamily = osFamilyIn;
     }
 
+    /**
+     * Getter for CPE (Common Platform Enumeration)
+     *
+     * @return cpe
+     * */
+    public String getCpe() {
+        return cpe;
+    }
+
+    /**
+     * Setter for CPE (Common Platform Enumeration)
+     *
+     * @param cpeIn to set
+     * */
+    public void setCpe(String cpeIn) {
+        this.cpe = cpeIn;
+    }
+
+    /**
+     * Getter for AppStreams
+     *
+     * @return Set of ServerAppStream
+     */
+    public Set<ServerAppStream> getAppStreams() {
+        return appStreams;
+    }
+
+    /**
+     * Setter for AppStreams
+     *
+     * @param appStreamsIn to set
+    */
+    public void setAppStreams(Set<ServerAppStream> appStreamsIn) {
+        appStreams = appStreamsIn;
+    }
+
+    /**
+     * Checks if a specific module with a given stream is enabled on the system.
+     *
+     * @param module The name of the module to check.
+     * @param stream The stream associated with the module to check.
+     * @return {@code true} if the module with the specified stream is enabled, {@code false} otherwise.
+     */
+    public boolean hasAppStreamModuleEnabled(String module, String stream) {
+        return getAppStreams().stream().anyMatch(it -> it.getName().equals(module) && it.getStream().equals(stream));
+    }
+
+    /**
+     * Getter for SAPWorkloads
+     *
+     * @return Set of SAPWorkload
+     */
+    public Set<SAPWorkload> getSapWorkloads() {
+        return sapWorkloads;
+    }
+
+    /**
+     * Setter for SAPWorkloads
+     *
+     * @param sapWorkloadsIn to set
+     */
+    public void setSapWorkloads(Set<SAPWorkload> sapWorkloadsIn) {
+        sapWorkloads = sapWorkloadsIn;
+    }
 }

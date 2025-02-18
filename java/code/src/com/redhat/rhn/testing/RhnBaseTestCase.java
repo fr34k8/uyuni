@@ -14,8 +14,8 @@
  */
 package com.redhat.rhn.testing;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -26,13 +26,10 @@ import com.redhat.rhn.common.messaging.MessageQueue;
 import com.suse.manager.webui.services.SaltStateGeneratorService;
 import com.suse.manager.webui.services.test.TestSaltApi;
 
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.File;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 
@@ -42,7 +39,7 @@ import java.util.Date;
  * test to similuate what happens when the code is run
  * in a web application server.
  */
-public abstract class RhnBaseTestCase  {
+public abstract class RhnBaseTestCase implements HibernateTestCaseUtils  {
 
     /**
      * Default Constructor
@@ -67,43 +64,6 @@ public abstract class RhnBaseTestCase  {
     @AfterEach
     public void tearDown() throws Exception {
         TestCaseHelper.tearDownHelper();
-    }
-
-    /**
-     * PLEASE Refrain from using this unless you really have to.
-     *
-     * Try clearSession() instead
-     * @throws HibernateException hibernate exception
-     */
-    protected void commitAndCloseSession() throws HibernateException {
-        HibernateFactory.commitTransaction();
-        HibernateFactory.closeSession();
-    }
-
-    protected void flushAndEvict(Object obj) throws HibernateException {
-        Session session = HibernateFactory.getSession();
-        session.flush();
-        session.evict(obj);
-    }
-
-    protected <T> T reload(Class<T> objClass, Serializable id) throws HibernateException {
-        assertNotNull(id);
-        T obj = TestUtils.reload(objClass, id);
-        return reload(obj);
-    }
-
-    /**
-     * Reload a Hibernate entity.
-     * @param obj the entity to reload
-     * @param <T> type of object to reload
-     * @return the new instance
-     * @throws HibernateException in case of error
-     */
-    public static <T> T reload(T obj) throws HibernateException {
-        assertNotNull(obj);
-        T result = TestUtils.reload(obj);
-        assertNotSame(obj, result);
-        return result;
     }
 
     /**
@@ -136,6 +96,16 @@ public abstract class RhnBaseTestCase  {
      */
     public static <A> void assertContains(Collection<A> coll, A elem) {
         assertTrue(coll.contains(elem));
+    }
+
+    /**
+     * Assert that <code>coll</code> does not contain <code>elem</code>
+     * @param <A> element type
+     * @param coll a collection
+     * @param elem the element that should not be in the collection
+     */
+    public static <A> void assertNotContains(Collection<A> coll, A elem) {
+        assertFalse(coll.contains(elem));
     }
 
     /**

@@ -112,20 +112,20 @@
                         <div class="col-lg-6">
                             <html:text property="filters" styleClass="form-control"/>
                             <span class="help-block">
-                                <rhn:tooltip key="repos.jsp.filters.tip"/>
+                                <bean:message key="repos.jsp.filters.tip"/>
                             </span>
                         </div>
             </div>
             <div class="form-group">
-                <div class="col-lg-offset-3 col-lg-6">
+                <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
                     <c:choose>
                         <c:when test = "${empty requestScope.create_mode}">
-                            <html:submit styleClass="btn btn-success">
+                            <html:submit styleClass="btn btn-primary">
                                 <bean:message key="repos.jsp.update.submit"/>
                             </html:submit>
                         </c:when>
                         <c:otherwise>
-                            <html:submit styleClass="btn btn-success">
+                            <html:submit styleClass="btn btn-primary">
                                 <bean:message key="repos.jsp.create.submit"/>
                             </html:submit>
                         </c:otherwise>

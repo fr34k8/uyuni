@@ -40,7 +40,7 @@
                             (none)
                         </c:if>
                         <c:if test="${!empty channel.parentChannel}">
-                            <a class="btn btn-info" href="/rhn/channels/ChannelDetail.do?cid=${channel.parentChannel.id}">
+                            <a href="/rhn/channels/ChannelDetail.do?cid=${channel.parentChannel.id}">
                                 <c:out value="${channel.parentChannel.name}" /> <rhn:icon type="nav-right" />
                             </a>
                         </c:if>
@@ -145,7 +145,7 @@
                         <bean:message key="header.jsp.packages"/>
                     </label>
                     <div class="col-lg-6">
-                        <a class="btn btn-info" href="/rhn/channels/ChannelPackages.do?cid=${channel.id}">
+                        <a href="/rhn/channels/ChannelPackages.do?cid=${channel.id}">
                             ${pack_size} <rhn:icon type="nav-right" />
                         </a>
                     </div>
@@ -171,7 +171,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="col-lg-offset-3 col-lg-6">
+                    <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
                         <div class="checkbox">
                             <label>
                                 <c:choose>
@@ -192,7 +192,7 @@
                         <bean:message key="channel.jsp.systemssubsribed"/>
                     </label>
                     <div class="col-lg-6">
-                        <a class="btn btn-info" href="/rhn/channels/ChannelSubscribers.do?cid=${channel.id}">
+                        <a href="/rhn/channels/ChannelSubscribers.do?cid=${channel.id}">
                             ${systems_subscribed} <rhn:icon type="nav-right" />
                         </a>
                     </div>
@@ -202,7 +202,7 @@
                         <bean:message key="channel.jsp.appstreams"/>
                     </label>
                     <div class="col-lg-6">
-                        <a class="btn btn-info" href="/rhn/channels/AppStreams.do?cid=${channel.id}">
+                        <a href="/rhn/channels/AppStreams.do?cid=${channel.id}">
                             ${systems_subscribed} <rhn:icon type="nav-right" />
                         </a>
                     </div>
@@ -228,7 +228,7 @@
                     </label>
                     <div class="col-lg-6">
                         <div class="input-group">
-                            <span class="input-group-addon">
+                            <span class="input-group-addon input-group-text">
                                 <bean:message key="channel.edit.jsp.emailaddress"/>
                             </span>
                             <div class="form-control">
@@ -238,9 +238,9 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="col-lg-offset-3 col-lg-6">
+                    <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
                         <div class="input-group">
-                            <span class="input-group-addon">
+                            <span class="input-group-addon input-group-text">
                                 <bean:message key="channel.edit.jsp.phonenumber"/>
                             </span>
                             <div class="form-control">
@@ -330,8 +330,8 @@
 
         <c:if test="${has_access}">
             <div class="form-group">
-                <div class="col-lg-offset-3 col-lg-6">
-                    <html:submit property="Update" styleClass="btn btn-success">
+                <div class="col-lg-offset-3 offset-lg-3 col-lg-6">
+                    <html:submit property="Update" styleClass="btn btn-primary">
                         <bean:message key="message.Update"/>
                     </html:submit>
                 </div>

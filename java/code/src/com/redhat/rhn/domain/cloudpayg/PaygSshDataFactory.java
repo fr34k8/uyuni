@@ -16,6 +16,9 @@
 package com.redhat.rhn.domain.cloudpayg;
 
 import com.redhat.rhn.common.hibernate.HibernateFactory;
+import com.redhat.rhn.domain.channel.ContentSource;
+import com.redhat.rhn.domain.credentials.BaseCredentials;
+import com.redhat.rhn.domain.credentials.CloudCredentials;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -97,7 +100,7 @@ public class PaygSshDataFactory extends HibernateFactory {
      * @return list of payg ssh daa objects
      */
     public static List<PaygSshData> lookupPaygSshData() {
-        return getSession().createQuery("FROM PaygSshData").list();
+        return getSession().createQuery("FROM PaygSshData", PaygSshData.class).list();
     }
 
     /**
@@ -106,5 +109,46 @@ public class PaygSshDataFactory extends HibernateFactory {
      */
     public static void deletePaygSshData(PaygSshData data) {
         getSession().delete(data);
+    }
+
+    /**
+     * Search for the credentials based on the hostname of the payg ssh data
+     * @param hostname to use in the search
+     * @return The appropriate {@link CloudCredentials} if present
+     */
+    public static Optional<CloudCredentials> lookupCloudCredentialsByHostname(String hostname) {
+        return getSession().createNamedQuery("BaseCredentials.lookupByPaygSSHDataHostname", BaseCredentials.class)
+            .setParameter("hostname", hostname)
+            .uniqueResultOptional()
+            .flatMap(creds -> creds.castAs(CloudCredentials.class));
+    }
+
+    /**
+     * Return the cloud credentials that reference the specified PAYG SSH Data id
+     * @param sshData the {@link PaygSshData} object
+     * @return The appropriate {@link CloudCredentials} if present
+     */
+    public static Optional<CloudCredentials> lookupCloudCredentials(PaygSshData sshData) {
+        return getSession().createNamedQuery("BaseCredentials.lookupByPaygSSHDataId", BaseCredentials.class)
+            .setParameter("sshDataId", sshData.getId())
+            .uniqueResultOptional()
+            .flatMap(creds -> creds.castAs(CloudCredentials.class))
+            .map(creds -> {
+                getSession().evict(creds.getPaygSshData());
+                creds.setPaygSshData(sshData);
+                return creds;
+            });
+    }
+
+    /**
+     * @param instance the instance
+     * @return return a list of {@link ContentSource} created by the given instance
+     */
+    public static List<ContentSource> listRhuiRepositoriesCreatedByInstance(PaygSshData instance) {
+        String qString = String.format("%%-i%d", instance.getId());
+        return getSession()
+                .createQuery("FROM ContentSource WHERE label like :label", ContentSource.class)
+                .setParameter("label", qString)
+                .list();
     }
 }

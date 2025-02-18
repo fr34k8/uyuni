@@ -15,10 +15,9 @@
 package com.redhat.rhn.frontend.xmlrpc.system.test;
 
 import static com.redhat.rhn.testing.ErrataTestUtils.createTestChannelFamily;
-import static com.suse.manager.webui.services.SaltConstants.PILLAR_DATA_FILE_EXT;
-import static com.suse.manager.webui.services.SaltConstants.PILLAR_DATA_FILE_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -27,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.redhat.rhn.FaultException;
+import com.redhat.rhn.GlobalInstanceHolder;
 import com.redhat.rhn.common.client.ClientCertificate;
 import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.db.datasource.DataResult;
@@ -46,8 +46,6 @@ import com.redhat.rhn.domain.action.script.ScriptResult;
 import com.redhat.rhn.domain.action.script.ScriptRunAction;
 import com.redhat.rhn.domain.action.server.ServerAction;
 import com.redhat.rhn.domain.action.server.test.ServerActionTest;
-import com.redhat.rhn.domain.action.virtualization.VirtualizationSetMemoryGuestAction;
-import com.redhat.rhn.domain.action.virtualization.VirtualizationSetVcpusGuestAction;
 import com.redhat.rhn.domain.channel.Channel;
 import com.redhat.rhn.domain.channel.ChannelFactory;
 import com.redhat.rhn.domain.channel.ChannelFamily;
@@ -92,10 +90,7 @@ import com.redhat.rhn.domain.server.ServerFactory;
 import com.redhat.rhn.domain.server.ServerGroup;
 import com.redhat.rhn.domain.server.ServerGroupFactory;
 import com.redhat.rhn.domain.server.ServerHistoryEvent;
-import com.redhat.rhn.domain.server.VirtualInstance;
-import com.redhat.rhn.domain.server.VirtualInstanceFactory;
 import com.redhat.rhn.domain.server.test.CPUTest;
-import com.redhat.rhn.domain.server.test.GuestBuilder;
 import com.redhat.rhn.domain.server.test.MinionServerFactoryTest;
 import com.redhat.rhn.domain.server.test.NetworkInterfaceTest;
 import com.redhat.rhn.domain.server.test.ServerFactoryTest;
@@ -108,7 +103,6 @@ import com.redhat.rhn.domain.token.ActivationKey;
 import com.redhat.rhn.domain.token.test.ActivationKeyTest;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.domain.user.UserFactory;
-import com.redhat.rhn.frontend.context.Context;
 import com.redhat.rhn.frontend.dto.ErrataOverview;
 import com.redhat.rhn.frontend.dto.HistoryEvent;
 import com.redhat.rhn.frontend.dto.OperationDetailsDto;
@@ -146,6 +140,7 @@ import com.redhat.rhn.manager.channel.ChannelManager;
 import com.redhat.rhn.manager.entitlement.EntitlementManager;
 import com.redhat.rhn.manager.errata.cache.ErrataCacheManager;
 import com.redhat.rhn.manager.formula.FormulaMonitoringManager;
+import com.redhat.rhn.manager.kickstart.cobbler.CobblerXMLRPCHelper;
 import com.redhat.rhn.manager.profile.ProfileManager;
 import com.redhat.rhn.manager.rhnpackage.test.PackageManagerTest;
 import com.redhat.rhn.manager.ssm.SsmOperationManager;
@@ -164,19 +159,22 @@ import com.redhat.rhn.testing.ServerTestUtils;
 import com.redhat.rhn.testing.TestUtils;
 import com.redhat.rhn.testing.UserTestUtils;
 
-import com.suse.manager.virtualization.VirtManagerSalt;
+import com.suse.cloud.CloudPaygManager;
+import com.suse.cloud.test.TestCloudPaygManagerBuilder;
+import com.suse.manager.attestation.AttestationManager;
 import com.suse.manager.webui.controllers.bootstrap.RegularMinionBootstrapper;
 import com.suse.manager.webui.controllers.bootstrap.SSHMinionBootstrapper;
+import com.suse.manager.webui.services.SaltServerActionService;
 import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.pillar.MinionCustomInfoPillarGenerator;
 import com.suse.manager.webui.services.test.TestSaltApi;
 import com.suse.manager.webui.services.test.TestSystemQuery;
 import com.suse.manager.xmlrpc.dto.SystemEventDetailsDto;
 
 import org.apache.commons.lang3.StringUtils;
+import org.cobbler.CobblerConnection;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.imposters.ByteBuddyClassImposteriser;
@@ -187,8 +185,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -202,10 +198,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @ExtendWith(JUnit5Mockery.class)
 public class SystemHandlerTest extends BaseHandlerTestCase {
@@ -213,24 +207,27 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
     private TaskomaticApi taskomaticApi = new TaskomaticApi();
     private final SystemQuery systemQuery = new TestSystemQuery();
     private final SaltApi saltApi = new TestSaltApi();
-    private RegularMinionBootstrapper regularMinionBootstrapper = new RegularMinionBootstrapper(systemQuery, saltApi);
-    private SSHMinionBootstrapper sshMinionBootstrapper = new SSHMinionBootstrapper(systemQuery, saltApi);
+    private final CloudPaygManager paygManager = new TestCloudPaygManagerBuilder().build();
+    private final AttestationManager attestationManager = new AttestationManager();
+    private RegularMinionBootstrapper regularMinionBootstrapper =
+            new RegularMinionBootstrapper(systemQuery, saltApi, paygManager, attestationManager);
+    private SSHMinionBootstrapper sshMinionBootstrapper =
+            new SSHMinionBootstrapper(systemQuery, saltApi, paygManager, attestationManager);
     private XmlRpcSystemHelper xmlRpcSystemHelper = new XmlRpcSystemHelper(
             regularMinionBootstrapper,
             sshMinionBootstrapper
     );
     private final ServerGroupManager serverGroupManager = new ServerGroupManager(saltApi);
-    private final VirtManager virtManager = new VirtManagerSalt(saltApi);
     private final MonitoringManager monitoringManager = new FormulaMonitoringManager(saltApi);
     private final SystemEntitlementManager systemEntitlementManager = new SystemEntitlementManager(
-            new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-            new SystemEntitler(saltApi, virtManager, monitoringManager, serverGroupManager)
+            new SystemUnentitler(monitoringManager, serverGroupManager),
+            new SystemEntitler(saltApi, monitoringManager, serverGroupManager)
     );
     private SystemManager systemManager =
             new SystemManager(ServerFactory.SINGLETON, ServerGroupFactory.SINGLETON, saltApi);
     private SystemHandler handler =
             new SystemHandler(taskomaticApi, xmlRpcSystemHelper, systemEntitlementManager, systemManager,
-                    serverGroupManager);
+                    serverGroupManager, new TestCloudPaygManagerBuilder().build(), new AttestationManager());
 
     @RegisterExtension
     protected final Mockery mockContext = new JUnit5Mockery() {{
@@ -343,8 +340,14 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
     public void testSetChildChannelsDeprecated() throws Exception {
         // the usage of setChildChannels API as tested by this junit where
         // channel ids are passed as arguments is being deprecated...
+        SystemHandler mockedHandler = getMockedHandler();
+        ActionChainManager.setTaskomaticApi(mockedHandler.getTaskomaticApi());
+        SaltServerActionService sa = GlobalInstanceHolder.SALT_SERVER_ACTION_SERVICE;
+        sa.setCommitTransaction(false);
+        sa.setSaltApi(saltApi);
+        List<Long> finishedActions = new ArrayList<>();
 
-        Server server = ServerFactoryTest.createTestServer(admin, true);
+        Server server = MinionServerFactoryTest.createTestMinionServer(admin);
         assertNull(server.getBaseChannel());
         Integer sid = server.getId().intValue();
 
@@ -359,6 +362,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
 
         //subscribe to base channel.
         SystemManager.subscribeServerToChannel(admin, server, base);
+        TestUtils.flushAndEvict(server);
         server = reload(server);
         assertNotNull(server.getBaseChannel());
 
@@ -367,6 +371,14 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         cids.add(child2.getId().intValue());
 
         int result = handler.setChildChannels(admin, sid, cids);
+        Optional<Action> first = ActionFactory.listActionsForServer(admin, server).stream()
+                .filter(a -> a.getActionType().equals(ActionFactory.TYPE_SUBSCRIBE_CHANNELS))
+                .findFirst();
+        assertTrue(first.isPresent(), "No Subscribe Channels Action created");
+        sa.execute(first.get(), false, false, Optional.empty());
+        finishedActions.add(first.get().getId());
+
+        TestUtils.flushAndEvict(server);
         server = TestUtils.reload(server);
         assertEquals(1, result);
         assertEquals(3, server.getChannels().size());
@@ -377,6 +389,15 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         assertEquals(1, cids.size());
 
         result = handler.setChildChannels(admin, sid, cids);
+        first = ActionFactory.listActionsForServer(admin, server).stream()
+                .filter(a -> !finishedActions.contains(a.getId()))
+                .filter(a -> a.getActionType().equals(ActionFactory.TYPE_SUBSCRIBE_CHANNELS))
+                .findFirst();
+        assertTrue(first.isPresent(), "No Subscribe Channels Action created");
+        sa.execute(first.get(), false, false, Optional.empty());
+        finishedActions.add(first.get().getId());
+
+        TestUtils.flushAndEvict(server);
         server = TestUtils.reload(server);
         assertEquals(1, result);
         assertEquals(2, server.getChannels().size());
@@ -409,6 +430,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
             //success
         }
 
+        TestUtils.flushAndEvict(server);
         server = reload(server);
         assertEquals(2, server.getChannels().size());
 
@@ -435,7 +457,14 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
 
     @Test
     public void testSetChildChannels() throws Exception {
-        Server server = ServerFactoryTest.createTestServer(admin, true);
+        SystemHandler mockedHandler = getMockedHandler();
+        ActionChainManager.setTaskomaticApi(mockedHandler.getTaskomaticApi());
+        SaltServerActionService sa = GlobalInstanceHolder.SALT_SERVER_ACTION_SERVICE;
+        sa.setCommitTransaction(false);
+        sa.setSaltApi(saltApi);
+        List<Long> finishedActions = new ArrayList<>();
+
+        Server server = MinionServerFactoryTest.createTestMinionServer(admin);
         assertNull(server.getBaseChannel());
         Integer sid = server.getId().intValue();
 
@@ -444,37 +473,60 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
 
         Channel child1 = ChannelFactoryTest.createTestChannel(admin);
         child1.setParentChannel(base);
+        String child1Label = child1.getLabel();
 
         Channel child2 = ChannelFactoryTest.createTestChannel(admin);
         child2.setParentChannel(base);
+        String child2Label = child2.getLabel();
+
+        TestUtils.flushAndEvict(child1);
+        TestUtils.flushAndEvict(child2);
 
         //subscribe to base channel.
         SystemManager.subscribeServerToChannel(admin, server, base);
+        TestUtils.saveAndFlush(server);
         server = reload(server);
         assertNotNull(server.getBaseChannel());
 
-        List channelLabels = new ArrayList<>();
-        channelLabels.add(new String(child1.getLabel()));
-        channelLabels.add(new String(child2.getLabel()));
+        List<String> channelLabels = new ArrayList<>();
+        channelLabels.add(child1Label);
+        channelLabels.add(child2Label);
 
         int result = handler.setChildChannels(admin, sid, channelLabels);
+        Optional<Action> first = ActionFactory.listActionsForServer(admin, server).stream()
+                .filter(a -> a.getActionType().equals(ActionFactory.TYPE_SUBSCRIBE_CHANNELS))
+                .findFirst();
+        assertTrue(first.isPresent(), "No Subscribe Channels Action created");
+        sa.execute(first.get(), false, false, Optional.empty());
+        finishedActions.add(first.get().getId());
+
+        TestUtils.flushAndEvict(server);
         server = TestUtils.reload(server);
         assertEquals(1, result);
         assertEquals(3, server.getChannels().size());
 
         //Try 'unsubscribing' from child1...
         channelLabels = new ArrayList<>();
-        channelLabels.add(new String(child2.getLabel()));
+        channelLabels.add(child2Label);
         assertEquals(1, channelLabels.size());
 
         result = handler.setChildChannels(admin, sid, channelLabels);
+        first = ActionFactory.listActionsForServer(admin, server).stream()
+                .filter(a -> !finishedActions.contains(a.getId()))
+                .filter(a -> a.getActionType().equals(ActionFactory.TYPE_SUBSCRIBE_CHANNELS))
+                .findFirst();
+        assertTrue(first.isPresent(), "No Subscribe Channels Action created");
+        sa.execute(first.get(), false, false, Optional.empty());
+        finishedActions.add(first.get().getId());
+
+        TestUtils.flushAndEvict(server);
         server = TestUtils.reload(server);
         assertEquals(1, result);
         assertEquals(2, server.getChannels().size());
 
         //Try putting an invalid channel in there
         channelLabels = new ArrayList<>();
-        channelLabels.add(new String("invalid-unknown-channel-label"));
+        channelLabels.add("invalid-unknown-channel-label");
         assertEquals(1, channelLabels.size());
 
         try {
@@ -486,10 +538,13 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         }
         assertEquals(2, server.getChannels().size());
 
+        TestUtils.flushAndEvict(server);
+        server = TestUtils.reload(server);
+
         Channel base2 = ChannelFactoryTest.createTestChannel(admin);
         base2.setParentChannel(null);
         channelLabels = new ArrayList<>();
-        channelLabels.add(new String(base2.getLabel()));
+        channelLabels.add(base2.getLabel());
         assertEquals(1, channelLabels.size());
 
         try {
@@ -500,6 +555,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
             //success
         }
 
+        TestUtils.flushAndEvict(server);
         server = reload(server);
         assertEquals(2, server.getChannels().size());
 
@@ -527,8 +583,14 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
     @Test
     public void testSetBaseChannelDeprecated() throws Exception {
         // the setBaseChannel API tested by this junit is being deprecated
+        SystemHandler mockedHandler = getMockedHandler();
+        ActionChainManager.setTaskomaticApi(mockedHandler.getTaskomaticApi());
+        SaltServerActionService sa = GlobalInstanceHolder.SALT_SERVER_ACTION_SERVICE;
+        sa.setCommitTransaction(false);
+        sa.setSaltApi(saltApi);
+        List<Long> finishedActions = new ArrayList<>();
 
-        Server server = ServerFactoryTest.createTestServer(admin, true);
+        MinionServer server = MinionServerFactoryTest.createTestMinionServer(admin);
         assertNull(server.getBaseChannel());
         Integer sid = server.getId().intValue();
 
@@ -542,16 +604,34 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         child1.setParentChannel(base1);
 
         // Set base channel to base1
-        int result = handler.setBaseChannel(admin, sid,
-                base1.getId().intValue());
+        int result = handler.setBaseChannel(admin, sid, base1.getLabel());
+        Optional<Action> first = ActionFactory.listActionsForServer(admin, server).stream()
+                .filter(a -> a.getActionType().equals(ActionFactory.TYPE_SUBSCRIBE_CHANNELS))
+                .findFirst();
+        assertTrue(first.isPresent(), "No Subscribe Channels Action created");
+        sa.execute(first.get(), false, false, Optional.empty());
+        finishedActions.add(first.get().getId());
+
+        HibernateFactory.getSession().flush();
+        HibernateFactory.getSession().clear();
+
         server = reload(server);
         assertEquals(1, result);
         assertNotNull(server.getBaseChannel());
         assertEquals(server.getBaseChannel().getLabel(), base1.getLabel());
 
         // Set base channel to base2
-        result = handler.setBaseChannel(admin, sid,
-                base2.getId().intValue());
+        result = handler.setBaseChannel(admin, sid, base2.getLabel());
+        first = ActionFactory.listActionsForServer(admin, server).stream()
+                .filter(a -> !finishedActions.contains(a.getId()))
+                .filter(a -> a.getActionType().equals(ActionFactory.TYPE_SUBSCRIBE_CHANNELS))
+                .findFirst();
+        assertTrue(first.isPresent(), "No Subscribe Channels Action created");
+        sa.execute(first.get(), false, false, Optional.empty());
+
+        HibernateFactory.getSession().flush();
+        HibernateFactory.getSession().clear();
+
         server = TestUtils.reload(server);
         assertEquals(1, result);
         assertNotNull(server.getBaseChannel());
@@ -559,8 +639,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
 
         // Try setting base channel to child
         try {
-            result = handler.setBaseChannel(admin, sid,
-                    child1.getId().intValue());
+            result = handler.setBaseChannel(admin, sid, child1.getLabel());
             fail("SystemHandler.setBaseChannel allowed invalid base channel to be set.");
         }
         catch (InvalidChannelException e) {
@@ -577,8 +656,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
             ServerFactory.save(server);
 
 
-            result = handler.setBaseChannel(admin, sid,
-                    base1.getId().intValue());
+            result = handler.setBaseChannel(admin, sid, base1.getLabel());
             fail("allowed channel with incompatible arch to be set");
         }
         catch (InvalidChannelException e) {
@@ -588,7 +666,14 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
 
     @Test
     public void testSetBaseChannel() throws Exception {
-        Server server = ServerFactoryTest.createTestServer(admin, true);
+        SystemHandler mockedHandler = getMockedHandler();
+        ActionChainManager.setTaskomaticApi(mockedHandler.getTaskomaticApi());
+        SaltServerActionService sa = GlobalInstanceHolder.SALT_SERVER_ACTION_SERVICE;
+        sa.setCommitTransaction(false);
+        sa.setSaltApi(saltApi);
+        List<Long> finishedActions = new ArrayList<>();
+
+        MinionServer server = MinionServerFactoryTest.createTestMinionServer(admin);
         assertNull(server.getBaseChannel());
         Integer sid = server.getId().intValue();
 
@@ -603,6 +688,16 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
 
         // Set base channel to base1
         int result = handler.setBaseChannel(admin, sid, base1.getLabel());
+        Optional<Action> first = ActionFactory.listActionsForServer(admin, server).stream()
+                .filter(a -> a.getActionType().equals(ActionFactory.TYPE_SUBSCRIBE_CHANNELS))
+                .findFirst();
+        assertTrue(first.isPresent(), "No Subscribe Channels Action created");
+        sa.execute(first.get(), false, false, Optional.empty());
+        finishedActions.add(first.get().getId());
+
+        HibernateFactory.getSession().flush();
+        HibernateFactory.getSession().clear();
+
         server = reload(server);
         assertEquals(1, result);
         assertNotNull(server.getBaseChannel());
@@ -610,6 +705,17 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
 
         // Set base channel to base2
         result = handler.setBaseChannel(admin, sid, base2.getLabel());
+        first = ActionFactory.listActionsForServer(admin, server).stream()
+                .filter(a -> !finishedActions.contains(a.getId()))
+                .filter(a -> a.getActionType().equals(ActionFactory.TYPE_SUBSCRIBE_CHANNELS))
+                .findFirst();
+        assertTrue(first.isPresent(), "No Subscribe Channels Action created");
+        sa.execute(first.get(), false, false, Optional.empty());
+        finishedActions.add(first.get().getId());
+
+        HibernateFactory.getSession().flush();
+        HibernateFactory.getSession().clear();
+
         server = TestUtils.reload(server);
         assertEquals(1, result);
         assertNotNull(server.getBaseChannel());
@@ -679,7 +785,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         var actionId = actionIds.get(0);
         Action action = ActionFactory.lookupById(actionId);
         assertEquals(earliest, action.getEarliestAction());
-        assertTrue(action instanceof SubscribeChannelsAction);
+        assertInstanceOf(SubscribeChannelsAction.class, action);
         SubscribeChannelsAction sca = (SubscribeChannelsAction)action;
         assertEquals(base1.getId(), sca.getDetails().getBaseChannel().getId());
         assertEquals(1, sca.getDetails().getChannels().size());
@@ -717,7 +823,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
 
         Action action = ActionFactory.lookupById(actionId);
         assertEquals(earliest, action.getEarliestAction());
-        assertTrue(action instanceof SubscribeChannelsAction);
+        assertInstanceOf(SubscribeChannelsAction.class, action);
         SubscribeChannelsAction sca = (SubscribeChannelsAction)action;
         assertEquals(base1.getId(), sca.getDetails().getBaseChannel().getId());
         assertTrue(sca.getDetails().getChannels().isEmpty());
@@ -1069,8 +1175,11 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         Action action = ActionManager.scheduleHardwareRefreshAction(admin, server, new Date());
         ActionFactory.save(action);
 
-        // Ensure the other actions are created later
+        // Commit in this test is mandatory as creation date keeps updating while the object is not actually stored
+        // in the database
         commitAndCloseSession();
+        commitHappened();
+
         Thread.sleep(2_000);
         final Date earliestDate = new Date();
 
@@ -1194,6 +1303,8 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
 
         int setResult = handler.setCustomValues(admin, server.getId().intValue(), valuesToSet);
 
+        server = reload(server);
+
         //make sure the val was updated
         val = server.getCustomDataValue(testKey);
         assertEquals(val2, val.getValue());
@@ -1247,15 +1358,19 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
                 valuesToDelete);
 
         assertEquals(1, setResult);
+
+        server = reload(server);
+
         val = server.getCustomDataValue(testKey);
         assertNull(val);
 
-        Path filePath = tmpPillarRoot.resolve(
-                PILLAR_DATA_FILE_PREFIX + "_" +
-                server.getMinionId() + "_custom_info." +
-                PILLAR_DATA_FILE_EXT);
-
-        assertFalse(Files.exists(filePath));
+        try {
+            pillar = readCustomInfoPillar(server);
+            fail("Custom info pillar was not deleted.");
+        }
+        catch (java.util.NoSuchElementException e) {
+            //success
+        }
     }
 
     @Test
@@ -1520,7 +1635,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         serverAction.setStatus(ActionFactory.STATUS_PICKED_UP);
 
         ActionFactory.save(action);
-        commitAndCloseSession();
+        clearSession();
 
         // Retrieve the action event detail
         final int sid = server.getId().intValue();
@@ -1576,6 +1691,43 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         assertEquals(list.size(), 1);
         ErrataOverview errata = list.get(0);
         assertEquals(e.getId().intValue(), errata.getId().intValue());
+    }
+
+    @Test
+    public void testGetRelevantErrataWithListOfSids() throws Exception {
+
+        Errata firstErrata = ErrataFactoryTest.createTestErrata(admin.getOrg().getId());
+        firstErrata.setAdvisoryType(ErrataFactory.ERRATA_TYPE_BUG);
+
+        Errata secondErrata = ErrataFactoryTest.createTestErrata(admin.getOrg().getId());
+        secondErrata.setAdvisoryType(ErrataFactory.ERRATA_TYPE_BUG);
+
+        TestUtils.flushAndEvict(firstErrata);
+        TestUtils.flushAndEvict(secondErrata);
+
+        Server firstServer = ServerFactoryTest.createTestServer(admin);
+        Server secondServer = ServerFactoryTest.createTestServer(admin);
+        ServerFactory.save(firstServer);
+        ServerFactory.save(secondServer);
+        TestUtils.flushAndEvict(firstServer);
+        TestUtils.flushAndEvict(secondServer);
+
+        UserFactory.save(admin);
+        TestUtils.flushAndEvict(admin);
+
+        Package packageOne = firstErrata.getPackages().iterator().next();
+        Package packageTwo = secondErrata.getPackages().iterator().next();
+
+        ErrataCacheManager.insertNeededErrataCache(
+                firstServer.getId(), firstErrata.getId(), packageOne.getId());
+        ErrataCacheManager.insertNeededErrataCache(
+                secondServer.getId(), secondErrata.getId(), packageTwo.getId());
+
+        List<Integer> sids = Arrays.asList(firstServer.getId().intValue(), secondServer.getId().intValue());
+
+        List<Map<String, Object>> list = handler.getRelevantErrata(admin, sids);
+
+        assertEquals(list.size(), 2);
     }
 
     @Test
@@ -2258,6 +2410,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         // lookup_transaction_package(:operation, :n, :e, :v, :r, :a)
         // which can cause deadlocks.  We are forced to call commitAndCloseTransaction()
         commitAndCloseSession();
+        commitHappened();
         handler.scheduleSyncPackagesWithSystem(admin, s1.getId().
                         intValue(), s2.getId().intValue(), packagesToSync,
                 new Date());
@@ -2484,90 +2637,6 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         assertTrue(systemInList(srv1.getId(), list));
 
 
-    }
-
-    @Test
-    public void testScheduleGuestAction() throws Exception {
-        Context.getCurrentContext().setTimezone(TimeZone.getTimeZone("UTC"));
-        Server host = ServerFactoryTest.createTestServer(admin, true);
-        GuestBuilder build = new GuestBuilder(admin);
-        VirtualInstance guest = build.createGuest().withVirtHost().build();
-        guest.setHostSystem(host);
-
-        VirtualInstanceFactory.getInstance().saveVirtualInstance(guest);
-
-        int id = handler.scheduleGuestAction(admin,
-                guest.getGuestSystem().getId().intValue(), "restart");
-
-        List<Action> actions = ActionFactory.listActionsForServer(admin, host);
-
-        boolean contains = false;
-        for (Action act : actions) {
-            if (act.getId() == id) {
-                contains = true;
-                assertEquals(act.getActionType(), ActionFactory.TYPE_VIRTUALIZATION_REBOOT);
-            }
-        }
-        assertTrue(contains);
-    }
-
-    @Test
-    public void testSetGuestMemory() throws Exception {
-        Context.getCurrentContext().setTimezone(TimeZone.getTimeZone("UTC"));
-        Server host = ServerFactoryTest.createTestServer(admin, true);
-        GuestBuilder build = new GuestBuilder(admin);
-        VirtualInstance guest = build.createGuest().withVirtHost().build();
-        guest.setHostSystem(host);
-
-        VirtualInstanceFactory.getInstance().saveVirtualInstance(guest);
-
-        int id = handler.setGuestMemory(admin,
-                guest.getGuestSystem().getId().intValue(), 512);
-
-        List<Action> actions = ActionFactory.listActionsForServer(admin, host);
-
-        boolean contains = false;
-        for (Action act : actions) {
-            if (act.getId() == id) {
-                contains = true;
-                assertEquals(act.getActionType(),
-                        ActionFactory.TYPE_VIRTUALIZATION_SET_MEMORY);
-                VirtualizationSetMemoryGuestAction action = HibernateFactory.getSession().load(
-                        VirtualizationSetMemoryGuestAction.class,  (long) id);
-                assertEquals(action.getMemory(), Integer.valueOf(512 * 1024));
-            }
-        }
-        assertTrue(contains);
-    }
-
-
-    @Test
-    public void testSetGuestCpus() throws Exception {
-        Context.getCurrentContext().setTimezone(TimeZone.getTimeZone("UTC"));
-        Server host = ServerFactoryTest.createTestServer(admin, true);
-        GuestBuilder build = new GuestBuilder(admin);
-        VirtualInstance guest = build.createGuest().withVirtHost().build();
-        guest.setHostSystem(host);
-
-        VirtualInstanceFactory.getInstance().saveVirtualInstance(guest);
-
-        int id = handler.setGuestCpus(admin,
-                guest.getGuestSystem().getId().intValue(), 3);
-
-        List<Action> actions = ActionFactory.listActionsForServer(admin, host);
-
-        boolean contains = false;
-        for (Action act : actions) {
-            if (act.getId() == id) {
-                contains = true;
-                assertEquals(act.getActionType(),
-                        ActionFactory.TYPE_VIRTUALIZATION_SET_VCPUS);
-                VirtualizationSetVcpusGuestAction action = HibernateFactory.getSession().load(
-                        VirtualizationSetVcpusGuestAction.class,  (long) id);
-                assertEquals(action.getVcpu(), Integer.valueOf(3));
-            }
-        }
-        assertTrue(contains);
     }
 
     @Test
@@ -3175,19 +3244,76 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         }
     }
 
+    @Test
+    public void testCreateSystemRecordRegistered() throws Exception {
+        // Arrange
+        CobblerConnection connection = CobblerXMLRPCHelper.getConnection(admin);
+        connection.invokeMethod("new_profile");
+        var profileId = ((LinkedList<HashMap>) connection.invokeMethod("get_profiles")).get(0).get("uid");
+        SystemHandler mockedHandler = getMockedHandler();
+        KickstartData k = KickstartDataTest.createTestKickstartData(admin.getOrg());
+        k.setCobblerId(profileId.toString());
+        int systemId = mockedHandler.createSystemProfile(
+            admin,
+            "test system",
+            Collections.singletonMap("hwAddress", "aa:bb:cc:dd:ee:01")
+        );
+
+        // Act
+        int result = mockedHandler.createSystemRecord(admin, systemId, k.getLabel());
+
+        // Assert
+        assertEquals(1, result);
+    }
+
+    @Test
+    public void testCreateSystemRecordUnregistered() throws Exception {
+        // Arrange
+        CobblerConnection connection = CobblerXMLRPCHelper.getConnection(admin);
+        connection.invokeMethod("new_profile");
+        var profileId = ((LinkedList<HashMap>) connection.invokeMethod("get_profiles")).get(0).get("uid");
+        SystemHandler mockedHandler = getMockedHandler();
+        String systemName = "test system";
+        KickstartData k = KickstartDataTest.createTestKickstartData(admin.getOrg());
+        k.setCobblerId(profileId.toString());
+
+        Map<String, String> netDevices = Map.of(
+            "name", "dev1",
+            "ip", "127.0.0.1",
+            "mac", "00:00:00:00",
+            "dnsname", "test.com"
+        );
+        // Act
+        int result = mockedHandler.createSystemRecord(
+            admin,
+            systemName,
+            k.getLabel(),
+            "",
+            "",
+            List.of(netDevices)
+        );
+
+        // Assert
+        assertEquals(1, result);
+    }
+
     /**
      * Tests creating a system profile.
      * @throws Exception if anything goes wrong
      */
     @Test
     public void testCreateSystemProfile() throws Exception {
+        // Arrange
         String hwAddress = "aa:bb:cc:dd:ee:00";
+
+        // Act
         int result = getMockedHandler().createSystemProfile(admin, "test system",
                 Collections.singletonMap("hwAddress", hwAddress));
+
+        // Assert
         List<NetworkInterface> nics = NetworkInterfaceFactory
                 .lookupNetworkInterfacesByHwAddress(hwAddress)
-                .collect(Collectors.toList());
-
+                .toList();
         assertEquals(1, nics.size());
         Server server = nics.get(0).getServer();
         assertEquals("test system", server.getName());
@@ -3433,6 +3559,80 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
     }
 
     /**
+     * Test the SystemHandler.getPillar method
+     * @throws Exception if anything fail
+     */
+    @Test
+    public void testGetPillar() throws Exception {
+        MinionServer minion = MinionServerFactoryTest.createTestMinionServer(admin);
+        Pillar newPillar = new Pillar("new_pillar", Collections.singletonMap("key", "value"), minion);
+        minion.addPillar(newPillar);
+        minion = TestUtils.saveAndReload(minion);
+        assertEquals(2, minion.getPillars().size());
+
+        SystemHandler systemHandler = getMockedHandler();
+        Map<String, Object> pillar = systemHandler.getPillar(admin, minion.getId().intValue(), "new_pillar");
+        assertNotNull(pillar);
+        assertEquals("value", pillar.get("key"));
+    }
+
+    /**
+     * Test the SystemHandler.setPillar method
+     * @throws Exception if anything fail
+     */
+    @Test
+    public void testSetPillar() throws Exception {
+        MinionServer minion = MinionServerFactoryTest.createTestMinionServer(admin);
+        assertEquals(1, minion.getPillars().size());
+
+        SystemHandler systemHandler = getMockedHandler();
+        Map<String, Object> pillarData = Collections.singletonMap("key", "value");
+        systemHandler.setPillar(admin, minion.getId().intValue(), "stored_pillar", pillarData);
+
+        minion = reload(minion);
+        assertEquals(2, minion.getPillars().size());
+        assertTrue(minion.getPillarByCategory("stored_pillar").isPresent());
+        assertEquals("value", minion.getPillarByCategory("stored_pillar").get().getPillar().get("key"));
+    }
+
+    /**
+     * Test the SystemHandler.getPillar method
+     * @throws Exception if anything fail
+     */
+    @Test
+    public void testGetPillarByMinionId() throws Exception {
+        MinionServer minion = MinionServerFactoryTest.createTestMinionServer(admin);
+        Pillar newPillar = new Pillar("new_pillar", Collections.singletonMap("key", "value"), minion);
+        minion.addPillar(newPillar);
+        minion = TestUtils.saveAndReload(minion);
+        assertEquals(2, minion.getPillars().size());
+
+        SystemHandler systemHandler = getMockedHandler();
+        Map<String, Object> pillar = systemHandler.getPillar(admin, minion.getMinionId(), "new_pillar");
+        assertNotNull(pillar);
+        assertEquals("value", pillar.get("key"));
+    }
+
+    /**
+     * Test the SystemHandler.setPillar method
+     * @throws Exception if anything fail
+     */
+    @Test
+    public void testSetPillarByMinionId() throws Exception {
+        MinionServer minion = MinionServerFactoryTest.createTestMinionServer(admin);
+        assertEquals(1, minion.getPillars().size());
+
+        SystemHandler systemHandler = getMockedHandler();
+        Map<String, Object> pillarData = Collections.singletonMap("key", "value");
+        systemHandler.setPillar(admin, minion.getMinionId(), "stored_pillar", pillarData);
+
+        minion = reload(minion);
+        assertEquals(2, minion.getPillars().size());
+        assertTrue(minion.getPillarByCategory("stored_pillar").isPresent());
+        assertEquals("value", minion.getPillarByCategory("stored_pillar").get().getPillar().get("key"));
+    }
+
+    /**
      * Test the SystemHandler.changeProxy method
      * @throws Exception if anything failed
      */
@@ -3507,7 +3707,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
         assertFalse(details.isTest());
 
         // direct connection to SUMA
-        assertEquals(ConfigDefaults.get().getCobblerHost(), details.getPillarsMap().get().get("mgr_server"));
+        assertEquals(ConfigDefaults.get().getJavaHostname(), details.getPillarsMap().get().get("mgr_server"));
 
         actions = systemHandler.changeProxy(admin,
                              List.of(minionSsh1.getId().intValue(), minionSsh2.getId().intValue()),
@@ -3551,7 +3751,7 @@ public class SystemHandlerTest extends BaseHandlerTestCase {
     private SystemHandler getMockedHandler() throws Exception {
         TaskomaticApi taskomaticMock = mockContext.mock(TaskomaticApi.class);
         SystemHandler systemHandler = new SystemHandler(taskomaticMock, xmlRpcSystemHelper, systemEntitlementManager,
-                systemManager, serverGroupManager);
+                systemManager, serverGroupManager, new TestCloudPaygManagerBuilder().build(), new AttestationManager());
 
         mockContext.checking(new Expectations() {{
             allowing(taskomaticMock).scheduleActionExecution(with(any(Action.class)));

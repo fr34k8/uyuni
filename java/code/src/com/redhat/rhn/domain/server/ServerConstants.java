@@ -27,6 +27,7 @@ public class ServerConstants {
     public static final String FEATURE_KICKSTART = "ftr_kickstart";
     public static final String SLES = "SLES";
     public static final String SLEMICRO = "SLE Micro";
+    public static final String SLMICRO = "SL-Micro";
     public static final String LEAP = "Leap";
     public static final String LEAPMICRO = "openSUSE Leap Micro";
     public static final String OPENSUSEMICROOS = "openSUSE MicroOS";
@@ -37,6 +38,8 @@ public class ServerConstants {
     public static final String ALMA = "AlmaLinux";
     public static final String AMAZON = "Amazon Linux";
     public static final String ROCKY = "Rocky";
+    public static final String SLED = "SLED";
+    public static final String RHEL = "Red Hat Enterprise Linux";
 
     private ServerConstants() {
 
@@ -111,5 +114,13 @@ public class ServerConstants {
      */
     public static final ServerGroupType getServerGroupTypeOSImageBuildHostEntitled() {
         return ServerFactory.lookupServerGroupTypeByLabel("osimage_build_host");
+    }
+
+    /**
+     * Static representing the Peripheral Server entitled server group type
+     * @return ServerGroupType
+     */
+    public static final ServerGroupType getServerGroupTypePeripheralServerEntitled() {
+        return ServerFactory.lookupServerGroupTypeByLabel("peripheral_server");
     }
 }

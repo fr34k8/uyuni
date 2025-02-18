@@ -226,7 +226,7 @@ SELECT COUNT(S.id) AS count
   </query>
 </mode>
 
-<mode name="systems_subscribed_to_channel">
+<mode name="systems_subscribed_to_channel" class="com.redhat.rhn.frontend.dto.SystemOverview">
   <query params="org_id, cid, user_id">
 SELECT
        S.id as id,
@@ -1016,7 +1016,7 @@ SELECT  DISTINCT ST.element AS ID
   SELECT  DISTINCT S.id,
                    S.name,
                    SI.server_id AS MGR_SERVER,
-                   PI.server_id AS PROXY,
+                   PI.server_id is not null AS PROXY,
                    TO_CHAR(Sinfo.checkin, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CHECKIN,
                    SO.SECURITY_ERRATA, SO.BUG_ERRATA, SO.ENHANCEMENT_ERRATA, SO.LOCKED,
                    SO.OUTDATED_PACKAGES, SO.SERVER_NAME, SO.SERVER_ADMINS, SO.GROUP_COUNT,
@@ -1477,6 +1477,7 @@ SELECT 1
               WHEN 'osimage_build_host' then 'OS Image'
               WHEN 'monitoring_entitled' then 'Monitoring'
               WHEN 'ansible_control_node' then 'Ansible Control Node'
+              WHEN 'peripheral_server' then 'Peripheral Server'
             END)
   </query>
 </write-mode>
@@ -1798,7 +1799,7 @@ select event_id as id,
          where SH.server_id = :sid
          union
         select SA.action_id event_id,
-               COALESCE(A.name, AType.name) || ' scheduled by ' || NVL(U.login, '(none)') as summary,
+               COALESCE(A.name, AType.name) || ' scheduled by ' || NVL(U.login, '(system)') as summary,
                SA.created,
                SA.pickup_time as picked_up,
                SA.completion_time as completed,
@@ -1852,7 +1853,7 @@ order by completed desc, picked_up desc, all_events.created desc, event_id desc
                      AND SH.id = :eid
                union
               select SA.action_id event_id,
-                     COALESCE(A.name, AType.name) || ' scheduled by ' || NVL(U.login, '(none)') as summary,
+                     COALESCE(A.name, AType.name) || ' scheduled by ' || NVL(U.login, '(system)') as summary,
                      SA.created,
                      SA.pickup_time as picked_up,
                      SA.completion_time as completed,
@@ -1888,7 +1889,7 @@ select count(action_id) as count
   class="com.redhat.rhn.frontend.dto.SystemPendingEventDto">
   <query params="sid">
   SELECT SA.action_id AS id
-                , COALESCE(A.name, AType.name) || ' scheduled by ' || NVL(U.login, '(none)') AS summary
+                , COALESCE(A.name, AType.name) || ' scheduled by ' || NVL(U.login, '(system)') AS summary
                 , A.earliest_action AS scheduled_for
                 , AType.label AS history_type
                 , AType.name AS history_type_name
@@ -1910,7 +1911,7 @@ ORDER BY scheduled_for DESC, prereq_aid NULLS FIRST
   class="com.redhat.rhn.frontend.dto.SystemPendingEventDto">
   <query params="sid, user_id, set_label">
   SELECT SA.action_id AS ID
-                , COALESCE(A.name, AType.name) || ' scheduled by ' || NVL(U.login, '(none)') AS summary
+                , COALESCE(A.name, AType.name) || ' scheduled by ' || NVL(U.login, '(system)') AS summary
                 , A.earliest_action AS scheduled_for
                 , AType.label AS history_type
                 , AType.name AS history_type_name

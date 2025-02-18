@@ -29,11 +29,9 @@ import com.redhat.rhn.manager.system.entitling.SystemUnentitler;
 import com.redhat.rhn.testing.BaseTestCaseWithUser;
 import com.redhat.rhn.testing.ServerTestUtils;
 
-import com.suse.manager.virtualization.VirtManagerSalt;
 import com.suse.manager.webui.services.iface.MonitoringManager;
 import com.suse.manager.webui.services.iface.SaltApi;
 import com.suse.manager.webui.services.iface.SystemQuery;
-import com.suse.manager.webui.services.iface.VirtManager;
 import com.suse.manager.webui.services.test.TestSaltApi;
 import com.suse.manager.webui.services.test.TestSystemQuery;
 
@@ -50,11 +48,10 @@ public abstract class BaseEntitlementTestCase extends BaseTestCaseWithUser {
     private final SystemQuery systemQuery = new TestSystemQuery();
     private final SaltApi saltApi = new TestSaltApi();
     private final ServerGroupManager serverGroupManager = new ServerGroupManager(saltApi);
-    private final VirtManager virtManager = new VirtManagerSalt(saltApi);
     private final MonitoringManager monitoringManager = new FormulaMonitoringManager(saltApi);
     private final SystemEntitlementManager systemEntitlementManager = new SystemEntitlementManager(
-            new SystemUnentitler(virtManager, monitoringManager, serverGroupManager),
-            new SystemEntitler(saltApi, virtManager, monitoringManager, serverGroupManager)
+            new SystemUnentitler(monitoringManager, serverGroupManager),
+            new SystemEntitler(saltApi, monitoringManager, serverGroupManager)
     );
 
     @Override
@@ -79,7 +76,7 @@ public abstract class BaseEntitlementTestCase extends BaseTestCaseWithUser {
         systemEntitlementManager.setBaseEntitlement(foreign, EntitlementManager.FOREIGN);
 
         assertFalse(traditional.getValidAddonEntitlementsForServer().isEmpty());
-        assertTrue(foreign.getValidAddonEntitlementsForServer().isEmpty());
+        assertFalse(foreign.getValidAddonEntitlementsForServer().isEmpty());
     }
 
     @Test
@@ -91,7 +88,7 @@ public abstract class BaseEntitlementTestCase extends BaseTestCaseWithUser {
         systemEntitlementManager.setBaseEntitlement(foreign, EntitlementManager.FOREIGN);
 
         assertTrue(ent.isAllowedOnServer(traditional, null));
-        assertFalse(ent.isAllowedOnServer(foreign, null));
+        assertTrue(ent.isAllowedOnServer(foreign, null));
     }
 
     protected abstract void createEntitlement();

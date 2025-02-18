@@ -35,7 +35,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.persistence.PersistenceException;
@@ -59,6 +58,7 @@ public class PagedSqlQueryBuilder {
     private String from;
     private String where;
     private String idColumn = "id";
+    private String countFrom;
 
     /**
      * Create a query builder with count column named 'id'
@@ -95,6 +95,18 @@ public class PagedSqlQueryBuilder {
      */
     public PagedSqlQueryBuilder from(String sql) {
         this.from = sql;
+        return this;
+    }
+
+    /**
+     * Add from clause to count the items to the query builder
+     * If not set, use the from value. This may be useful to avoid joining tables for nothing in the count query.
+     *
+     * @param sql the native SQL from part, without the 'from' keyword
+     * @return the current object to ease chaining calls
+     */
+    public PagedSqlQueryBuilder countFrom(String sql) {
+        this.countFrom = sql;
         return this;
     }
 
@@ -308,7 +320,8 @@ public class PagedSqlQueryBuilder {
             }
         }
 
-        String countSql = String.format("SELECT count(%s) FROM %s WHERE %s", idColumn, from, whereWithFilter);
+        String countSql = String.format("SELECT count(%s) FROM %s WHERE %s", idColumn,
+                countFrom != null ? countFrom : from, whereWithFilter);
         Query<Tuple> countQuery = session.createNativeQuery(countSql, Tuple.class);
 
         for (Map.Entry<String, Object> entry : parameters.entrySet()) {
@@ -365,7 +378,7 @@ public class PagedSqlQueryBuilder {
                     LOG.error("Failed to create {} from SQL tuple", clazz.getName(), e);
                     return null;
                 }
-            }).collect(Collectors.toList());
+            }).toList();
         }
         catch (NoSuchMethodException e) {
             LOG.error("Cannot create {} objects from Tuple", clazz.getName());

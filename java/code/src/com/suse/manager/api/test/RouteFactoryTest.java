@@ -24,6 +24,7 @@ import com.redhat.rhn.frontend.servlets.PxtSessionDelegate;
 import com.redhat.rhn.frontend.servlets.PxtSessionDelegateFactory;
 import com.redhat.rhn.frontend.xmlrpc.serializer.SerializerFactory;
 import com.redhat.rhn.testing.RhnMockHttpServletResponse;
+import com.redhat.rhn.testing.SparkTestUtils;
 import com.redhat.rhn.testing.UserTestUtils;
 
 import com.suse.manager.api.ApiResponseSerializer;
@@ -34,7 +35,6 @@ import com.suse.manager.api.RouteFactory;
 import com.suse.manager.api.SerializationBuilder;
 import com.suse.manager.api.SerializedApiResponse;
 import com.suse.manager.webui.controllers.test.BaseControllerTestCase;
-import com.suse.manager.webui.utils.SparkTestUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -67,7 +67,6 @@ public class RouteFactoryTest extends BaseControllerTestCase {
             .registerTypeAdapter(Map.class, new MapDeserializer())
             .registerTypeAdapter(List.class, new ListDeserializer())
             .create();
-    private final JsonParser parser = new JsonParser();
     private RouteFactory routeFactory;
     private TestHandler handler;
 
@@ -244,11 +243,12 @@ public class RouteFactoryTest extends BaseControllerTestCase {
         Method basicDate = handler.getClass().getMethod("basicDate", Date.class);
         Route route = routeFactory.createRoute(basicDate, handler);
 
-        Request req = createRequest("/manager/api/test/basicDate", Collections.singletonMap("myDate", "2022-04-01"));
+        Request req = createRequest("/manager/api/test/basicDate",
+                Collections.singletonMap("myDate", "2022-04-01T00:00:00+02:00"));
         Response res = createResponse();
         String result = getResult((String) route.handle(req, res), String.class);
 
-        assertEquals("Apr 1, 2022, 12:00:00 AM", result);
+        assertEquals("2022-03-31T22:00:00Z", result);
     }
 
     /**
@@ -260,11 +260,11 @@ public class RouteFactoryTest extends BaseControllerTestCase {
         Route route = routeFactory.createRoute(basicDate, handler);
 
         Request req = createRequest("/manager/api/test/basicDate",
-                GSON.toJson(Collections.singletonMap("myDate", "2022-04-01")));
+                GSON.toJson(Collections.singletonMap("myDate", "2022-04-01T00:00:00+02:00")));
         Response res = createResponse();
         String result = getResult((String) route.handle(req, res), String.class);
 
-        assertEquals("Apr 1, 2022, 12:00:00 AM", result);
+        assertEquals("2022-03-31T22:00:00Z", result);
     }
 
     /**
@@ -350,6 +350,26 @@ public class RouteFactoryTest extends BaseControllerTestCase {
                 TypeToken.getParameterized(List.class, String.class).getType());
 
         assertEquals(List.of("$tr:ng", "bar", "baz", "foo"), result);
+    }
+
+    /**
+     * When passed a single value, query string parameters are always interpreted as primitives rather than arrays.
+     * This case tests if a single value is correctly passed to a handler method that expects a {@link List} as the
+     * parameter.
+     *
+     * @see <a href="https://bugzilla.suse.com/show_bug.cgi?id=1207297">bsc#1207297</a>
+     */
+    @Test
+    public void testOneElementListInQueryString() throws Exception {
+        Method sortIntegerList = handler.getClass().getMethod("sortIntegerList", List.class);
+        Route route = routeFactory.createRoute(sortIntegerList, handler);
+
+        Map<String, String> queryParams = Collections.singletonMap("myList", "42");
+        Request req = createRequest("/manager/api/test/sortIntegerList", queryParams);
+        Response res = createResponse();
+        List<Integer> result = getResult((String) route.handle(req, res), List.class);
+
+        assertEquals(List.of(42), result);
     }
 
     /**
@@ -697,7 +717,7 @@ public class RouteFactoryTest extends BaseControllerTestCase {
      * @return the result object
      */
     private <T> T getResult(String response, Type resultType) {
-        JsonObject obj = parser.parse(response).getAsJsonObject();
+        JsonObject obj = JsonParser.parseString(response).getAsJsonObject();
 
         boolean isSuccess = obj.getAsJsonPrimitive("success").getAsBoolean();
         assertTrue(isSuccess);
@@ -711,7 +731,7 @@ public class RouteFactoryTest extends BaseControllerTestCase {
      * @return the response message
      */
     private String getExceptionResult(String response) {
-        HttpApiResponse responseObj = GSON.fromJson(response, HttpApiResponse.class);
+        HttpApiResponse<?> responseObj = GSON.fromJson(response, HttpApiResponse.class);
         assertFalse(responseObj.isSuccess());
         return responseObj.getMessage();
     }

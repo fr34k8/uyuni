@@ -31,7 +31,7 @@ export MINION="${PREFIX}min-sles15.tf.local"
 export BUILD_HOST="${PREFIX}min-build.tf.local"
 export SSH_MINION="${PREFIX}minssh-sles15.tf.local"
 export RHLIKE_MINION="${PREFIX}min-rocky8.tf.local"
-export DEBLIKE_MINION="${PREFIX}min-ubuntu2204.tf.local"
+export DEBLIKE_MINION="${PREFIX}min-ubuntu2404.tf.local"
 run-testsuite
 ```
 
@@ -40,7 +40,6 @@ run-testsuite
 ```bash
 # add sumaform tools repository
 zypper addrepo https://download.opensuse.org/repositories/systemsmanagement:/sumaform:/tools/openSUSE_Tumbleweed/
-zypper install twopence
 
 # install required Ruby gems
 cd <your_repo>/testsuite

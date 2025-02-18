@@ -12,7 +12,7 @@ from salt.scripts import salt_ssh
 from salt.utils.user import chugid
 
 
-SSH_KEY = "/srv/susemanager/salt/salt_ssh/mgr_ssh_id"
+SSH_KEY = "/var/lib/salt/.ssh/mgr_ssh_id"
 
 
 if __name__ == "__main__":
@@ -20,6 +20,8 @@ if __name__ == "__main__":
         os.chdir(tempfile.gettempdir())
         try:
             chugid("salt", "salt")
+            # Change HOME according to salt user
+            os.environ["HOME"] = os.path.expanduser("~salt")
         except (KeyError, CommandExecutionError):
             print("Error: Unable to setuid to `salt` user!", file=sys.stderr)
             exit(1)

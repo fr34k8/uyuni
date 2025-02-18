@@ -1,11 +1,17 @@
-# Copyright (c) 2021-2022 SUSE LLC
+# Copyright (c) 2021-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
+#
+#
+# This feature can cause failures in the following features:
+# - features/secondary/min_bootstrap_script.feature
+# If the minion fails to bootstrap again.
 
+@skip_if_github_validation
 @scope_onboarding
 Feature: Bootstrap a Salt minion via the GUI using SSH key
 
-  Scenario: Log in as admin user
-    Given I am authorized for the "Admin" section
+  Scenario: Log in as org admin user
+    Given I am authorized
 
   Scenario: Delete SLES minion system profile before bootstrap with SSH key test
     Given I am on the Systems overview page of this "sle_minion"
@@ -13,6 +19,7 @@ Feature: Bootstrap a Salt minion via the GUI using SSH key
     Then I should see a "Confirm System Profile Deletion" text
     When I click on "Delete Profile"
     And I wait until I see "has been deleted" text
+    And I wait until Salt client is inactive on "sle_minion"
     Then "sle_minion" should not be registered
 
   Scenario: Prepare the minion for SSH key authentication
@@ -34,7 +41,7 @@ Feature: Bootstrap a Salt minion via the GUI using SSH key
     When I click on "Details"
     And I wait at most 10 seconds until I see modal containing "Error Details" text
     Then I should see a "Standard Error" text
-    And I should see "Permission denied, no authentication information" in the textarea
+    And I should see "Permission denied, no authentication information" or "Permission denied (publickey,password,keyboard-interactive)" in the stderr textarea
     When I close the modal dialog
 
   Scenario: Bootstrap a SLES minion using SSH key
@@ -48,7 +55,8 @@ Feature: Bootstrap a Salt minion via the GUI using SSH key
     And I enter "linux" as "privKeyPwd"
     And I select the hostname of "proxy" from "proxies" if present
     And I click on "Bootstrap"
-    And I wait until I see "Successfully bootstrapped host!" text
+    # workaround for bsc#1222108
+    And I wait at most 480 seconds until I see "Bootstrap process initiated." text
 
   Scenario: Check new minion bootstrapped with SSH key in System Overview page
     When I follow the left menu "Salt > Keys"

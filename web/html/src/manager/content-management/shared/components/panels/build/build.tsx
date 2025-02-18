@@ -6,11 +6,11 @@ import _last from "lodash/last";
 import { Button } from "components/buttons";
 import { closeDialog, Dialog } from "components/dialog/LegacyDialog";
 import { ModalButton } from "components/dialog/ModalButton";
-import { Form } from "components/input/Form";
-import { Text } from "components/input/Text";
-import { Messages, Utils as MsgUtils } from "components/messages";
+import { Form } from "components/input/form/Form";
+import { Text } from "components/input/text/Text";
+import { Messages, Utils as MsgUtils } from "components/messages/messages";
 import { showErrorToastr, showSuccessToastr } from "components/toastr/toastr";
-import { Loading } from "components/utils/Loading";
+import { Loading } from "components/utils/loading/Loading";
 
 import statesEnum from "../../../../shared/business/states.enum";
 import useLifecycleActionsApi from "../../../api/use-lifecycle-actions-api";
@@ -57,17 +57,16 @@ const Build = ({
       <div className="text-center">
         <ModalButton
           id={`build-contentmngt-modal-link`}
-          className={disabled ? `btn-secondary` : `btn-success`}
+          className={`btn-default`}
           text={
             changesToBuild.length > 0
-              ? t(
-                  "Build ({0})",
-                  changesToBuild.filter(
+              ? t("Build ({count})", {
+                  count: changesToBuild.filter(
                     (s) =>
                       s.includes(` ${statesEnum.findByKey(statesEnum.enum.ATTACHED.key).sign} `) ||
                       s.includes(` ${statesEnum.findByKey(statesEnum.enum.DETACHED.key).sign} `)
-                  ).length
-                )
+                  ).length,
+                })
               : t("Build")
           }
           disabled={disabled}
@@ -86,7 +85,7 @@ const Build = ({
         onClosePopUp={() => setOpen(false)}
         content={
           isLoading ? (
-            <Loading text={t("Building project..")} />
+            <Loading text={t("Building project")} />
           ) : (
             <div>
               {hasChannelsWithUnsyncedPatches && (
@@ -109,7 +108,9 @@ const Build = ({
                   <Text name="message" label={t("Version Message")} labelClass="col-md-3" divClass="col-md-9" />
                 </div>
                 <dl className="row">
-                  <dt className="col-md-3 control-label">{t("Version {0} history", buildVersionForm.version)}:</dt>
+                  <dt className="col-md-3 control-label">
+                    {t("Version {version} history", { version: buildVersionForm.version })}:
+                  </dt>
                   <dd className="col-md-9">
                     <pre>{changesToBuild}</pre>
                   </dd>
@@ -120,7 +121,7 @@ const Build = ({
         }
         buttons={
           <React.Fragment>
-            <div className="col-lg-offset-6 col-lg-6">
+            <div className="col-lg-offset-6 offset-lg-6 col-lg-6">
               <div className="pull-right btn-group">
                 <Button
                   id={`cm-build-modal-cancel-button`}
@@ -144,11 +145,10 @@ const Build = ({
                       .then((projectWithUpdatedSources: any) => {
                         closeDialog(modalNameId);
                         showSuccessToastr(
-                          t(
-                            "Version {0} successfully built into {1}",
-                            (_last(projectWithUpdatedSources.properties.historyEntries) as any).version,
-                            projectWithUpdatedSources.environments[0].name
-                          )
+                          t("Version {version} successfully built into {environmentName}", {
+                            version: (_last(projectWithUpdatedSources.properties.historyEntries) as any).version,
+                            environmentName: projectWithUpdatedSources.environments[0].name,
+                          })
                         );
                         onBuild(projectWithUpdatedSources);
                       })

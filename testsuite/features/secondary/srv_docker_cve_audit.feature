@@ -4,6 +4,7 @@
 # This feature depends on:
 # - features/secondary/buildhost_docker_build_image.feature : Due to the images listed in the CVE Audit images
 
+@skip_if_github_validation
 @scope_cve_audit
 @no_auth_registry
 Feature: CVE audit for content management
@@ -20,6 +21,7 @@ Feature: CVE audit for content management
     Then I should see a "bunch was scheduled" text
     And I wait until the table contains "FINISHED" or "SKIPPED" followed by "FINISHED" in its first rows
 
+  @scc_credentials
   Scenario: Audit images, searching for a known CVE number
     When I follow the left menu "Audit > CVE Audit"
     And I select "1999" from "cveIdentifierYear"

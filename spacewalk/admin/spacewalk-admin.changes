@@ -1,4 +1,105 @@
 -------------------------------------------------------------------
+Fri Jan 24 13:30:58 CET 2025 - marina.latini@suse.com
+
+- version 5.1.2-0
+  * Remove useless SELinux and Oracle related code
+
+-------------------------------------------------------------------
+Mon Oct 14 15:42:56 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Thu Aug 01 09:42:29 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.8-0
+  * Remove mgr-check-payg service
+
+-------------------------------------------------------------------
+Mon Jun 10 16:55:14 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.7-0
+  * Remove enforcing billing-adapter-service as it is running
+    outside of the container
+  * Move server-only functions out of uyuni.common (bsc#1222325)
+
+-------------------------------------------------------------------
+Fri May 03 14:48:55 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6-0
+  * Use uyuni-build-keys.gpg if suma-build-keys.gpg is missing
+
+-------------------------------------------------------------------
+Thu Apr 04 18:47:06 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.5-0
+  * Use java.hostname for Uyuni roster configuration
+  * uyuni-update-config: trigger synchronization of configuration
+    files if uyuni-configfiles-sync is available
+
+-------------------------------------------------------------------
+Tue Feb 13 17:12:44 CET 2024 - marina.latini@suse.com
+
+- version 5.0.4-1
+  * Import SUSE Manager Build Keys into the RPM keyring
+  * Copy CA certificate to Salt filesystem during startup (bsc#1219577)
+
+-------------------------------------------------------------------
+Mon Jan 29 11:56:24 CET 2024 - rosuna@suse.com
+
+- version 5.0.3-1
+  * Apply Black and Pylint to enforce Python style
+
+-------------------------------------------------------------------
+Thu Jan 18 11:05:39 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.2-1
+  * schema dir moved to /usr/share/susemanager/db
+
+-------------------------------------------------------------------
+Tue Jan 16 08:16:30 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Bump version to 5.0.0
+
+-------------------------------------------------------------------
+Fri Dec 15 17:04:21 CET 2023 - rosuna@suse.com
+
+- version 4.4.8-1
+  * Remove unused makefiles
+
+-------------------------------------------------------------------
+Wed Nov 01 20:52:06 CET 2023 - marina.latini@suse.com
+
+- version 4.4.7-1
+  * Call service ca-certificates as a dependency for database check
+
+-------------------------------------------------------------------
+Mon Sep 18 14:25:35 CEST 2023 - rosuna@suse.com
+
+- version 4.4.6-1
+  * add mgr-check-payg service
+  * remove python2 leftovers
+  * integrate instance-flavor-check to detect if the instance is PAYG
+  * add checks for csp-billing-adapter in case of a PAYG instance
+  * remove unused GPG keyfile
+  * Fix to detect correct Apache group instead of assuming it (gh#7092)
+  * Added missing python3-websockify runtime requirement.
+
+-------------------------------------------------------------------
+Wed Apr 19 12:50:23 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.5-1
+  * change backup file extension from .orig to .current_time (bsc#1206783)
+
+-------------------------------------------------------------------
+Tue Feb 21 12:39:12 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.4-1
+  * Readded httpd variant for Enterprise Linux.
+
+-------------------------------------------------------------------
 Wed Dec 14 14:12:08 CET 2022 - jgonzalez@suse.com
 
 - version 4.4.3-1

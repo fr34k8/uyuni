@@ -1,16 +1,24 @@
-# Copyright (c) 2017-2022 SUSE LLC
+# Copyright (c) 2017-2024 SUSE LLC
 # Licensed under the terms of the MIT license.
 #
 # 1) delete Red Hat-like minion and register as SSH minion
 # 2) run a remote command
 # 3) delete Red Hat-like SSH minion and register as normal minion
+#
+# This feature can cause failures in the following features:
+# - features/secondary/min_rhlike_salt_install_package_and_patch.feature
+# - features/secondary/min_rhlike_salt_install_with_staging.feature
+# - features/secondary/min_rhlike_monitoring.feature
+# If the cleanup bootstrap scenario fails,
+# the minion will not be reachable in those features
 
+@skip_if_github_validation
 @scope_res
 @rhlike_minion
 Feature: Bootstrap a SSH-managed Red Hat-like minion and do some basic operations on it
 
-  Scenario: Log in as admin user
-    Given I am authorized for the "Admin" section
+  Scenario: Log in as org admin user
+    Given I am authorized
 
   Scenario: Delete the Red Hat-like minion before SSH minion tests
     When I am on the Systems overview page of this "rhlike_minion"
@@ -18,6 +26,7 @@ Feature: Bootstrap a SSH-managed Red Hat-like minion and do some basic operation
     Then I should see a "Confirm System Profile Deletion" text
     When I click on "Delete Profile"
     And I wait until I see "has been deleted" text
+    And I wait until Salt client is inactive on "rhlike_minion"
     Then "rhlike_minion" should not be registered
 
   Scenario: Bootstrap a SSH-managed Red Hat-like minion
@@ -28,7 +37,8 @@ Feature: Bootstrap a SSH-managed Red Hat-like minion and do some basic operation
     And I enter "linux" as "password"
     And I select the hostname of "proxy" from "proxies" if present
     And I click on "Bootstrap"
-    And I wait until I see "Successfully bootstrapped host!" text
+    # workaround for bsc#1222108
+    And I wait at most 480 seconds until I see "Bootstrap process initiated." text
     And I follow the left menu "Systems > System List > All"
     And I wait until I see the name of "rhlike_minion", refreshing the page
     And I wait until onboarding is completed for "rhlike_minion"
@@ -52,13 +62,13 @@ Feature: Bootstrap a SSH-managed Red Hat-like minion and do some basic operation
     When I follow "Software" in the content area
     And I follow "Software Channels" in the content area
     And I wait until I do not see "Loading..." text
-    And I check radio button "Fake Base Channel"
+    And I check radio button "Fake-Base-Channel-RH-like"
     And I wait until I do not see "Loading..." text
     And I click on "Next"
     Then I should see a "Confirm Software Channel Change" text
     When I click on "Confirm"
     Then I should see a "Changing the channels has been scheduled." text
-    And I wait until event "Subscribe channels scheduled by admin" is completed
+    And I wait until event "Subscribe channels scheduled" is completed
 
   Scenario: Check events history for failures on SSH-managed Red Hat-like minion
     Given I am on the Systems overview page of this "rhlike_minion"
@@ -98,7 +108,8 @@ Feature: Bootstrap a SSH-managed Red Hat-like minion and do some basic operation
     And I enter "linux" as "password"
     And I select the hostname of "proxy" from "proxies" if present
     And I click on "Bootstrap"
-    And I wait until I see "Successfully bootstrapped host!" text
+    # workaround for bsc#1222108
+    And I wait at most 480 seconds until I see "Bootstrap process initiated." text
     And I follow the left menu "Systems > System List > All"
     And I wait until I see the name of "rhlike_minion", refreshing the page
     And I wait until onboarding is completed for "rhlike_minion"
@@ -108,10 +119,10 @@ Feature: Bootstrap a SSH-managed Red Hat-like minion and do some basic operation
     When I follow "Software" in the content area
     And I follow "Software Channels" in the content area
     And I wait until I do not see "Loading..." text
-    And I check radio button "Fake Base Channel"
+    And I check radio button "Fake-Base-Channel-RH-like"
     And I wait until I do not see "Loading..." text
     And I click on "Next"
     Then I should see a "Confirm Software Channel Change" text
     When I click on "Confirm"
     Then I should see a "Changing the channels has been scheduled." text
-    And I wait until event "Subscribe channels scheduled by admin" is completed
+    And I wait until event "Subscribe channels scheduled" is completed

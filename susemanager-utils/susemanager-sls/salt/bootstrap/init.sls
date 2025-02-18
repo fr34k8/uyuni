@@ -29,7 +29,11 @@ no_ssh_push_key_authorized:
   {% set osrelease_major = grains['osrelease_info'][0] %}
   #exceptions to the family rule
   {%- if "opensuse" in grains['oscodename']|lower %}
-    {% set os_base = 'opensuse' %}
+    {%- if "tumbleweed" in grains['oscodename']|lower %}
+      {% set os_base = 'opensusetumbleweed' %}
+    {%- else %}
+      {% set os_base = 'opensuse' %}
+    {%- endif %}
   {%- endif %}
   {%- if (grains['osrelease_info']| length) < 2 %}
     {% set osrelease_minor = 0 %}
@@ -40,12 +44,15 @@ no_ssh_push_key_authorized:
     {%- if "microos" in grains['oscodename']|lower %}
         {% set os_base = 'opensusemicroos' %}
     {%- else %}
+        {%- if grains['osrelease_info'][0]|int >= 6 %}
+            {% set os_base = 'sl' %}
+        {%- endif %}
         {% set os_base = os_base|string + 'micro' %}
     {%- endif %}
   {%- endif %}
-  #end of expections
-  {%- if os_base == 'opensusemicroos' %}
-      {% set osrelease = 'latest' %}
+  #end of exceptions
+  {%- if os_base == 'opensusemicroos' or os_base == 'opensusetumbleweed' %}
+      {% set osrelease = 'latest/0' %}
   {%- else %}
       {% set osrelease = osrelease_major|string + '/' + osrelease_minor|string %}
   {%- endif %}
@@ -63,6 +70,8 @@ no_ssh_push_key_authorized:
   {%- elif grains['os'] == 'Ubuntu' %}
     {%- set os_base = grains['os']|lower %}
     {% set osrelease = grains['osrelease_info'][0]|string + '/' + grains['osrelease_info'][1]|string %}
+  {%- elif grains['os'] == 'Raspbian' %}
+    {%- set os_base = grains['os']|lower %}
   {%- endif %}
   #end of expections
 {%- endif %}
@@ -90,9 +99,15 @@ no_ssh_push_key_authorized:
   #end of expections
 {%- endif %}
 
+# openEuler Family. This OS is based in RedHat, but declares a separate family
+{%- if grains['os_family'] == 'openEuler' %}
+  {% set os_base = grains['os'] %}
+  {% set osrelease = grains['osrelease'] %}
+{%- endif %}
+
 {% set bootstrap_repo_url = 'https://' ~ salt['pillar.get']('mgr_server') ~ '/pub/repositories/' ~ os_base ~ '/' ~ osrelease ~ '/bootstrap/' %}
 
-{%- if grains['os_family'] == 'RedHat' or  grains['os_family'] == 'Suse'%}
+{%- if grains['os_family'] == 'RedHat' or grains['os_family'] == 'openEuler' or grains['os_family'] == 'Suse'%}
   {% set bootstrap_repo_request = salt['http.query'](bootstrap_repo_url + 'repodata/repomd.xml', status=True, verify_ssl=False) %}
   {%- if 'status' not in bootstrap_repo_request %}
     {{ raise('Missing request status: {}'.format(bootstrap_repo_request)) }}
@@ -120,10 +135,16 @@ bootstrap_repo:
   file.managed:
 {%- if grains['os_family'] == 'Suse' %}
     - name: /etc/zypp/repos.d/susemanager:bootstrap.repo
-{%- elif grains['os_family'] == 'RedHat' %}
+{%- elif grains['os_family'] == 'RedHat' or grains['os_family'] == 'openEuler' %}
     - name: /etc/yum.repos.d/susemanager:bootstrap.repo
 {%- elif grains['os_family'] == 'Debian' %}
+{%- set apt_version = salt['pkg.version']("apt") %}
+{%- set apt_sources_deb822 = apt_version and salt['pkg.version_cmp'](apt_version, "2.7.12") >= 0 %}
+{%- if apt_sources_deb822 %}
+    - name: /etc/apt/sources.list.d/susemanager_bootstrap.sources
+{%- else %}
     - name: /etc/apt/sources.list.d/susemanager_bootstrap.list
+{%- endif %}
 {%- endif %}
     - source:
       - salt://bootstrap/bootstrap.repo
@@ -143,12 +164,20 @@ bootstrap_repo:
 
 {%- set salt_minion_name = 'salt-minion' %}
 {%- set salt_config_dir = '/etc/salt' %}
-{% set venv_available_request = salt['http.query'](bootstrap_repo_url + 'venv-enabled-' + grains['osarch'] + '.txt', status=True, verify_ssl=False) %}
+{# We need also to check the case when venv-salt-call installed but not present in the bootstrap repo #}
+{% set salt_minion_installed = (salt['pkg.info_installed']('venv-salt-minion', attr='version', failhard=False).get('venv-salt-minion', {}).get('version') != None) %}
+check_bootstrap_dbg:
+  cmd.run:
+    - name: echo "{{ salt_minion_installed }}"
+{% set venv_available_request = salt_minion_installed or salt['http.query'](bootstrap_repo_url + 'venv-enabled-' + grains['osarch'] + '.txt', status=True, verify_ssl=False) %}
 {# Prefer venv-salt-minion if available and not disabled #}
-{%- set use_venv_salt = salt['pillar.get']('mgr_force_venv_salt_minion') or (0 < venv_available_request.get('status', 404) < 300) and not salt['pillar.get']('mgr_avoid_venv_salt_minion') %}
-{%- if use_venv_salt %}
+{%- set use_venv_salt = salt['pillar.get']('mgr_force_venv_salt_minion') or ((salt_minion_installed or (0 < venv_available_request.get('status', 404) < 300)) and not salt['pillar.get']('mgr_avoid_venv_salt_minion')) %}
+{%- if use_venv_salt -%}
 {%- set salt_minion_name = 'venv-salt-minion' %}
 {%- set salt_config_dir = '/etc/venv-salt-minion' %}
+{%- else -%}
+{# Reuse salt_minion_installed to check if the salt-minion installed already, it's required for proper handling on transactional systems #}
+{% set salt_minion_installed = (salt['pkg.info_installed']('salt-minion', attr='version', failhard=False).get('salt-minion', {}).get('version') != None) %}
 {%- endif -%}
 
 {%- if not transactional %}
@@ -159,6 +188,7 @@ salt-minion-package:
     - require:
       - file: bootstrap_repo
 {%- else %}
+{%- if not salt['file.directory_exists'](salt_config_dir) %}
 {# hack until transactional_update.run is fixed to use venv-salt-call #}
 {# Writing  to the future - find latest etc overlay which was created for package installation and use that as etc root #}
 {# this only works here in bootstrap when we are not running in transaction #}
@@ -171,15 +201,21 @@ salt-minion-package:
 {# this is working under assumption there will be only one transaction between jinja render and actual package installation #}
 {%- set pending_transaction_id = pending_transaction_id|int + 1 %}
 {%- set salt_config_dir = '/var/lib/overlay/' + pending_transaction_id|string + salt_config_dir %}
+{%- endif %}
 
 salt-minion-package:
   mgrcompat.module_run:
     - name: transactional_update.pkg_install
     - pkg: {{ salt_minion_name }}
     - args: "--no-recommends"
+    - unless:
+      - ([ {{ salt_minion_installed }} = "True" ])
     - require:
       - file: bootstrap_repo
 
+{%- if not use_venv_salt %}
+{# transactional_update executor module is required for classic salt-minion only #}
+{# venv-salt-minion has its own venv executor module which invokes transactional_update if needed #}
 {{ salt_config_dir }}/minion.d/transactional_update.conf:
   file.managed:
     - source:
@@ -188,7 +224,8 @@ salt-minion-package:
     - mode: 644
     - makedirs: True
     - require:
-      - file: {{ salt_config_dir }}/minion.d/susemanager.conf
+      - file: salt-minion-susemanager-config
+{%- endif %}
 {%- endif %}
 
 {# We must install "python3-contextvars" on DEB based distros, running Salt 3004, with Python version < 3.7, like Ubuntu 18.04 #}
@@ -209,11 +246,12 @@ salt-install-contextvars:
     - install_recommends: False
     - require:
       - file: bootstrap_repo
-      - pkg: salt-minion-package
+      - salt-minion-package
 {% endif %}
 
-{{ salt_config_dir }}/minion.d/susemanager.conf:
+salt-minion-susemanager-config:
   file.managed:
+    - name: {{ salt_config_dir }}/minion.d/susemanager.conf
     - source:
       - salt://bootstrap/susemanager.conf
     - template: jinja
@@ -222,34 +260,46 @@ salt-install-contextvars:
     - require:
       - salt-minion-package
 
-{{ salt_config_dir }}/minion_id:
+salt-minion-minion_id-file:
   file.managed:
+    - name: {{ salt_config_dir }}/minion_id
     - contents_pillar: minion_id
     - require:
       - salt-minion-package
 
 {%- if not transactional %}
 {% include 'bootstrap/remove_traditional_stack.sls' %}
+{% else %}
+include:
+  - util.syncstates
 {%- endif %}
 
 # Manage minion key files in case they are provided in the pillar
 {%- if pillar['minion_pub'] is defined and pillar['minion_pem'] is defined %}
-{{ salt_config_dir }}/pki/minion/minion.pub:
+salt-minion-key-pub:
   file.managed:
+    - name: {{ salt_config_dir }}/pki/minion/minion.pub
     - contents_pillar: minion_pub
     - mode: 644
     - makedirs: True
     - require:
       - salt-minion-package
 
-{{ salt_config_dir }}/pki/minion/minion.pem:
+salt-minion-key-pem:
   file.managed:
+    - name: {{ salt_config_dir }}/pki/minion/minion.pem
     - contents_pillar: minion_pem
     - mode: 400
     - makedirs: True
     - require:
       - salt-minion-package
 {%- endif %}
+
+# On bootstapping the minion which was registered to the other master before,
+# the master public key must be removed from the minion to prevent key verification fails.
+salt-minion-master-pub-wipe:
+  file.absent:
+    - name: {{ salt_config_dir }}/pki/minion/minion_master.pub
 
 {%- if not transactional %}
 {{ salt_minion_name }}:
@@ -259,11 +309,11 @@ salt-install-contextvars:
       - salt-minion-package
       - host: mgr_server_localhost_alias_absent
     - watch:
-      - file: {{ salt_config_dir }}/minion_id
-      - file: {{ salt_config_dir }}/minion.d/susemanager.conf
+      - file: salt-minion-minion_id-file
+      - file: salt-minion-susemanager-config
   {%- if pillar['minion_pub'] is defined and pillar['minion_pem'] is defined %}
-      - file: {{ salt_config_dir }}/pki/minion/minion.pem
-      - file: {{ salt_config_dir }}/pki/minion/minion.pub
+      - file: salt-minion-key-pub
+      - file: salt-minion-key-pem
   {%- endif %}
 {%- else %}
 {{ salt_minion_name }}:
@@ -274,17 +324,36 @@ salt-install-contextvars:
     - require:
       - salt-minion-package
       - host: mgr_server_localhost_alias_absent
-      - file: {{ salt_config_dir }}/minion_id
-      - file: {{ salt_config_dir }}/minion.d/susemanager.conf
+      - file: salt-minion-minion_id-file
+      - file: salt-minion-susemanager-config
   {%- if pillar['minion_pub'] is defined and pillar['minion_pem'] is defined %}
-      - file: {{ salt_config_dir }}/pki/minion/minion.pem
-      - file: {{ salt_config_dir }}/pki/minion/minion.pub
+      - file: salt-minion-key-pub
+      - file: salt-minion-key-pem
   {%- endif %}
 
-{# Use transactional reboot support -> server will be rebooted according to maintentance schedule #}
-reboot_transactional_server:
-  mgrcompat.module_run:
-    - name: transactional_update.reboot
+{# Change REBOOT_METHOD to systemd if it is default, otherwise don't change it #}
+
+copy_transactional_conf_file_to_etc:
+  file.copy:
+    - name: /etc/transactional-update.conf
+    - source: /usr/etc/transactional-update.conf
+    - unless:
+      - test -f /etc/transactional-update.conf
+
+transactional_update_set_reboot_method_systemd:
+  file.keyvalue:
+    - name: /etc/transactional-update.conf
+    - key_values:
+        REBOOT_METHOD: 'systemd'
+    - separator: '='
+    - uncomment: '# '
+    - append_if_not_found: True
     - require:
-      - {{ salt_minion_name }}
+      - file: copy_transactional_conf_file_to_etc
+    - unless:
+      - grep -P '^(?=[\s]*+[^#])[^#]*(REBOOT_METHOD=(?!auto))' /etc/transactional-update.conf
+
+disable_reboot_timer_transactional_minions:
+  cmd.run:
+    - name: systemctl disable transactional-update.timer
 {%- endif %}

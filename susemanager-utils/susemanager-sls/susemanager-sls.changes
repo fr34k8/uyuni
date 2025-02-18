@@ -1,7 +1,223 @@
-- Fix mgrnet custom module to be compatible with old Python 2.6 (bsc#1206979) (bsc#1206981)
-- Fix current limitation on Action Chains for SLE Micro
-- Support SLE Micro migration (bsc#1205011)
-- Add data for openSUSE Leap Micro 5.3 and openSUSE MicroOS bootstrapping
+-------------------------------------------------------------------
+Fri Jan 24 13:28:27 CET 2025 - marina.latini@suse.com
+
+- version 5.1.4-0
+  * Implement SUSE Linux Enterprise Server to
+    SUSE Linux Enterprise Server for SAP migration
+  * Remove virtualization features
+
+-------------------------------------------------------------------
+Fri Dec 13 15:01:05 CET 2024 - rosuna@suse.com
+
+- version 5.1.3-0
+  * Prevent warning message for unsigned Debian repositories
+    when using new deb822 format (bsc#1234251)
+
+-------------------------------------------------------------------
+Thu Dec 12 10:08:16 CET 2024 - rosuna@suse.com
+
+- version 5.1.2-0
+  * suma_minion: prevent issues when calling Salt runners (bsc#1228232)
+  * Prevent a crash on "reboot_info" module for Liberty 6, RHEL 6 and
+    clones (bsc#1231404)
+  * Remove Master public key on bootstrapping to prevent possible issues.
+  * Fix rebootifneeded state which misses definition of a variable
+    (bsc#1233426)
+  * Do not set "Trusted" for Debian repositories when the repo
+    should be signed
+  * Improve appstreams context selection (bsc#1231459)
+
+-------------------------------------------------------------------
+Mon Oct 14 16:01:34 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Implement product migration from RHEL and Clones to SUSE Liberty
+    Linux
+  * Bump version to 5.1.0
+
+-------------------------------------------------------------------
+Thu Aug 01 09:30:50 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.10-0
+  * Speed-up mgrutil.remove_ssh_known_host runner (bsc#1223312)
+  * Start using DEB822 format for repository sources beginning with
+    Ubuntu 24.04
+  * Disable transactional-update.timer on SUSE Linux Enterprise
+    Micro at bootstrap
+  * sumautil: properly detect bridge interfaces (bsc#1226461)
+  * Fix typo on directories to cleanup when deleting a system
+    (bsc#1228101)
+  * Granslate GPG URL if URL has server name and client behind
+    proxy (bsc#1223988)
+  * Fix yum-utils package missing on CentOS7 minions (bsc#1227133)
+  * Remove reboot from uptodate state, introduce reboot and
+    rebootifneeded states
+  * Fix package profile update on CentOS 7 when yum-utils is not
+    installed (bsc#1227133)
+
+-------------------------------------------------------------------
+Tue Jun 18 18:11:01 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.9-0
+  * Implement IMDSv2 for AWS instance detection (bsc#1226090)
+
+-------------------------------------------------------------------
+Mon Jun 10 16:40:05 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.8-0
+  * Define bootstrap repo data for SL Micro 6.0
+  * Calculate bootstrap repo path for SL Micro 6.0
+  * Exclude AppStream information from package profile update for
+    Centos 7 and older (bsc1224476)
+  * Explicitly remove old venv-minion environment when updating
+    Python versions
+  * Fix bootstrapping transactional systems if Salt Minion package
+    is already installed.
+  * Avoid sending empty events with reboot_info beacon
+  * Fix parsing passwords with special characters for PostgreSQL
+    exporter
+  * Fix PAYG client detection during Hardware refresh (bsc#1225940)
+  * Fix hairpin problem in SSH push with tunnel preventing
+    bootstrapping (bsc#1226098, bsc#1223970)
+
+-------------------------------------------------------------------
+Fri May 03 14:42:58 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.7-0
+  * Fix SUSE Liberty Linux bootstrapping when Zypper is installed
+    (bsc#1222347)
+  * Recognize .tbz image type (bsc#1216085)
+  * Native support for AppSream repositories
+  * Introduce Salt module for configuring AppStreams
+
+-------------------------------------------------------------------
+Thu Apr 04 18:57:37 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.6-0
+  * Distinguish between different SUSE versions when detecting if a
+    reboot is needed (bsc#1220903, bsc#1221571)
+  * Add custom grain module for CPE
+  * Use java.hostname conf instead of cobbler.host
+  * Replace Uyuni configuration formula with an API call
+  * Fix the case of missing requisites on bootstrap (bsc#1220705)
+  * Avoid issues on reactivating traditional clients as Salt managed
+  * Don't log dnf needs-restarting output in Salt's log (bsc#1220194)
+  * Use execution module call to detect client instance flavor
+    (PAYG/BYOS) in public cloud (bsc#1218805)
+  * Migrate all Salt versions to Salt Bundle
+  * Implement state for confidential compute attestation
+  * Recognize squashfs build results from kiwi (bsc#1216085)
+  * Switch the default release version to 0 and update the source
+    URL
+
+-------------------------------------------------------------------
+Wed Feb 28 16:59:17 CET 2024 - marina.latini@suse.com
+
+- version 5.0.5-0
+  * Remove automatic reboot from transactional systems bootstrap (bsc#1218146)
+
+-------------------------------------------------------------------
+Fri Feb 16 10:11:46 CET 2024 - rosuna@suse.com
+
+- version 5.0.4-1
+  * Fix issue with Salt SSH keys for Salt SSH Minions CVE-2023-32189 (bsc#1170848)
+
+-------------------------------------------------------------------
+Tue Feb 13 17:21:41 CET 2024 - marina.latini@suse.com
+
+- version 5.0.3-1
+  * Fix reboot needed detection for SUSE systems
+  * Change certs/RHN-ORG-TRUSTED-SSL-CERT from symlink into a real file
+    (bsc#1219577)
+  * Improve updatestack update in uptodate state
+  * Add a standalone update-salt state
+  * Add pillar check to skip reboot_if_needed state
+
+-------------------------------------------------------------------
+Mon Jan 29 11:54:33 CET 2024 - rosuna@suse.com
+
+- version 5.0.2-1
+  * Include reboot required indication for non-Suse distros
+
+-------------------------------------------------------------------
+Tue Jan 16 08:28:35 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * improve PAYG instance detection (bsc#1217784)
+  * Remove includesls macro usage as not relevant anymore
+  * Change openeuler.sls to a symlink to redhat.sls
+  * Drop handling of legacy pillar and formula files
+  * Dynamically load an SELinux policy for "Push via SSH tunnel" for SELinux
+    enabled clients. This policy allows communication over a custom SSH port.
+
+-------------------------------------------------------------------
+Fri Dec 15 17:32:36 CET 2023 - rosuna@suse.com
+
+- version 4.4.10-1
+  * Configure reboot method for SUSE Linux Enterprise  Micro when
+    applying bootstrap state (bsc#1213981)
+  * Allow openSUSE Tumbleweed bootstrapping
+  * Move all file managed by RPM from /srv to /usr/share/susemanager
+  * Fix the evaluation of mgr_install_flavor_check salt state for
+    openSUSE
+  * Add Raspberry Pi OS 12 support
+  * Revert hardcoded symbolic link and renamed variable for clarity
+
+-------------------------------------------------------------------
+Wed Nov 01 19:46:00 CET 2023 - marina.latini@suse.com
+
+- version 4.4.9-1
+  * Use HTTP for connections to localhost
+  * Disable dnf_rhui_plugin as it break our susemanagerplugin (bsc#1214601)
+  * Fix susemanagerplugin to not overwrite header fields set by other plugins
+  * Let the dnf plugin log when a token was set
+  * Do not install instance-flavor-check tool on openSUSE
+
+-------------------------------------------------------------------
+Mon Sep 18 14:41:33 CEST 2023 - rosuna@suse.com
+
+- version 4.4.8-1
+  * Integrate instance-flavor-check to detect if the instance is PAYG
+  * do not disable salt-minion on salt-ssh managed clients
+  * Mask uyuni roster module password on logs
+  * Don't install product packages on openSUSE clients
+  * keep original traditional stack tools for RHEL7 RHUI connection
+  * Retry loading of pillars from DB on connection error (bsc#1214186)
+  * Use recurse stratedy to merge formula pillar with existing pillars
+  * Prevent product installation from being executed before executing product migration (bsc#1210475)
+  * Include automatic migration from Salt 3000 to Salt Bundle in highstate
+  * fix duplicate packages in state
+  * Fix enabling bundle build via custom info
+  * Rename internal state 'synccustomall' to 'syncall'
+  * Recurring custom states
+  * Do not include pillar_only formulas in highstate
+  * Allow KiwiNG to be used on SLE12 buildhosts (bsc#1204089)
+  * Add kiwi supported disk images to be collectable (bsc#1208522)
+  * disable salt-minion and remove its config file on cleanup (bsc#1209277)
+
+-------------------------------------------------------------------
+Wed Apr 19 12:56:27 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.7-1
+  * to update everything on a debian system, call dist-upgrade to
+    be able to install and remove packages
+  * Add openEuler 22.03 support
+  * support multiple gpgkey urls for a channel (bsc#1208540)
+  * make SUSE Addon GPG key available on all instance (bsc#1208540)
+  * Improve error handling in mgr_events.py (bsc#1208687)
+
+-------------------------------------------------------------------
+Tue Feb 21 14:10:36 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.6-1
+  * get uptime with package profile update
+  * Fix missing module when bootstraping transactional systems (bsc#1207792)
+  * Install the reboot info beacon using a conf file instead of using pillars
+  * add CPU sockets, threads and total number to standard CPU grains
+  * Fix mgrnet custom module to be compatible with old Python 2.6 (bsc#1206979) (bsc#1206981)
+  * Fix current limitation on Action Chains for SLE Micro
+  * Support SLE Micro migration (bsc#1205011)
+  * Add data for openSUSE Leap Micro 5.3 and openSUSE MicroOS bootstrapping
 
 -------------------------------------------------------------------
 Thu Jan 26 12:27:21 CET 2023 - jgonzalez@suse.com
@@ -22,7 +238,7 @@ Mon Jan 23 08:30:18 CET 2023 - jgonzalez@suse.com
   * filter out libvirt engine events (bsc#1206146)
   * Improve _mgractionchains.conf logs
   * install SUSE Liberty v2 GPG key
-  * Detect bootstrap repository path for SLE Micro
+  * Detect bootstrap repository path for SLE Micro (bsc#1206294)
   * Fix reboot info beacon installation
   * Add state to properly configure the reboot action for transactional systems
   * enforce installation of the PTF GPG key package
@@ -68,7 +284,7 @@ Wed Sep 28 11:14:52 CEST 2022 - jgonzalez@suse.com
   * fix syntax error - remove trailing colon (bsc#1203049)
   * Add mgrnet salt module with mgrnet.dns_fqnd function implementation
     allowing to get all possible FQDNs from DNS (bsc#1199726)
-  * Copy grains file with util.mgr_switch_to_venv_minion state apply
+  * Copy grains file with util.mgr_switch_to_venv_minion state apply (bsc#1203056)
   * Remove the message 'rpm: command not found' on using Salt SSH
     with Debian based systems which has no Salt Bundle
 

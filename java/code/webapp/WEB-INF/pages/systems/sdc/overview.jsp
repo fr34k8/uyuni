@@ -150,6 +150,21 @@
               <td><c:out value="${system.virtualInstance.type.name}"/></td>
             </tr>
             <tr>
+              <td><bean:message key="sdc.details.overview.virtualization.host"/></td>
+              <c:choose>
+                <c:when test="${system.virtualInstance.hostSystem == null}">
+                  <td><bean:message key="sdc.details.overview.unknown"/></td>
+                </c:when>
+                <c:otherwise>
+                  <td>
+                    <a href="/rhn/systems/details/Overview.do?sid=${system.virtualInstance.hostSystem.id}">
+                      <c:out value="${system.virtualInstance.hostSystem.name}"/>
+                    </a>
+                  </td>
+                </c:otherwise>
+              </c:choose>
+            </tr>
+             <tr>
               <td><bean:message key="sdc.details.overview.uuid"/></td>
               <c:choose>
                 <c:when test="${system.virtualInstance.uuid == null}">
@@ -182,6 +197,17 @@
               <c:if test="${not empty kernelLiveVersion}">
                   <br/><bean:message key="sdc.details.overview.kernel_live" arg0="${kernelLiveVersion}"/>
               </c:if>
+            </td>
+          </tr>
+          </rhn:require>
+          <!-- PAYG info -->
+          <rhn:require acl="system_is_payg()">
+          <tr>
+            <td>
+              <bean:message key="sdc.details.overview.payg"/>
+            </td>
+            <td>
+              <rhn:icon type="system-ok" title="sdc.details.overview.payg_msg"/>
             </td>
           </tr>
           </rhn:require>

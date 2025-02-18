@@ -1,6 +1,117 @@
-- Add openSUSE Leap Micro 5.3 and openSUSE MicroOS repositories 
-- Add SLES 15 SP5 client tools repositories to spacewalk-common-channels
-- Add openSUSE Leap 15.5 repositories to spacewalk-common-channels
+-------------------------------------------------------------------
+Fri Jan 24 14:50:24 CET 2025 - marina.latini@suse.com
+
+- version 5.1.3-0
+  * Add Uyuni Client Tools for SL Micro 6.2
+  * Add Uyuni Client Tools for SUSE Linux Enterprise 15 SP7 family
+
+-------------------------------------------------------------------
+Thu Dec 12 09:25:29 CET 2024 - rosuna@suse.com
+
+- version 5.1.2-0
+  * Force login to spacecmd from spacewalk-hostname-rename (bsc#1229848)
+  * Remove unmaintained snapshot and export tools from package
+    `spacewalk-utils-extras`
+  * Add openSUSE Leap Micro 6.0 and 6.1 with Uyuni Client Tools
+  * Add Uyuni Client Tools for SL Micro 6.1
+  * Remove tools from spacewalk-utils-extra and move them to Uyuni
+    contrib repository
+
+-------------------------------------------------------------------
+Mon Oct 14 15:56:01 CEST 2024 - rosuna@suse.com
+
+- version 5.1.1-0
+  * Add repositories for Ubuntu 24.04 LTS
+  * Drop unsupported tool spacewalk-final-archive as it is broken
+    and may disclose sensitive information (bsc#1228945)
+  * Bump version to 5.1.0
+  * Move taskotop tool to spacewalk-utils package
+
+-------------------------------------------------------------------
+Mon Jun 10 17:13:13 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.4-0
+  * Move server-only functions out of uyuni.common (bsc#1222325)
+  * Add SL Micro 6.0 Uyuni Client Tools Channel via
+    spacewalk-common-channels
+
+-------------------------------------------------------------------
+Thu Apr 04 17:59:01 CEST 2024 - marina.latini@suse.com
+
+- version 5.0.3-0
+  * Remove apply_errata script
+  * spacewalk-hostname-rename should always set cobbler.host to localhost (bsc#1219887)
+  * Add openSUSE Leap 15.6 and its client tools
+  * Add Uyuni client tools for SUSE Linux Enterprise 15 SP6
+
+-------------------------------------------------------------------
+Mon Jan 29 11:48:40 CET 2024 - rosuna@suse.com
+
+- version 5.0.2-1
+  * Use HTTP for localhost and HTTPS for other FQDN for spacewalk-common-channels
+
+-------------------------------------------------------------------
+Tue Jan 16 08:12:07 CET 2024 - jgonzalez@suse.com
+
+- version 5.0.1-1
+  * Fix conflicting NAME for SLES and SLES4SAP channels of uyuni tools
+    in spacewalk-common-channels
+
+-------------------------------------------------------------------
+Fri Dec 15 17:24:43 CET 2023 - rosuna@suse.com
+
+- version 4.4.11-1
+  * Amazon Linux 2023 channels
+  * Update the openSUSE Tumbleweed and MicroOS repositories
+  * Add SUSE Linux Enterprise Micro 5.5 to spacewalk-commons-channels
+  * Add Raspberry Pi OS 12 repositories
+
+-------------------------------------------------------------------
+Mon Nov 06 13:37:46 CET 2023 - rosuna@suse.com
+
+- version 4.4.10-1
+  * Fix Debian 12 wrong repo url for Uyuni client tools (stable)
+
+-------------------------------------------------------------------
+Wed Nov 01 20:15:51 CET 2023 - marina.latini@suse.com
+
+- version 4.4.9-1
+  * Add Debian 12 repositories
+  * add openSUSE Leap Micro 5.5 to spacewalk-commons-channels
+
+-------------------------------------------------------------------
+Mon Sep 18 14:36:37 CEST 2023 - rosuna@suse.com
+
+- version 4.4.8-1
+  * Add missing Debian 10 and 11 backports repositories for spacewalk-common-channels
+  * Add openSUSE Leap 15.5 common channels
+  * Drop Python2 compatibility
+  * Add RHEL 7, 8, 9 pool and tools channels
+  * Add openSUSE Leap Micro 5.4 repositories
+  * Add SLE Micro 5.4 Uyuni Client Tools repositories
+  * spacewalk-hostname-rename remains stuck at refreshing pillars (bsc#1207550)
+
+-------------------------------------------------------------------
+Wed Apr 19 12:58:26 CEST 2023 - marina.latini@suse.com
+
+- version 4.4.7-1
+  * change GPG Key URL for openSUSE Leap to local file URL
+  * Avoid conflicting names for openSUSE channels
+  * Add openEuler 22.03 repositories
+
+-------------------------------------------------------------------
+Tue Feb 28 11:54:37 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.6-1
+  * Use json instead of simplejson for spacewalk-clone-by-date 
+
+-------------------------------------------------------------------
+Tue Feb 21 12:31:34 CET 2023 - jgonzalez@suse.com
+
+- version 4.4.5-1
+  * Add openSUSE Leap Micro 5.3 and openSUSE MicroOS repositories 
+  * Add SLES 15 SP5 client tools repositories to spacewalk-common-channels
+  * Add openSUSE Leap 15.5 repositories to spacewalk-common-channels
 
 -------------------------------------------------------------------
 Mon Jan 23 08:24:57 CET 2023 - jgonzalez@suse.com

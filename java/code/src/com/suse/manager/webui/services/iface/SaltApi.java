@@ -24,6 +24,7 @@ import com.suse.manager.webui.services.impl.runner.MgrUtilRunner;
 import com.suse.manager.webui.utils.ElementCallJson;
 import com.suse.manager.webui.utils.gson.BootstrapParameters;
 import com.suse.manager.webui.utils.salt.custom.ScheduleMetadata;
+import com.suse.manager.webui.utils.salt.custom.SumaUtil;
 import com.suse.manager.webui.utils.salt.custom.SystemInfo;
 import com.suse.salt.netapi.calls.LocalAsyncResult;
 import com.suse.salt.netapi.calls.LocalCall;
@@ -42,6 +43,7 @@ import com.suse.salt.netapi.results.SSHResult;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.Serializable;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -53,7 +55,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * Interface for interacting with salt.
  */
-public interface SaltApi {
+public interface SaltApi extends Serializable {
 
     /**
      * Sync the channels of a list of minions
@@ -97,6 +99,15 @@ public interface SaltApi {
     Optional<Boolean> removeFile(Path path);
 
     /**
+     * Create a directory using RunnerCall
+     *
+     * @param path the absolute path of the directory
+     * @param modeString the desired mode
+     * @return Optional with true if the directory was created
+     */
+    Optional<Boolean> mkDir(Path path, String modeString);
+
+    /**
      * Copy given file using RunnerCall
      *
      * @param src the source path of file to be removed
@@ -127,6 +138,13 @@ public interface SaltApi {
     Optional<SystemInfo> getSystemInfoFull(String minion);
 
     /**
+     * Call sumautil.instance_flavor.
+     * @param minionId of the target minion.
+     * @return PublicCloudInstanceFlavor result
+     */
+    SumaUtil.PublicCloudInstanceFlavor getInstanceFlavor(String minionId);
+
+    /**
      * Store the files uploaded by a minion to the SCAP storage directory.
      * @param minion the minion
      * @param uploadDir the uploadDir
@@ -149,9 +167,10 @@ public interface SaltApi {
      * Call the custom mgrutil.ssh_keygen runner if the key files are not present.
      *
      * @param path of the key files
+     * @param pubkeyCopy create a copy of the pubkey at this place. Set NULL when no copy should be created
      * @return the result of the runner call as a map
      */
-    Optional<MgrUtilRunner.SshKeygenResult> generateSSHKey(String path);
+    Optional<MgrUtilRunner.SshKeygenResult> generateSSHKey(String path, String pubkeyCopy);
 
     /**
      * Chain ssh calls over one or more hops to run a command on the last host in the chain.
@@ -203,6 +222,12 @@ public interface SaltApi {
      * @param minionList minion list
      */
     void syncAll(MinionList minionList);
+
+    /**
+     * Call 'saltutil.sync_all' to sync everything to the target minion(s) using salt asynchronous call.
+     * @param minionList minion list
+     */
+    void syncAllAsync(MinionList minionList);
 
     /**
      * call salt test.ping
@@ -487,4 +512,12 @@ public interface SaltApi {
      */
      String checkSSLCert(String rootCA, SSLCertPair serverCertKey, List<String> intermediateCAs)
              throws IllegalArgumentException;
+
+    /**
+     * Call 'mgrutil.select_minions'
+     * @param target return the minions matching the target
+     * @param targetType type of target
+     * @return list of matching minions
+     */
+     List<String> selectMinions(String target, String targetType);
 }

@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2022 SUSE LLC
+# Copyright (c) 2015-2025 SUSE LLC
 # Licensed under the terms of the MIT license.
 
 @scope_salt
@@ -14,7 +14,7 @@ Feature: Install a patch on the client via Salt through the UI
     And I wait until refresh package list on "sle_minion" is finished
     Then spacecmd should show packages "virgo-dummy-1.0" installed on "sle_minion"
 
-  Scenario: Log in as admin user
+  Scenario: Log in as org admin user
     Given I am authorized for the "Admin" section
 
   Scenario: Pre-requisite: ensure the errata cache is computed before patching Salt minion
@@ -32,9 +32,11 @@ Feature: Install a patch on the client via Salt through the UI
 
   Scenario: Install a patch on the minion
     Given I am on the Systems overview page of this "sle_minion"
-    And I follow "Software" in the content area
+    When I follow "Software" in the content area
     And I follow "Patches" in the content area
-    When I check "virgo-dummy-3456" in the list
+    And I enter "virgo" as the filtered synopsis
+    And I click on the filter button
+    And I check "virgo-dummy-3456" in the list
     And I check "allowVendorChange"
     And I click on "Apply Patches"
     And I click on "Confirm"

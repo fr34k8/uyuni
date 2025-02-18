@@ -8,7 +8,7 @@ import { useImmer } from "use-immer";
 import { AsyncButton } from "components/buttons";
 import { TextField } from "components/fields";
 import withPageWrapper from "components/general/with-page-wrapper";
-import { Messages } from "components/messages";
+import { Messages } from "components/messages/messages";
 import { InnerPanel } from "components/panels/InnerPanel";
 import { showErrorToastr } from "components/toastr/toastr";
 
@@ -110,7 +110,7 @@ const PackageStates = ({ serverId }: PropsType) => {
       const newPackageStateId: OptionalValue = packageHelpers.selectValue2PackageState(
         parseInt(event.target.value, 10)
       );
-      const newPackageConstraintId: OptionalValue =
+      const newPackageConstraintId: number =
         newPackageStateId === packageHelpers.INSTALLED ? packageHelpers.LATEST : original.versionConstraintId;
       addChanged(original, newPackageStateId, newPackageConstraintId);
     };
@@ -123,7 +123,7 @@ const PackageStates = ({ serverId }: PropsType) => {
       );
       const key = packageHelpers.packageStateKey(original);
       const currentState: PackagesObject = changed[key];
-      const currentPackageStateId: OptionalValue =
+      const currentPackageStateId: number =
         currentState !== undefined && typeof currentState.value === "object"
           ? currentState.value.packageStateId
           : original.packageStateId;

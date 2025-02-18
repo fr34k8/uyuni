@@ -16,7 +16,7 @@
 package com.redhat.rhn.domain.cloudpayg;
 
 import com.redhat.rhn.domain.BaseDomainHelper;
-import com.redhat.rhn.domain.credentials.Credentials;
+import com.redhat.rhn.domain.credentials.CloudCredentials;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -33,32 +33,27 @@ import javax.persistence.Id;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name = "susePaygSshData")
 public class PaygSshData extends BaseDomainHelper {
     private Long id;
-
     private String description;
-
     private String host;
     private Integer port;
     private String username;
     private String password;
     private String key;
     private String keyPassword;
-
     private String bastionHost;
     private Integer bastionPort;
     private String bastionUsername;
     private String bastionPassword;
     private String bastionKey;
     private String bastionKeyPassword;
-
     private Status status;
     private String errorMessage;
-
-    private Credentials credentials;
     private CloudRmtHost rmtHosts;
 
     /**
@@ -139,7 +134,7 @@ public class PaygSshData extends BaseDomainHelper {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "susePaygSshData_seq")
     @SequenceGenerator(name = "susePaygSshData_seq", sequenceName = "susePaygSshData_id_seq",
-            allocationSize = 1)
+        allocationSize = 1)
     public Long getId() {
         return id;
     }
@@ -288,13 +283,9 @@ public class PaygSshData extends BaseDomainHelper {
         this.errorMessage = errorMessageIn;
     }
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "paygSshData")
-    public Credentials getCredentials() {
-        return credentials;
-    }
-
-    public void setCredentials(Credentials credentialsIn) {
-        this.credentials = credentialsIn;
+    @Transient
+    public CloudCredentials getCredentials() {
+        return PaygSshDataFactory.lookupCloudCredentials(this).orElse(null);
     }
 
     @OneToOne(fetch = FetchType.LAZY, mappedBy = "paygSshData", cascade = CascadeType.ALL)
@@ -304,6 +295,27 @@ public class PaygSshData extends BaseDomainHelper {
 
     public void setRmtHosts(CloudRmtHost rmtHostsIn) {
         this.rmtHosts = rmtHostsIn;
+    }
+
+    /**
+     * Identifies a connection for SUSE Manager PAYG
+     * @return true if this SSH data refers to a SUSE Manager PAYG connection.
+     */
+    @Transient
+    public boolean isSUSEManagerPayg() {
+        return "localhost".equals(host);
+    }
+
+    @Override
+    public String toString() {
+        return "PaygSshData{" +
+                "id=" + id +
+                ", description='" + description + '\'' +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                ", username='" + username + '\'' +
+                ", status=" + status +
+                '}';
     }
 
     @Override
@@ -319,39 +331,39 @@ public class PaygSshData extends BaseDomainHelper {
         PaygSshData that = (PaygSshData) o;
 
         return new EqualsBuilder().append(host, that.host)
-                .append(port, that.port)
-                .append(username, that.username)
-                .append(password, that.password)
-                .append(key, that.key)
-                .append(keyPassword, that.keyPassword)
-                .append(bastionHost, that.bastionHost)
-                .append(bastionPort, that.bastionPort)
-                .append(bastionUsername, that.bastionUsername)
-                .append(bastionPassword, that.bastionPassword)
-                .append(bastionKey, that.bastionKey)
-                .append(bastionKeyPassword, that.bastionKeyPassword)
-                .append(status, that.status)
-                .append(errorMessage, that.errorMessage)
-                .isEquals();
+            .append(port, that.port)
+            .append(username, that.username)
+            .append(password, that.password)
+            .append(key, that.key)
+            .append(keyPassword, that.keyPassword)
+            .append(bastionHost, that.bastionHost)
+            .append(bastionPort, that.bastionPort)
+            .append(bastionUsername, that.bastionUsername)
+            .append(bastionPassword, that.bastionPassword)
+            .append(bastionKey, that.bastionKey)
+            .append(bastionKeyPassword, that.bastionKeyPassword)
+            .append(status, that.status)
+            .append(errorMessage, that.errorMessage)
+            .isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
-                .append(host)
-                .append(port)
-                .append(username)
-                .append(password)
-                .append(key)
-                .append(keyPassword)
-                .append(bastionHost)
-                .append(bastionPort)
-                .append(bastionUsername)
-                .append(bastionPassword)
-                .append(bastionKey)
-                .append(bastionKeyPassword)
-                .append(status)
-                .append(errorMessage)
-                .toHashCode();
+            .append(host)
+            .append(port)
+            .append(username)
+            .append(password)
+            .append(key)
+            .append(keyPassword)
+            .append(bastionHost)
+            .append(bastionPort)
+            .append(bastionUsername)
+            .append(bastionPassword)
+            .append(bastionKey)
+            .append(bastionKeyPassword)
+            .append(status)
+            .append(errorMessage)
+            .toHashCode();
     }
 }

@@ -1,16 +1,16 @@
-# Copyright (c) 2017 SUSE LLC
+# Copyright (c) 2017-2024 SUSE LLC
 # License under the terms of the MIT License.
 
 @scope_configuration_channels
 Feature: Clone a channel
 
-  Scenario: Log in as admin user
-    Given I am authorized for the "Admin" section
+  Scenario: Log in as org admin user
+    Given I am authorized
 
   Scenario: Clone a channel without patches
     When I follow the left menu "Software > Manage > Channels"
     And I follow "Clone Channel"
-    And I select "Fake-RPM-SLES-Channel" as the origin channel
+    And I select "Fake-RPM-SUSE-Channel" as the origin channel
     And I choose "original"
     And I click on "Clone Channel"
     And I enter "Fake-Clone-RPM-SLES15SP4-Channel" as "Channel Name"
@@ -29,7 +29,7 @@ Feature: Clone a channel
   Scenario: Clone a channel with patches
     When I follow the left menu "Software > Manage > Channels"
     And I follow "Clone Channel"
-    And I select "Fake-RPM-SLES-Channel" as the origin channel
+    And I select "Fake-RPM-SUSE-Channel" as the origin channel
     And I choose "current"
     And I click on "Clone Channel"
     And I enter "Fake-Clone-2-RPM-SLES15SP4-Channel" as "Channel Name"
@@ -51,7 +51,7 @@ Feature: Clone a channel
   Scenario: Clone a channel with selected patches
     When I follow the left menu "Software > Manage > Channels"
     And I follow "Clone Channel"
-    And I select "Fake-RPM-SLES-Channel" as the origin channel
+    And I select "Fake-RPM-SUSE-Channel" as the origin channel
     And I choose "select"
     And I click on "Clone Channel"
     And I enter "Fake-Clone-3-RPM-SLES15SP4-Channel" as "Channel Name"
@@ -59,8 +59,8 @@ Feature: Clone a channel
     And I should see a "Select patches" text
     And I click on "Clone Channel"
     And I should see a "Fake-Clone-3-RPM-SLES15SP4-Channel" text
-    And I should see a "Channel Fake-Clone-3-RPM-SLES15SP4-Channel cloned from channel Fake-RPM-SLES-Channel." text
-    And I should see a "You may now wish to clone the patches associated with Fake-RPM-SLES-Channel." text
+    And I should see a "Channel Fake-Clone-3-RPM-SLES15SP4-Channel cloned from channel Fake-RPM-SUSE-Channel." text
+    And I should see a "You may now wish to clone the patches associated with Fake-RPM-SUSE-Channel." text
     And I check the row with the "hoag-dummy-7890" link
     And I check the row with the "virgo-dummy-3456" link
     And I click on "Clone Patches"
@@ -70,6 +70,8 @@ Feature: Clone a channel
 
   Scenario: Check that new patches exists
     When I follow the left menu "Patches > Patch List > All"
+    And I enter "dummy" as the filtered synopsis
+    And I click on the filter button
     And I select "500" from "1154021400_PAGE_SIZE_LABEL"
     Then I should see a "CL-hoag-dummy-7890" link
     And I should see a "CL-virgo-dummy-3456" link
@@ -78,6 +80,8 @@ Feature: Clone a channel
 
   Scenario: Check CL-hoag-dummy-7890 patches
     When I follow the left menu "Patches > Patch List > All"
+    And I enter "dummy" as the filtered synopsis
+    And I click on the filter button
     And I select "500" from "1154021400_PAGE_SIZE_LABEL"
     And I follow "CL-hoag-dummy-7890"
     Then I should see a "CL-hoag-dummy-7890 - Security Advisory" text
@@ -86,6 +90,8 @@ Feature: Clone a channel
 
   Scenario: Check CM-virgo-dummy-3456 patches
     When I follow the left menu "Patches > Patch List > All"
+    And I enter "dummy" as the filtered synopsis
+    And I click on the filter button
     And I select "500" from "1154021400_PAGE_SIZE_LABEL"
     And I follow "CL-virgo-dummy-3456"
     Then I should see a "CL-virgo-dummy-3456 - Bug Fix Advisory" text

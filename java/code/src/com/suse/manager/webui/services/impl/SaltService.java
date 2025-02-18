@@ -18,6 +18,7 @@ import com.redhat.rhn.common.RhnRuntimeException;
 import com.redhat.rhn.common.client.ClientCertificate;
 import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.messaging.JavaMailException;
+import com.redhat.rhn.common.util.http.HttpClientAdapter;
 import com.redhat.rhn.domain.server.MinionServer;
 import com.redhat.rhn.domain.server.MinionServerFactory;
 import com.redhat.rhn.domain.server.ServerFactory;
@@ -43,6 +44,7 @@ import com.suse.manager.webui.utils.gson.BootstrapParameters;
 import com.suse.manager.webui.utils.salt.custom.MgrActionChains;
 import com.suse.manager.webui.utils.salt.custom.PkgProfileUpdateSlsResult;
 import com.suse.manager.webui.utils.salt.custom.ScheduleMetadata;
+import com.suse.manager.webui.utils.salt.custom.SumaUtil.PublicCloudInstanceFlavor;
 import com.suse.manager.webui.utils.salt.custom.SystemInfo;
 import com.suse.salt.netapi.AuthModule;
 import com.suse.salt.netapi.calls.AbstractCall;
@@ -188,9 +190,9 @@ public class SaltService implements SystemQuery, SaltApi {
      */
     public SaltService() {
         RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectTimeout(0)
-                .setSocketTimeout(0)
-                .setConnectionRequestTimeout(0)
+                .setConnectTimeout(HttpClientAdapter.getHTTPConnectionTimeout(5))
+                .setSocketTimeout(HttpClientAdapter.getSaltApiHTTPSocketTimeout(12 * 60 * 60))
+                .setConnectionRequestTimeout(5 * 60 * 1000)
                 .setCookieSpec(CookieSpecs.STANDARD)
                 .build();
         HttpAsyncClientBuilder httpClientBuilder = HttpAsyncClients.custom();
@@ -503,8 +505,8 @@ public class SaltService implements SystemQuery, SaltApi {
     @Override
     public Optional<String> getMachineId(String minionId) {
         return getGrain(minionId, "machine_id").flatMap(grain -> {
-          if (grain instanceof String) {
-              return Optional.of((String) grain);
+          if (grain instanceof String strGrain) {
+              return Optional.of(strGrain);
           }
           else {
               LOG.warn("Minion {} returned non string: {} as minion_id", minionId, grain);
@@ -552,6 +554,7 @@ public class SaltService implements SystemQuery, SaltApi {
         eventStream = null;
     }
 
+    @SuppressWarnings("java:S2276") // sleep fits in this solution as no locks are held
     private synchronized EventStream createOrGetEventStream() {
 
         int retries = 0;
@@ -584,8 +587,8 @@ public class SaltService implements SystemQuery, SaltApi {
             }
             catch (SaltException e) {
                 try {
-                    LOG.error("Unable to connect: {}, retrying in " + DELAY_TIME_SECONDS + " seconds.", e);
-                    Thread.sleep(1000 * DELAY_TIME_SECONDS);
+                    LOG.error("Unable to connect: {}, retrying in {} seconds.", e, DELAY_TIME_SECONDS);
+                    Thread.sleep(1000L * DELAY_TIME_SECONDS);
                     if (retries == 1) {
                         MailHelper.withSmtp().sendAdminEmail("Cannot connect to salt event bus",
                                 "salt-api daemon is not responding. Check the status of " +
@@ -594,10 +597,11 @@ public class SaltService implements SystemQuery, SaltApi {
                     }
                 }
                 catch (JavaMailException javaMailException) {
-                    LOG.error("Error sending email: {}", javaMailException.getMessage());
+                    LOG.error("Error sending email: {}", javaMailException.getMessage(), javaMailException);
                 }
                 catch (InterruptedException e1) {
                     LOG.error("Interrupted during sleep", e1);
+                    Thread.currentThread().interrupt();
                 }
             }
         }
@@ -760,7 +764,7 @@ public class SaltService implements SystemQuery, SaltApi {
             return result.entrySet().stream()
                     .filter(e -> e.getValue().result().isPresent() && Boolean.TRUE.equals(e.getValue().result().get()))
                     .map(Entry::getKey)
-                    .collect(Collectors.toList());
+                    .toList();
         }
         catch (SaltException e) {
             throw new RhnRuntimeException(e);
@@ -861,6 +865,21 @@ public class SaltService implements SystemQuery, SaltApi {
              LocalCall<Map<String, Object>> call = SaltUtil.syncAll(Optional.empty(),
                     Optional.empty());
             callSync(call, minionList);
+        }
+        catch (SaltException e) {
+            throw new RhnRuntimeException(e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void syncAllAsync(MinionList minionList) {
+        try {
+            LocalCall<Map<String, Object>> call = SaltUtil.syncAll(Optional.empty(),
+                    Optional.empty());
+            callAsync(call, minionList);
         }
         catch (SaltException e) {
             throw new RhnRuntimeException(e);
@@ -1001,7 +1020,7 @@ public class SaltService implements SystemQuery, SaltApi {
      */
     @Override
     public void deployChannels(List<String> minionIds) throws SaltException {
-        callSync(
+        callAsync(
                 com.suse.salt.netapi.calls.modules.State.apply(ApplyStatesEventMessage.CHANNELS),
                 new MinionList(minionIds));
     }
@@ -1034,8 +1053,8 @@ public class SaltService implements SystemQuery, SaltApi {
         }
         catch (CompletionException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof SaltException) {
-                throw (SaltException) cause;
+            if (cause instanceof SaltException ex) {
+                throw ex;
             }
             else {
                 throw new SaltException(cause);
@@ -1063,7 +1082,7 @@ public class SaltService implements SystemQuery, SaltApi {
             }
         }
         catch (RuntimeException e) {
-            LOG.error(e);
+            LOG.error(e.getMessage(), e);
         }
         return uptime;
     }
@@ -1090,8 +1109,29 @@ public class SaltService implements SystemQuery, SaltApi {
     public Optional<SystemInfo> getSystemInfoFull(String minionId) {
         return rawJsonCall(State.apply(Collections.singletonList(ApplyStatesEventMessage.SYSTEM_INFO_FULL),
                Optional.empty()), minionId)
-               .flatMap(result -> result.result())
+               .flatMap(Result::result)
                .map(result -> Json.GSON.fromJson(result, SystemInfo.class));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PublicCloudInstanceFlavor getInstanceFlavor(String minionId) {
+        LocalCall<String> call = new LocalCall<>("sumautil.instance_flavor",
+                                                 Optional.empty(),
+                                                 Optional.empty(),
+                                                 new TypeToken<>() {  });
+        return callSync(call, minionId)
+            .map(res -> {
+                    try {
+                        return PublicCloudInstanceFlavor.valueOf(res.toUpperCase());
+                    }
+                    catch (IllegalArgumentException e) {
+                        return PublicCloudInstanceFlavor.UNKNOWN;
+                    }
+                })
+            .orElse(PublicCloudInstanceFlavor.UNKNOWN);
     }
 
     /**
@@ -1273,8 +1313,8 @@ public class SaltService implements SystemQuery, SaltApi {
      * {@inheritDoc}
      */
     @Override
-    public Optional<MgrUtilRunner.SshKeygenResult> generateSSHKey(String path) {
-        RunnerCall<MgrUtilRunner.SshKeygenResult> call = MgrUtilRunner.generateSSHKey(path);
+    public Optional<MgrUtilRunner.SshKeygenResult> generateSSHKey(String path, String pubkeyCopy) {
+        RunnerCall<MgrUtilRunner.SshKeygenResult> call = MgrUtilRunner.generateSSHKey(path, pubkeyCopy);
         return callSync(call);
     }
 
@@ -1422,6 +1462,16 @@ public class SaltService implements SystemQuery, SaltApi {
      * {@inheritDoc}
      */
     @Override
+    public Optional<Boolean> mkDir(Path path, String modeString) {
+        ensureAbsolutePath(path);
+        String absolutePath = path.toAbsolutePath().toString();
+        RunnerCall<Boolean> mkdir = MgrRunner.mkDir(absolutePath, modeString);
+        return callSync(mkdir);
+    }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Optional<Boolean> copyFile(Path src, Path dst) {
         ensureAbsolutePath(src);
         ensureAbsolutePath(dst);
@@ -1485,5 +1535,12 @@ public class SaltService implements SystemQuery, SaltApi {
             throw new IllegalArgumentException(error);
         }
         return result.get("cert");
+    }
+
+    @Override
+    public List<String> selectMinions(String target, String targetType)
+            throws IllegalStateException {
+        RunnerCall<List<String>> call = MgrUtilRunner.selectMinions(target, targetType);
+        return callSync(call).orElseThrow(() -> new IllegalStateException("Can't get minion list"));
     }
 }

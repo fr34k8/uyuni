@@ -22,8 +22,12 @@ import static com.suse.manager.webui.utils.SparkApplicationHelper.withUserAndSer
 import static com.suse.manager.webui.utils.SparkApplicationHelper.withUserPreferences;
 import static spark.Spark.get;
 
+import com.redhat.rhn.common.conf.Config;
+import com.redhat.rhn.common.conf.ConfigDefaults;
 import com.redhat.rhn.common.db.datasource.DataResult;
+import com.redhat.rhn.common.security.PermissionException;
 import com.redhat.rhn.domain.org.OrgFactory;
+import com.redhat.rhn.domain.role.RoleFactory;
 import com.redhat.rhn.domain.server.MinionServer;
 import com.redhat.rhn.domain.server.MinionServerFactory;
 import com.redhat.rhn.domain.server.Server;
@@ -39,6 +43,7 @@ import com.redhat.rhn.manager.ssm.SsmManager;
 import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.manager.token.ActivationKeyManager;
 
+import com.suse.manager.model.attestation.CoCoEnvironmentType;
 import com.suse.manager.utils.MinionServerUtils;
 import com.suse.manager.webui.utils.ViewHelper;
 import com.suse.manager.webui.utils.gson.SimpleMinionJson;
@@ -47,10 +52,12 @@ import com.suse.utils.Json;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import spark.ModelAndView;
 import spark.Request;
@@ -74,6 +81,7 @@ public class MinionController {
         initStatesRoutes(jade);
         initSSMRoutes(jade);
         initPTFRoutes(jade);
+        initCoCoRoutes(jade);
     }
 
     private static void initSystemRoutes(JadeTemplateEngine jade) {
@@ -100,8 +108,8 @@ public class MinionController {
         get("/manager/systems/details/highstate",
                 withCsrfToken(withDocsLocale(withUserAndServer(MinionController::highstate))),
                 jade);
-        get("/manager/systems/details/recurring-states",
-                withCsrfToken(withDocsLocale(withUserAndServer(MinionController::recurringStates))),
+        get("/manager/systems/details/recurring-actions",
+                withCsrfToken(withDocsLocale(withUserAndServer(MinionController::recurringActions))),
                 jade);
         get("/manager/systems/details/proxy",
                 withCsrfToken(withDocsLocale(withUserAndServer(MinionController::proxy))),
@@ -109,22 +117,22 @@ public class MinionController {
         get("/manager/multiorg/details/custom",
                 withCsrfToken(MinionController::orgCustomStates),
                 jade);
-        get("/manager/multiorg/details/recurring-states",
-                withCsrfToken(withUser(MinionController::orgRecurringStates)),
+        get("/manager/multiorg/recurring-actions",
+                withCsrfToken(withUser(MinionController::orgRecurringActions)),
                 jade);
         get("/manager/yourorg/custom",
                 withCsrfToken(withDocsLocale(withUser(MinionController::yourOrgConfigChannels))),
                 jade);
-        get("/manager/yourorg/recurring-states",
-                withCsrfToken(withDocsLocale(withUser(MinionController::yourOrgRecurringStates))),
+        get("/manager/yourorg/recurring-actions",
+                withCsrfToken(withDocsLocale(withUser(MinionController::yourOrgRecurringActions))),
                 jade);
         get("/manager/groups/details/custom",
                 withCsrfToken(withUser(MinionController::serverGroupConfigChannels)),
                 jade);
         get("/manager/groups/details/highstate",
                 withCsrfToken(withUser(MinionController::serverGroupHighstate)), jade);
-        get("/manager/groups/details/recurring-states",
-                withCsrfToken(withUser(MinionController::serverGroupRecurringStates)),
+        get("/manager/groups/details/recurring-actions",
+                withCsrfToken(withUser(MinionController::serverGroupRecurringActions)),
                 jade);
     }
 
@@ -133,6 +141,10 @@ public class MinionController {
                 withCsrfToken(withDocsLocale(withUser(MinionController::ssmHighstate))), jade);
         get("/manager/systems/ssm/proxy",
                 withCsrfToken(withDocsLocale(withUser(MinionController::ssmProxy))), jade);
+        get("/manager/systems/ssm/coco/settings",
+                withCsrfToken(withDocsLocale(withUser(MinionController::ssmCoCoSettings))), jade);
+        get("/manager/systems/ssm/coco/schedule",
+            withCsrfToken(withDocsLocale(withUser(MinionController::ssmCoCoSchedule))), jade);
     }
 
     private static void initPTFRoutes(JadeTemplateEngine jade) {
@@ -142,6 +154,13 @@ public class MinionController {
             withCsrfToken(withDocsLocale(withUserAndServer(MinionController::ptfListRemove))), jade);
         get("/manager/systems/details/ptf/install",
             withCsrfToken(withDocsLocale(withUserAndServer(MinionController::ptfInstall))), jade);
+    }
+
+    private static void initCoCoRoutes(JadeTemplateEngine jade) {
+        get("/manager/systems/details/coco/settings",
+            withCsrfToken(withDocsLocale(withUserAndServer(MinionController::cocoSettings))), jade);
+        get("/manager/systems/details/coco/list",
+            withCsrfToken(withDocsLocale(withUserAndServer(MinionController::cocoListScans))), jade);
     }
 
     /**
@@ -165,6 +184,9 @@ public class MinionController {
      * @return the ModelAndView object to render the page
      */
     public static ModelAndView cmd(Request request, Response response) {
+        if (Config.get().getBoolean(ConfigDefaults.WEB_DISABLE_REMOTE_COMMANDS_FROM_UI)) {
+            throw new PermissionException("Remote command is disabled");
+        }
         request.session().removeAttribute(MinionsAPI.SALT_CMD_RUN_TARGETS);
         return new ModelAndView(new HashMap<>(), "templates/minion/cmd.jade");
     }
@@ -198,14 +220,14 @@ public class MinionController {
     }
 
     /**
-     * Handler for the org recurring-states page.
+     * Handler for the org recurring-actions page.
      *
      * @param request the request object
      * @param response the response object
      * @param user the current user
      * @return the ModelAndView object to render the page
      */
-    public static ModelAndView orgRecurringStates(Request request, Response response, User user) {
+    public static ModelAndView orgRecurringActions(Request request, Response response, User user) {
         DataResult<ShortSystemInfo> dr = SystemManager.systemListShort(user, null);
         dr.elaborate();
         Set<Long> systems = Arrays.stream(dr.toArray())
@@ -214,7 +236,7 @@ public class MinionController {
         List<Server> servers = ServerFactory.lookupByIdsAndOrg(systems, user.getOrg());
         List<SimpleMinionJson> minions = MinionServerUtils.filterSaltMinions(servers)
                 .map(SimpleMinionJson::fromMinionServer)
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, Object> data = new HashMap<>();
         String orgId = request.queryParams("oid");
@@ -222,9 +244,10 @@ public class MinionController {
         data.put("orgId", orgId);
         data.put("orgName", OrgFactory.lookupById(Long.valueOf(orgId)).getName());
         data.put("entityType", "ORG");
+        data.put("is_org_admin", user.hasRole(RoleFactory.ORG_ADMIN));
         data.put("tabs",
                 ViewHelper.getInstance().renderNavigationMenu(request, "/WEB-INF/nav/org_tabs.xml"));
-        return new ModelAndView(data, "templates/org/recurring-states.jade");
+        return new ModelAndView(data, "templates/org/recurring-actions.jade");
     }
 
     /**
@@ -245,14 +268,14 @@ public class MinionController {
     }
 
     /**
-     * Handler for the org recurring-states page.
+     * Handler for the org recurring-actions page.
      *
      * @param request the request object
      * @param response the response object
      * @param user the current user
      * @return the ModelAndView object to render the page
      */
-    public static ModelAndView yourOrgRecurringStates(Request request, Response response,
+    public static ModelAndView yourOrgRecurringActions(Request request, Response response,
                                                      User user) {
         DataResult<ShortSystemInfo> dr = SystemManager.systemListShort(user, null);
         dr.elaborate();
@@ -262,14 +285,15 @@ public class MinionController {
         List<Server> servers = ServerFactory.lookupByIdsAndOrg(systems, user.getOrg());
         List<SimpleMinionJson> minions = MinionServerUtils.filterSaltMinions(servers)
                 .map(SimpleMinionJson::fromMinionServer)
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, Object> data = new HashMap<>();
         data.put("minions", Json.GSON.toJson(minions));
         data.put("orgId", user.getOrg().getId());
         data.put("orgName", user.getOrg().getName());
+        data.put("is_org_admin", user.hasRole(RoleFactory.ORG_ADMIN));
         data.put("entityType", "ORG");
-        return new ModelAndView(data, "templates/yourorg/recurring-states.jade");
+        return new ModelAndView(data, "templates/yourorg/recurring-actions.jade");
     }
 
     /**
@@ -309,14 +333,14 @@ public class MinionController {
     }
 
     /**
-     * Handler for the server group recurring-states page.
+     * Handler for the server group recurring-actions page.
      *
      * @param request the request object
      * @param response the response object
      * @param user the current user
      * @return the ModelAndView object to render the page
      */
-    public static ModelAndView serverGroupRecurringStates(Request request, Response response,
+    public static ModelAndView serverGroupRecurringActions(Request request, Response response,
                                                     User user) {
         String grpId = request.queryParams("sgid");
 
@@ -326,7 +350,7 @@ public class MinionController {
         List<Server> groupServers = ServerGroupFactory.listServers(group);
         List<SimpleMinionJson> minions = MinionServerUtils.filterSaltMinions(groupServers)
                 .map(SimpleMinionJson::fromMinionServer)
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, Object> data = new HashMap<>();
         data.put("groupId", grpId);
@@ -336,7 +360,8 @@ public class MinionController {
         data.put("entityType", "GROUP");
         data.put("tabs",
                 ViewHelper.getInstance().renderNavigationMenu(request, "/WEB-INF/nav/system_group_detail.xml"));
-        return new ModelAndView(data, "templates/groups/recurring-states.jade");
+        data.put("is_org_admin", user.hasRole(RoleFactory.ORG_ADMIN));
+        return new ModelAndView(data, "templates/groups/recurring-actions.jade");
     }
 
     /**
@@ -355,7 +380,7 @@ public class MinionController {
                 ServerGroupFactory.lookupByIdAndOrg(Long.parseLong(grpId), user.getOrg());
 
         List<SimpleMinionJson> minions = ServerGroupFactory.listMinionIdsForServerGroup(group).stream()
-                .map(m -> new SimpleMinionJson(m.getServerId(), m.getMinionId())).collect(Collectors.toList());
+                .map(m -> new SimpleMinionJson(m.getServerId(), m.getMinionId())).toList();
 
         Map<String, Object> data = new HashMap<>();
         data.put("groupId", grpId);
@@ -380,7 +405,7 @@ public class MinionController {
     public static ModelAndView ssmHighstate(Request request, Response response, User user) {
         List<SimpleMinionJson> minions =
                 MinionServerFactory.findMinionIdsByServerIds(SsmManager.listServerIds(user)).stream()
-                        .map(m -> new SimpleMinionJson(m.getServerId(), m.getMinionId())).collect(Collectors.toList());
+                        .map(m -> new SimpleMinionJson(m.getServerId(), m.getMinionId())).toList();
 
         Map<String, Object> data = new HashMap<>();
         data.put("minions", Json.GSON.toJson(minions));
@@ -404,7 +429,7 @@ public class MinionController {
     }
 
     /**
-     * Handler for the recurring-states page.
+     * Handler for the recurring-actions page.
      *
      * @param request the request object
      * @param response the response object
@@ -412,10 +437,11 @@ public class MinionController {
      * @param server the server
      * @return the ModelAndView object to render the page
      */
-    public static ModelAndView recurringStates(Request request, Response response, User user, Server server) {
+    public static ModelAndView recurringActions(Request request, Response response, User user, Server server) {
         Map<String, Object> data = new HashMap<>();
         data.put("entityType", "MINION");
-        return new ModelAndView(data, "templates/minion/recurring-states.jade");
+        data.put("is_org_admin", user.hasRole(RoleFactory.ORG_ADMIN));
+        return new ModelAndView(data, "templates/minion/recurring-actions.jade");
     }
 
     /**
@@ -460,10 +486,10 @@ public class MinionController {
                     List<String> path = proxy.getServerPaths().stream()
                             .sorted(Comparator.comparingLong(ServerPath::getPosition))
                             .map(ServerPath::getHostname)
-                            .collect(Collectors.toList());
+                            .toList();
                     entry.put("path", path);
                     return entry; })
-                .collect(Collectors.toList());
+                .toList();
         model.put("proxies", Json.GSON.toJson(proxies));
     }
 
@@ -480,7 +506,7 @@ public class MinionController {
         ActivationKeyManager akm = ActivationKeyManager.getInstance();
         List<String> visibleBootstrapKeys = akm.findAllActive(user).stream()
                 .map(ActivationKey::getKey)
-                .collect(Collectors.toList());
+                .toList();
         data.put("availableActivationKeys", Json.GSON.toJson(visibleBootstrapKeys));
         addProxies(user, data);
         return new ModelAndView(data, "templates/minion/bootstrap.jade");
@@ -523,7 +549,7 @@ public class MinionController {
         List<SimpleMinionJson> minions =
                 MinionServerFactory.lookupByIds(SsmManager.listServerIds(user))
                         .filter(m -> !m.isProxy())
-                        .map(m -> new SimpleMinionJson(m.getId(), m.getMinionId())).collect(Collectors.toList());
+                        .map(m -> new SimpleMinionJson(m.getId(), m.getMinionId())).toList();
         if (minions.size() == SsmManager.listServerIds(user).size()) {
             data.put("minions", Json.GSON.toJson(minions));
         }
@@ -576,4 +602,97 @@ public class MinionController {
         return new ModelAndView(data, "templates/minion/ptf-install.jade");
     }
 
+    /**
+     * Handler for the page to list confidential computing settings.
+     *
+     * @param request the request object
+     * @param response the response object
+     * @param user the current user
+     * @param server the server
+     * @return the ModelAndView object to render the page
+     */
+    public static ModelAndView cocoSettings(Request request, Response response, User user, Server server) {
+        Map<String, Object> data = new HashMap<>();
+        addActionChains(user, data);
+        addCoCoMetadata(data);
+        return new ModelAndView(data, "templates/minion/coco-settings.jade");
+    }
+
+    /**
+     * Handler for the page to list confidential computing attestation scans.
+     *
+     * @param request the request object
+     * @param response the response object
+     * @param user the current user
+     * @param server the server
+     * @return the ModelAndView object to render the page
+     */
+    public static ModelAndView cocoListScans(Request request, Response response, User user, Server server) {
+        Map<String, Object> data = new HashMap<>();
+        addActionChains(user, data);
+        return new ModelAndView(data, "templates/minion/coco-scans-list.jade");
+    }
+
+    private static void addCoCoMetadata(Map<String, Object> data) {
+        // Confidential computing environment types. Using linked hash map to keep the enum order
+        Map<String, String> environmentMap = new LinkedHashMap<>();
+        Stream.of(CoCoEnvironmentType.values())
+            .forEach(e -> environmentMap.put(e.name(), e.getDescription()));
+
+        data.put("availableEnvironmentTypes", Json.GSON.toJson(environmentMap));
+    }
+
+    /**
+     * Handler for the ssm confidential computing settings page
+     *
+     * @param request the request object
+     * @param response the response object
+     * @param user the current user
+     * @return the ModelAndView object to render the page
+     */
+    public static ModelAndView ssmCoCoSettings(Request request, Response response, User user) {
+        Map<String, Object> data = new HashMap<>();
+
+        data.put("entityType", "SSM");
+        data.put("tabs", ViewHelper.getInstance().renderNavigationMenu(request, "/WEB-INF/nav/ssm.xml"));
+        data.put("systemSupport", Json.GSON.toJson(
+            MinionServerFactory.lookupByIds(SsmManager.listServerIds(user))
+                .map(minionServer -> Map.of(
+                    "id", minionServer.getId(),
+                    "name", minionServer.getName(),
+                    "cocoSupport", minionServer.doesOsSupportCoCoAttestation()
+                ))
+                .toList()
+        ));
+        addCoCoMetadata(data);
+
+        return new ModelAndView(data, "templates/ssm/coco-ssm-settings.jade");
+    }
+
+    /**
+     * Handler for the ssm confidential computing schedule page
+     *
+     * @param request the request object
+     * @param response the response object
+     * @param user the current user
+     * @return the ModelAndView object to render the page
+     */
+    public static ModelAndView ssmCoCoSchedule(Request request, Response response, User user) {
+        Map<String, Object> data = new HashMap<>();
+
+        data.put("entityType", "SSM");
+        data.put("tabs", ViewHelper.getInstance().renderNavigationMenu(request, "/WEB-INF/nav/ssm.xml"));
+        data.put("systemSupport", Json.GSON.toJson(
+            MinionServerFactory.lookupByIds(SsmManager.listServerIds(user))
+                .map(minionServer -> Map.of(
+                    "id", minionServer.getId(),
+                    "name", minionServer.getName(),
+                    "cocoSupport", minionServer.doesOsSupportCoCoAttestation()
+                ))
+                .toList()
+        ));
+        addActionChains(user, data);
+
+        return new ModelAndView(data, "templates/ssm/coco-ssm-schedule.jade");
+    }
 }

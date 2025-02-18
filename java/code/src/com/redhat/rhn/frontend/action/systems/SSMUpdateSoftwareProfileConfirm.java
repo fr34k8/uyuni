@@ -72,7 +72,7 @@ public class SSMUpdateSoftwareProfileConfirm extends RhnAction implements Listab
         RhnSet set = RhnSetDecl.SYSTEMS.get(user);
         request.setAttribute("system_count", set.size());
         DynaActionForm daForm = (DynaActionForm)formIn;
-        Map params = makeParamMap(request);
+        Map<String, Object> params = makeParamMap(request);
 
         if (isSubmitted(daForm)) {
             Iterator it = set.iterator();
@@ -101,8 +101,7 @@ public class SSMUpdateSoftwareProfileConfirm extends RhnAction implements Listab
                         mapping.findForward("success"), params);
             }
             catch (TaskomaticApiException e) {
-                log.error("Could not schedule package refresh:");
-                log.error(e);
+                log.error("Could not schedule package refresh:", e);
                 ActionErrors errors = new ActionErrors();
                 getStrutsDelegate().addError(errors, "taskscheduler.down");
                 getStrutsDelegate().saveMessages(request, errors);

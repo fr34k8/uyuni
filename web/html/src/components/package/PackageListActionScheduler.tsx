@@ -3,7 +3,7 @@ import * as React from "react";
 import { ActionChain, ActionSchedule } from "components/action-schedule";
 import { AsyncButton, Button } from "components/buttons";
 import { ActionChainLink, ActionLink } from "components/links";
-import { Messages, MessageType, Utils as MessagesUtils } from "components/messages";
+import { Messages, MessageType, Utils as MessagesUtils } from "components/messages/messages";
 import { InnerPanel } from "components/panels/InnerPanel";
 import { Column } from "components/table/Column";
 import { SearchField } from "components/table/SearchField";
@@ -79,13 +79,17 @@ export class PackageListActionScheduler extends React.Component<Props, State> {
         const msg = MessagesUtils.info(
           this.state.actionChain ? (
             <span>
-              {t(
-                "Action has been successfully added to the action chain '{0}'.",
-                <ActionChainLink id={data}>{this.state.actionChain.text}</ActionChainLink>
-              )}
+              {t('Action has been successfully added to the action chain <link>"{name}"</link>.', {
+                name: this.state.actionChain.text,
+                link: (str) => <ActionChainLink id={data}>{str}</ActionChainLink>,
+              })}
             </span>
           ) : (
-            <span>{t("The action has been {0}.", <ActionLink id={data}>{t("scheduled")}</ActionLink>)}</span>
+            <span>
+              {t("The action has been <link>scheduled</link>.", {
+                link: (str) => <ActionLink id={data}>{str}</ActionLink>,
+              })}
+            </span>
           )
         );
 

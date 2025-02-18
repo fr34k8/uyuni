@@ -44,6 +44,7 @@ import com.redhat.rhn.frontend.xmlrpc.InvalidGPGUrlException;
 import com.redhat.rhn.manager.channel.ChannelManager;
 import com.redhat.rhn.manager.channel.CloneChannelCommand;
 import com.redhat.rhn.manager.channel.CreateChannelCommand;
+import com.redhat.rhn.manager.channel.ForbiddenCloneChannelPAYGException;
 import com.redhat.rhn.manager.channel.InvalidGPGFingerprintException;
 import com.redhat.rhn.manager.channel.UpdateChannelCommand;
 import com.redhat.rhn.manager.download.DownloadManager;
@@ -51,6 +52,7 @@ import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.manager.user.UserManager;
 
 import com.suse.manager.webui.services.pillar.MinionPillarManager;
+import com.suse.utils.Json;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -61,7 +63,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.action.DynaActionForm;
-import org.stringtree.json.JSONWriter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -500,6 +501,10 @@ public class EditChannelAction extends RhnAction implements Listable<OrgTrust> {
         catch (IllegalArgumentException iae) {
             errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(iae.getMessage()));
         }
+        catch (ForbiddenCloneChannelPAYGException f) {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(
+                    "edit.channel.forbiddenclonechannelpayg"));
+        }
         return null;
     }
 
@@ -763,8 +768,6 @@ public class EditChannelAction extends RhnAction implements Listable<OrgTrust> {
         }
         ctx.getRequest().setAttribute("parentChannelChecksums", parentChannelChecksums);
 
-        JSONWriter json = new JSONWriter();
-
         // base channel arches
         List<Map<String, String>> channelArches = new ArrayList<>();
         List<ChannelArch> arches = ChannelManager.getChannelArchitectures();
@@ -783,10 +786,10 @@ public class EditChannelAction extends RhnAction implements Listable<OrgTrust> {
                 .values());
         for (String arch : uniqueParentChannelArches) {
             archCompatMap.put(
-                    arch, json.write(ChannelManager.compatibleChildChannelArches(arch)));
+                    arch, Json.GSON.toJson(ChannelManager.compatibleChildChannelArches(arch)));
         }
         // empty string for when there is no parent, all arches are available
-        archCompatMap.put("", json.write(allArchConstruct));
+        archCompatMap.put("", Json.GSON.toJson(allArchConstruct));
         ctx.getRequest().setAttribute("archCompatMap", archCompatMap);
 
         // set the list of yum supported checksums

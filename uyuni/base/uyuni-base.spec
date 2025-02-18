@@ -1,7 +1,7 @@
 #
 # spec file for package uyuni-base
 #
-# Copyright (c) 2022 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -17,31 +17,27 @@
 
 
 %global debug_package %{nil}
-
 #Compat macro for new _fillupdir macro introduced in Nov 2017
 %if ! %{defined _fillupdir}
-  %define _fillupdir /var/adm/fillup-templates
+  %define _fillupdir %{_localstatedir}/adm/fillup-templates
 %endif
-
 %if 0%{?suse_version}
 %define www_path /srv/
 %define apache_user wwwrun
 %define apache_group www
 %else
 %define www_path %{_var}
-%define apache_user root
-%define apache_group root
+%define apache_user apache
+%define apache_group apache
 %endif
-
 Name:           uyuni-base
-Version:        4.4.1
-Release:        1
-URL:            https://github.com/uyuni-project/uyuni
-Source0:        %{name}-%{version}.tar.gz
+Version:        5.1.1
+Release:        0
 Summary:        Uyuni Base Package
 License:        GPL-2.0-only
 Group:          System/Fhs
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+URL:            https://github.com/uyuni-project/uyuni
+Source0:        %{name}-%{version}.tar.gz
 
 %description
 Uyuni is a systems management application that will
@@ -60,16 +56,16 @@ Requires(pre):  httpd
 %description common
 Basic filesystem hierarchy for Uyuni server and proxy.
 
-%if ! (0%{?suse_version} == 1110)
+%if 0%{?suse_version} >= 1500 || 0%{?rhel} >= 9
 %package server
 Summary:        Base structure for Uyuni server
 Group:          System/Fhs
-Provides:       group(susemanager)
-Requires(pre):  uyuni-base-common
 Requires(pre):  %{_sbindir}/groupadd
 Requires(pre):  %{_sbindir}/usermod
-Requires(pre):  tomcat
 Requires(pre):  salt
+Requires(pre):  tomcat
+Requires(pre):  uyuni-base-common
+Provides:       group(susemanager)
 %if 0%{?suse_version} >= 1500
 Requires(pre):  user(wwwrun)
 %endif
@@ -96,18 +92,19 @@ Basic filesystem hierarchy for Uyuni proxy.
 # nothing to do here
 
 %install
-mkdir -p %{buildroot}/etc/rhn
-mkdir -p %{buildroot}/usr/share/rhn/proxy
-%if ! (0%{?suse_version} == 1110)
-mkdir -p %{buildroot}/var/spacewalk
+mkdir -p %{buildroot}%{_sysconfdir}/rhn
+mkdir -p %{buildroot}%{_datadir}/rhn/proxy
+%if 0%{?suse_version} >= 1500 || 0%{?rhel} >= 9
+mkdir -p %{buildroot}%{_localstatedir}/spacewalk
 %endif
-mkdir -p %{buildroot}/%{_prefix}/share/rhn/config-defaults
+mkdir -p %{buildroot}%{_datadir}/rhn/config-defaults
+mkdir -p %{buildroot}/srv/www/distributions
 
-%if !(0%{?suse_version} == 1110)
+%if 0%{?suse_version} >= 1500 || 0%{?rhel} >= 9
 %pre server
 getent group susemanager >/dev/null || %{_sbindir}/groupadd -r susemanager
 getent passwd salt >/dev/null && %{_sbindir}/usermod -a -G susemanager salt
-getent passwd tomcat >/dev/null && %{_sbindir}/usermod -a -G susemanager tomcat
+getent passwd tomcat >/dev/null && %{_sbindir}/usermod -a -G susemanager,%{apache_group} tomcat
 getent passwd %{apache_user} >/dev/null && %{_sbindir}/usermod -a -G susemanager %{apache_user}
 %endif
 
@@ -115,22 +112,19 @@ getent passwd %{apache_user} >/dev/null && %{_sbindir}/usermod -a -G susemanager
 %defattr(-,root,root)
 %{!?_licensedir:%global license %doc}
 %license LICENSE
-%dir %attr(750,root,%{apache_group}) /etc/rhn
-%dir %{_prefix}/share/rhn
-%dir %attr(755,root,%{apache_group}) %{_prefix}/share/rhn/config-defaults
+%dir %attr(750,root,%{apache_group}) %{_sysconfdir}/rhn
+%dir %{_datadir}/rhn
+%dir %attr(755,root,%{apache_group}) %{_datadir}/rhn/config-defaults
 
-%if ! (0%{?suse_version} == 1110)
+%if 0%{?suse_version} >= 1500 || 0%{?rhel} >= 9
 %files server
 %defattr(-,root,root)
-%if 0%{?rhel}
-/var/spacewalk
-%else
-%dir %attr(755,%{apache_user}, root) /var/spacewalk
-%endif
+%dir %attr(755,%{apache_user}, root) %{_localstatedir}/spacewalk
+%dir %attr(755,root,root) /srv/www/distributions
 %endif
 
 %files proxy
 %defattr(-,root,root)
-%dir /usr/share/rhn/proxy
+%dir %{_datadir}/rhn/proxy
 
 %changelog

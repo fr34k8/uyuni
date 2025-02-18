@@ -15,6 +15,12 @@
 
 package com.redhat.rhn.common.util;
 
+import com.redhat.rhn.domain.common.RhnConfiguration;
+import com.redhat.rhn.domain.common.RhnConfigurationFactory;
+
+import org.apache.commons.lang3.RandomStringUtils;
+
+import java.security.SecureRandom;
 import java.util.Random;
 
 /**
@@ -98,7 +104,7 @@ public class CryptHelper {
      */
     static String generateRandomSalt(Integer saltLength) {
         StringBuilder salt = new StringBuilder();
-        Random r = new Random();
+        Random r = new SecureRandom();
 
         for (int i = 0; i < saltLength; i++) {
             int rand = r.nextInt(b64t.length());
@@ -106,5 +112,21 @@ public class CryptHelper {
         }
 
         return salt.toString();
+    }
+
+    /**
+     * Generate a random string as password for PAM Auth
+     * @return a random password string
+     */
+    public static String getRandomPasswordForPamAuth() {
+        // We don't require a password when
+        // we set use pam authentication, yet the password field
+        // in the database is NOT NULL.  So we have to create this
+        // stupid HACK!  Actually this is beyond HACK.
+        RhnConfigurationFactory factory = RhnConfigurationFactory.getSingleton();
+        return RandomStringUtils.random(
+                factory.getIntegerConfiguration(RhnConfiguration.KEYS.PSW_CHECK_LENGTH_MAX).getValue(),
+                0, 0,
+                true, true, null, new SecureRandom());
     }
 }

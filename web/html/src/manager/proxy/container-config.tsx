@@ -3,11 +3,11 @@ import { useState } from "react";
 
 import { AsyncButton } from "components/buttons";
 import { SubmitButton } from "components/buttons";
-import { Form } from "components/input/Form";
+import { Form } from "components/input/form/Form";
+import { FormMultiInput } from "components/input/form-multi-input/FormMultiInput";
 import { unflattenModel } from "components/input/form-utils";
-import { FormMultiInput } from "components/input/FormMultiInput";
-import { Radio } from "components/input/Radio";
-import { Text } from "components/input/Text";
+import { Radio } from "components/input/radio/Radio";
+import { Text } from "components/input/text/Text";
 import { Panel } from "components/panels/Panel";
 import { TopPanel } from "components/panels/TopPanel";
 import Validation from "components/validation";
@@ -178,7 +178,7 @@ export function ProxyConfig() {
     <TopPanel
       title={t("Container Based Proxy Configuration")}
       icon="fa fa-cogs"
-      helpUrl="reference/proxy/container-based-config.html"
+      helpUrl="installation-and-upgrade/proxy-container-setup.html"
     >
       <p>
         {t(
@@ -197,11 +197,13 @@ export function ProxyConfig() {
         <Text
           name="proxyFQDN"
           label={t("Proxy FQDN")}
-          hint={t("The unique, DNS-resolvable FQDN of this proxy. It should be different from any registered clients.")}
+          hint={t("The unique, DNS-resolvable FQDN of this proxy.")}
           required
           placeholder={t("e.g., proxy.domain.com")}
           labelClass="col-md-3"
           divClass="col-md-6"
+          validators={[Validation.matches(/^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*$/)]}
+          invalidHint={t("Has to be a valid FQDN address")}
         />
         <Text
           name="serverFQDN"
@@ -211,6 +213,8 @@ export function ProxyConfig() {
           hint={t("The FQDN of the parent (server or proxy) to connect to.")}
           labelClass="col-md-3"
           divClass="col-md-6"
+          validators={[Validation.matches(/^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*$/)]}
+          invalidHint={t("Has to be a valid FQDN address")}
         />
         <Text
           name="proxyPort"
@@ -290,7 +294,7 @@ export function ProxyConfig() {
               key="ssl-certificate"
               title={t("SSL Certificate data")}
               headingLevel="h2"
-              className="panel-default col-md-6 col-md-offset-3 no-padding"
+              className="panel-default col-md-6 col-md-offset-3 offset-md-3 no-padding"
             >
               <div className="row">
                 <FormMultiInput
@@ -300,7 +304,7 @@ export function ProxyConfig() {
                   onAdd={onAddField("cnames")}
                   onRemove={onRemoveField("cnames")}
                   panelHeading="label"
-                  panelClassName="panel-default col-md-8 col-md-offset-1 no-padding"
+                  panelClassName="panel-default col-md-8 col-md-offset-1 offset-md-1 no-padding"
                 >
                   {(index) => (
                     <Text name={`cnames${index}`} label={t("CNAME")} labelClass="col-md-3" divClass="col-md-6" />
@@ -341,7 +345,7 @@ export function ProxyConfig() {
                 prefix="intermediateCAs"
                 onAdd={onAddField("intermediateCAs")}
                 onRemove={onRemoveField("intermediateCAs")}
-                panelClassName="panel-default col-md-8 col-md-offset-1 no-padding"
+                panelClassName="panel-default col-md-8 col-md-offset-1 offset-md-1 no-padding"
                 panelHeading="label"
               >
                 {(index) => (
@@ -377,8 +381,8 @@ export function ProxyConfig() {
           </>
         )}
 
-        <div className="col-md-offset-3 col-md-6">
-          <SubmitButton id="submit-btn" className="btn-success" text={t("Generate")} disabled={!isValidated} />
+        <div className="col-md-offset-3 offset-md-3 col-md-6">
+          <SubmitButton id="submit-btn" className="btn-primary" text={t("Generate")} disabled={!isValidated} />
           <AsyncButton
             id="clear-btn"
             defaultType="btn-default pull-right"
